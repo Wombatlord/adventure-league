@@ -1,12 +1,14 @@
 from src.entities.entity import Entity
 from src.entities.fighter import Fighter
 from random import randint
+from copy import deepcopy
+
+names = ["guts", "raphael", "eliza", "vasquez", "seraph"]
 
 
-def create_random_fighter() -> Entity:
-    rand = randint(1, 5)
-    fighter = Fighter(rand, rand, rand)
-    return Entity("NAME", cost=rand, fighter=fighter)
+def create_random_fighter(name) -> Entity:
+    fighter = Fighter(randint(1, 5), randint(1, 5), randint(1, 5))
+    return Entity(name, cost=randint(1, 5), fighter=fighter)
 
 
 class EntityPool:
@@ -15,8 +17,13 @@ class EntityPool:
         self.pool = []
 
     def fill_pool(self):
+        # Create a deepcopy of name array for consuming with pop.
+        name_choices = deepcopy(names)
+
         for _ in range(self.size):
-            self.pool.append(create_random_fighter())
+            # iteratively pop a random name from the deepcopy array and supply the name to the factory.
+            name = name_choices.pop(randint(0, len(name_choices) - 1))
+            self.pool.append(create_random_fighter(name))
 
     def show_pool(self):
         print(self.pool)
