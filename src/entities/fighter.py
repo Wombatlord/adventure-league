@@ -33,3 +33,14 @@ class Fighter:
         }
 
         return result
+
+    def from_dict(self, dict):
+        self.hp = dict.get('hp')
+        self.defence = dict.get('defence')
+        self.power = dict.get('power')
+        self.level = dict.get('level')
+        self.xp_reward = dict.get('xp_reward')
+        self.current_xp = dict.get('current_xp')
+
+    def attack(self, target):
+        pass
