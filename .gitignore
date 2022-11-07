@@ -1,3 +1,4 @@
+src/entities/__pycache__/*
 .python-version
 .vscode/
 venv/
