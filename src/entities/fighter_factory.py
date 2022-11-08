@@ -3,7 +3,18 @@ from src.entities.fighter import Fighter
 from random import randint
 from copy import deepcopy
 
-names = ["guts", "raphael", "eliza", "vasquez", "seraph"]
+names = [
+    "guts",
+    "raphael",
+    "eliza",
+    "vasquez",
+    "seraph",
+    "emilia",
+    "roberto",
+    "william",
+    "beckett",
+    "freya"
+]
 
 
 def create_random_fighter(name) -> Entity:
@@ -16,7 +27,18 @@ class EntityPool:
         self.size = size
         self.pool = []
 
-    def fill_pool(self):
+    def increase_pool_size(self, new_size: int) -> None:
+        # Set the new pool size and clear the previous pool
+        self.size = new_size
+        self.pool = []
+        # Refill the pool with new recruits
+        if self.size <= len(names):
+            self.fill_pool()
+
+        else:
+            raise ValueError(f"Not enough names for recruits. size: {self.size} < names: {len(names)}")
+
+    def fill_pool(self) -> None:
         # Create a deepcopy of name array for consuming with pop.
         name_choices = deepcopy(names)
 
@@ -25,7 +47,8 @@ class EntityPool:
             name = name_choices.pop(randint(0, len(name_choices) - 1))
             self.pool.append(create_random_fighter(name))
 
-    def show_pool(self):
+    def show_pool(self) -> None:
+        # Sanity check function
         print(self.pool)
         for i in self.pool:
             print(i.fighter.hp)
