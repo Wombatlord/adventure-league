@@ -34,7 +34,7 @@ class Fighter:
 
         return result
 
-    def from_dict(self, dict):
+    def from_dict(self, dict) -> None:
         self.hp = dict.get('hp')
         self.defence = dict.get('defence')
         self.power = dict.get('power')
@@ -42,5 +42,24 @@ class Fighter:
         self.xp_reward = dict.get('xp_reward')
         self.current_xp = dict.get('current_xp')
 
-    def attack(self, target):
-        pass
+    def take_damage(self, amount):
+        self.hp -= amount
+
+        if self.hp <= 0:
+            self.hp = 0
+            self.owner.is_dead = True
+
+    def attack(self, target: Entity):
+        if target.is_dead:
+            raise ValueError("he's dead jim.")
+
+        damage = self.power - target.fighter.defence
+
+        if damage > 0:
+            print("hp:" + str(target.fighter.hp))
+            print(f"{self.owner.name.capitalize()} hits {target.name.capitalize()} for {damage}")
+            target.fighter.take_damage(damage)
+            print("hp:" + str(target.fighter.hp))
+
+        else:
+            print("no damage")
