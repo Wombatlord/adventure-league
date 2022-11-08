@@ -2,6 +2,7 @@ class Entity:
     def __init__(
         self,
         name: str = None,
+        title: str = None,
         cost: int = None,
         fighter=None,
         inventory=None,
@@ -9,6 +10,7 @@ class Entity:
         is_dead: bool = False,
     ) -> None:
         self.name = name
+        self.title = title
         self.cost = cost
         self.inventory = inventory
         self.item = item

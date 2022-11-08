@@ -48,7 +48,7 @@ class Fighter:
         if self.hp <= 0:
             self.hp = 0
             self.owner.is_dead = True
-            print(f"{self.owner.name} is dead!")
+            print(f"{self.owner.name} {self.owner.title} is dead!")
 
     def attack(self, target: Entity):
         if self.owner.is_dead or target.is_dead:
@@ -61,7 +61,7 @@ class Fighter:
         damage: int = self.power - target.fighter.defence
 
         if damage > 0:
-            print(f"{self.owner.name.capitalize()} hits {target.name.capitalize()} for {damage}")
+            print(f"{self.owner.name.capitalize()} hits {target.name.capitalize()} {target.title} for {damage}")
             
             target.fighter.take_damage(damage)
             
