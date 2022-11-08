@@ -1,3 +1,4 @@
+from __future__ import annotations
 from src.entities.entity import Entity
 from random import randint
 
@@ -19,25 +20,19 @@ class Guild:
         roster_limit: int = None,
         roster: list[Entity] = None,
     ) -> None:
+        self.name = name
         self.level = level
         self.funds = funds
-        self.roster_scalar = 1.5
         self.roster_limit = roster_limit
         self.roster = roster
-        self.names = [
-            "Band of the Hawk",
-            "Diamond Dogs",
-            "Screaming Eagles",
-            "Order of the Lion",
-            "Iron Bears",
-        ]
-        self.name = name
+        self.roster_scalar = 1.5
+        self.team = Team()
 
         if self.roster_limit == None:
             self.roster_limit = int(self.level * self.roster_scalar)
 
         if self.name == None:
-            self.name = self.names.pop(randint(0, len(names) - 1))
+            self.name = names.pop(randint(0, len(names) - 1))
 
     def recruit(self, i, pool) -> list[Entity]:
         if len(self.roster) >= self.roster_limit:
@@ -52,3 +47,17 @@ class Guild:
             self.funds -= pool[i].cost
             choice = pool.pop(i)
             return self.roster.append(choice)
+
+class Team:
+    def __init__(self) -> None:
+        self.name = "TEAM"
+        self.members: list[Entity] = []
+    
+    def get_team(self):
+        return self.members
+
+    def assign_to_team(self, roster, selection):
+        self.members.append(roster[selection])
+
+    def remove_from_team(self, selection):
+        self.members.pop(selection)
