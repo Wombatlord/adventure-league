@@ -6,7 +6,7 @@ names = [
     "Band of the Hawk",
     "Diamond Dogs",
     "Screaming Eagles",
-    "Order of the Lion",
+    "Order of the Hound",
     "Iron Bears",
 ]
 
@@ -49,7 +49,7 @@ class Guild:
             return self.roster.append(choice)
 
     def remove_from_roster(self, i):
-        # Remove a dead member from the roster.
+        # Remove a member from the roster. For example, if killed in combat, call this.
         self.roster.pop(i)
 
 class Team:
