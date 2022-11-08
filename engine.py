@@ -37,7 +37,7 @@ class Engine:
     def setup_dungeon(self) -> Dungeon:
         # Prepare a dungeon instance with an enemy / enemies
         fighter = Fighter(hp=10, defence=2, power=4)
-        enemy = Entity(name="Tristan the Terrible", fighter=fighter)
+        enemy = Entity(name="Tristan", title="the Terrible", fighter=fighter)
         dungeon = Dungeon()
         dungeon.enemies.append(enemy)
 
@@ -51,21 +51,6 @@ class Engine:
         print(self.guild.name)
         for entity in self.guild.roster:
             print(entity.get_dict())
-
-    def test_attack(self):
-        f1 = Fighter(5, 1, 3, 1)
-        f2 = Fighter(5, 1, 3, 1)
-
-        en1 = Entity(
-            "EN1",
-            0,
-            fighter=f1,
-        )
-
-        en2 = Entity("EN2", 0, fighter=f2)
-
-        en1.fighter.attack(en2)
-        en2.fighter.attack(en1)
 
 
 # Instantiate & setup the engine
