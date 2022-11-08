@@ -51,13 +51,14 @@ class Fighter:
             print(f"{self.owner.name} is dead!")
 
     def attack(self, target: Entity):
-        if self.owner.is_dead:
+        if self.owner.is_dead or target.is_dead:
             return
 
         if target.is_dead:
-            raise ValueError("he's dead jim.")
-
-        damage = self.power - target.fighter.defence
+            # raise ValueError(f"{self.owner.name}: he's dead jim.")
+            return
+        
+        damage: int = self.power - target.fighter.defence
 
         if damage > 0:
             print("hp:" + str(target.fighter.hp))
@@ -69,3 +70,4 @@ class Fighter:
 
         else:
             print("no damage")
+            return 0
