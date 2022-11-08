@@ -6,11 +6,13 @@ class Entity:
         fighter=None,
         inventory=None,
         item=None,
+        is_dead: bool = False,
     ) -> None:
         self.name = name
         self.cost = cost
         self.inventory = inventory
         self.item = item
+        self.is_dead = is_dead
 
         # Entities with a fighter component can engage in combat.
         self.fighter = fighter
