@@ -48,6 +48,10 @@ class Guild:
             choice = pool.pop(i)
             return self.roster.append(choice)
 
+    def remove_from_roster(self, i):
+        # Remove a dead member from the roster.
+        self.roster.pop(i)
+
 class Team:
     def __init__(self) -> None:
         self.name = "TEAM"
