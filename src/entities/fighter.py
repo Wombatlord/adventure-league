@@ -61,12 +61,11 @@ class Fighter:
         damage: int = self.power - target.fighter.defence
 
         if damage > 0:
-            print("hp:" + str(target.fighter.hp))
             print(f"{self.owner.name.capitalize()} hits {target.name.capitalize()} for {damage}")
             
             target.fighter.take_damage(damage)
             
-            print("hp:" + str(target.fighter.hp))
+            print(f"{target.name.capitalize()} HP: " + str(target.fighter.hp) + "\n")
 
         else:
             print("no damage")
