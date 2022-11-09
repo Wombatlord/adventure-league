@@ -1,5 +1,28 @@
+from __future__ import annotations
 from typing import Optional
+from enum import Enum
 from src.entities.entity import Entity
+
+# Simple enum for providing formatted names with and without titles
+class Title(Enum):
+    ATK_WITH_TITLE = "attacker titled"
+    ATK_WITHOUT_TITLE = "attacker without title"
+    TAR_WITH_TITLE = "target titled"
+    TAR_WITHOUT_TITLE = "target without title"
+
+    def format_name(self, fighter: Fighter) -> str:
+        match self:
+            case Title.ATK_WITH_TITLE:
+                return f"{fighter.owner.name.capitalize()} {fighter.owner.title}"
+            
+            case Title.ATK_WITHOUT_TITLE:
+                return f"{fighter.owner.name.capitalize()}"
+
+            case Title.TAR_WITH_TITLE:
+                return f"{fighter.name.capitalize()} {fighter.title}"
+
+            case Title.TAR_WITHOUT_TITLE:
+                return f"{fighter.name.capitalize()}"
 
 # A class attached to any Entity that can fight
 class Fighter:
@@ -48,7 +71,7 @@ class Fighter:
         if self.hp <= 0:
             self.hp = 0
             self.owner.is_dead = True
-            print(f"{self.owner.name} {self.owner.title} is dead!")
+            print(f"{self.owner.name.capitalize()} {self.owner.title} is dead!")
 
     def attack(self, target: Entity):
         if self.owner.is_dead or target.is_dead:
@@ -60,8 +83,13 @@ class Fighter:
         
         damage: int = self.power - target.fighter.defence
 
+        atk_titled = Title.ATK_WITH_TITLE.format_name(self)
+        atk_untitled = Title.ATK_WITHOUT_TITLE.format_name(self)
+        tgt_titled = Title.TAR_WITH_TITLE.format_name(target)
+        tgt_untitled = Title.TAR_WITHOUT_TITLE.format_name(target)
+
         if damage > 0:
-            print(f"{self.owner.name.capitalize()} hits {target.name.capitalize()} {target.title} for {damage}")
+            print(f"{atk_titled if self.owner.title else atk_untitled} hits {tgt_titled if target.title else tgt_untitled} for {damage}")
             
             target.fighter.take_damage(damage)
             

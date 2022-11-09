@@ -13,13 +13,13 @@ names = [
     "roberto",
     "william",
     "beckett",
-    "freya"
+    "freya",
 ]
 
 
 def create_random_fighter(name) -> Entity:
     fighter = Fighter(randint(1, 5), randint(1, 5), randint(1, 5))
-    return Entity(name, cost=randint(1, 5), fighter=fighter)
+    return Entity(name, title='', cost=randint(1, 5), fighter=fighter)
 
 
 class EntityPool:
@@ -36,7 +36,9 @@ class EntityPool:
             self.fill_pool()
 
         else:
-            raise ValueError(f"Not enough names for recruits. size: {self.size} < names: {len(names)}")
+            raise ValueError(
+                f"Not enough names for recruits. size: {self.size} < names: {len(names)}"
+            )
 
     def fill_pool(self) -> None:
         # Create a deepcopy of name array for consuming with pop.
