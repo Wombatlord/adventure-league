@@ -26,6 +26,7 @@ class Entity:
         result = {}
 
         result["name"] = self.name
+        result["title"] = self.name
         result["cost"] = self.cost
 
         if self.fighter:
