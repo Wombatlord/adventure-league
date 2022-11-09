@@ -2,6 +2,26 @@ from __future__ import annotations
 from typing import Optional
 from enum import Enum
 from src.entities.entity import Entity
+from typing import NamedTuple
+
+class Name(NamedTuple):
+    title: str = None
+    first_name: str = None
+    last_name: str = None
+
+    def __str__(self) -> str:
+        return " ".join(filter(lambda x: (x is not None), self))    
+    
+    def has_title(self) -> bool:
+        return self.title is not None
+
+    def formal_form(self) -> str:
+        if not self.has_title:
+            return "guv"
+        else:
+            return self.title + " " + self.last_name
+
+example_name = Name(title="fuckminster", first_name="hadron", last_name="blimey")
 
 # Simple enum for providing formatted names with and without titles
 class Title(Enum):
