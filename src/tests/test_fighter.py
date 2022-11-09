@@ -19,7 +19,7 @@ class TestFighter(unittest.TestCase):
         en1.fighter.attack(en2)
         en2.fighter.attack(en1)
 
-        assert f1.max_hp > f1.hp
+        self.assertGreaterEqual(f1.max_hp, f1.hp)
 
 if __name__ == "__main__":
     unittest.main()
