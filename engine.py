@@ -3,25 +3,15 @@ from src.entities.fighter_factory import EntityPool
 from src.entities.entity import Entity
 from src.entities.fighter import Fighter
 from src.entities.guild import Guild
-
-
-class Dungeon:
-    def __init__(self, enemies: list[Entity] = []) -> None:
-        self.enemies: Optional[list[Entity]] = enemies
-        self.treasure = None
-
-    def remove_corpses(self):
-        # Iterate through enemies and remove dead enemies from the array.
-        for i, enemy in enumerate(self.enemies):
-            if enemy.is_dead:
-                self.enemies.pop(i)
-
+from src.entities.dungeon import Dungeon
+from src.entities.mission_board import MissionBoard
 
 class Engine:
     def __init__(self) -> None:
         self.guild: Optional[Guild] = None
         self.entity_pool: Optional[EntityPool] = None
         self.dungeon: Optional[Dungeon] = None
+        self.mission_board: Optional[MissionBoard] = None
 
     def setup(self) -> None:
         # create a pool of potential recruits
@@ -31,6 +21,10 @@ class Engine:
         # create a guild
         self.guild = Guild(name=None, level=4, funds=100, roster=[])
 
+        # create a mission board
+        self.mission_board = MissionBoard(size=3)
+        self.mission_board.fill_board(enemy_amount=3)
+        
         # prepare a dungeon
         self.dungeon = self.setup_dungeon()
 
@@ -38,7 +32,7 @@ class Engine:
         # Prepare a dungeon instance with an enemy / enemies
         fighter = Fighter(hp=10, defence=2, power=4)
         enemy = Entity(name="Tristan", title="the Terrible", fighter=fighter)
-        dungeon = Dungeon()
+        dungeon = Dungeon(id=0, enemies=[])
         dungeon.enemies.append(enemy)
 
         return dungeon
@@ -93,6 +87,8 @@ while len(eng.dungeon.enemies) > 0:
         break
 
 eng.print_guild()
+print(eng.mission_board.missions[0].id)
+print(eng.mission_board.missions[1].enemies[0].name)
 
 # eng.recruit_entity_to_guild(1)
 # eng.guild.roster[0].fighter.attack(eng.guild.roster[1])
