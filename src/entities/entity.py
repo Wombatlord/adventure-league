@@ -1,8 +1,32 @@
+from typing import NamedTuple
+
+class Name(NamedTuple):
+    first_name: str = None
+    title: str = None
+    last_name: str = None
+
+    def __str__(self) -> str:
+        return " ".join(filter(lambda x: (x is not None), self))
+
+    def name_and_title(self) -> str:
+        if self.has_title():
+            return f"{self.first_name.capitalize()} {self.title}"
+        else:
+            return f"{self.first_name.capitalize()}"
+
+    def has_title(self) -> bool:
+        return self.title is not None
+
+    def formal_form(self) -> str:
+        if not self.has_title:
+            return "guv"
+        else:
+            return f"{self.first_name} {self.title}"
+
 class Entity:
     def __init__(
         self,
-        name: str = None,
-        title: str = None,
+        name: Name = None,
         cost: int = None,
         fighter=None,
         inventory=None,
@@ -10,7 +34,6 @@ class Entity:
         is_dead: bool = False,
     ) -> None:
         self.name = name
-        self.title = title
         self.cost = cost
         self.inventory = inventory
         self.item = item
@@ -26,7 +49,6 @@ class Entity:
         result = {}
 
         result["name"] = self.name
-        result["title"] = self.name
         result["cost"] = self.cost
 
         if self.fighter:
