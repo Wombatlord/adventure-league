@@ -34,13 +34,26 @@ class Guild:
         if self.name == None:
             self.name = names.pop(randint(0, len(names) - 1))
 
+    def get_dict(self) -> dict:
+        guild = {}
+
+        guild["name"] = self.name
+        guild["level"] = self.level
+        guild["funds"] = self.funds
+        guild["roster_limit"] = self.roster_limit
+        guild["roster"] = self.roster
+        guild["roster_scalar"] = self.roster_scalar
+        guild["team"] = self.team.get_dict()
+
+        return guild
+
     def recruit(self, i, pool) -> list[Entity]:
         if len(self.roster) >= self.roster_limit:
             print("Roster full.")
             return
 
         if pool[i].cost > self.funds:
-            print(f"{pool[i].name.capitalize()} is too expensive.")
+            print(f"{pool[i].name.first_name.capitalize()} is too expensive.")
             return
 
         else:
@@ -56,6 +69,14 @@ class Team:
     def __init__(self) -> None:
         self.name = "TEAM"
         self.members: list[Entity] = []
+
+    def get_dict(self) -> dict:
+        team = {}
+
+        team["name"] = self.name
+        team["members"] = self.members
+
+        return team
     
     def get_team(self):
         return self.members
