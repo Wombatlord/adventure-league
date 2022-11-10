@@ -1,4 +1,4 @@
-from src.entities.entity import Entity
+from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
 from random import randint
 from copy import deepcopy
@@ -18,8 +18,9 @@ names = [
 
 
 def create_random_fighter(name) -> Entity:
-    fighter = Fighter(randint(1, 5), randint(1, 5), randint(1, 5))
-    return Entity(name, title='', cost=randint(1, 5), fighter=fighter)
+    fighter = Fighter(15, randint(1,3), randint(1,3))
+    entity_name = Name(title=None, first_name=name, last_name=None)
+    return Entity(name=entity_name, cost=randint(1, 5), fighter=fighter)
 
 
 class EntityPool:
