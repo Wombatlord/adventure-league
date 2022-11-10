@@ -1,6 +1,6 @@
 from typing import Optional
 from src.entities.fighter_factory import EntityPool
-from src.entities.entity import Entity
+from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
 from src.entities.guild import Guild
 from src.entities.dungeon import Dungeon
@@ -30,8 +30,9 @@ class Engine:
 
     def setup_dungeon(self) -> Dungeon:
         # Prepare a dungeon instance with an enemy / enemies
-        fighter = Fighter(hp=10, defence=2, power=4)
-        enemy = Entity(name="Tristan", title="the Terrible", fighter=fighter)
+        fighter = Fighter(hp=30, defence=1, power=3)
+        tristan = Name(title="the Terrible", first_name="Tristan", last_name="")
+        enemy = Entity(name=tristan, fighter=fighter)
         dungeon = Dungeon(id=0, enemies=[])
         dungeon.enemies.append(enemy)
 
@@ -42,7 +43,7 @@ class Engine:
 
     def print_guild(self):
         # print(self.guild)
-        print(self.guild.name)
+        print(self.guild.get_dict())
         for entity in self.guild.roster:
             print(entity.get_dict())
 
@@ -70,11 +71,12 @@ while len(eng.dungeon.enemies) > 0:
             a = merc.fighter.attack(eng.dungeon.enemies[0])
             
             if a == 0:
-                print(f"{merc.name.capitalize()} retreats!")
+                print(f"{merc.name.first_name.capitalize()} retreats!")
                 eng.guild.team.remove_from_team(i)
         
         if merc.is_dead:
             eng.guild.team.remove_from_team(i)
+            eng.guild.remove_from_roster(i)
             # print(eng.guild.team)
 
         eng.dungeon.remove_corpses()
@@ -88,7 +90,7 @@ while len(eng.dungeon.enemies) > 0:
 
 eng.print_guild()
 print(eng.mission_board.missions[0].id)
-print(eng.mission_board.missions[1].enemies[0].name)
+print(eng.mission_board.missions[1].enemies[0].name.first_name.capitalize())
 
 # eng.recruit_entity_to_guild(1)
 # eng.guild.roster[0].fighter.attack(eng.guild.roster[1])
