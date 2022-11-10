@@ -1,48 +1,6 @@
 from __future__ import annotations
 from typing import Optional
-from enum import Enum
 from src.entities.entity import Entity
-from typing import NamedTuple
-
-class Name(NamedTuple):
-    title: str = None
-    first_name: str = None
-    last_name: str = None
-
-    def __str__(self) -> str:
-        return " ".join(filter(lambda x: (x is not None), self))    
-    
-    def has_title(self) -> bool:
-        return self.title is not None
-
-    def formal_form(self) -> str:
-        if not self.has_title:
-            return "guv"
-        else:
-            return self.title + " " + self.last_name
-
-example_name = Name(title="fuckminster", first_name="hadron", last_name="blimey")
-
-# Simple enum for providing formatted names with and without titles
-class Title(Enum):
-    ATK_WITH_TITLE = "attacker titled"
-    ATK_WITHOUT_TITLE = "attacker without title"
-    TAR_WITH_TITLE = "target titled"
-    TAR_WITHOUT_TITLE = "target without title"
-
-    def format_name(self, fighter: Fighter) -> str:
-        match self:
-            case Title.ATK_WITH_TITLE:
-                return f"{fighter.owner.name.capitalize()} {fighter.owner.title}"
-            
-            case Title.ATK_WITHOUT_TITLE:
-                return f"{fighter.owner.name.capitalize()}"
-
-            case Title.TAR_WITH_TITLE:
-                return f"{fighter.name.capitalize()} {fighter.title}"
-
-            case Title.TAR_WITHOUT_TITLE:
-                return f"{fighter.name.capitalize()}"
 
 # A class attached to any Entity that can fight
 class Fighter:
@@ -78,12 +36,12 @@ class Fighter:
         return result
 
     def from_dict(self, dict) -> None:
-        self.hp = dict.get('hp')
-        self.defence = dict.get('defence')
-        self.power = dict.get('power')
-        self.level = dict.get('level')
-        self.xp_reward = dict.get('xp_reward')
-        self.current_xp = dict.get('current_xp')
+        self.hp = dict.get("hp")
+        self.defence = dict.get("defence")
+        self.power = dict.get("power")
+        self.level = dict.get("level")
+        self.xp_reward = dict.get("xp_reward")
+        self.current_xp = dict.get("current_xp")
 
     def take_damage(self, amount):
         self.hp -= amount
@@ -91,30 +49,36 @@ class Fighter:
         if self.hp <= 0:
             self.hp = 0
             self.owner.is_dead = True
-            print(f"{self.owner.name.capitalize()} {self.owner.title} is dead!")
+            print(
+                f"{self.owner.name.name_and_title()} is dead!"
+            )
 
     def attack(self, target: Entity):
         if self.owner.is_dead or target.is_dead:
-            return
+            raise ValueError(f"{self.owner.name}: he's dead jim.")
+            # return
 
-        if target.is_dead:
-            # raise ValueError(f"{self.owner.name}: he's dead jim.")
-            return
-        
-        damage: int = self.power - target.fighter.defence
+        # if target.is_dead:
+        #     return
 
-        atk_titled = Title.ATK_WITH_TITLE.format_name(self)
-        atk_untitled = Title.ATK_WITHOUT_TITLE.format_name(self)
-        tgt_titled = Title.TAR_WITH_TITLE.format_name(target)
-        tgt_untitled = Title.TAR_WITHOUT_TITLE.format_name(target)
+        succesful_hit: int = self.power - target.fighter.defence
 
-        if damage > 0:
-            print(f"{atk_titled if self.owner.title else atk_untitled} hits {tgt_titled if target.title else tgt_untitled} for {damage}")
-            
-            target.fighter.take_damage(damage)
-            
-            print(f"{target.name.capitalize()} HP: " + str(target.fighter.hp) + "\n")
+        if succesful_hit > 0:
+            actual_damage = int(
+                2 * self.power**2 / (self.power + target.fighter.defence)
+            )
+
+        my_name = self.owner.name.name_and_title()
+
+        target_name = target.name.name_and_title()
+
+        if succesful_hit > 0:
+            print(f"{my_name} hits {target_name} for {actual_damage}\n")
+
+            target.fighter.take_damage(actual_damage)
+
+            # print(f"{target.name.capitalize()} HP: " + str(target.fighter.hp) + "\n")
 
         else:
-            print("no damage")
+            print(f"{my_name} fails to hit {target_name}!")
             return 0
