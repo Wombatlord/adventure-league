@@ -1,5 +1,6 @@
+import sys
 from typing import Optional
-from src.entities.fighter_factory import EntityPool
+from src.entities.fighter_factory import EntityPool, create_random_fighter
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
 from src.entities.guild import Guild
@@ -31,10 +32,10 @@ class Engine:
     def setup_dungeon(self) -> Dungeon:
         # Prepare a dungeon instance with an enemy / enemies
         fighter = Fighter(hp=30, defence=1, power=3)
-        tristan = Name(title="the Terrible", first_name="Tristan", last_name="")
-        enemy = Entity(name=tristan, fighter=fighter)
-        dungeon = Dungeon(id=0, enemies=[])
-        dungeon.enemies.append(enemy)
+        bossName = Name(title="the Terrible", first_name="Tristan", last_name="")
+        tristan = Entity(name=bossName, fighter=fighter)
+        dungeon = Dungeon(id=0, enemies=[], boss=tristan)
+        dungeon.enemies.append(create_random_fighter('goblin'))
 
         return dungeon
 
@@ -64,6 +65,9 @@ eng.guild.team.assign_to_team(eng.guild.roster, 1)
 print(eng.guild.team.name)
 
 # Testing combat interactions between a team and Dungeon enemies
+
+eng.dungeon = eng.mission_board.missions[int(sys.argv[1])]
+
 while len(eng.dungeon.enemies) > 0:
     for i, merc in enumerate(eng.guild.team.members):
         
@@ -89,8 +93,6 @@ while len(eng.dungeon.enemies) > 0:
         break
 
 eng.print_guild()
-print(eng.mission_board.missions[0].id)
-print(eng.mission_board.missions[1].enemies[0].name.first_name.capitalize())
+# print(eng.mission_board.missions[0].id)
+# print(eng.mission_board.missions[1].enemies[0].name.first_name.capitalize())
 
-# eng.recruit_entity_to_guild(1)
-# eng.guild.roster[0].fighter.attack(eng.guild.roster[1])
