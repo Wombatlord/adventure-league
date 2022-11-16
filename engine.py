@@ -68,25 +68,38 @@ print(eng.guild.team.name)
 
 eng.dungeon = eng.mission_board.missions[int(sys.argv[1])]
 
-while len(eng.dungeon.enemies) > 0:
+while eng.dungeon.boss.is_dead == False:
     for i, merc in enumerate(eng.guild.team.members):
         
-        if not merc.is_dead and len(eng.dungeon.enemies) > 0:
-            a = merc.fighter.attack(eng.dungeon.enemies[0])
-            
-            if a == 0:
-                print(f"{merc.name.first_name.capitalize()} retreats!")
-                eng.guild.team.remove_from_team(i)
-        
+        if not merc.is_dead:
+            if len(eng.dungeon.enemies) > 0:
+                a = merc.fighter.attack(eng.dungeon.enemies[0])
+                
+                if a == 0:
+                    print(f"{merc.name.first_name.capitalize()} retreats!")
+                    eng.guild.team.remove_from_team(i)
+
+            if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
+                a = merc.fighter.attack(eng.dungeon.boss)
+
+                if a == 0:
+                    print(f"{merc.name.first_name.capitalize()} retreats!")
+                    eng.guild.team.remove_from_team(i)
+
         if merc.is_dead:
             eng.guild.team.remove_from_team(i)
             eng.guild.remove_from_roster(i)
-            # print(eng.guild.team)
+
 
         eng.dungeon.remove_corpses()
 
     if len(eng.dungeon.enemies) > 0 and len(eng.guild.team.members) > 0:
         eng.dungeon.enemies[0].fighter.attack(eng.guild.team.members[0])
+
+    # End states & Break.
+    if len(eng.dungeon.enemies) == 0 and eng.dungeon.boss.is_dead:
+        print("You Win!")
+        break
 
     if len(eng.guild.team.members) == 0:
         print(f"{eng.guild.team.name} defeated!")

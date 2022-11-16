@@ -7,12 +7,14 @@ class Dungeon:
         self,
         id: int,
         enemies: list[Entity],
+        boss: Entity,
         description: Optional[str] = "NO DESC",
         treasure: Optional[str] = "NO TREASURE",
         xp_reward: Optional[int] = 0,
     ) -> None:
         self.id: int = id
         self.enemies: list[Entity] = enemies
+        self.boss: Entity = boss
         self.description: Optional[str] = description
         self.treasure: Optional[str] = treasure
         self.xp_reward: Optional[int] = xp_reward
