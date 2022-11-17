@@ -1,9 +1,9 @@
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 class Name(NamedTuple):
     first_name: str = None
-    title: str = None
-    last_name: str = None
+    title: Optional[str] = None
+    last_name: Optional[str] = None
 
     def __str__(self) -> str:
         return " ".join(filter(lambda x: (x is not None), self))
@@ -16,7 +16,7 @@ class Name(NamedTuple):
 
     def has_title(self) -> bool:
         return self.title is not None
-        
+
 
 class Entity:
     def __init__(
