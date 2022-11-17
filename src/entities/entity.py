@@ -16,12 +16,7 @@ class Name(NamedTuple):
 
     def has_title(self) -> bool:
         return self.title is not None
-
-    def formal_form(self) -> str:
-        if not self.has_title:
-            return "guv"
-        else:
-            return f"{self.first_name} {self.title}"
+        
 
 class Entity:
     def __init__(
