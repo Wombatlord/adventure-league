@@ -1,11 +1,13 @@
 import sys
+from random import randint
 from typing import Optional
 from src.entities.fighter_factory import EntityPool, create_random_fighter
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
-from src.entities.guild import Guild
+from src.entities.guild import Guild, Team
 from src.entities.dungeon import Dungeon
 from src.entities.mission_board import MissionBoard
+
 
 class Engine:
     def __init__(self) -> None:
@@ -13,6 +15,11 @@ class Engine:
         self.entity_pool: Optional[EntityPool] = None
         self.dungeon: Optional[Dungeon] = None
         self.mission_board: Optional[MissionBoard] = None
+        self.guild_names = [
+            "Band of the Hawk",
+            "Order of the Hound",
+            "House of the Bear",
+        ]
 
     def setup(self) -> None:
         # create a pool of potential recruits
@@ -20,14 +27,17 @@ class Engine:
         self.entity_pool.fill_pool()
 
         # create a guild
-        self.guild = Guild(name=None, level=4, funds=100, roster=[])
+        self.guild = Guild(
+            name=self.guild_names[randint(0, len(self.guild_names) - 1)],
+            level=4,
+            funds=100,
+            roster=[],
+        )
+        self.guild.team.name_team()
 
         # create a mission board
         self.mission_board = MissionBoard(size=3)
         self.mission_board.fill_board(enemy_amount=3)
-        
-        # prepare a dungeon
-        self.dungeon = self.setup_dungeon()
 
     def setup_dungeon(self) -> Dungeon:
         # Prepare a dungeon instance with an enemy / enemies
@@ -35,7 +45,7 @@ class Engine:
         bossName = Name(title="the Terrible", first_name="Tristan", last_name="")
         tristan = Entity(name=bossName, fighter=fighter)
         dungeon = Dungeon(id=0, enemies=[], boss=tristan)
-        dungeon.enemies.append(create_random_fighter('goblin'))
+        dungeon.enemies.append(create_random_fighter("goblin"))
 
         return dungeon
 
@@ -62,19 +72,18 @@ eng.recruit_entity_to_guild(1)
 # Assign entities to a team within the guild
 eng.guild.team.assign_to_team(eng.guild.roster, 0)
 eng.guild.team.assign_to_team(eng.guild.roster, 1)
-print(eng.guild.team.name)
 
 # Testing combat interactions between a team and Dungeon enemies
 
 eng.dungeon = eng.mission_board.missions[int(sys.argv[1])]
-
+print(eng.dungeon.description)
 while eng.dungeon.boss.is_dead == False:
     for i, merc in enumerate(eng.guild.team.members):
-        
+
         if not merc.is_dead:
             if len(eng.dungeon.enemies) > 0:
                 a = merc.fighter.attack(eng.dungeon.enemies[0])
-                
+
                 if a == 0:
                     print(f"{merc.name.first_name.capitalize()} retreats!")
                     eng.guild.team.remove_from_team(i)
@@ -90,22 +99,32 @@ while eng.dungeon.boss.is_dead == False:
             eng.guild.team.remove_from_team(i)
             eng.guild.remove_from_roster(i)
 
-
         eng.dungeon.remove_corpses()
 
     if len(eng.dungeon.enemies) > 0 and len(eng.guild.team.members) > 0:
         eng.dungeon.enemies[0].fighter.attack(eng.guild.team.members[0])
 
+    if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
+        if len(eng.guild.team.members) > 0:
+            eng.dungeon.boss.fighter.attack(eng.guild.team.members[0])
+
     # End states & Break.
     if len(eng.dungeon.enemies) == 0 and eng.dungeon.boss.is_dead:
-        print("You Win!")
+        message = "\n".join(
+            (
+                f"{eng.dungeon.boss.name.first_name.capitalize()} is vanquished and the evil within {eng.dungeon.description} is no more!",
+                f"{eng.guild.team.name} of the {eng.guild.name} is victorious!",
+            )
+        )
+
+        print(message)
         break
 
     if len(eng.guild.team.members) == 0:
         print(f"{eng.guild.team.name} defeated!")
         break
 
-eng.print_guild()
+
+# eng.print_guild()
 # print(eng.mission_board.missions[0].id)
 # print(eng.mission_board.missions[1].enemies[0].name.first_name.capitalize())
-
