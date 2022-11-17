@@ -49,17 +49,14 @@ class Fighter:
         if self.hp <= 0:
             self.hp = 0
             self.owner.is_dead = True
-            print(
-                f"{self.owner.name.name_and_title()} is dead!"
-            )
+            print(f"{self.owner.name.name_and_title()} is dead!")
 
     def attack(self, target: Entity):
         if self.owner.is_dead or target.is_dead:
             raise ValueError(f"{self.owner.name}: he's dead jim.")
-            # return
 
-        # if target.is_dead:
-        #     return
+        my_name = self.owner.name.name_and_title()
+        target_name = target.name.name_and_title()
 
         succesful_hit: int = self.power - target.fighter.defence
 
@@ -68,16 +65,8 @@ class Fighter:
                 2 * self.power**2 / (self.power + target.fighter.defence)
             )
 
-        my_name = self.owner.name.name_and_title()
-
-        target_name = target.name.name_and_title()
-
-        if succesful_hit > 0:
             print(f"{my_name} hits {target_name} for {actual_damage}\n")
-
             target.fighter.take_damage(actual_damage)
-
-            # print(f"{target.name.capitalize()} HP: " + str(target.fighter.hp) + "\n")
 
         else:
             print(f"{my_name} fails to hit {target_name}!")
