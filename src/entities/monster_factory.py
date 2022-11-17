@@ -10,6 +10,7 @@ boss_names = [
     "xevrain",
     "selin",
     "kefka",
+    "tristan",
 ]
 
 boss_titles = [
