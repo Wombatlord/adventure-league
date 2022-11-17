@@ -22,13 +22,13 @@ _boss = StatBlock(hp=(30, 30), defence=(2, 4), power=(2, 4))
 
 
 def get_fighter_factory(stats: StatBlock):
-    def _create_random_fighter(name, title) -> Entity:
+    def _create_random_fighter(name=None, title=None, last_name=None) -> Entity:
         fighter = Fighter(
             hp=randint(*stats.hp),
             defence=randint(*stats.defence),
             power=randint(*stats.power),
         )
-        entity_name = Name(title=title, first_name=name, last_name=None)
+        entity_name = Name(title=title, first_name=name, last_name=last_name)
         return Entity(name=entity_name, cost=randint(1, 5), fighter=fighter)
 
     return _create_random_fighter
@@ -64,7 +64,7 @@ class EntityPool:
         for _ in range(self.size):
             # iteratively pop a random name from the deepcopy array and supply the name to the factory.
             name = name_choices.pop(randint(0, len(name_choices) - 1))
-            self.pool.append(create_random_fighter(name, None))
+            self.pool.append(create_random_fighter(name))
 
     def show_pool(self) -> None:
         # Sanity check function
