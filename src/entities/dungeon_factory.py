@@ -1,40 +1,28 @@
 from src.entities.dungeon import Dungeon
+from src.config.constants import dungeon_descriptors, boss_titles, boss_names
 from random import randint
-from src.entities.monster_factory import create_random_monster, create_random_boss
+from src.entities.fighter_factory import create_random_monster, create_random_boss
 
-descriptors = {
-    "a": [
-        "Forgotten",
-        "Haunted",
-        "Forlorn",
-        "Desolate",
-        "Scourged",
-        "Cursed",
-        "Wailing",
-        "Forsaken",
-        "Scorched",
-        "Frozen",
-    ],
-    "b": [
-        "Crypt",
-        "Church",
-        "Cathedral",
-        "Sepulcher",
-        "Warcamp",
-        "Cave",
-        "Tunnels",
-        "Mine",
-        "Forest",
-        "Lair",
-    ],
-}
 
 def describe_dungeon() -> str:
-    return f"The {descriptors.get('a')[randint(0, len(descriptors['a']) - 1)]} {descriptors.get('b')[randint(0, len(descriptors['b']) - 1)]}"
+    descriptor_a = dungeon_descriptors.get('a')[randint(0, len(dungeon_descriptors['a']) - 1)]
+    descriptor_b = dungeon_descriptors.get('b')[randint(0, len(dungeon_descriptors['b']) - 1)]
+    return f"The {descriptor_a} {descriptor_b}"
+
 
 def create_random_dungeon(enemy_amount, dungeon_id) -> Dungeon:
     enemies = []
     for _ in range(enemy_amount):
-        enemies.append(create_random_monster("goblin"))
+        enemies.append(create_random_monster("goblin", None))
 
-    return Dungeon(dungeon_id, enemies, create_random_boss(), describe_dungeon(), "TREASURE", 10)
+    return Dungeon(
+        dungeon_id,
+        enemies,
+        create_random_boss(
+            name=boss_names[randint(0, len(boss_names) - 1)],
+            title=boss_titles[randint(0, len(boss_titles) - 1)],
+        ),
+        describe_dungeon(),
+        "TREASURE",
+        10,
+    )
