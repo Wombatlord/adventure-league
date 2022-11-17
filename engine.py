@@ -1,6 +1,7 @@
 import sys
 from random import randint
 from typing import Optional
+from src.config.constants import guild_names
 from src.entities.fighter_factory import EntityPool, create_random_fighter
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
@@ -15,11 +16,6 @@ class Engine:
         self.entity_pool: Optional[EntityPool] = None
         self.dungeon: Optional[Dungeon] = None
         self.mission_board: Optional[MissionBoard] = None
-        self.guild_names = [
-            "Band of the Hawk",
-            "Order of the Hound",
-            "House of the Bear",
-        ]
 
     def setup(self) -> None:
         # create a pool of potential recruits
@@ -28,7 +24,7 @@ class Engine:
 
         # create a guild
         self.guild = Guild(
-            name=self.guild_names[randint(0, len(self.guild_names) - 1)],
+            name=guild_names[randint(0, len(guild_names) - 1)],
             level=4,
             funds=100,
             roster=[],

@@ -1,33 +1,8 @@
 from __future__ import annotations
+from src.config.constants import team_names
 from src.entities.entity import Entity
 from random import randint
 from typing import Optional
-
-guild_names = [
-    "Band of the Hawk",
-    "Order of the Hound",
-    "House of the Bear",
-]
-
-team_names = {
-    "Band of the Hawk": [
-        "Sparrows",
-        "Kestrels",
-        "Red Tails",
-        "Ospreys",
-        "Shikras",
-        "Falcons",
-    ],
-    "Order of the Hound": [
-        "Akitas",
-        "Shepherds",
-        "Shibas",
-        "Wolves",
-        "Jackals",
-        "Diamond Dogs",
-    ],
-    "House of the Bear": ["Steel Claws", "Iron Furs", "Bloody Jaws"],
-}
 
 
 class Guild:
@@ -48,9 +23,6 @@ class Guild:
 
         if self.roster_limit == None:
             self.roster_limit = int(self.level * self.roster_scalar)
-
-        if self.name == None:
-            self.name = guild_names[randint(0, len(guild_names) - 1)]
 
         self.team = Team()
         if self.team:
