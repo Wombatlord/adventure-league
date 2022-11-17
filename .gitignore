@@ -1,6 +1,7 @@
 src/__pycache__/*
 src/entities/__pycache__/*
 src/tests/__pycache__/*
+src/config/__pycache__/*
 .python-version
 .vscode/
 venv/
