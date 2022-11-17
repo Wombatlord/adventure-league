@@ -66,11 +66,13 @@ class Team:
         self.name = None
         self.members: list[Entity] = []
 
-    def name_team(self):
-        if self.name == None:
+    def name_team(self, name: str | None = None):
+        if name == None:
             self.name = team_names.get(self.owner.name)[
                 randint(0, len(team_names[self.owner.name]) - 1)
             ]
+        else:
+            self.name = name
 
     def get_dict(self) -> dict:
         team = {}
