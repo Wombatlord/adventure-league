@@ -1,14 +1,33 @@
 from __future__ import annotations
 from src.entities.entity import Entity
 from random import randint
+from typing import Optional
 
-names = [
+guild_names = [
     "Band of the Hawk",
-    "Diamond Dogs",
-    "Screaming Eagles",
     "Order of the Hound",
-    "Iron Bears",
+    "House of the Bear",
 ]
+
+team_names = {
+    "Band of the Hawk": [
+        "Sparrows",
+        "Kestrels",
+        "Red Tails",
+        "Ospreys",
+        "Shikras",
+        "Falcons",
+    ],
+    "Order of the Hound": [
+        "Akitas",
+        "Shepherds",
+        "Shibas",
+        "Wolves",
+        "Jackals",
+        "Diamond Dogs",
+    ],
+    "House of the Bear": ["Steel Claws", "Iron Furs", "Bloody Jaws"],
+}
 
 
 class Guild:
@@ -26,13 +45,16 @@ class Guild:
         self.roster_limit = roster_limit
         self.roster = roster
         self.roster_scalar = 1.5
-        self.team = Team()
 
         if self.roster_limit == None:
             self.roster_limit = int(self.level * self.roster_scalar)
 
         if self.name == None:
-            self.name = names.pop(randint(0, len(names) - 1))
+            self.name = guild_names[randint(0, len(guild_names) - 1)]
+
+        self.team = Team()
+        if self.team:
+            self.team.owner = self
 
     def get_dict(self) -> dict:
         guild = {}
@@ -65,10 +87,18 @@ class Guild:
         # Remove a member from the roster. For example, if killed in combat, call this.
         self.roster.pop(i)
 
+
 class Team:
     def __init__(self) -> None:
-        self.name = "TEAM"
+        self.owner: Optional[Guild] = None
+        self.name = None
         self.members: list[Entity] = []
+
+    def name_team(self):
+        if self.name == None:
+            self.name = team_names.get(self.owner.name)[
+                randint(0, len(team_names[self.owner.name]) - 1)
+            ]
 
     def get_dict(self) -> dict:
         team = {}
@@ -77,7 +107,7 @@ class Team:
         team["members"] = self.members
 
         return team
-    
+
     def get_team(self):
         return self.members
 
