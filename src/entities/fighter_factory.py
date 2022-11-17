@@ -1,26 +1,42 @@
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
+from src.config.constants import merc_names
+from typing import NamedTuple
 from random import randint
 from copy import deepcopy
 
-names = [
-    "guts",
-    "raphael",
-    "eliza",
-    "vasquez",
-    "seraph",
-    "emilia",
-    "roberto",
-    "william",
-    "beckett",
-    "freya",
-]
+
+class StatBlock(NamedTuple):
+    hp: tuple[int, int]
+    defence: tuple[int, int]
+    power: tuple[int, int]
+
+    @property
+    def factory(self):
+        return get_fighter_factory(self)
 
 
-def create_random_fighter(name) -> Entity:
-    fighter = Fighter(hp=25, defence=randint(1, 3), power=randint(3, 5))
-    entity_name = Name(title=None, first_name=name, last_name=None)
-    return Entity(name=entity_name, cost=randint(1, 5), fighter=fighter)
+_mercenary = StatBlock(hp=(25, 25), defence=(1, 3), power=(3, 5))
+_monster = StatBlock(hp=(10, 10), defence=(1, 3), power=(1, 3))
+_boss = StatBlock(hp=(30, 30), defence=(2, 4), power=(2, 4))
+
+
+def get_fighter_factory(stats: StatBlock):
+    def _create_random_fighter(name, title) -> Entity:
+        fighter = Fighter(
+            hp=randint(*stats.hp),
+            defence=randint(*stats.defence),
+            power=randint(*stats.power),
+        )
+        entity_name = Name(title=title, first_name=name, last_name=None)
+        return Entity(name=entity_name, cost=randint(1, 5), fighter=fighter)
+
+    return _create_random_fighter
+
+
+create_random_fighter = _mercenary.factory
+create_random_monster = _monster.factory
+create_random_boss = _boss.factory
 
 
 class EntityPool:
@@ -33,22 +49,22 @@ class EntityPool:
         self.size = new_size
         self.pool = []
         # Refill the pool with new recruits
-        if self.size <= len(names):
+        if self.size <= len(merc_names):
             self.fill_pool()
 
         else:
             raise ValueError(
-                f"Not enough names for recruits. size: {self.size} < names: {len(names)}"
+                f"Not enough names for recruits. size: {self.size} < names: {len(merc_names)}"
             )
 
     def fill_pool(self) -> None:
         # Create a deepcopy of name array for consuming with pop.
-        name_choices = deepcopy(names)
+        name_choices = deepcopy(merc_names)
 
         for _ in range(self.size):
             # iteratively pop a random name from the deepcopy array and supply the name to the factory.
             name = name_choices.pop(randint(0, len(name_choices) - 1))
-            self.pool.append(create_random_fighter(name))
+            self.pool.append(create_random_fighter(name, None))
 
     def show_pool(self) -> None:
         # Sanity check function
