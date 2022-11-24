@@ -1,10 +1,11 @@
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
 from src.config.constants import merc_names
-from typing import NamedTuple
+from typing import NamedTuple, Callable
 from random import randint
 from copy import deepcopy
 
+Factory = Callable[[str], Entity]
 
 class StatBlock(NamedTuple):
     hp: tuple[int, int]
@@ -12,7 +13,7 @@ class StatBlock(NamedTuple):
     power: tuple[int, int]
 
     @property
-    def factory(self):
+    def factory(self) -> Factory:
         return get_fighter_factory(self)
 
 
@@ -21,7 +22,7 @@ _monster = StatBlock(hp=(10, 10), defence=(1, 3), power=(1, 3))
 _boss = StatBlock(hp=(30, 30), defence=(2, 4), power=(2, 4))
 
 
-def get_fighter_factory(stats: StatBlock):
+def get_fighter_factory(stats: StatBlock) -> Factory:
     def _create_random_fighter(name=None, title=None, last_name=None) -> Entity:
         fighter = Fighter(
             hp=randint(*stats.hp),
