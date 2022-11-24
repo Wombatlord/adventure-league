@@ -73,52 +73,55 @@ eng.guild.team.assign_to_team(eng.guild.roster, 1)
 
 eng.dungeon = eng.mission_board.missions[int(sys.argv[1])]
 print(eng.dungeon.description)
-while eng.dungeon.boss.is_dead == False:
-    for i, merc in enumerate(eng.guild.team.members):
 
-        if not merc.is_dead:
-            if len(eng.dungeon.enemies) > 0:
-                a = merc.fighter.attack(eng.dungeon.enemies[0])
 
-                if a == 0:
-                    print(f"{merc.name.first_name.capitalize()} retreats!")
-                    eng.guild.team.remove_from_team(i)
+def scripted_run():
+    while eng.dungeon.boss.is_dead == False:
+        for i, merc in enumerate(eng.guild.team.members):
 
-            if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
-                a = merc.fighter.attack(eng.dungeon.boss)
+            if not merc.is_dead:
+                if len(eng.dungeon.enemies) > 0:
+                    a = merc.fighter.attack(eng.dungeon.enemies[0])
 
-                if a == 0:
-                    print(f"{merc.name.first_name.capitalize()} retreats!")
-                    eng.guild.team.remove_from_team(i)
+                    if a == 0:
+                        print(f"{merc.name.first_name.capitalize()} retreats!")
+                        eng.guild.team.remove_from_team(i)
 
-        if merc.is_dead:
-            eng.guild.team.remove_from_team(i)
-            eng.guild.remove_from_roster(i)
+                if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
+                    a = merc.fighter.attack(eng.dungeon.boss)
 
-        eng.dungeon.remove_corpses()
+                    if a == 0:
+                        print(f"{merc.name.first_name.capitalize()} retreats!")
+                        eng.guild.team.remove_from_team(i)
 
-    if len(eng.dungeon.enemies) > 0 and len(eng.guild.team.members) > 0:
-        eng.dungeon.enemies[0].fighter.attack(eng.guild.team.members[0])
+            if merc.is_dead:
+                eng.guild.team.remove_from_team(i)
+                eng.guild.remove_from_roster(i)
 
-    if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
-        if len(eng.guild.team.members) > 0:
-            eng.dungeon.boss.fighter.attack(eng.guild.team.members[0])
+            eng.dungeon.remove_corpses()
 
-    # End states & Break.
-    if len(eng.dungeon.enemies) == 0 and eng.dungeon.boss.is_dead:
-        message = "\n".join(
-            (
-                f"{eng.dungeon.boss.name.first_name.capitalize()} is vanquished and the evil within {eng.dungeon.description} is no more!",
-                f"{eng.guild.team.name} of the {eng.guild.name} is victorious!",
+        if len(eng.dungeon.enemies) > 0 and len(eng.guild.team.members) > 0:
+            eng.dungeon.enemies[0].fighter.attack(eng.guild.team.members[0])
+
+        if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
+            if len(eng.guild.team.members) > 0:
+                eng.dungeon.boss.fighter.attack(eng.guild.team.members[0])
+
+        # End states & Break.
+        if len(eng.dungeon.enemies) == 0 and eng.dungeon.boss.is_dead:
+            message = "\n".join(
+                (
+                    f"{eng.dungeon.boss.name.first_name.capitalize()} is vanquished and the evil within {eng.dungeon.description} is no more!",
+                    f"{eng.guild.team.name} of the {eng.guild.name} is victorious!",
+                )
             )
-        )
 
-        print(message)
-        break
+            print(message)
+            break
 
-    if len(eng.guild.team.members) == 0:
-        print(f"{eng.guild.team.name} defeated!")
-        break
+        if len(eng.guild.team.members) == 0:
+            print(f"{eng.guild.team.name} defeated!")
+            break
 
 
 # eng.print_guild()
