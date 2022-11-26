@@ -1,4 +1,5 @@
 import arcade
+from src.gui.mission_card import MissionCard
 from src.engine.engine import scripted_run, eng
 from dataclasses import dataclass
 from arcade import Window
@@ -17,6 +18,7 @@ class WindowData:
     width = 800
     height = 600
     title_background = arcade.load_texture("./background_glacial_mountains.png")
+    mission_background = arcade.load_texture("./mb.png")
     font = "Alagard"
 
 
@@ -128,8 +130,8 @@ class GuildView(arcade.View):
 
         guild_name.draw()
 
-    def on_show_view(self):
-        arcade.set_background_color(arcade.color.BLACK)
+    # def on_show_view(self):
+    #     arcade.set_background_color(arcade.color.BLACK)
 
     def on_draw(self):
         self.clear()
@@ -161,41 +163,31 @@ class GuildView(arcade.View):
 
         WindowData.width = width
         WindowData.height = height
-    
+
 
 class MissionsView(arcade.View):
     def __init__(self, window: Window = None):
         super().__init__(window)
-
+        self.background = WindowData.mission_background
         self.margin = 5
 
     def on_show_view(self):
-        arcade.set_background_color(arcade.color.RED_DEVIL)
+        self.background.draw_scaled(WindowData.width / 2, WindowData.height)
 
     def on_draw(self):
         self.clear()
+        
+        arcade.draw_lrwh_rectangle_textured(
+            0, 0, WindowData.width, WindowData.height, self.background
+        )
 
         for row in range(len(eng.mission_board.missions)):
-            y = (
-                (self.margin + WindowData.height) * row
-                + self.margin
-                + WindowData.height // 2
-            )
-            y2 = WindowData.height * row + WindowData.height // 2
-            arcade.draw_rectangle_outline(
-                center_x=WindowData.width * 0.5,
-                center_y=y / 3,
-                width=WindowData.width - self.margin,
-                height=WindowData.height * 0.3,
-                color=arcade.color.GOLDENROD,
-            )
-
-            arcade.Text(
-                text=eng.mission_board.missions[row].description,
-                start_x=self.margin * 3,
-                start_y=y2 / 3 + WindowData.height * 0.12,
-                font_name=WindowData.font,
-            ).draw()
+            MissionCard(
+                width=WindowData.width,
+                height=WindowData.height,
+                mission=row,
+                margin=self.margin,
+            ).draw_card()
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
