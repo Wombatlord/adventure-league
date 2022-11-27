@@ -158,6 +158,73 @@ class GuildView(arcade.View):
             missions_view = MissionsView()
             self.window.show_view(missions_view)
 
+        if symbol == arcade.key.R:
+            roster_view = RosterView()
+            self.window.show_view(roster_view)
+
+    def on_resize(self, width: int, height: int):
+        super().on_resize(width, height)
+
+        WindowData.width = width
+        WindowData.height = height
+
+
+class RosterView(arcade.View):
+    def __init__(self, window: Window = None):
+        super().__init__(window)
+        self.roster = eng.guild.roster
+
+    def draw_panels(self):
+        margin = 5
+        for col in range(2):
+            x = (margin + WindowData.width) * col + margin + WindowData.width // 2
+            arcade.draw_rectangle_outline(
+                center_x=x / 2 - margin,
+                center_y=WindowData.height * 0.5 + margin * 4,
+                width=WindowData.width * 0.5 - margin * 4,
+                height=WindowData.height - margin * 10,
+                color=arcade.color.GOLDENROD,
+            )
+            if col == 0:
+                arcade.Text(
+                    "Roster",
+                    start_x=(x / 2) - margin * 2,
+                    start_y=WindowData.height - margin * 8,
+                    font_name=WindowData.font,
+                    font_size=25,
+                    anchor_x="center",
+                ).draw()
+
+                for merc in range(len(eng.guild.roster)):
+                    y2 = (margin + WindowData.height) * merc + margin + WindowData.height // 2
+                    arcade.Text(
+                        eng.guild.roster[merc].name.first_name,
+                        start_x=(x / 2) - margin * 2,
+                        start_y=y2 * 0.05 + WindowData.height - margin * 25,
+                        font_name=WindowData.font,
+                        font_size=12,
+                        anchor_x="center",
+                    ).draw()
+
+            if col == 1:
+                arcade.Text(
+                    "Team",
+                    start_x=(x / 2) - margin,
+                    start_y=WindowData.height - margin * 8,
+                    font_name=WindowData.font,
+                    font_size=25,
+                    anchor_x="center",
+                ).draw()
+
+    def on_draw(self):
+        self.clear()
+        self.draw_panels()
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        if symbol == arcade.key.G:
+            guild_view = GuildView()
+            self.window.show_view(guild_view)
+
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
 
@@ -227,6 +294,7 @@ class MissionsView(arcade.View):
         if symbol == arcade.key.RETURN:
             eng.selected_mission = self.selection
             scripted_run()
+
 
 def start_adventure_league():
     """Startup"""
