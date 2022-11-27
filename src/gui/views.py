@@ -170,9 +170,7 @@ class MissionsView(arcade.View):
         super().__init__(window)
         self.background = WindowData.mission_background
         self.margin = 5
-
-    def on_show_view(self):
-        self.background.draw_scaled(WindowData.width / 2, WindowData.height)
+        self.selection = 0
 
     def on_draw(self):
         self.clear()
@@ -182,12 +180,22 @@ class MissionsView(arcade.View):
         )
 
         for row in range(len(eng.mission_board.missions)):
-            MissionCard(
-                width=WindowData.width,
-                height=WindowData.height,
-                mission=row,
-                margin=self.margin,
-            ).draw_card()
+            if self.selection == row:
+                MissionCard(
+                    width=WindowData.width,
+                    height=WindowData.height,
+                    mission=row,
+                    margin=self.margin,
+                    opac=255
+                ).draw_card()
+            else:
+                MissionCard(
+                    width=WindowData.width,
+                    height=WindowData.height,
+                    mission=row,
+                    margin=self.margin,
+                    opac=0
+                ).draw_card()
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
@@ -200,6 +208,19 @@ class MissionsView(arcade.View):
             guild_view = GuildView()
             self.window.show_view(guild_view)
 
+        if symbol == arcade.key.DOWN:
+            if self.selection == 0:
+                self.selection = 2
+            
+            else:
+                self.selection -= 1
+
+        if symbol == arcade.key.UP:
+            if self.selection == 2:
+                self.selection = 0
+            
+            else:
+                self.selection += 1
 
 def start_adventure_league():
     """Startup"""

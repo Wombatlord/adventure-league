@@ -2,13 +2,16 @@ import arcade
 from src.engine.engine import eng
 
 class MissionCard:
-    def __init__(self, width, height, mission, margin):
+    def __init__(self, width, height, mission, margin, opac=0):
         self.width = width
         self.height = height
         self.mission = mission
         self.margin = margin
+        self.opac = opac
+
 
     def draw_card(self):
+
 
         y = (
                 (self.margin + self.height) * self.mission
@@ -21,7 +24,7 @@ class MissionCard:
                 center_y=y / 3,
                 width=self.width - self.margin,
                 height=self.height * 0.3,
-                color=arcade.color.GOLDENROD,
+                color=(218, 165, 32, self.opac),
             )
 
         arcade.Text(
