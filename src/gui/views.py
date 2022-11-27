@@ -17,8 +17,8 @@ from arcade import Window
 class WindowData:
     width = 800
     height = 600
-    title_background = arcade.load_texture("./background_glacial_mountains.png")
-    mission_background = arcade.load_texture("./mb.png")
+    title_background = arcade.load_texture("./assets/background_glacial_mountains.png")
+    mission_background = arcade.load_texture("./assets/mb.png")
     font = "Alagard"
 
 
@@ -194,7 +194,7 @@ class RosterView(arcade.View):
             height: column is the full height of the window minus some adjustment by margin amounts.
             """
             arcade.draw_rectangle_outline(
-                center_x=x / 2 - self.margin,
+                center_x=x / 2 - self.margin / 2,
                 center_y=WindowData.height * 0.5 + self.margin * 4,
                 width=WindowData.width * 0.5 - self.margin * 4,
                 height=WindowData.height - self.margin * 10,
@@ -215,7 +215,7 @@ class RosterView(arcade.View):
             if col == 1:
                 arcade.Text(
                     "Team",
-                    start_x=(x / 2) - self.margin,
+                    start_x=(x / 2) - self.margin * 2,
                     start_y=WindowData.height - self.margin * 8,
                     font_name=WindowData.font,
                     font_size=25,
