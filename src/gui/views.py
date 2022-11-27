@@ -173,48 +173,53 @@ class RosterView(arcade.View):
     def __init__(self, window: Window = None):
         super().__init__(window)
         self.roster = eng.guild.roster
-
+        self.margin = 5
     def draw_panels(self):
-        margin = 5
         for col in range(2):
-            x = (margin + WindowData.width) * col + margin + WindowData.width // 2
+            x = (self.margin + WindowData.width) * col + self.margin + WindowData.width // 2
             arcade.draw_rectangle_outline(
-                center_x=x / 2 - margin,
-                center_y=WindowData.height * 0.5 + margin * 4,
-                width=WindowData.width * 0.5 - margin * 4,
-                height=WindowData.height - margin * 10,
+                center_x=x / 2 - self.margin,
+                center_y=WindowData.height * 0.5 + self.margin * 4,
+                width=WindowData.width * 0.5 - self.margin * 4,
+                height=WindowData.height - self.margin * 10,
                 color=arcade.color.GOLDENROD,
             )
             if col == 0:
                 arcade.Text(
                     "Roster",
-                    start_x=(x / 2) - margin * 2,
-                    start_y=WindowData.height - margin * 8,
+                    start_x=(x / 2) - self.margin * 2,
+                    start_y=WindowData.height - self.margin * 8,
                     font_name=WindowData.font,
                     font_size=25,
                     anchor_x="center",
                 ).draw()
 
-                for merc in range(len(eng.guild.roster)):
-                    y2 = (margin + WindowData.height) * merc + margin + WindowData.height // 2
-                    arcade.Text(
-                        eng.guild.roster[merc].name.first_name,
-                        start_x=(x / 2) - margin * 2,
-                        start_y=y2 * 0.05 + WindowData.height - margin * 25,
-                        font_name=WindowData.font,
-                        font_size=12,
-                        anchor_x="center",
-                    ).draw()
+                self.populate_roster_pane(x = x)
 
             if col == 1:
                 arcade.Text(
                     "Team",
-                    start_x=(x / 2) - margin,
-                    start_y=WindowData.height - margin * 8,
+                    start_x=(x / 2) - self.margin,
+                    start_y=WindowData.height - self.margin * 8,
                     font_name=WindowData.font,
                     font_size=25,
                     anchor_x="center",
                 ).draw()
+    
+    def populate_roster_pane(self, x):
+        """
+        Print the name of each entity in a guild roster in a centralised column.
+        """
+        for merc in range(len(eng.guild.roster)):
+                    y2 = (self.margin + WindowData.height) * merc + self.margin + WindowData.height // 2
+                    arcade.Text(
+                        f"{eng.guild.roster[merc].name.first_name.capitalize()}",
+                        start_x=(x / 2) - self.margin * 2,
+                        start_y=y2 * 0.05 + WindowData.height - self.margin * 25,
+                        font_name=WindowData.font,
+                        font_size=12,
+                        anchor_x="center",
+                    ).draw()
 
     def on_draw(self):
         self.clear()
