@@ -174,19 +174,21 @@ class MissionsView(arcade.View):
 
     def on_draw(self):
         self.clear()
-        
+
         arcade.draw_lrwh_rectangle_textured(
             0, 0, WindowData.width, WindowData.height, self.background
         )
 
         for row in range(len(eng.mission_board.missions)):
+            # self.selection is a user controlled value changed via up / down arrow keypress.
+            # set opacity of the MissionCard border to visible if self.selection == the row being drawn.
             if self.selection == row:
                 MissionCard(
                     width=WindowData.width,
                     height=WindowData.height,
                     mission=row,
                     margin=self.margin,
-                    opac=255
+                    opacity=255,
                 ).draw_card()
             else:
                 MissionCard(
@@ -194,7 +196,7 @@ class MissionsView(arcade.View):
                     height=WindowData.height,
                     mission=row,
                     margin=self.margin,
-                    opac=0
+                    opacity=25,
                 ).draw_card()
 
     def on_resize(self, width: int, height: int):
@@ -211,20 +213,24 @@ class MissionsView(arcade.View):
         if symbol == arcade.key.DOWN:
             if self.selection == 0:
                 self.selection = 2
-            
+
             else:
                 self.selection -= 1
 
         if symbol == arcade.key.UP:
-            if self.selection == 2:
+            if self.selection == len(eng.mission_board.missions) - 1:
                 self.selection = 0
-            
+
             else:
                 self.selection += 1
 
+        if symbol == arcade.key.RETURN:
+            eng.selected_mission = self.selection
+            scripted_run()
+
 def start_adventure_league():
     """Startup"""
-    scripted_run()
+    # scripted_run()
     window = arcade.Window(
         WindowData.width, WindowData.height, "Adventure League!", resizable=True
     )
