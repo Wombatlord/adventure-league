@@ -66,10 +66,6 @@ eng.setup()
 eng.recruit_entity_to_guild(0)
 eng.recruit_entity_to_guild(1)
 
-# Assign entities to a team within the guild
-eng.guild.team.assign_to_team(eng.guild.roster, 0)
-eng.guild.team.assign_to_team(eng.guild.roster, 1)
-
 # Testing combat interactions between a team and Dungeon enemies
 
 def scripted_run():
