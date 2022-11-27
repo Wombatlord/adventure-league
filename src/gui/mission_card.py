@@ -11,8 +11,6 @@ class MissionCard:
 
 
     def draw_card(self):
-
-
         y = (
                 (self.margin + self.height) * self.mission
                 + self.margin
