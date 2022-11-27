@@ -16,6 +16,7 @@ class Engine:
         self.entity_pool: Optional[EntityPool] = None
         self.dungeon: Optional[Dungeon] = None
         self.mission_board: Optional[MissionBoard] = None
+        self.selected_mission = None
 
     def setup(self) -> None:
         # create a pool of potential recruits
@@ -71,11 +72,12 @@ eng.guild.team.assign_to_team(eng.guild.roster, 1)
 
 # Testing combat interactions between a team and Dungeon enemies
 
-eng.dungeon = eng.mission_board.missions[int(sys.argv[1])]
-print(eng.dungeon.description)
-
-
 def scripted_run():
+    if eng.selected_mission == None:
+        return
+    else:
+        eng.dungeon = eng.mission_board.missions[eng.selected_mission]
+    
     while eng.dungeon.boss.is_dead == False:
         for i, merc in enumerate(eng.guild.team.members):
 
