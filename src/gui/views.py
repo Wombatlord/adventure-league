@@ -174,9 +174,25 @@ class RosterView(arcade.View):
         super().__init__(window)
         self.roster = eng.guild.roster
         self.margin = 5
+
     def draw_panels(self):
         for col in range(2):
-            x = (self.margin + WindowData.width) * col + self.margin + WindowData.width // 2
+            """
+            Derive a value for x positions based on the total width including margins,
+            Multiply by the value of col to shift the position by a column width right,
+            Add margin & window width for col * 0
+            Divide this by 2 to get the halfway point with respect to width + margins
+            """
+            x = (self.margin + WindowData.width) * col + (
+                self.margin + WindowData.width
+            ) // 2
+
+            """
+            center_x: x / 2 positions center_x of the column at 1/4 of above x. ie, one column will fill half the vertical view.
+            center_y: position center_y point slightly above halfway to leave space at the bottom.
+            width: half the total window width with some adjustment by margin amounts.
+            height: column is the full height of the window minus some adjustment by margin amounts.
+            """
             arcade.draw_rectangle_outline(
                 center_x=x / 2 - self.margin,
                 center_y=WindowData.height * 0.5 + self.margin * 4,
@@ -194,7 +210,7 @@ class RosterView(arcade.View):
                     anchor_x="center",
                 ).draw()
 
-                self.populate_roster_pane(x = x)
+                self.populate_roster_pane(x=x)
 
             if col == 1:
                 arcade.Text(
@@ -205,21 +221,48 @@ class RosterView(arcade.View):
                     font_size=25,
                     anchor_x="center",
                 ).draw()
-    
+
+                self.populate_team_pane(x=x)
+
     def populate_roster_pane(self, x):
         """
         Print the name of each entity in a guild roster in a centralised column.
+        We pass x through from the calling scope to center text relative to the column width.
         """
         for merc in range(len(eng.guild.roster)):
-                    y2 = (self.margin + WindowData.height) * merc + self.margin + WindowData.height // 2
-                    arcade.Text(
-                        f"{eng.guild.roster[merc].name.first_name.capitalize()}",
-                        start_x=(x / 2) - self.margin * 2,
-                        start_y=y2 * 0.05 + WindowData.height - self.margin * 25,
-                        font_name=WindowData.font,
-                        font_size=12,
-                        anchor_x="center",
-                    ).draw()
+            y2 = (
+                (self.margin + WindowData.height) * merc
+                + self.margin
+                + WindowData.height // 2
+            )
+            arcade.Text(
+                f"{eng.guild.roster[merc].name.first_name.capitalize()}",
+                start_x=(x / 2) - self.margin * 2,
+                start_y=y2 * 0.05 + WindowData.height - self.margin * 25,
+                font_name=WindowData.font,
+                font_size=12,
+                anchor_x="center",
+            ).draw()
+
+    def populate_team_pane(self, x):
+        """
+        Print the name of each entity assigned to the team in a centralised column.
+        We pass x through from the calling scope to center text relative to the column width.
+        """
+        for merc in range(len(eng.guild.team.members)):
+            y2 = (
+                (self.margin + WindowData.height) * merc
+                + self.margin
+                + WindowData.height // 2
+            )
+            arcade.Text(
+                f"{eng.guild.team.members[merc].name.first_name.capitalize()}",
+                start_x=(x / 2) - self.margin * 2,
+                start_y=y2 * 0.05 + WindowData.height - self.margin * 25,
+                font_name=WindowData.font,
+                font_size=12,
+                anchor_x="center",
+            ).draw()
 
     def on_draw(self):
         self.clear()
@@ -242,7 +285,7 @@ class MissionsView(arcade.View):
         super().__init__(window)
         self.background = WindowData.mission_background
         self.margin = 5
-        self.selection = 0
+        self.selection = 2
 
     def on_draw(self):
         self.clear()
