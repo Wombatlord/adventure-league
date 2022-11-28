@@ -169,7 +169,7 @@ class RosterView(arcade.View):
         self.team_members = eng.guild.team.members
         self.margin = 5
         self.col_select = Cycle(2)
-        self.name_select = Cycle(len(self.roster))
+        self.name_select_roster = Cycle(len(self.roster))
         self.name_select_team = Cycle(0, 0)
         self.row_height = 25
         self.roster_pane = 0
@@ -300,7 +300,7 @@ class RosterView(arcade.View):
         height = self.gen_heights()
         for merc in range(len(eng.guild.roster)):
             y2 = next(height)
-            if col == 0 and merc == self.name_select.pos:
+            if col == 0 and merc == self.name_select_roster.pos:
                 arcade.Text(
                     f"{eng.guild.roster[merc].name.first_name.capitalize()} {merc}",
                     start_x=(x / 2) - self.margin * 2,
@@ -368,15 +368,6 @@ class RosterView(arcade.View):
 
     def _log_state(self):
         ...
-    
-    # Ensure that name_select.length for team and roster is updated to correspond with changing assignments
-    def increase_roster_decrease_team(self):
-        self.name_select.length += 1
-        self.name_select_team.length -= 1
-    
-    def decrease_roster_increase_team(self):
-        self.name_select.length -= 1
-        self.name_select_team.length += 1
 
     def on_key_press(self, symbol: int, modifiers: int):
         self._log_input(symbol, modifiers)
@@ -395,29 +386,33 @@ class RosterView(arcade.View):
         # Cycle up or down through Roster names
         if symbol == arcade.key.UP:
             if self.col_select.pos == 0:
-                self.name_select.decr()
+                self.name_select_roster.decr()
             
             if self.col_select.pos == 1:
                 self.name_select_team.decr()
 
         if symbol == arcade.key.DOWN:
             if self.col_select.pos == 0:
-                self.name_select.incr()
+                self.name_select_roster.incr()
             
             if self.col_select.pos == 1:
                 self.name_select_team.incr()
 
         if symbol == arcade.key.ENTER:
             if self.col_select.pos == self.roster_pane and len(self.roster) > 0:
-                eng.guild.team.assign_to_team(eng.guild.roster, self.name_select.pos)
-                eng.guild.remove_from_roster(self.name_select.pos)
-                self.name_select.pos = 0
-                self.decrease_roster_increase_team()
+                # Move merc from ROSTER to TEAM. Increase Cycle.length for team, decrease Cycle.length for roster.
+                eng.guild.team.assign_to_team(eng.guild.roster, self.name_select_roster.pos)
+                eng.guild.remove_from_roster(self.name_select_roster.pos)
+                self.name_select_roster.reset_pos()
+                self.name_select_team.increase_length()
+                self.name_select_roster.decrease_length()
 
             if self.col_select.pos == self.team_pane and len(self.team_members) > 0:
+                # Move merc from TEAM to ROSTER. Increase Cycle.length for roster, decrease Cycle.length for team.
                 eng.guild.team.move_to_roster(self.name_select_team.pos)
-                self.name_select_team.pos = 0
-                self.increase_roster_decrease_team()
+                self.name_select_team.reset_pos()
+                self.name_select_roster.increase_length()
+                self.name_select_team.decrease_length()
 
         self._log_state()
 
@@ -448,10 +443,13 @@ class MissionsView(arcade.View):
                 opacity = 255
             else:
                 opacity = 25
+
+            # Controls size of reserved space beneath MissionCards.
+            reserved_space = 100
             
             MissionCard(
                 width=WindowData.width,
-                height=WindowData.height,
+                height=WindowData.height - reserved_space,
                 mission=row,
                 margin=self.margin,
                 opacity=opacity,
