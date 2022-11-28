@@ -5,6 +5,22 @@ class Cycle:
         self.length = length
         self.pos = pos
 
+    def reset_pos(self, new_pos: int = 0):
+        self.pos = new_pos
+
+    # If the amount of things that can be cycled through changes,
+    # use these to adjust the lengths of the cycle to ensure pos never
+    # corresponds to an "empty" slot in the cycle
+    def increase_length(self):
+        self.length += 1
+    
+    def decrease_length(self):
+        self.length -= 1
+
+    # Cycle self.pos through the range of self.length.
+    # First check length is not zero.
+    # It may be zero if the collection the cycle is tracking has had all elements removed.
+    # eg. all entities moved from a Roster to a Team or vice versa.
     def incr(self):
         if self.length == 0:
             return
