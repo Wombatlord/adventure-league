@@ -2,7 +2,7 @@ import arcade
 from src.engine.engine import eng
 
 class MissionCard:
-    def __init__(self, width, height, mission, margin, opacity=0):
+    def __init__(self, width, height, mission, margin, opacity=0,):
         self.width = width
         self.height = height
         self.mission = mission
@@ -16,10 +16,10 @@ class MissionCard:
                 + self.margin
                 + self.height // 2
             )
-
+        
         arcade.draw_rectangle_outline(
                 center_x=self.width * 0.5,
-                center_y=y / 3,
+                center_y=y / 3 + 100,
                 width=self.width - self.margin,
                 height=self.height * 0.3,
                 color=(218, 165, 32, self.opacity),
@@ -28,14 +28,14 @@ class MissionCard:
         arcade.Text(
                 text=eng.mission_board.missions[self.mission].description,
                 start_x=self.margin * 5,
-                start_y=y / 3 + self.height * 0.11,
+                start_y=y / 3 + self.height * 0.3,
                 font_name="Alagard",
             ).draw()
 
         arcade.Text(
                 text="Boss: ",
                 start_x=self.margin * 9,
-                start_y=y / 3 + self.height * 0.05,
+                start_y=y / 3 + self.height * 0.24,
                 font_name="Alagard",
                 color=arcade.color.GOLDENROD
             ).draw()
@@ -43,7 +43,7 @@ class MissionCard:
         arcade.Text(
                 text=f"{eng.mission_board.missions[self.mission].boss.name.name_and_title()}",
                 start_x=self.margin * 20,
-                start_y=y / 3 + self.height * 0.05,
+                start_y=y / 3 + self.height * 0.24,
                 font_name="Alagard",
                 color=arcade.color.RED
             ).draw()
