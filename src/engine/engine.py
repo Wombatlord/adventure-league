@@ -69,7 +69,7 @@ eng.recruit_entity_to_guild(1)
 # Testing combat interactions between a team and Dungeon enemies
 
 def scripted_run():
-    if eng.selected_mission == None:
+    if len(eng.guild.team.members) == 0:
         return
     else:
         eng.dungeon = eng.mission_board.missions[eng.selected_mission]
