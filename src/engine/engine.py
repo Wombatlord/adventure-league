@@ -83,17 +83,17 @@ def scripted_run():
 
                     if a == 0:
                         print(f"{merc.name.first_name.capitalize()} retreats!")
-                        eng.guild.team.remove_from_team(i)
+                        eng.guild.team.move_to_roster(i)
 
                 if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
                     a = merc.fighter.attack(eng.dungeon.boss)
 
                     if a == 0:
                         print(f"{merc.name.first_name.capitalize()} retreats!")
-                        eng.guild.team.remove_from_team(i)
+                        eng.guild.team.move_to_roster(i)
 
             if merc.is_dead:
-                eng.guild.team.remove_from_team(i)
+                eng.guild.team.move_to_roster(i)
                 eng.guild.remove_from_roster(i)
 
             eng.dungeon.remove_corpses()
