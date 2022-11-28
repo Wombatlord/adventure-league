@@ -81,6 +81,13 @@ dungeon_descriptors = {
         "Forsaken",
         "Scorched",
         "Frozen",
+        "Corrupted",
+        "Flooded",
+        "Crumbling",
+        "Tainted",
+        "Hidden",
+        "Lost",
+        "Ruined"
     ],
     "b": [
         "Crypt",
@@ -90,8 +97,14 @@ dungeon_descriptors = {
         "Warcamp",
         "Cave",
         "Tunnels",
+        "Mausoleum",
         "Mine",
         "Forest",
         "Lair",
+        "Tower",
+        "Keep",
+        "Ruins",
+        "Oubliette",
+        "Den"
     ],
 }
