@@ -214,15 +214,13 @@ class RosterView(arcade.View):
                 )
 
                 if col == 0:
-                    first = "roster"
-                    second = "team"
+                    instruction_text = "Up / Down arrows to change selection. Enter to move mercenaries between Roster and Team."
                 
                 else:
-                    first = "team"
-                    second = "roster"
+                    instruction_text = "Up / Down arrows to change selection. Enter to move mercenaries between Team and Roster."
                 
                 arcade.Text(
-                    f"Up / Down arrows to change selection. Enter to move mercenaries between {first} and {second}.",
+                    instruction_text,
                     start_x=(x / 2),
                     start_y=80,
                     font_name=WindowData.font,
@@ -370,6 +368,15 @@ class RosterView(arcade.View):
 
     def _log_state(self):
         ...
+    
+    # Ensure that name_select.length for team and roster is updated to correspond with changing assignments
+    def increase_roster_decrease_team(self):
+        self.name_select.length += 1
+        self.name_select_team.length -= 1
+    
+    def decrease_roster_increase_team(self):
+        self.name_select.length -= 1
+        self.name_select_team.length += 1
 
     def on_key_press(self, symbol: int, modifiers: int):
         self._log_input(symbol, modifiers)
@@ -404,14 +411,13 @@ class RosterView(arcade.View):
             if self.col_select.pos == self.roster_pane and len(self.roster) > 0:
                 eng.guild.team.assign_to_team(eng.guild.roster, self.name_select.pos)
                 eng.guild.remove_from_roster(self.name_select.pos)
-                self.name_select_team.length += 1
-                self.name_select.length -= 1
+                self.name_select.pos = 0
+                self.decrease_roster_increase_team()
 
             if self.col_select.pos == self.team_pane and len(self.team_members) > 0:
-                eng.guild.team.move_to_roster(self.name_select.pos)
-                self.name_select.pos = 0
-                self.name_select.length += 1
-                self.name_select_team.length -= 1
+                eng.guild.team.move_to_roster(self.name_select_team.pos)
+                self.name_select_team.pos = 0
+                self.increase_roster_decrease_team()
 
         self._log_state()
 
@@ -426,7 +432,7 @@ class MissionsView(arcade.View):
         super().__init__(window)
         self.background = WindowData.mission_background
         self.margin = 5
-        self.selection = Cycle(3, 2)
+        self.selection = Cycle(3, 2) # 3 missions on screen, default selected (2) is the top visually.
 
     def on_draw(self):
         self.clear()
@@ -469,5 +475,5 @@ class MissionsView(arcade.View):
             self.selection.incr()
 
         if symbol == arcade.key.RETURN:
-            eng.selected_mission = self.selection
+            eng.selected_mission = self.selection.pos
             scripted_run()
