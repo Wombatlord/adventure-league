@@ -1,17 +1,10 @@
 import arcade
+from src.gui.gui_utils import Cycle
 from src.gui.mission_card import MissionCard
 from src.engine.engine import scripted_run, eng
 from dataclasses import dataclass
 from arcade import Window
-from copy import deepcopy
-# class MainWindow(arcade.Window):
-#     def __init__(self, width, height, title):
-#         super().__init__(width, height, title, resizable=True)
-
-#         self.width = width
-#         self.height = height
-#         self.title = title
-
+from typing import Sequence
 
 @dataclass
 class WindowData:
@@ -174,8 +167,22 @@ class RosterView(arcade.View):
         super().__init__(window)
         self.roster = eng.guild.roster
         self.margin = 5
-        self.col_select = 0
-        self.name_select = 0
+        self.col_select = Cycle(2)
+        self.name_select = Cycle(len(self.roster))
+        self.row_height = 500
+        self.roster_pane = 0
+        self.team_pane = 1
+
+    def bottom_bar(self):
+        margin = 5
+        bar_height = 40
+        arcade.draw_lrtb_rectangle_outline(
+            left=margin * 2,
+            right=WindowData.width - margin * 2,
+            top=bar_height,
+            bottom=margin,
+            color=arcade.color.GOLDENROD,
+        )
 
     def draw_panels(self):
         for col in range(2):
@@ -195,7 +202,7 @@ class RosterView(arcade.View):
             width: half the total window width with some adjustment by margin amounts.
             height: column is the full height of the window minus some adjustment by margin amounts.
             """
-            if self.col_select == col:
+            if self.col_select.pos == col:
                 arcade.draw_rectangle_outline(
                     center_x=x / 2 - self.margin / 2,
                     center_y=WindowData.height * 0.5 + self.margin * 4,
@@ -214,7 +221,7 @@ class RosterView(arcade.View):
                     anchor_x="center",
                 ).draw()
 
-                self.populate_roster_pane(x=x, col=self.col_select)
+                self.populate_roster_pane(x=x, col=self.col_select.pos)
 
             if col == 1:
                 arcade.Text(
@@ -226,20 +233,33 @@ class RosterView(arcade.View):
                     anchor_x="center",
                 ).draw()
 
-                self.populate_team_pane(x=x, col=self.col_select)
+                self.populate_team_pane(x=x, col=self.col_select.pos)
+
+    
+    def gen_heights(self, desc: bool = True) -> Sequence[int]:
+        
+        start = 2 * self.margin + WindowData.height + WindowData.height // 2
+        incr = abs(self.row_height) # Negative indicates down
+        if desc:
+            incr = - abs(incr)
+
+        current = start
+        while True:
+            yield current
+
+            # increment on subsequent calls
+            current = current + incr
+
 
     def populate_roster_pane(self, x, col):
         """
         Print the name of each entity in a guild roster in a centralised column.
         We pass x through from the calling scope to center text relative to the column width.
         """
+        height = self.gen_heights()
         for merc in range(len(eng.guild.roster)):
-            y2 = (
-                (self.margin + WindowData.height) * merc
-                + self.margin
-                + WindowData.height // 2
-            )
-            if col == 0 and merc == self.name_select:
+            y2 = next(height)
+            if col == 0 and merc == self.name_select.pos:
                 arcade.Text(
                     f"{eng.guild.roster[merc].name.first_name.capitalize()} {merc}",
                     start_x=(x / 2) - self.margin * 2,
@@ -247,9 +267,9 @@ class RosterView(arcade.View):
                     font_name=WindowData.font,
                     font_size=12,
                     anchor_x="center",
-                    color=(218, 165, 32, 255)
+                    color=(218, 165, 32, 255),
                 ).draw()
-            
+
             else:
                 arcade.Text(
                     f"{eng.guild.roster[merc].name.first_name.capitalize()} {merc}",
@@ -258,7 +278,7 @@ class RosterView(arcade.View):
                     font_name=WindowData.font,
                     font_size=12,
                     anchor_x="center",
-                    color=arcade.color.WHITE
+                    color=arcade.color.WHITE,
                 ).draw()
 
     def populate_team_pane(self, x, col):
@@ -266,13 +286,10 @@ class RosterView(arcade.View):
         Print the name of each entity assigned to the team in a centralised column.
         We pass x through from the calling scope to center text relative to the column width.
         """
+        height = self.gen_heights()
         for merc in range(len(eng.guild.team.members)):
-            y2 = (
-                (self.margin + WindowData.height) * merc
-                + self.margin
-                + WindowData.height // 2
-            )
-            if col == 1 and merc == self.name_select:
+            y2 = next(height)
+            if col == 1 and merc == self.name_select.pos:
                 arcade.Text(
                     f"{eng.guild.team.members[merc].name.first_name.capitalize()} {merc}",
                     start_x=(x / 2) - self.margin * 2,
@@ -280,9 +297,9 @@ class RosterView(arcade.View):
                     font_name=WindowData.font,
                     font_size=12,
                     anchor_x="center",
-                    color=(218, 165, 32, 255)
+                    color=(218, 165, 32, 255),
                 ).draw()
-            
+
             else:
                 arcade.Text(
                     f"{eng.guild.team.members[merc].name.first_name.capitalize()} {merc}",
@@ -291,55 +308,56 @@ class RosterView(arcade.View):
                     font_name=WindowData.font,
                     font_size=12,
                     anchor_x="center",
-                    color=arcade.color.WHITE
+                    color=arcade.color.WHITE,
                 ).draw()
 
     def on_draw(self):
         self.clear()
         self.draw_panels()
+        self.bottom_bar()
+
+    def decr_col(self, col_count: int):
+        self.col_select = (self.col_select - 1) % col_count
+
+    def incr_col(self, col_count: int):
+        self.col_select = (self.col_select + 1) % col_count
+        
+    def _log_input(self, symbol, modifiers):
+        ...
+
+    def _log_state(self):
+        ...
 
     def on_key_press(self, symbol: int, modifiers: int):
+        self._log_input(symbol, modifiers)
+
         if symbol == arcade.key.G:
             guild_view = GuildView()
             self.window.show_view(guild_view)
 
         # Cycle left or right in Roster & Team columns.
         if symbol == arcade.key.LEFT:
-            if self.col_select == 1:
-                self.col_select -= 1
+            self.col_select.decr()
 
-            else:
-                self.col_select = 1
-        
         if symbol == arcade.key.RIGHT:
-            if self.col_select == 0:
-                self.col_select += 1
-
-            else:
-                self.col_select = 0
+            self.col_select.incr()
 
         # Cycle up or down through Roster names
         if symbol == arcade.key.UP:
-            # print(self.name_select)
-            if self.name_select <= 0:
-                self.name_select += 1
+           self.name_select.decr()
 
-            else:
-                self.name_select = 0
-            # print(self.name_select)
-            # print(eng.guild.roster)
-        
         if symbol == arcade.key.DOWN:
-            if self.name_select >= len(eng.guild.roster) - 1:
-                self.name_select -= 1
-            
-            else:
-                self.name_select = len(eng.guild.roster) - 1
-        
+           self.name_select.incr()
+
         if symbol == arcade.key.ENTER:
-            if self.col_select == 0:
-                eng.guild.team.assign_to_team(eng.guild.roster, self.name_select)
-                eng.guild.remove_from_roster(self.name_select)
+            if self.col_select.pos == self.roster_pane:
+                eng.guild.team.assign_to_team(eng.guild.roster, self.name_select.pos)
+                eng.guild.remove_from_roster(self.name_select.pos)
+
+            if self.col_select.pos == self.team_pane:
+                eng.guild.team.move_to_roster(self.name_select.pos)
+
+        self._log_state()
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
@@ -353,7 +371,7 @@ class MissionsView(arcade.View):
         super().__init__(window)
         self.background = WindowData.mission_background
         self.margin = 5
-        self.selection = 2
+        self.selection = Cycle(3, 2)
 
     def on_draw(self):
         self.clear()
@@ -365,22 +383,18 @@ class MissionsView(arcade.View):
         for row in range(len(eng.mission_board.missions)):
             # self.selection is a user controlled value changed via up / down arrow keypress.
             # set opacity of the MissionCard border to visible if self.selection == the row being drawn.
-            if self.selection == row:
-                MissionCard(
-                    width=WindowData.width,
-                    height=WindowData.height,
-                    mission=row,
-                    margin=self.margin,
-                    opacity=255,
-                ).draw_card()
+            if self.selection.pos == row:
+                opacity = 255
             else:
-                MissionCard(
-                    width=WindowData.width,
-                    height=WindowData.height,
-                    mission=row,
-                    margin=self.margin,
-                    opacity=25,
-                ).draw_card()
+                opacity = 25
+            
+            MissionCard(
+                width=WindowData.width,
+                height=WindowData.height,
+                mission=row,
+                margin=self.margin,
+                opacity=opacity,
+            ).draw_card()
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
@@ -394,18 +408,10 @@ class MissionsView(arcade.View):
             self.window.show_view(guild_view)
 
         if symbol == arcade.key.DOWN:
-            if self.selection == 0:
-                self.selection = 2
-
-            else:
-                self.selection -= 1
+            self.selection.decr()
 
         if symbol == arcade.key.UP:
-            if self.selection == len(eng.mission_board.missions) - 1:
-                self.selection = 0
-
-            else:
-                self.selection += 1
+            self.selection.incr()
 
         if symbol == arcade.key.RETURN:
             eng.selected_mission = self.selection
