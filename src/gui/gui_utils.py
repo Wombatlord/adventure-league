@@ -6,9 +6,13 @@ class Cycle:
         self.pos = pos
 
     def incr(self):
+        if self.length == 0:
+            return
         self.pos = (self.pos + 1) % self.length
 
     def decr(self):
+        if self.length == 0:
+            return
         self.pos = (self.pos - 1) % self.length
 
 
