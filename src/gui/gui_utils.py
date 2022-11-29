@@ -9,8 +9,9 @@ class Cycle:
         self.pos = new_pos
 
     # If the amount of things that can be cycled through changes,
-    # use these to adjust the lengths of the cycle to ensure pos never
-    # corresponds to an "empty" slot in the cycle
+    # ie. items are added or removed from a cyclable array,
+    # use these to adjust the lengths of the cycle to ensure cycle length
+    # and array length retain correspondence.
     def increase_length(self):
         self.length += 1
     
