@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, Sequence
 
 class Cycle:
     def __init__(self, length: int, pos: int = 0) -> None:
@@ -14,7 +14,7 @@ class Cycle:
     # and array length retain correspondence.
     def increase_length(self):
         self.length += 1
-    
+
     def decrease_length(self):
         self.length -= 1
 
@@ -32,21 +32,39 @@ class Cycle:
             return
         self.pos = (self.pos - 1) % self.length
 
+# Generate a sequence of values for vertical alignments. Descending by default.
+def gen_heights(
+    desc: bool = True, row_height: int = 0, height: int = 0, spacing: int = 0
+) -> Sequence[int]:
 
+    start = height - row_height * spacing
+    incr = abs(row_height)  # Negative indicates down
+    if desc:
+        incr = -abs(incr)
+
+    current = start
+    while True:
+        yield current
+
+        # increment on subsequent calls
+        current = current + incr
+
+
+## BELOW BE EXPERIMENTS. ##
 class Coords(NamedTuple):
     x: int
     y: int
 
+
 class Grid:
     axes: tuple[Cycle, Cycle]
+
     def __init__(
-        self, 
-        size: tuple[int, int], # (width, height) 
-        pos: tuple[int,int] = (0,0), # (x, y)
+        self,
+        size: tuple[int, int],  # (width, height)
+        pos: tuple[int, int] = (0, 0),  # (x, y)
     ) -> None:
-        self.axes = tuple(
-            Cycle(length, start) for length, start in zip(size, pos)
-        )
+        self.axes = tuple(Cycle(length, start) for length, start in zip(size, pos))
 
     def current(self) -> Coords:
         return Coords(self.axes[0].pos, self.axes[1].pos)
