@@ -1,7 +1,7 @@
 import arcade
 from arcade import Window
 from src.gui.window_data import WindowData
-from src.gui.gui_utils import Cycle
+from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.mission_card import MissionCard
 from src.gui.roster_view_components import (
     bottom_bar,
@@ -166,11 +166,12 @@ class RosterView(arcade.View):
         self.team_members = eng.guild.team.members
         self.margin = 5
         self.col_select = Cycle(2)
-        self.roster_member_selection = Cycle(len(self.roster))
+        self.roster_member_selection = Cycle(len(eng.guild.roster))
         self.team_member_selection = Cycle(0, 0)
         self.row_height = 25
         self.roster_pane = 0
         self.team_pane = 1
+        self.roster_scroll_window = ScrollWindow(self.roster, 6)
 
     def on_draw(self):
         self.clear()
@@ -180,8 +181,8 @@ class RosterView(arcade.View):
             height=WindowData.height,
             width=WindowData.width,
             row_height=self.row_height,
-            roster_member_selection=self.roster_member_selection,
             team_member_selection=self.team_member_selection,
+            roster_scroll_window=self.roster_scroll_window
         )
         bottom_bar()
 
@@ -211,19 +212,21 @@ class RosterView(arcade.View):
             case arcade.key.LEFT:
                 self.col_select.decr()
 
-            case arcade.key.UP:
+            case arcade.key.UP:     
                 if self.col_select.pos == 0:
-                    self.roster_member_selection.decr()
-
+                    self.roster_scroll_window.decr_selection()
+                    
                 if self.col_select.pos == 1:
                     self.team_member_selection.decr()
 
+
             case arcade.key.DOWN:
                 if self.col_select.pos == 0:
-                    self.roster_member_selection.incr()
+                    self.roster_scroll_window.incr_selection()
 
                 if self.col_select.pos == 1:
                     self.team_member_selection.incr()
+                
 
             case arcade.key.ENTER:
                 if self.col_select.pos == self.roster_pane and len(self.roster) > 0:
@@ -233,6 +236,7 @@ class RosterView(arcade.View):
                     )
                     eng.guild.remove_from_roster(self.roster_member_selection.pos)
                     self.roster_member_selection.reset_pos()
+                    self.roster_scroll_window.visible_size -= 1
                     self.team_member_selection.increase_length()
                     self.roster_member_selection.decrease_length()
 

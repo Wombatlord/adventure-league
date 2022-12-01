@@ -1,7 +1,8 @@
 import arcade
 from src.gui.window_data import WindowData
-from src.gui.gui_utils import gen_heights
+from src.gui.gui_utils import gen_heights, ScrollWindow
 from src.engine.engine import eng
+
 
 def bottom_bar():
     margin = 5
@@ -15,15 +16,15 @@ def bottom_bar():
     )
 
 # This should probably be broken up a little.
-# Handles drawing the panel outlines and populating with called to populate_x_pane
+# Handles drawing the panel outlines and populating with calls to populate_x_pane
 def draw_panels(
-    margin,
-    col_select,
-    height,
-    width,
-    row_height,
-    roster_member_selection,
-    team_member_selection,
+    margin: int,
+    col_select: int,
+    height: int,
+    width: int,
+    row_height: int,
+    team_member_selection: int,
+    roster_scroll_window: ScrollWindow
 ):
     for col in range(2):
         """
@@ -41,6 +42,7 @@ def draw_panels(
             height: column is the full height of the window minus some adjustment by margin amounts.
             """
         if col_select.pos == col:
+            # Highlight the selected column and write instructions at the bottom.
             arcade.draw_rectangle_outline(
                 center_x=x / 2 - margin / 2,
                 center_y=height * 0.5 + margin * 4,
@@ -68,6 +70,7 @@ def draw_panels(
 
         match col:
             case 0:
+                # Roster Panel
                 arcade.Text(
                     "Roster",
                     start_x=(x / 2) - margin * 2,
@@ -94,10 +97,11 @@ def draw_panels(
                     row_height=row_height,
                     margin=margin,
                     height=height,
-                    roster_member_selection=roster_member_selection,
+                    roster_scroll_window=roster_scroll_window
                 )
 
             case 1:
+                # Team Panel
                 arcade.Text(
                     "Team",
                     start_x=(x / 2) - margin * 2,
@@ -128,37 +132,34 @@ def draw_panels(
                 )
 
 
-def populate_roster_pane(x, col, row_height, margin, height, roster_member_selection):
+def populate_roster_pane(
+    x, col, row_height, margin, height, roster_scroll_window
+):
     """
     Print the name of each entity in a guild roster in a centralised column.
     We pass x through from the calling scope to center text relative to the column width.
     """
-    height = gen_heights(row_height=row_height, height=height, spacing=5)
-    for merc in range(len(eng.guild.roster)):
-        y2 = next(height)
-        # Colour the selected merc Gold
-        if col == 0 and merc == roster_member_selection.pos:
-            arcade.Text(
-                f"{eng.guild.roster[merc].name.first_name.capitalize()} {merc}",
-                start_x=(x / 2) - margin * 2,
-                start_y=y2,
-                font_name=WindowData.font,
-                font_size=12,
-                anchor_x="center",
-                color=(218, 165, 32, 255),
-            ).draw()
 
-        # All other mercs coloured white.
+    height = gen_heights(row_height=row_height, height=height, spacing=5)
+    for merc in range(roster_scroll_window.visible_size):
+        y2 = next(height)
+
+        if col == 0 and merc == roster_scroll_window.visible_items[1]:
+        # Colour the selected merc Gold
+            color = (218, 165, 32, 255)
         else:
-            arcade.Text(
-                f"{eng.guild.roster[merc].name.first_name.capitalize()} {merc}",
-                start_x=(x / 2) - margin * 2,
-                start_y=y2,  # * 0.05 + WindowData.height - self.margin * 38,
-                font_name=WindowData.font,
-                font_size=12,
-                anchor_x="center",
-                color=arcade.color.WHITE,
-            ).draw()
+        # otherwise colour white.
+            color = arcade.color.WHITE
+        
+        arcade.Text(
+            f"{roster_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {merc}",
+            start_x=(x / 2) - margin * 2,
+            start_y=y2,
+            font_name=WindowData.font,
+            font_size=12,
+            anchor_x="center",
+            color=color,
+        ).draw()
 
 
 def populate_team_pane(x, col, row_height, margin, height, team_member_selection):
