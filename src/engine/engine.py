@@ -20,7 +20,7 @@ class Engine:
 
     def setup(self) -> None:
         # create a pool of potential recruits
-        self.entity_pool = EntityPool(5)
+        self.entity_pool = EntityPool(8)
         self.entity_pool.fill_pool()
 
         # create a guild
@@ -64,7 +64,12 @@ eng.setup()
 
 # Get some entities in the guild
 eng.recruit_entity_to_guild(0)
-eng.recruit_entity_to_guild(1)
+eng.recruit_entity_to_guild(0)
+eng.recruit_entity_to_guild(0)
+eng.recruit_entity_to_guild(0)
+eng.recruit_entity_to_guild(0)
+eng.recruit_entity_to_guild(0)
+
 
 # Testing combat interactions between a team and Dungeon enemies
 
