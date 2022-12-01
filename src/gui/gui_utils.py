@@ -1,4 +1,4 @@
-from typing import NamedTuple, Sequence
+from typing import NamedTuple, Sequence, TypeVar
 
 class Cycle:
     def __init__(self, length: int, pos: int = 0) -> None:
@@ -22,15 +22,15 @@ class Cycle:
     # First check length is not zero.
     # It may be zero if the collection the cycle is tracking has had all elements removed.
     # eg. all entities moved from a Roster to a Team or vice versa.
-    def incr(self):
+    def incr(self, by: int = 1):
         if self.length == 0:
             return
-        self.pos = (self.pos + 1) % self.length
+        self.pos = (self.pos + by) % self.length
 
-    def decr(self):
+    def decr(self, by: int = 1):
         if self.length == 0:
             return
-        self.pos = (self.pos - 1) % self.length
+        self.pos = (self.pos - by) % self.length
 
 # Generate a sequence of values for vertical alignments. Descending by default.
 def gen_heights(
@@ -80,3 +80,59 @@ class Grid:
 
     def down(self):
         self.axes[1].decr()
+
+class ScrollWindow:
+    items: list
+    visible_size: int
+    position: Cycle
+    _frame_offset: Cycle
+
+    def __init__(self, items: list, visible_size: int) -> None:
+        if visible_size > len(items):
+            visible_size = len(items)
+        if visible_size < 1:
+            visible_size = 1
+        self._frame_offset = Cycle(len(items) - visible_size + 1, pos=0)
+        self.position = Cycle(len(items), pos=0)
+        self.visible_size = visible_size
+        self.items = items
+
+    @property
+    def frame_start(self) -> int:
+        return self._frame_offset.pos
+
+    @property
+    def frame_end(self) -> int:
+        return self._frame_offset.pos + self.visible_size
+
+    @property
+    def visible_items(self) -> tuple[list, int | None]:
+        relative_position = self.position.pos - self._frame_offset.pos
+        frame = self.items[self.frame_start:self.frame_end]
+        return frame, relative_position if frame else None
+
+    def _drag_frame(self):
+        drag = 0
+        if self.position.pos >= self.frame_end:
+            drag = self.position.pos - self.frame_end + 1
+            
+        elif self.position.pos < self.frame_start:
+            drag = self.position.pos - self.frame_start
+
+        self._frame_offset.incr(by=drag)
+
+    def incr_selection(self):
+        self.position.incr()
+        self._drag_frame()
+        
+    def decr_selection(self):
+        self.position.decr()
+        self._drag_frame()
+
+    def append(self, item):
+        self.__init__([*self.items, item], self.visible_size)
+        
+        # show the latest addition
+        self.position.pos = len(self.items) - 1
+        self._drag_frame()
+        
