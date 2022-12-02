@@ -23,8 +23,8 @@ def draw_panels(
     height: int,
     width: int,
     row_height: int,
-    team_member_selection: int,
-    roster_scroll_window: ScrollWindow
+    roster_scroll_window: ScrollWindow,
+    team_scroll_window: ScrollWindow
 ):
     for col in range(2):
         """
@@ -128,7 +128,7 @@ def draw_panels(
                     row_height=row_height,
                     margin=margin,
                     height=height,
-                    team_member_selection=team_member_selection,
+                    team_scroll_window=team_scroll_window,
                 )
 
 
@@ -162,32 +162,28 @@ def populate_roster_pane(
         ).draw()
 
 
-def populate_team_pane(x, col, row_height, margin, height, team_member_selection):
+def populate_team_pane(x, col, row_height, margin, height, team_scroll_window):
     """
     Print the name of each entity assigned to the team in a centralised column.
     We pass x through from the calling scope to center text relative to the column width.
     """
-    height = gen_heights(row_height=row_height, height=height, spacing=5)
-    for merc in range(len(eng.guild.team.members)):
-        y2 = next(height)
-        if col == 1 and merc == team_member_selection.pos:
-            arcade.Text(
-                f"{eng.guild.team.members[merc].name.first_name.capitalize()} {merc}",
-                start_x=(x / 2) - margin * 2,
-                start_y=y2,
-                font_name=WindowData.font,
-                font_size=12,
-                anchor_x="center",
-                color=(218, 165, 32, 255),
-            ).draw()
+    if team_scroll_window.visible_items[1] is not None:
+        height = gen_heights(row_height=row_height, height=height, spacing=5)
+        for merc in range(team_scroll_window.visible_size):
+            y2 = next(height)
 
-        else:
+            if col == 1 and merc == team_scroll_window.visible_items[1]:
+            # Colour the selected merc Gold
+                color = (218, 165, 32, 255)
+            else:
+            # otherwise colour white.
+                color = arcade.color.WHITE
             arcade.Text(
-                f"{eng.guild.team.members[merc].name.first_name.capitalize()} {merc}",
+                f"{team_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {merc}",
                 start_x=(x / 2) - margin * 2,
                 start_y=y2,
                 font_name=WindowData.font,
                 font_size=12,
                 anchor_x="center",
-                color=arcade.color.WHITE,
+                color=color,
             ).draw()
