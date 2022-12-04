@@ -3,7 +3,6 @@ from src.gui.window_data import WindowData
 from src.gui.gui_utils import gen_heights, ScrollWindow
 from src.engine.engine import eng
 
-
 def bottom_bar():
     margin = 5
     bar_height = 40
@@ -41,6 +40,7 @@ def draw_panels(
             width: half the total window width with some adjustment by margin amounts.
             height: column is the full height of the window minus some adjustment by margin amounts.
             """
+        content_height = height - margin * 10
         if col_select.pos == col:
             # Highlight the selected column and write instructions at the bottom.
             arcade.draw_rectangle_outline(
@@ -139,27 +139,26 @@ def populate_roster_pane(
     Print the name of each entity in a guild roster in a centralised column.
     We pass x through from the calling scope to center text relative to the column width.
     """
+    if roster_scroll_window.visible_items[1] is not None:
+        height = gen_heights(row_height=row_height, y=height, spacing=5)
+        for merc, y2 in zip(range(roster_scroll_window.visible_size), height):
 
-    height = gen_heights(row_height=row_height, height=height, spacing=5)
-    for merc in range(roster_scroll_window.visible_size):
-        y2 = next(height)
-
-        if col == 0 and merc == roster_scroll_window.visible_items[1]:
-        # Colour the selected merc Gold
-            color = (218, 165, 32, 255)
-        else:
-        # otherwise colour white.
-            color = arcade.color.WHITE
-        
-        arcade.Text(
-            f"{roster_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {merc}",
-            start_x=(x / 2) - margin * 2,
-            start_y=y2,
-            font_name=WindowData.font,
-            font_size=12,
-            anchor_x="center",
-            color=color,
-        ).draw()
+            if col == 0 and merc == roster_scroll_window.visible_items[1]:
+            # Colour the selected merc Gold
+                color = (218, 165, 32, 255)
+            else:
+            # otherwise colour white.
+                color = arcade.color.WHITE
+            
+            arcade.Text(
+                f"{roster_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {merc}",
+                start_x=(x / 2) - margin * 2,
+                start_y=y2,
+                font_name=WindowData.font,
+                font_size=12,
+                anchor_x="center",
+                color=color,
+            ).draw()
 
 
 def populate_team_pane(x, col, row_height, margin, height, team_scroll_window):
@@ -168,10 +167,8 @@ def populate_team_pane(x, col, row_height, margin, height, team_scroll_window):
     We pass x through from the calling scope to center text relative to the column width.
     """
     if team_scroll_window.visible_items[1] is not None:
-        height = gen_heights(row_height=row_height, height=height, spacing=5)
-        for merc in range(team_scroll_window.visible_size):
-            y2 = next(height)
-
+        height = gen_heights(row_height=row_height, y=height, spacing=5)
+        for merc, y2 in zip(range(team_scroll_window.visible_size), height):            
             if col == 1 and merc == team_scroll_window.visible_items[1]:
             # Colour the selected merc Gold
                 color = (218, 165, 32, 255)
