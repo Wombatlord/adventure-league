@@ -171,8 +171,11 @@ class RosterView(arcade.View):
         self.row_height = 25
         self.roster_pane = 0
         self.team_pane = 1
-        self.roster_scroll_window = ScrollWindow(self.roster, 4)
-        self.team_scroll_window = ScrollWindow(self.team_members, 0)
+        self.roster_scroll_window = ScrollWindow([], 0, 4)
+        self.roster_scroll_window.append_all(self.roster)
+        self.team_scroll_window = ScrollWindow([], 0, 4)
+        self.team_scroll_window.append_all(self.team_members)
+
 
     def on_draw(self):
         self.clear()
@@ -232,52 +235,25 @@ class RosterView(arcade.View):
             case arcade.key.ENTER:
                 if self.col_select.pos == self.roster_pane and len(self.roster_scroll_window.items) > 0:
                     # Move merc from ROSTER to TEAM. Increase Cycle.length for team, decrease Cycle.length for roster.
-                    print("Enter")
-                    # self.team_scroll_window.append(self.roster[self.roster_scroll_window.position.pos])
-                    # Increment the visible size 
-                    self.team_scroll_window.visible_size += 1
-
                     # Assign to Team & Remove from Roster.
-                    print(eng.guild.roster)
-                    self.team_scroll_window.append(self.roster_scroll_window.items[self.roster_scroll_window.position.pos])
-                    # eng.guild.team.assign_to_team(
-                    #     eng.guild.roster, self.roster_scroll_window.position.pos
-                    # )
-                    self.roster_scroll_window.items.pop(self.roster_scroll_window.position.pos)
-                    # eng.guild.remove_from_roster(self.roster_scroll_window.position.pos)
-                    
-                    # Increment / Decrement the appropriate Cycle lengths
-                    self.team_scroll_window.position.length = self.team_scroll_window.visible_size
-                    self.roster_scroll_window.position.decrease_length()
-                    
-                    
-                    # Decrease the visible size of the roster frame if there are less visible items than visible size.
-                    if self.roster_scroll_window.visible_size > len(self.roster_scroll_window.visible_items[0]):
-                        self.roster_scroll_window.visible_size -= 1
+                    self.team_scroll_window.append(self.roster_scroll_window.selection)
+                    self.roster_scroll_window.pop()
 
+                    # Update Engine state.
+                    eng.guild.roster = self.roster_scroll_window.items
+                    eng.guild.team.members = self.team_scroll_window.items
 
-                if self.col_select.pos == self.team_pane and len(self.team_scroll_window.visible_items) > 0:
-                    # Move merc from TEAM to ROSTER. Increase Cycle.length for roster, decrease Cycle.length for team.
-                    self.roster_scroll_window.visible_size += 1
-                    self.roster_scroll_window.append(self.team_scroll_window.items[self.team_scroll_window.position.pos])
+                if self.col_select.pos == self.team_pane and len(self.team_scroll_window.items) > 0:
+                    # Move merc from TEAM to ROSTER
+                    self.roster_scroll_window.append(self.team_scroll_window.selection)
                     
                     # Remove from Team array
-                    self.team_scroll_window.items.pop(self.team_scroll_window.position.pos)
-                    
-                    self.roster_scroll_window.position.length = self.roster_scroll_window.visible_size
-                    self.team_scroll_window.position.decrease_length()
+                    self.team_scroll_window.pop()
 
+                    # Update Engine state.
+                    eng.guild.roster = self.roster_scroll_window.items
+                    eng.guild.team.members = self.team_scroll_window.items
 
-                    if self.team_scroll_window.visible_size > len(self.team_scroll_window.visible_items[0]):
-                        self.team_scroll_window.visible_size -= 1
-                    
-                    self.team_scroll_window.position.pos = 0
-                    # eng.guild.team.move_to_roster(self.team_member_selection.pos)
-                    # self.roster_scroll_window += 1
-                    # self.team_scroll_window -= 1
-                    # self.team_member_selection.reset_pos()
-                    # self.roster_member_selection.increase_length()
-                    # self.team_member_selection.decrease_length()
 
         self._log_state()
 
