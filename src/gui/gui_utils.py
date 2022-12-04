@@ -1,9 +1,14 @@
-from typing import NamedTuple, Sequence, TypeVar
+from typing import NamedTuple, Sequence, Any
+import json
 
 class Cycle:
     def __init__(self, length: int, pos: int = 0) -> None:
         self.length = length
         self.pos = pos
+
+    def __str__(self) -> str:
+        return json.dumps(self.__dict__)
+
 
     def reset_pos(self, new_pos: int = 0):
         self.pos = new_pos
@@ -32,18 +37,23 @@ class Cycle:
             return
         self.pos = (self.pos - by) % self.length
 
+    @property
+    def max(self) -> int:
+        return self.length - 1
+
 # Generate a sequence of values for vertical alignments. Descending by default.
 def gen_heights(
-    desc: bool = True, row_height: int = 0, height: int = 0, spacing: int = 0
+    desc: bool = True, row_height: int = 0, y: int = 0, spacing: int = 0, max_height: int | None = None
 ) -> Sequence[int]:
-
-    start = height - row_height * spacing
+    start = y - row_height * spacing
     incr = abs(row_height)  # Negative indicates down
     if desc:
         incr = -abs(incr)
 
     current = start
     while True:
+        if max_height is not None and abs(start - current) >= max_height:
+            break
         yield current
 
         # increment on subsequent calls
@@ -84,10 +94,15 @@ class Grid:
 class ScrollWindow:
     items: list
     visible_size: int
+    stretch_limit: int
     position: Cycle
     _frame_offset: Cycle
 
-    def __init__(self, items: list, visible_size: int) -> None:
+    def __init__(self, items: list, visible_size: int, stretch_limit: int | None = None) -> None:
+        if stretch_limit is None:
+            stretch_limit = visible_size
+
+        self.stretch_limit = stretch_limit
         if visible_size > len(items):
             visible_size = len(items)
         if visible_size < 1:
@@ -95,7 +110,16 @@ class ScrollWindow:
         self._frame_offset = Cycle(len(items) - visible_size + 1, pos=0)
         self.position = Cycle(len(items), pos=0)
         self.visible_size = visible_size
-        self.items = items
+        self.items = [*items]
+
+    def __str__(self) -> str:
+        state = {**self.__dict__}
+
+        for k, v in state.items():
+            if isinstance(v, Cycle):
+                state[k] = v.__dict__
+        
+        return json.dumps(state)
 
     @property
     def frame_start(self) -> int:
@@ -111,10 +135,14 @@ class ScrollWindow:
         frame = self.items[self.frame_start:self.frame_end]
         return frame, relative_position if frame else None
 
+    @property
+    def selection(self) -> Any:
+        return self.items[self.position.pos]
+
     def _drag_frame(self):
         drag = 0
         if self.position.pos >= self.frame_end:
-            drag = self.position.pos - self.frame_end + 1
+            drag = self.position.pos - (self.frame_end - 1)
             
         elif self.position.pos < self.frame_start:
             drag = self.position.pos - self.frame_start
@@ -130,9 +158,31 @@ class ScrollWindow:
         self._drag_frame()
 
     def append(self, item):
-        self.__init__([*self.items, item], self.visible_size)
+        self.__init__(
+            [*self.items, item], 
+            min(self.visible_size + 1, self.stretch_limit), # grow the frame size by 1 unless at max
+            stretch_limit=self.stretch_limit, # preserve stretch limit
+        )
         
         # show the latest addition
         self.position.pos = len(self.items) - 1
         self._drag_frame()
-        
+
+    def append_all(self, items: list):
+        for item in items:
+            self.append(item)
+    
+    def pop(self, index: int = -1):
+        """
+        Behaves like array.pop but can be called with no arguments to pop the current selection
+        """
+        if index == -1:
+            index = self.position.pos
+        old_items = self.items
+        old_position = self.position
+        item = old_items.pop(index)
+
+        self.__init__(old_items, self.visible_size, self.stretch_limit)
+        self.position.pos = min(old_position.pos, self.position.max)
+        self._drag_frame()
+        return item
