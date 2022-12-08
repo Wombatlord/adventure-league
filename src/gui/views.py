@@ -5,22 +5,9 @@ from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.mission_card import MissionCard
 from src.gui.roster_view_components import (
     bottom_bar,
-    populate_roster_pane,
-    populate_team_pane,
     draw_panels,
 )
 from src.engine.engine import scripted_run, eng
-from dataclasses import dataclass
-from typing import Sequence
-
-# @dataclass
-# class WindowData:
-#     width = 800
-#     height = 600
-#     title_background = arcade.load_texture("./assets/background_glacial_mountains.png")
-#     mission_background = arcade.load_texture("./assets/mb.png")
-#     font = "Alagard"
-
 
 class TitleView(arcade.View):
     def __init__(self, window: Window = None):

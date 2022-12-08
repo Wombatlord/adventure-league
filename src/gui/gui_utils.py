@@ -9,7 +9,6 @@ class Cycle:
     def __str__(self) -> str:
         return json.dumps(self.__dict__)
 
-
     def reset_pos(self, new_pos: int = 0):
         self.pos = new_pos
 
@@ -58,38 +57,6 @@ def gen_heights(
 
         # increment on subsequent calls
         current = current + incr
-
-
-## BELOW BE EXPERIMENTS. ##
-class Coords(NamedTuple):
-    x: int
-    y: int
-
-
-class Grid:
-    axes: tuple[Cycle, Cycle]
-
-    def __init__(
-        self,
-        size: tuple[int, int],  # (width, height)
-        pos: tuple[int, int] = (0, 0),  # (x, y)
-    ) -> None:
-        self.axes = tuple(Cycle(length, start) for length, start in zip(size, pos))
-
-    def current(self) -> Coords:
-        return Coords(self.axes[0].pos, self.axes[1].pos)
-
-    def left(self):
-        self.axes[0].decr()
-
-    def right(self):
-        self.axes[0].incr()
-
-    def up(self):
-        self.axes[1].incr()
-
-    def down(self):
-        self.axes[1].decr()
 
 class ScrollWindow:
     items: list
@@ -186,3 +153,34 @@ class ScrollWindow:
         self.position.pos = min(old_position.pos, self.position.max)
         self._drag_frame()
         return item
+
+## BELOW BE EXPERIMENTS. ##
+class Coords(NamedTuple):
+    x: int
+    y: int
+
+
+class Grid:
+    axes: tuple[Cycle, Cycle]
+
+    def __init__(
+        self,
+        size: tuple[int, int],  # (width, height)
+        pos: tuple[int, int] = (0, 0),  # (x, y)
+    ) -> None:
+        self.axes = tuple(Cycle(length, start) for length, start in zip(size, pos))
+
+    def current(self) -> Coords:
+        return Coords(self.axes[0].pos, self.axes[1].pos)
+
+    def left(self):
+        self.axes[0].decr()
+
+    def right(self):
+        self.axes[0].incr()
+
+    def up(self):
+        self.axes[1].incr()
+
+    def down(self):
+        self.axes[1].decr()

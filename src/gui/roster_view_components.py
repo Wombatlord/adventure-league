@@ -1,7 +1,6 @@
 import arcade
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import gen_heights, ScrollWindow
-from src.engine.engine import eng
 
 def bottom_bar():
     margin = 5
@@ -146,12 +145,14 @@ def populate_roster_pane(
             if col == 0 and merc == roster_scroll_window.visible_items[1]:
             # Colour the selected merc Gold
                 color = (218, 165, 32, 255)
+                mark = " >>>"
             else:
             # otherwise colour white.
                 color = arcade.color.WHITE
+                mark = ""
             
             arcade.Text(
-                f"{roster_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {merc}",
+                f"{merc} {roster_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {mark}",
                 start_x=(x / 2) - margin * 2,
                 start_y=y2,
                 font_name=WindowData.font,
@@ -172,11 +173,14 @@ def populate_team_pane(x, col, row_height, margin, height, team_scroll_window):
             if col == 1 and merc == team_scroll_window.visible_items[1]:
             # Colour the selected merc Gold
                 color = (218, 165, 32, 255)
+                mark = "<<< "
             else:
             # otherwise colour white.
                 color = arcade.color.WHITE
+                mark = ""
+
             arcade.Text(
-                f"{team_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {merc}",
+                f"{mark} {team_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {merc}",
                 start_x=(x / 2) - margin * 2,
                 start_y=y2,
                 font_name=WindowData.font,

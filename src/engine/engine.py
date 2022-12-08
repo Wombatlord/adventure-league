@@ -70,6 +70,9 @@ eng.recruit_entity_to_guild(0)
 eng.recruit_entity_to_guild(0)
 eng.recruit_entity_to_guild(0)
 
+# eng.guild.team.assign_to_team(
+#                         eng.guild.roster, 0
+#                     )
 
 # Testing combat interactions between a team and Dungeon enemies
 
@@ -125,8 +128,3 @@ def scripted_run():
         if len(eng.guild.team.members) == 0:
             print(f"{eng.guild.team.name} defeated!")
             break
-
-
-# eng.print_guild()
-# print(eng.mission_board.missions[0].id)
-# print(eng.mission_board.missions[1].enemies[0].name.first_name.capitalize())
