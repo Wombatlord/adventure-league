@@ -88,5 +88,5 @@ class Team:
     def assign_to_team(self, roster, selection):
         self.members.append(roster[selection])
 
-    def remove_from_team(self, selection):
-        self.members.pop(selection)
+    def move_to_roster(self, selection):
+        self.owner.roster.append(self.members.pop(selection))
