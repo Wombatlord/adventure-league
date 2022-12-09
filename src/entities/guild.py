@@ -1,25 +1,27 @@
 from __future__ import annotations
 from src.config.constants import team_names
 from src.entities.entity import Entity
+from src.entities.loot import Loot
 from random import randint
 from typing import Optional
+import math
 
 
 class Guild:
     def __init__(
         self,
         name: str = None,
-        level: int = None,
-        funds: int = None,
+        funds: int = 0,
         roster_limit: int = None,
         roster: list[Entity] = None,
+        xp: int = 0
     ) -> None:
         self.name = name
-        self.level = level
         self.funds = funds
         self.roster_limit = roster_limit
         self.roster = roster
         self.roster_scalar = 1.5
+        self.xp = xp
 
         if self.roster_limit == None:
             self.roster_limit = int(self.level * self.roster_scalar)
@@ -59,7 +61,15 @@ class Guild:
         # Remove a member from the roster. For example, if killed in combat, call this.
         self.roster.pop(i)
 
+    def claim_rewards(self, rewards: Loot):
+        self.funds += rewards.claim_gp()
+        self.xp += rewards.claim_xp()
 
+
+    @property
+    def level(self) -> int:
+        return self.xp//1000
+        
 class Team:
     def __init__(self) -> None:
         self.owner: Optional[Guild] = None
