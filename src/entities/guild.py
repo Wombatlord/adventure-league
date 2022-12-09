@@ -4,7 +4,6 @@ from src.entities.entity import Entity
 from src.entities.loot import Loot
 from random import randint
 from typing import Optional
-import math
 
 
 class Guild:
