@@ -1,8 +1,10 @@
 import arcade
 from src.engine.engine import eng
+from src.entities.dungeon import Dungeon
 
 
 class MissionCard:
+    mission: Dungeon
     def __init__(
         self,
         width,
@@ -19,12 +21,14 @@ class MissionCard:
         self.reserved_space = reserved_space
         self.opacity = opacity
         
-    def draw_card(self):
+    def draw_card(self, row):
         y = (
-            (self.margin + self.height - self.reserved_space) * self.mission
+            (self.margin + self.height - self.reserved_space) * row
             + self.margin
             + (self.height - self.reserved_space) // 2
         )
+
+        line_separation = 0.05*self.height
 
         arcade.draw_rectangle_outline(
             center_x=self.width * 0.5,
@@ -33,26 +37,50 @@ class MissionCard:
             height=(self.height - self.reserved_space) * 0.3,
             color=(218, 165, 32, self.opacity),
         )
-
+        cursor = [self.margin * 5, y / 3 + self.height*0.2]
         arcade.Text(
-            text=eng.mission_board.missions[self.mission].description,
-            start_x=self.margin * 5,
-            start_y=y / 3 + self.height * 0.2,
+            text=self.mission.description,
+            start_x=cursor[0],
+            start_y=cursor[1],
             font_name="Alagard",
         ).draw()
+
+        cursor[1] -= line_separation
+
 
         arcade.Text(
             text="Boss: ",
             start_x=self.margin * 9,
-            start_y=y / 3 + self.height * 0.15,
+            start_y=cursor[1],
             font_name="Alagard",
             color=arcade.color.GOLDENROD,
         ).draw()
 
+        
         arcade.Text(
-            text=f"{eng.mission_board.missions[self.mission].boss.name.name_and_title()}",
+            text=f"{self.mission.boss.name.name_and_title()}",
             start_x=self.margin * 20,
             start_y=y / 3 + self.height * 0.15,
             font_name="Alagard",
             color=arcade.color.RED,
         ).draw()
+
+        cursor[1] -= line_separation
+        cursor[0] = self.margin * 9
+        prefix = arcade.Text(
+            text="Rewards:",
+            start_x=cursor[0],
+            start_y=cursor[1],
+            font_name="Alagard",
+        )
+        prefix.draw()
+
+        arcade.Text(
+            text=self.mission.peek_reward(),
+            start_x=cursor[0] + 16*self.margin,
+            start_y=cursor[1],
+            font_name="Alagard",
+            color=arcade.color.GOLDENROD
+        ).draw()
+
+        

@@ -11,6 +11,7 @@ from src.entities.mission_board import MissionBoard
 
 
 class Engine:
+    dungeon: Dungeon
     def __init__(self) -> None:
         self.guild: Optional[Guild] = None
         self.entity_pool: Optional[EntityPool] = None
@@ -26,7 +27,7 @@ class Engine:
         # create a guild
         self.guild = Guild(
             name=guild_names[randint(0, len(guild_names) - 1)],
-            level=4,
+            xp=4000,
             funds=100,
             roster=[],
         )
@@ -123,6 +124,12 @@ def scripted_run():
             )
 
             print(message)
+
+            print(f"guild claimed: {eng.dungeon.peek_reward()=}")
+            eng.guild.claim_rewards(eng.dungeon)
+
+            print(f"peek again: {eng.dungeon.peek_reward()=}")
+            
             break
 
         if len(eng.guild.team.members) == 0:

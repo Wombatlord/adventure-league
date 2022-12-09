@@ -281,11 +281,11 @@ class MissionsView(arcade.View):
             MissionCard(
                 width=WindowData.width,
                 height=WindowData.height,
-                mission=row,
+                mission=eng.mission_board.missions[row],
                 margin=self.margin,
                 opacity=opacity,
                 reserved_space=reserved_space,
-            ).draw_card()
+            ).draw_card(row)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)

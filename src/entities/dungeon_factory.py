@@ -23,6 +23,6 @@ def create_random_dungeon(enemy_amount, dungeon_id) -> Dungeon:
             title=boss_titles[randint(0, len(boss_titles) - 1)],
         ),
         describe_dungeon(),
-        "TREASURE",
-        10,
+        treasure=randint(100, 150),
+        xp_reward=10,
     )
