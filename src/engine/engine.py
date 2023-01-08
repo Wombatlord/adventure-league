@@ -1,4 +1,4 @@
-import sys
+import time
 from random import randint
 from typing import Optional
 from src.config.constants import guild_names
@@ -12,12 +12,15 @@ from src.entities.mission_board import MissionBoard
 
 class Engine:
     dungeon: Dungeon
+
     def __init__(self) -> None:
         self.guild: Optional[Guild] = None
         self.entity_pool: Optional[EntityPool] = None
         self.dungeon: Optional[Dungeon] = None
         self.mission_board: Optional[MissionBoard] = None
         self.selected_mission = None
+        self.messages = []
+        self.action_queue = []
 
     def setup(self) -> None:
         # create a pool of potential recruits
@@ -51,17 +54,28 @@ class Engine:
         self.guild.recruit(selection_id, self.entity_pool.pool)
 
     def print_guild(self):
-        # print(self.guild)
         print(self.guild.get_dict())
         for entity in self.guild.roster:
             print(entity.get_dict())
 
+    def process_action_queue(self):
+        new_action_queue = []
+        for action in self.action_queue:
+            if "message" in action:
+                print(action["message"])
+                self.messages.append(action["message"])
+                time.sleep(0.75)
+        
+        self.action_queue = new_action_queue
+
+
+    def check_action_queue(self):
+        for item in self.action_queue:
+            print(item)
 
 # Instantiate & setup the engine
 eng = Engine()
 eng.setup()
-# eng.test_attack()
-
 
 # Get some entities in the guild
 eng.recruit_entity_to_guild(0)
@@ -82,23 +96,23 @@ def scripted_run():
         return
     else:
         eng.dungeon = eng.mission_board.missions[eng.selected_mission]
-    
+
     while eng.dungeon.boss.is_dead == False:
         for i, merc in enumerate(eng.guild.team.members):
 
             if not merc.is_dead:
                 if len(eng.dungeon.enemies) > 0:
-                    a = merc.fighter.attack(eng.dungeon.enemies[0])
+                    
+                    eng.action_queue.extend(merc.fighter.attack(eng.dungeon.enemies[0]))
 
-                    if a == 0:
-                        print(f"{merc.name.first_name.capitalize()} retreats!")
+                    if merc.fighter.retreating == True:
                         eng.guild.team.move_to_roster(i)
 
                 if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
-                    a = merc.fighter.attack(eng.dungeon.boss)
 
-                    if a == 0:
-                        print(f"{merc.name.first_name.capitalize()} retreats!")
+                    eng.action_queue.extend(merc.fighter.attack(eng.dungeon.boss))
+                    
+                    if merc.fighter.retreating == True:
                         eng.guild.team.move_to_roster(i)
 
             if merc.is_dead:
@@ -108,11 +122,11 @@ def scripted_run():
             eng.dungeon.remove_corpses()
 
         if len(eng.dungeon.enemies) > 0 and len(eng.guild.team.members) > 0:
-            eng.dungeon.enemies[0].fighter.attack(eng.guild.team.members[0])
+            eng.action_queue.extend(eng.dungeon.enemies[0].fighter.attack(eng.guild.team.members[0]))
 
         if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
             if len(eng.guild.team.members) > 0:
-                eng.dungeon.boss.fighter.attack(eng.guild.team.members[0])
+                eng.action_queue.extend(eng.dungeon.boss.fighter.attack(eng.guild.team.members[0]))
 
         # End states & Break.
         if len(eng.dungeon.enemies) == 0 and eng.dungeon.boss.is_dead:
@@ -123,15 +137,20 @@ def scripted_run():
                 )
             )
 
-            print(message)
+            eng.action_queue.append(
+                {"message": message}
+            )
 
             print(f"guild claimed: {eng.dungeon.peek_reward()=}")
             eng.guild.claim_rewards(eng.dungeon)
 
             print(f"peek again: {eng.dungeon.peek_reward()=}")
-            
+
             break
 
         if len(eng.guild.team.members) == 0:
-            print(f"{eng.guild.team.name} defeated!")
+            eng.action_queue.append(
+                {"message": f"{eng.guild.team.name} defeated!"}
+            )
+            # print(f"{eng.guild.team.name} defeated!")
             break
