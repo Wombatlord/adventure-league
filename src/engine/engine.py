@@ -113,6 +113,11 @@ def scripted_run():
                     eng.action_queue.extend(merc.fighter.attack(eng.dungeon.boss))
                     
                     if merc.fighter.retreating == True:
+                        eng.action_queue.append(
+                            {
+                                "message": f"{merc.name.first_name} retreats!"
+                            }
+                        )
                         eng.guild.team.move_to_roster(i)
 
             if merc.is_dead:

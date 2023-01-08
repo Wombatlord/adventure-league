@@ -94,11 +94,5 @@ class Fighter:
                 }
             )
 
-            results.append(
-                {
-                    "message": f"{my_name} retreats!"
-                }
-            )
-
             self.retreating = True
             return results
