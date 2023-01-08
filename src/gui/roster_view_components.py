@@ -2,9 +2,9 @@ import arcade
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import gen_heights, ScrollWindow
 
-def bottom_bar():
+def bottom_bar(merc = None):
     margin = 5
-    bar_height = 40
+    bar_height = 80
     arcade.draw_lrtb_rectangle_outline(
         left=margin * 2,
         right=WindowData.width - margin * 2,
@@ -12,6 +12,19 @@ def bottom_bar():
         bottom=margin,
         color=arcade.color.GOLDENROD,
     )
+
+    if merc is not None:
+        stat_bar = f"LVL: {merc.fighter.level}  |  HP: {merc.fighter.hp}  |  ATK: {merc.fighter.power}  |  DEF: {merc.fighter.defence}"
+        arcade.Text(
+                    stat_bar,
+                    start_x=(WindowData.width / 2),
+                    start_y=20,
+                    font_name=WindowData.font,
+                    font_size=20,
+                    anchor_x="center",
+                ).draw()
+
+    # print(merc.name.first_name)
 
 # This should probably be broken up a little.
 # Handles drawing the panel outlines and populating with calls to populate_x_pane
@@ -44,9 +57,9 @@ def draw_panels(
             # Highlight the selected column and write instructions at the bottom.
             arcade.draw_rectangle_outline(
                 center_x=x / 2 - margin / 2,
-                center_y=height * 0.5 + margin * 4,
+                center_y=height * 0.5 + margin * 8,
                 width=width * 0.5 - margin * 4,
-                height=height - margin * 10,
+                height=height - margin * 18,
                 color=(218, 165, 32, 255),
             )
 
@@ -59,7 +72,7 @@ def draw_panels(
             arcade.Text(
                 instruction_text,
                 start_x=(x / 2),
-                start_y=80,
+                start_y=120,
                 font_name=WindowData.font,
                 font_size=10,
                 anchor_x="center",
