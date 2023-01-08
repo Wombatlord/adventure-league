@@ -123,6 +123,15 @@ class ScrollWindow:
     def decr_selection(self):
         self.position.decr()
         self._drag_frame()
+    
+    def init_items(self, items):
+        # size = self.visible_size
+        # print(size)
+        self.__init__(
+            [*items], 
+            visible_size=4, # grow the frame size by 1 unless at max
+            stretch_limit=self.stretch_limit, # preserve stretch limit
+        )
 
     def append(self, item):
         self.__init__(
@@ -138,6 +147,7 @@ class ScrollWindow:
     def append_all(self, items: list):
         for item in items:
             self.append(item)
+        
     
     def pop(self, index: int = -1):
         """
