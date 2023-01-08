@@ -153,15 +153,17 @@ class RosterView(arcade.View):
         self.team_members = eng.guild.team.members
         self.margin = 5
         self.col_select = Cycle(2)
-        self.roster_member_selection = Cycle(len(eng.guild.roster))
-        self.team_member_selection = Cycle(0, 0)
+        # self.roster_member_selection = Cycle(len(eng.guild.roster))
+        # self.team_member_selection = Cycle(0, 0)
         self.row_height = 25
         self.roster_pane = 0
         self.team_pane = 1
         self.roster_scroll_window = ScrollWindow([], 0, 4)
-        self.roster_scroll_window.append_all(self.roster)
+        print(self.roster_scroll_window.visible_size)
+        print(self.roster_scroll_window.stretch_limit)
+        self.roster_scroll_window.init_items(self.roster)
         self.team_scroll_window = ScrollWindow([], 0, 4)
-        self.team_scroll_window.append_all(self.team_members)
+        self.team_scroll_window.init_items(self.team_members)
 
 
     def on_draw(self):
@@ -175,7 +177,14 @@ class RosterView(arcade.View):
             roster_scroll_window=self.roster_scroll_window,
             team_scroll_window=self.team_scroll_window
         )
-        bottom_bar()
+        merc = None
+        if self.col_select.pos == 0 and len(self.roster_scroll_window.items) > 0:
+            merc = self.roster_scroll_window.items[self.roster_scroll_window.position.pos]
+        
+        if self.col_select.pos == 1 and len(self.team_scroll_window.items) > 0:
+            merc = self.team_scroll_window.items[self.team_scroll_window.position.pos]
+
+        bottom_bar(merc)
 
     def decr_col(self, col_count: int):
         self.col_select = (self.col_select - 1) % col_count
