@@ -21,6 +21,7 @@ class Fighter:
         self.level = level
         self.xp_reward = xp_reward
         self.current_xp = current_xp
+        self.retreating = False
 
     def get_dict(self) -> dict:
         result = {
@@ -44,18 +45,27 @@ class Fighter:
         self.current_xp = dict.get("current_xp")
 
     def take_damage(self, amount):
+        results = []
+
         self.hp -= amount
 
         if self.hp <= 0:
             self.hp = 0
             self.owner.is_dead = True
-            print(f"{self.owner.name.name_and_title()} is dead!")
+            results.append(
+                {"message": f"{self.owner.name.name_and_title()} is dead!"}
+            )
+            # print(f"{self.owner.name.name_and_title()} is dead!")
+        
+        return results
 
     def attack(self, target: Entity):
+        results = []
         if self.owner.is_dead or target.is_dead:
             raise ValueError(f"{self.owner.name}: he's dead jim.")
 
         my_name = self.owner.name.name_and_title()
+
         target_name = target.name.name_and_title()
 
         succesful_hit: int = self.power - target.fighter.defence
@@ -65,9 +75,30 @@ class Fighter:
                 2 * self.power**2 / (self.power + target.fighter.defence)
             )
 
-            print(f"{my_name} hits {target_name} for {actual_damage}\n")
-            target.fighter.take_damage(actual_damage)
+            results.append(
+                {
+                    "message": f"{my_name} hits {target_name} for {actual_damage}\n"
+                }
+            )
 
+            # print(f"{my_name} hits {target_name} for {actual_damage}\n")
+            result = target.fighter.take_damage(actual_damage)
+            results.extend(result)
+            
+            return results
+        
         else:
-            print(f"{my_name} fails to hit {target_name}!")
-            return 0
+            results.append(
+                {
+                    "message": f"{my_name} fails to hit {target_name}!"
+                }
+            )
+
+            results.append(
+                {
+                    "message": f"{my_name} retreats!"
+                }
+            )
+
+            self.retreating = True
+            return results
