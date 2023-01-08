@@ -2,7 +2,7 @@ import arcade
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import gen_heights, ScrollWindow
 
-def bottom_bar(merc = None):
+def bottom_bar(merc):
     margin = 5
     bar_height = 80
     arcade.draw_lrtb_rectangle_outline(
@@ -164,8 +164,10 @@ def populate_roster_pane(
                 color = arcade.color.WHITE
                 mark = ""
             
+            merc_index_in_items_array = roster_scroll_window.items.index(roster_scroll_window.visible_items[0][merc])
+
             arcade.Text(
-                f"{merc} {roster_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {mark}",
+                f"{merc_index_in_items_array} {roster_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {mark}",
                 start_x=(x / 2) - margin * 2,
                 start_y=y2,
                 font_name=WindowData.font,

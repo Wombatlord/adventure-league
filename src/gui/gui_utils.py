@@ -106,6 +106,9 @@ class ScrollWindow:
     def selection(self) -> Any:
         return self.items[self.position.pos]
 
+    # def index(self, merc) -> int:
+    #     return self.items.index(merc)
+
     def _drag_frame(self):
         drag = 0
         if self.position.pos >= self.frame_end:
