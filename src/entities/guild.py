@@ -99,3 +99,8 @@ class Team:
 
     def move_to_roster(self, selection):
         self.owner.roster.append(self.members.pop(selection))
+
+    def move_entity_to_roster(self, entity):
+        self.owner.roster.append(entity)
+        # print(self.members.index(entity))
+        self.members.pop(self.members.index(entity))
