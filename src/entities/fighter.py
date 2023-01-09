@@ -6,6 +6,7 @@ from src.entities.entity import Entity
 class Fighter:
     def __init__(
         self,
+        is_enemy: bool,
         hp: int = 0,
         defence: int = 0,
         power: int = 0,
@@ -22,6 +23,7 @@ class Fighter:
         self.xp_reward = xp_reward
         self.current_xp = current_xp
         self.retreating = False
+        self.is_enemy = is_enemy
 
     def get_dict(self) -> dict:
         result = {
@@ -94,5 +96,12 @@ class Fighter:
                 }
             )
 
-            self.retreating = True
+            if self.is_enemy != True:
+                self.retreating = True
+                # results.append(
+                #     {
+                #         "retreat": self.owner
+                #     }
+                # )
+            # self.retreating = True
             return results
