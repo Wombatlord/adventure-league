@@ -52,10 +52,10 @@ class Fighter:
         if self.hp <= 0:
             self.hp = 0
             self.owner.is_dead = True
+            
             results.append(
-                {"message": f"{self.owner.name.name_and_title()} is dead!"}
+                {"dying": self.owner}
             )
-            # print(f"{self.owner.name.name_and_title()} is dead!")
         
         return results
 
