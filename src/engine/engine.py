@@ -58,18 +58,31 @@ class Engine:
         for entity in self.guild.roster:
             print(entity.get_dict())
 
+    def dying(self, target):
+
+        if target in eng.guild.team.members:
+            results = [{"message": f"{target.name.first_name} is dead!"}]
+        else:
+            results = [{"message": f"{target.name.first_name} is dead!"}]
+
+        return results
+
     def process_action_queue(self):
         new_action_queue = []
+        self._check_action_queue()
         for action in self.action_queue:
             if "message" in action:
                 print(action["message"])
                 self.messages.append(action["message"])
-                time.sleep(0.75)
+
+            if "dying" in action:
+                target = action["dying"]
+                self.dying(target)
         
         self.action_queue = new_action_queue
 
 
-    def check_action_queue(self):
+    def _check_action_queue(self):
         for item in self.action_queue:
             print(item)
 
@@ -105,6 +118,9 @@ def scripted_run():
                     
                     eng.action_queue.extend(merc.fighter.attack(eng.dungeon.enemies[0]))
 
+                    if eng.dungeon.enemies[0].is_dead:
+                        eng.action_queue.extend(eng.dying(eng.dungeon.enemies[0]))
+
                     if merc.fighter.retreating == True:
                         eng.guild.team.move_to_roster(i)
 
@@ -119,8 +135,12 @@ def scripted_run():
                             }
                         )
                         eng.guild.team.move_to_roster(i)
+                    
+                    if eng.dungeon.boss.is_dead:
+                        eng.action_queue.extend(eng.dying(eng.dungeon.boss))
 
             if merc.is_dead:
+                eng.action_queue.extend(eng.dying(merc))
                 eng.guild.team.move_to_roster(i)
                 eng.guild.remove_from_roster(i)
 
