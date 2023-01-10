@@ -97,10 +97,36 @@ class Engine:
 
     def retreat(self, target):
         results = []
-        results = [{"message": f"{target.name.name_and_title()} is retreating!"}]
-        eng.guild.team.move_entity_to_roster(target)
+        if target in self.guild.team.members:
+            results = [{"message": f"{target.name.name_and_title()} is retreating!"}]
+            self.guild.team.move_entity_to_roster(target)
         
         return results
+
+    def victory(self):
+        if len(self.dungeon.enemies) == 0 and self.dungeon.boss.is_dead:
+            message = "\n".join(
+                    (
+                        f"{self.dungeon.boss.name.first_name.capitalize()} is vanquished and the evil within {self.dungeon.description} is no more!",
+                        f"{self.guild.team.name} of the {self.guild.name} is victorious!",
+                    )
+                )
+
+            self.action_queue.append({"message": message})
+
+            print(f"guild claimed: {self.dungeon.peek_reward()=}")
+            self.guild.claim_rewards(self.dungeon)
+
+            print(f"peek again: {self.dungeon.peek_reward()=}")
+
+
+            return True
+    
+    def defeat(self):
+        if len(eng.guild.team.members) == 0:
+            eng.action_queue.append({"message": f"{eng.guild.team.name} defeated!"})
+
+            return True
 
     def process_action_queue(self):
         new_action_queue = []
@@ -174,29 +200,13 @@ def scripted_run():
         eng.boss_attack()
         eng.process_action_queue()
 
-        # End states & Break.
-        if len(eng.dungeon.enemies) == 0 and eng.dungeon.boss.is_dead:
-            message = "\n".join(
-                (
-                    f"{eng.dungeon.boss.name.first_name.capitalize()} is vanquished and the evil within {eng.dungeon.description} is no more!",
-                    f"{eng.guild.team.name} of the {eng.guild.name} is victorious!",
-                )
-            )
-
-            eng.action_queue.append({"message": message})
-
-            print(f"guild claimed: {eng.dungeon.peek_reward()=}")
-            eng.guild.claim_rewards(eng.dungeon)
-
-            print(f"peek again: {eng.dungeon.peek_reward()=}")
-            eng.process_action_queue()
-
-            break
-
-        if len(eng.guild.team.members) == 0:
-            eng.action_queue.append({"message": f"{eng.guild.team.name} defeated!"})
+        # End states & Break.    
+        if eng.victory() or eng.defeat():
             eng.process_action_queue()
             break
+
+
+
 
 
 
