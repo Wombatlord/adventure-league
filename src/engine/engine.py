@@ -59,11 +59,12 @@ class Engine:
             print(entity.get_dict())
 
     def dying(self, target):
-
-        if target in eng.guild.team.members:
-            results = [{"message": f"{target.name.name_and_title()} is dead!"}]
+        name = target.name.name_and_title()
+        if target in self.guild.team.members:
+            results = [{"message": f"{name} is dead!"}]
+            self.guild.team.members.pop(self.guild.team.members.index(target))
         else:
-            results = [{"message": f"{target.name.name_and_title()} is dead!"}]
+            results = [{"message": f"{name} is dead!"}]
 
         return results
 
@@ -84,7 +85,10 @@ class Engine:
 
             if "dying" in action:
                 target = action["dying"]
-                self.dying(target)
+                new_actions = self.dying(target)
+                
+                if new_actions:
+                    new_action_queue.extend(new_actions)
 
             if "retreat" in action:
                 target = action["retreat"]
@@ -133,29 +137,18 @@ def scripted_run():
                         eng.action_queue.extend(eng.dying(eng.dungeon.enemies[0]))
 
                     if merc.fighter.retreating == True:
-                        # eng.guild.team.move_to_roster(i)
                         eng.action_queue.extend(eng.retreat(merc))
-                        eng.process_action_queue()
+
                     eng.process_action_queue()
 
                 if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
 
                     eng.action_queue.extend(merc.fighter.attack(eng.dungeon.boss))
 
-                    # if merc.fighter.retreating == True:
-                    #     eng.action_queue.append(
-                    #         {"message": f"{merc.name.first_name} retreats!"}
-                    #     )
-                    #     eng.guild.team.move_to_roster(i)
-
                     if eng.dungeon.boss.is_dead:
                         eng.action_queue.extend(eng.dying(eng.dungeon.boss))
                     eng.process_action_queue()
-            if merc.is_dead:
-                eng.action_queue.extend(eng.dying(merc))
-                eng.guild.team.move_to_roster(i)
-                eng.guild.remove_from_roster(i)
-                eng.process_action_queue()
+            
             eng.dungeon.remove_corpses()
 
         if len(eng.dungeon.enemies) > 0 and len(eng.guild.team.members) > 0:
