@@ -58,6 +58,33 @@ class Engine:
         for entity in self.guild.roster:
             print(entity.get_dict())
 
+    def team_attack_enemies(self, merc):
+        if len(self.dungeon.enemies) > 0:
+            self.action_queue.extend(merc.fighter.attack(self.dungeon.enemies[0]))
+
+            if merc.fighter.retreating == True:
+                self.action_queue.extend(self.retreat(merc))
+
+    def team_attack_boss(self, merc):
+        if len(self.dungeon.enemies) == 0 and not self.dungeon.boss.is_dead:
+            self.action_queue.extend(merc.fighter.attack(self.dungeon.boss))
+
+    def enemies_attack(self):
+        if len(self.dungeon.enemies) > 0 and len(self.guild.team.members) > 0:
+            for enemy in self.dungeon.enemies:
+                target = enemy.fighter.choose_target(self.guild.team.members)
+                    
+                self.action_queue.extend(
+                        enemy.fighter.attack(self.guild.team.members[target])
+                    )
+                    
+    def boss_attack(self):
+        if len(self.dungeon.enemies) == 0 and not self.dungeon.boss.is_dead:
+            if len(self.guild.team.members) > 0:
+                self.action_queue.extend(
+                        self.dungeon.boss.fighter.attack(self.guild.team.members[0])
+                    )
+    
     def dying(self, target):
         name = target.name.name_and_title()
         if target in self.guild.team.members:
@@ -70,9 +97,9 @@ class Engine:
 
     def retreat(self, target):
         results = []
-        if target.fighter.retreating == True:
-            results = [{"retreat": target}]
-
+        results = [{"message": f"{target.name.name_and_title()} is retreating!"}]
+        eng.guild.team.move_entity_to_roster(target)
+        
         return results
 
     def process_action_queue(self):
@@ -92,8 +119,11 @@ class Engine:
 
             if "retreat" in action:
                 target = action["retreat"]
-                eng.guild.team.move_entity_to_roster(target)
-        
+                new_actions = self.retreat(target)
+
+                if new_actions:
+                    new_action_queue.extend(new_actions)
+
         self.action_queue = new_action_queue
 
     def _check_action_queue(self):
@@ -128,48 +158,21 @@ def scripted_run():
 
     while eng.dungeon.boss.is_dead == False:
         # TEAM MEMBER ATTACKS
-        for i, merc in enumerate(eng.guild.team.members):
+        for merc in eng.guild.team.members:
             if not merc.is_dead:
-                if len(eng.dungeon.enemies) > 0:
+                eng.team_attack_enemies(merc)
 
-                    eng.action_queue.extend(merc.fighter.attack(eng.dungeon.enemies[0]))
-
-                    if merc.fighter.retreating == True:
-                        eng.action_queue.extend(eng.retreat(merc))
-
-                    eng.process_action_queue()
-
-                if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
-
-                    eng.action_queue.extend(merc.fighter.attack(eng.dungeon.boss))
-
-                    if eng.dungeon.boss.is_dead:
-                        eng.action_queue.extend(eng.dying(eng.dungeon.boss))
-                    eng.process_action_queue()
+                eng.team_attack_boss(merc)
+                eng.process_action_queue()
             
             eng.dungeon.remove_corpses()
 
         # ENEMY ATTACKS
-        if len(eng.dungeon.enemies) > 0 and len(eng.guild.team.members) > 0:
-            for enemy in eng.dungeon.enemies:
-                target = enemy.fighter.choose_target(eng.guild.team.members)
-                
-                eng.action_queue.extend(
-                    enemy.fighter.attack(eng.guild.team.members[target])
-                )
-
-                # eng.action_queue.extend(
-                #     eng.dungeon.enemies[0].fighter.attack(eng.guild.team.members[0])
-                # )
-                eng.process_action_queue()
+        eng.enemies_attack()
         
         # BOSS ATTACK
-        if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
-            if len(eng.guild.team.members) > 0:
-                eng.action_queue.extend(
-                    eng.dungeon.boss.fighter.attack(eng.guild.team.members[0])
-                )
-                eng.process_action_queue()
+        eng.boss_attack()
+        eng.process_action_queue()
 
         # End states & Break.
         if len(eng.dungeon.enemies) == 0 and eng.dungeon.boss.is_dead:
@@ -194,3 +197,7 @@ def scripted_run():
             eng.action_queue.append({"message": f"{eng.guild.team.name} defeated!"})
             eng.process_action_queue()
             break
+
+
+
+
