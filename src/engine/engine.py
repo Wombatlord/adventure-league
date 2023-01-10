@@ -77,7 +77,7 @@ class Engine:
 
     def process_action_queue(self):
         new_action_queue = []
-        self._check_action_queue()
+        # self._check_action_queue()
         for action in self.action_queue:
             if "message" in action:
                 print(action["message"])
@@ -127,14 +127,12 @@ def scripted_run():
         eng.dungeon = eng.mission_board.missions[eng.selected_mission]
 
     while eng.dungeon.boss.is_dead == False:
+        # TEAM MEMBER ATTACKS
         for i, merc in enumerate(eng.guild.team.members):
             if not merc.is_dead:
                 if len(eng.dungeon.enemies) > 0:
 
                     eng.action_queue.extend(merc.fighter.attack(eng.dungeon.enemies[0]))
-
-                    if eng.dungeon.enemies[0].is_dead:
-                        eng.action_queue.extend(eng.dying(eng.dungeon.enemies[0]))
 
                     if merc.fighter.retreating == True:
                         eng.action_queue.extend(eng.retreat(merc))
@@ -151,12 +149,21 @@ def scripted_run():
             
             eng.dungeon.remove_corpses()
 
+        # ENEMY ATTACKS
         if len(eng.dungeon.enemies) > 0 and len(eng.guild.team.members) > 0:
-            eng.action_queue.extend(
-                eng.dungeon.enemies[0].fighter.attack(eng.guild.team.members[0])
-            )
-            eng.process_action_queue()
+            for enemy in eng.dungeon.enemies:
+                target = enemy.fighter.choose_target(eng.guild.team.members)
+                
+                eng.action_queue.extend(
+                    enemy.fighter.attack(eng.guild.team.members[target])
+                )
 
+                # eng.action_queue.extend(
+                #     eng.dungeon.enemies[0].fighter.attack(eng.guild.team.members[0])
+                # )
+                eng.process_action_queue()
+        
+        # BOSS ATTACK
         if len(eng.dungeon.enemies) == 0 and not eng.dungeon.boss.is_dead:
             if len(eng.guild.team.members) > 0:
                 eng.action_queue.extend(
@@ -185,6 +192,5 @@ def scripted_run():
 
         if len(eng.guild.team.members) == 0:
             eng.action_queue.append({"message": f"{eng.guild.team.name} defeated!"})
-            # print(f"{eng.guild.team.name} defeated!")
             eng.process_action_queue()
             break
