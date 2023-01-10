@@ -302,6 +302,9 @@ class MissionsView(arcade.View):
         WindowData.width = width
         WindowData.height = height
 
+    # def on_update(self, delta_time: float):
+    #     eng.process_action_queue()
+
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
             case arcade.key.G:
