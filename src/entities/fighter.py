@@ -1,4 +1,5 @@
 from __future__ import annotations
+from random import randint
 from typing import Optional
 from src.entities.entity import Entity
 
@@ -45,6 +46,11 @@ class Fighter:
         self.level = dict.get("level")
         self.xp_reward = dict.get("xp_reward")
         self.current_xp = dict.get("current_xp")
+
+    def choose_target(self, targets):
+        possible = len(targets) - 1
+
+        return randint(0, possible)
 
     def take_damage(self, amount):
         results = []
