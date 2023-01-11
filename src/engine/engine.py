@@ -213,13 +213,16 @@ def combat_system_run():
 
         if len(eng.dungeon.enemies) == 0:
             break
+        
             
         for turn in turns:
             print("TURN")
             eng.process_action_queue()
             if combat.victor() == 1:
+                eng.process_action_queue()
                 print("you win")
             if combat.victor() == 0:
+                eng.process_action_queue()
                 print("goblins win")
         
         # eng.process_action_queue()
@@ -233,9 +236,9 @@ class CombatSystem:
         Fighter # fighter
     ]
 
-    def __init__(self, teamA: list[Fighter], teamB: list[Fighter], engine) -> None:
+    def __init__(self, teamA: list[Fighter], teamB: list[Fighter]) -> None:
         self.teams = (teamA, teamB)
-        self.engine = engine
+
     def _roll_turn_order(self) -> list:
         combatants = [yob for yob in self.teams[0] + self.teams[1] if yob.fighter.incapacitated == False]
 
