@@ -7,7 +7,7 @@ from src.gui.roster_view_components import (
     bottom_bar,
     draw_panels,
 )
-from src.engine.engine import scripted_run, eng
+from src.engine.engine import scripted_run, combat_system_run, eng
 
 class TitleView(arcade.View):
     def __init__(self, window: Window = None):
@@ -319,4 +319,5 @@ class MissionsView(arcade.View):
 
             case arcade.key.RETURN:
                 eng.selected_mission = self.selection.pos
-                scripted_run()
+                # scripted_run()
+                combat_system_run()
