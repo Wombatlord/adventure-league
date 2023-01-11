@@ -95,7 +95,7 @@ class Engine:
         return results
 
     def victory(self) -> bool:
-        if len(self.dungeon.enemies) == 0 and self.dungeon.boss.is_dead:
+        if len(self.dungeon.enemies) == 0:
             message = "\n".join(
                     (
                         f"{self.dungeon.boss.name.first_name.capitalize()} is vanquished and the evil within {self.dungeon.description} is no more!",
@@ -128,7 +128,7 @@ class Engine:
         # self._check_action_queue()
         for action in self.action_queue:
             if "message" in action:
-                print(action["message"])
+                print("message:", action["message"])
                 self.messages.append(action["message"])
 
             if "dying" in action:
@@ -208,26 +208,35 @@ def combat_system_run():
         eng.dungeon = eng.mission_board.missions[eng.selected_mission]
 
     while len(eng.dungeon.enemies) > 0:
-        combat = CombatSystem(eng.guild.team.members, eng.dungeon.enemies, eng)
-        turns = combat.iterate_turn()
+        print("TURN")
+        combat = CombatSystem(eng.guild.team.members, eng.dungeon.enemies)
+        turn_actions = combat.iterate_turn()
 
-        if len(eng.dungeon.enemies) == 0:
-            break
+
         
             
-        for turn in turns:
-            print("TURN")
-            eng.process_action_queue()
-            if combat.victor() == 1:
-                eng.process_action_queue()
-                print("you win")
-            if combat.victor() == 0:
-                eng.process_action_queue()
-                print("goblins win")
+        for action in turn_actions:
+            eng.action_queue.append(action)
+            if combat.victor() is not None:
+                break
         
-        # eng.process_action_queue()
-        break
-
+        combat_over = False
+        print(f"{combat.victor()=}")
+        if combat.victor() == 0:
+            eng.action_queue.append({"message": "you win"})
+            combat_over = True
+            eng.guild.claim_rewards(eng.dungeon)
+            
+        if combat.victor() == 1:
+            eng.action_queue.append({"message": "goblins win"})
+            combat_over = True
+            
+    
+        eng.process_action_queue()
+        eng.dungeon.remove_corpses()
+        if combat_over:
+            break
+        
 class CombatSystem:
     teams: tuple[list[Fighter], list[Fighter]]
     
@@ -236,11 +245,16 @@ class CombatSystem:
         Fighter # fighter
     ]
 
-    def __init__(self, teamA: list[Fighter], teamB: list[Fighter]) -> None:
-        self.teams = (teamA, teamB)
+    def __init__(self, teamA: list[Entity], teamB: list[Entity]) -> None:
+        self.teams = (
+            [member.fighter for member in teamA], 
+            [member.fighter for member in teamB]
+        )
 
     def _roll_turn_order(self) -> list:
-        combatants = [yob for yob in self.teams[0] + self.teams[1] if yob.fighter.incapacitated == False]
+        actions = []
+        
+        combatants = [yob for yob in self.teams[0] + self.teams[1] if yob.incapacitated == False]
 
         battle_size = len(combatants)
         
@@ -260,63 +274,69 @@ class CombatSystem:
         self._turn_order = [
             combatant for combatant, _ in initiative_roll
         ]
-        # print(self._turn_order)
-        return self._turn_order
+        actions.append({"message": f"{self._turn_order[0].owner.name} goes first this turn"})
+        
+        return actions
 
     def _team_id(self, combatant) -> tuple[int, int]:
         team = 0
         if combatant in self.teams[1]:
             team = 1
         # return team, opposing_team
-        return team % 2
+        return team, (team  + 1) % 2
 
     def iterate_turn(self) -> Iterator[dict[str, str]]:
         actions = self._roll_turn_order()
 
-        for action in actions:
-            # print(action)
-            yield action
+        while True:
+            try:
+                yield actions.pop(0)
+            except IndexError:
+                break
 
         for combatant in self._turn_order:
-            print(eng.action_queue)
-            actions = self.engine.action_queue
-            opposing_team = self._team_id(combatant)
+            _, opposing_team = self._team_id(combatant)
             
             enemies = [
                 cocombatant for cocombatant in self._turn_order 
                 if (
-                    self._team_id(cocombatant) != opposing_team 
-                    and cocombatant.fighter.incapacitated is False
+                    self._team_id(cocombatant)[0] == opposing_team 
+                    and cocombatant.incapacitated is False
                 )
             ]
 
             if len(enemies) == 0:
                 yield {"message": "the dust has settled, one team is victorious"}
                 break
-
             
-            if combatant.fighter.incapacitated == False:
-                print("!!!!")
-                target_index = combatant.fighter.choose_target(enemies)
+            if combatant.incapacitated == False:
+                target_index = combatant.choose_target(enemies)
                 target = enemies[target_index]
-                actions.extend(combatant.fighter.attack(target))
+                actions.extend(combatant.attack(target.owner))
             
             # self.engine.process_action_queue()
-            # while True:
-            #     try:
-            #         yield actions.pop(0)
-            #     except IndexError:
-            #         break
+            while True:
+                try:
+                    yield actions.pop(0)
+                except IndexError:
+                    break
 
         self._turn_order = None
 
     def victor(self) -> int | None:
         victor = None
         for team_idx in (0, 1):
-            living_members = [yob for yob in self.teams[team_idx] if yob.fighter.incapacitated == False]
-            if len(living_members) == 0:
-                victor = team_idx % 2
-                print(victor)
+            enemies = [
+                cocombatant for cocombatant in self.teams[(team_idx +1) % 2]
+                if (
+                    cocombatant.incapacitated is False
+                )
+            ]
+
+            print(f"{team_idx=}; ", f"{enemies=}")
+
+            if len(enemies) < 1:
+                victor = team_idx
                 break
 
         return victor
