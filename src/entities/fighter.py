@@ -47,12 +47,16 @@ class Fighter:
         self.xp_reward = dict.get("xp_reward")
         self.current_xp = dict.get("current_xp")
 
-    def choose_target(self, targets):
+    def choose_target(self, targets) -> int:
         possible = len(targets) - 1
 
         return randint(0, possible)
 
-    def take_damage(self, amount):
+    @property
+    def incapacitated(self) -> bool:
+        return self.owner.is_dead or self.retreating
+
+    def take_damage(self, amount) -> list[dict[str, Entity]]:
         results = []
 
         self.hp -= amount
@@ -67,11 +71,14 @@ class Fighter:
         
         return results
 
-    def attack(self, target: Entity):
+    def attack(self, target: Entity) -> list[dict]:
         results = []
-        if self.owner.is_dead or target.is_dead:
-            raise ValueError(f"{self.owner.name}: he's dead jim.")
+        if self.owner.is_dead:
+            raise ValueError(f"{self.owner.name}: I'm dead jim.")
 
+        if target.is_dead:
+            raise ValueError(f"{target}: He's dead jim.")
+        
         my_name = self.owner.name.name_and_title()
 
         target_name = target.name.name_and_title()
