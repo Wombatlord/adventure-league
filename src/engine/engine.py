@@ -75,16 +75,6 @@ class Engine:
                 self.action_queue.extend(
                         self.dungeon.boss.fighter.attack(self.guild.team.members[0])
                     )
-    
-    def dying(self, target) -> list[dict[str, str]]:
-        name = target.name.name_and_title()
-        if target in self.guild.team.members:
-            results = [{"message": f"{name} is dead!"}]
-            self.guild.team.members.pop(self.guild.team.members.index(target))
-        else:
-            results = [{"message": f"{name} is dead!"}]
-            self.dungeon.enemies.pop(self.dungeon.enemies.index(target))
-        return results
 
     def retreat(self, target) -> list[dict[str,str]]:
         results = []
@@ -124,32 +114,40 @@ class Engine:
             return True
 
     def process_action_queue(self):
-        new_action_queue = []
+        # new_action_queue = []
         # self._check_action_queue()
-        for action in self.action_queue:
+        while True:
+            try:
+                action = self.action_queue.pop(0)
+
+            except IndexError:
+                break
+            
             if "message" in action:
-                print("message:", action["message"])
+                # print("message:", action["message"])
                 self.messages.append(action["message"])
 
             if "dying" in action:
                 target = action["dying"]
-                new_actions = self.dying(target)
+                # new_actions = self.dying(target)
                 
-                if new_actions:
-                    new_action_queue.extend(new_actions)
+                
+                # self.action_queue.extend(new_actions)
+
+                # Remove any dead entities from their respective arrays.
+                self.guild.team.remove_corpses()
+                self.dungeon.remove_corpses()
+                print("DYING ACTION EXTEND")
 
             if "retreat" in action:
                 target = action["retreat"]
                 new_actions = self.retreat(target)
 
-                if new_actions:
-                    new_action_queue.extend(new_actions)
-
-        self.action_queue = new_action_queue
+                self.action_queue.extend(new_actions)
 
     def _check_action_queue(self):
         for item in self.action_queue:
-            print(item)
+            print(f"item: {item}")
 
 
 # Instantiate & setup the engine
@@ -211,14 +209,10 @@ def combat_system_run():
         print("TURN")
         combat = CombatSystem(eng.guild.team.members, eng.dungeon.enemies)
         turn_actions = combat.iterate_turn()
-
-
-        
+       
             
         for action in turn_actions:
             eng.action_queue.append(action)
-            if combat.victor() is not None:
-                break
         
         combat_over = False
         print(f"{combat.victor()=}")
@@ -233,9 +227,17 @@ def combat_system_run():
             
     
         eng.process_action_queue()
-        eng.dungeon.remove_corpses()
+        
+        while eng.messages:
+            print(eng.messages.pop(0))
+
         if combat_over:
             break
+
+    # If this prints, we have broken the While loop iterating combat rounds and no remaining actions in the action_queue will be processed.
+    # Checking action_queue here for sanity, it should be empty.
+    print("== COMBAT DONE ==")
+    eng._check_action_queue()
         
 class CombatSystem:
     teams: tuple[list[Fighter], list[Fighter]]
@@ -274,7 +276,7 @@ class CombatSystem:
         self._turn_order = [
             combatant for combatant, _ in initiative_roll
         ]
-        actions.append({"message": f"{self._turn_order[0].owner.name} goes first this turn"})
+        actions.append({"message": f"{self._turn_order[0].owner.name.name_and_title} goes first this turn"})
         
         return actions
 
@@ -313,8 +315,8 @@ class CombatSystem:
                 target_index = combatant.choose_target(enemies)
                 target = enemies[target_index]
                 actions.extend(combatant.attack(target.owner))
+                actions.extend(self.death_check(target))
             
-            # self.engine.process_action_queue()
             while True:
                 try:
                     yield actions.pop(0)
@@ -322,6 +324,18 @@ class CombatSystem:
                     break
 
         self._turn_order = None
+
+    def death_check(self, target) -> list[dict[str, str]]:
+        name = target.owner.name.name_and_title
+        results = []
+        if target.owner.is_dead:
+            results.append(
+                {"dying": target.owner}
+            )
+            results.append({"message": f"{name} is dead!"})
+            
+        print(f"dying func: {results}")
+        return results
 
     def victor(self) -> int | None:
         victor = None
