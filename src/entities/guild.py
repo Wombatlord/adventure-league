@@ -104,3 +104,8 @@ class Team:
         self.owner.roster.append(entity)
         # print(self.members.index(entity))
         self.members.pop(self.members.index(entity))
+
+    def remove_corpses(self):
+        for merc in self.members:
+            if merc.is_dead:
+                self.members.pop(self.members.index(merc))
