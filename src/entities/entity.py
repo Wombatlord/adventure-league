@@ -8,6 +8,7 @@ class Name(NamedTuple):
     def __str__(self) -> str:
         return " ".join(filter(lambda x: (x is not None), self))
 
+    @property
     def name_and_title(self) -> str:
         if self.has_title():
             return f"{self.first_name.capitalize()} {self.title}"
