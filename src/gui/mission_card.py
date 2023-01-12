@@ -58,7 +58,7 @@ class MissionCard:
 
         
         arcade.Text(
-            text=f"{self.mission.boss.name.name_and_title()}",
+            text=f"{self.mission.boss.name.name_and_title}",
             start_x=self.margin * 20,
             start_y=y / 3 + self.height * 0.15,
             font_name="Alagard",
