@@ -65,11 +65,14 @@ class Fighter:
             self.hp = 0
             self.owner.is_dead = True
             
-            results.append(
-                {"dying": self.owner}
-            )
+            # results.append(
+            #     {"dying": self.owner}
+            # )
+
+            # print("DYING ACTION RETURN")
+            # print(f"{results=} {self.owner.name=}")
         
-        return results
+        # return results
 
     def attack(self, target: Entity) -> list[dict]:
         results = []
@@ -79,9 +82,9 @@ class Fighter:
         if target.is_dead:
             raise ValueError(f"{target}: He's dead jim.")
         
-        my_name = self.owner.name.name_and_title()
+        my_name = self.owner.name.name_and_title
 
-        target_name = target.name.name_and_title()
+        target_name = target.name.name_and_title
 
         succesful_hit: int = self.power - target.fighter.defence
 
@@ -96,9 +99,8 @@ class Fighter:
                 }
             )
 
-            # print(f"{my_name} hits {target_name} for {actual_damage}\n")
-            result = target.fighter.take_damage(actual_damage)
-            results.extend(result)
+            target.fighter.take_damage(actual_damage)
+            # results.extend(result)
             
             return results
         
