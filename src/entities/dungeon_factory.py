@@ -12,8 +12,8 @@ def describe_dungeon() -> str:
 
 def create_random_dungeon(enemy_amount, dungeon_id) -> Dungeon:
     enemies = []
-    for _ in range(enemy_amount):
-        enemies.append(create_random_monster("goblin", None))
+    for i in range(enemy_amount):
+        enemies.append(create_random_monster(f"goblin {i}", None))
 
     return Dungeon(
         dungeon_id,
