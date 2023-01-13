@@ -1,4 +1,4 @@
-from src.entities.dungeon import Dungeon
+from src.entities.dungeon import Dungeon, Room
 from src.config.constants import dungeon_descriptors, boss_titles, boss_names
 from random import randint
 from src.entities.fighter_factory import create_random_monster, create_random_boss
@@ -12,29 +12,6 @@ def describe_dungeon() -> str:
         randint(0, len(dungeon_descriptors["b"]) - 1)
     ]
     return f"The {descriptor_a} {descriptor_b}"
-
-
-def create_random_room(room_amount, enemies_per_room) -> list:
-    
-    boss_room = room_amount - 1
-
-    rooms = [[] for _ in range(room_amount)]
-    print(rooms)
-
-    for i, room in enumerate(rooms):
-        for i in range(enemies_per_room):
-            room.append(create_random_monster(f"goblin {i}", None))
-
-
-    rooms.append([
-        create_random_boss(
-            name=boss_names[randint(0, len(boss_names) - 1)],
-            title=boss_titles[randint(0, len(boss_titles) - 1)],
-        )]
-    )
-
-    print(rooms)
-
 
 def create_random_dungeon(enemy_amount, dungeon_id) -> Dungeon:
     enemies = []
@@ -52,3 +29,49 @@ def create_random_dungeon(enemy_amount, dungeon_id) -> Dungeon:
         treasure=randint(100, 150),
         xp_reward=10,
     )
+
+
+# Room testing with Room Class
+def create_random_enemy_room(enemy_amount):
+    room = Room()
+
+    for enemy in range(enemy_amount):
+        room.enemies.append(create_random_monster(f"goblin {enemy}", None))
+    
+    print(f"RandomEnemyRoom: {room.enemies}")
+    return room
+
+
+def create_random_boss_room():
+    room = Room()
+
+    room.enemies.append(
+        create_random_boss(
+            name=boss_names[randint(0, len(boss_names) - 1)],
+            title=boss_titles[randint(0, len(boss_titles) - 1)],
+        )
+    )
+
+    print(f"RandomBossRoom: {room.enemies}")
+    return room
+
+
+def rooms_test(room_amount):
+    d = Dungeon(
+        0,
+        [],
+        [],
+        create_random_boss(
+            name=boss_names[randint(0, len(boss_names) - 1)],
+            title=boss_titles[randint(0, len(boss_titles) - 1)],
+        ),
+    )
+    for _ in range(room_amount):
+        d.rooms.append(create_random_enemy_room(enemy_amount=2))
+    
+    d.rooms.append(create_random_boss_room())
+
+    print(f"{d.rooms=}")
+
+    for i, _ in enumerate(d.rooms):
+        print(f"{d.rooms[i].enemies=}")
