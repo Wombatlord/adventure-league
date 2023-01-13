@@ -1,5 +1,14 @@
 import arcade
+import pyglet
 from dataclasses import dataclass
+
+pyglet.font.add_file("./assets/alagard.ttf")
+
+def _cross_platform_name(name: str) -> str:
+    if pyglet.compat_platform == "linux":
+        return name.lower()
+
+    return name
 
 @dataclass
 class WindowData:
@@ -7,4 +16,4 @@ class WindowData:
     height = 600
     title_background = arcade.load_texture("./assets/background_glacial_mountains.png")
     mission_background = arcade.load_texture("./assets/mb.png")
-    font = "Alagard"
+    font = _cross_platform_name("Alagard")

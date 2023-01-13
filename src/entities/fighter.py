@@ -47,12 +47,16 @@ class Fighter:
         self.xp_reward = dict.get("xp_reward")
         self.current_xp = dict.get("current_xp")
 
-    def choose_target(self, targets):
+    def choose_target(self, targets) -> int:
         possible = len(targets) - 1
 
         return randint(0, possible)
 
-    def take_damage(self, amount):
+    @property
+    def incapacitated(self) -> bool:
+        return self.owner.is_dead or self.retreating
+
+    def take_damage(self, amount) -> list[dict[str, Entity]]:
         results = []
 
         self.hp -= amount
@@ -61,20 +65,26 @@ class Fighter:
             self.hp = 0
             self.owner.is_dead = True
             
-            results.append(
-                {"dying": self.owner}
-            )
+            # results.append(
+            #     {"dying": self.owner}
+            # )
+
+            # print("DYING ACTION RETURN")
+            # print(f"{results=} {self.owner.name=}")
         
-        return results
+        # return results
 
-    def attack(self, target: Entity):
+    def attack(self, target: Entity) -> list[dict]:
         results = []
-        if self.owner.is_dead or target.is_dead:
-            raise ValueError(f"{self.owner.name}: he's dead jim.")
+        if self.owner.is_dead:
+            raise ValueError(f"{self.owner.name}: I'm dead jim.")
 
-        my_name = self.owner.name.name_and_title()
+        if target.is_dead:
+            raise ValueError(f"{target}: He's dead jim.")
+        
+        my_name = self.owner.name.name_and_title
 
-        target_name = target.name.name_and_title()
+        target_name = target.name.name_and_title
 
         succesful_hit: int = self.power - target.fighter.defence
 
@@ -89,9 +99,8 @@ class Fighter:
                 }
             )
 
-            # print(f"{my_name} hits {target_name} for {actual_damage}\n")
-            result = target.fighter.take_damage(actual_damage)
-            results.extend(result)
+            target.fighter.take_damage(actual_damage)
+            # results.extend(result)
             
             return results
         
@@ -104,9 +113,5 @@ class Fighter:
 
             if self.is_enemy != True:
                 self.retreating = True
-                results.append(
-                    {
-                        "retreat": self.owner
-                    }
-                )
+        
             return results

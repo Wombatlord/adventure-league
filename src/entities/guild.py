@@ -13,7 +13,7 @@ class Guild:
         funds: int = 0,
         roster_limit: int = None,
         roster: list[Entity] = None,
-        xp: int = 0
+        xp: int = 0,
     ) -> None:
         self.name = name
         self.funds = funds
@@ -64,11 +64,11 @@ class Guild:
         self.funds += rewards.claim_gp()
         self.xp += rewards.claim_xp()
 
-
     @property
     def level(self) -> int:
-        return self.xp//1000
-        
+        return self.xp // 1000
+
+
 class Team:
     def __init__(self) -> None:
         self.owner: Optional[Guild] = None
@@ -97,10 +97,10 @@ class Team:
     def assign_to_team(self, roster, selection):
         self.members.append(roster[selection])
 
-    def move_to_roster(self, selection):
-        self.owner.roster.append(self.members.pop(selection))
+    def move_fighter_to_roster(self, entity):
+        self.owner.roster.append(self.members.pop(self.members.index(entity)))
 
-    def move_entity_to_roster(self, entity):
-        self.owner.roster.append(entity)
-        # print(self.members.index(entity))
-        self.members.pop(self.members.index(entity))
+    def remove_corpses(self):
+        for merc in self.members:
+            if merc.is_dead:
+                self.members.pop(self.members.index(merc))
