@@ -113,9 +113,5 @@ class Fighter:
 
             if self.is_enemy != True:
                 self.retreating = True
-                results.append(
-                    {
-                        "retreat": self.owner
-                    }
-                )
+        
             return results
