@@ -9,7 +9,7 @@ class Room:
 class Dungeon(Rewarder):
     def __init__(
         self,
-        id: int,
+        max_enemies_per_room: int,
         rooms: list[Room],
         enemies: list[Entity],
         boss: Entity,
@@ -17,8 +17,8 @@ class Dungeon(Rewarder):
         treasure: Optional[int] = 0,
         xp_reward: Optional[int] = 0,
     ) -> None:
-        self.id: int = id
-        self.rooms: list[list[Entity]] = rooms
+        self.rooms: list[Room] = rooms
+        self.max_enemies_per_room = max_enemies_per_room
         self.enemies: list[Entity] = enemies
         self.boss: Entity = boss
         self.description: Optional[str] = description
