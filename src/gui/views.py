@@ -7,7 +7,7 @@ from src.gui.roster_view_components import (
     bottom_bar,
     draw_panels,
 )
-from src.engine.engine import scripted_run, combat_system_run, eng
+from src.engine.engine import combat_system_run, eng
 
 class TitleView(arcade.View):
     def __init__(self, window: Window = None):
