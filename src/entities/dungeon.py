@@ -2,11 +2,15 @@ from typing import Optional
 from src.entities.entity import Entity
 from src.entities.loot import Loot, Rewarder
 
+class Room:
+    def __init__(self) -> None:
+        self.enemies: list[Entity] = []
+
 class Dungeon(Rewarder):
     def __init__(
         self,
         id: int,
-        rooms: list[list[Entity]],
+        rooms: list[Room],
         enemies: list[Entity],
         boss: Entity,
         description: Optional[str] = "NO DESC",
