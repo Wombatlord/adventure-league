@@ -13,13 +13,12 @@ def describe_dungeon() -> str:
     ]
     return f"The {descriptor_a} {descriptor_b}"
 
-def create_random_dungeon(enemy_amount, dungeon_id) -> Dungeon:
+def create_random_dungeon(enemy_amount) -> Dungeon:
     enemies = []
     for i in range(enemy_amount):
         enemies.append(create_random_monster(f"goblin {i}", None))
 
     return Dungeon(
-        dungeon_id,
         enemies,
         create_random_boss(
             name=boss_names[randint(0, len(boss_names) - 1)],
@@ -38,7 +37,6 @@ def create_random_enemy_room(enemy_amount):
     for enemy in range(enemy_amount):
         room.enemies.append(create_random_monster(f"goblin {enemy}", None))
     
-    print(f"RandomEnemyRoom: {room.enemies}")
     return room
 
 
@@ -52,13 +50,12 @@ def create_random_boss_room():
         )
     )
 
-    print(f"RandomBossRoom: {room.enemies}")
     return room
 
 
-def rooms_test(room_amount):
+def create_dungeon_with_boss_room(room_amount: int):
     d = Dungeon(
-        0,
+        3,
         [],
         [],
         create_random_boss(
@@ -67,7 +64,8 @@ def rooms_test(room_amount):
         ),
     )
     for _ in range(room_amount):
-        d.rooms.append(create_random_enemy_room(enemy_amount=2))
+        e = randint(1, d.max_enemies_per_room)
+        d.rooms.append(create_random_enemy_room(enemy_amount=e))
     
     d.rooms.append(create_random_boss_room())
 
