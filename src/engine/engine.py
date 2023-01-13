@@ -91,7 +91,9 @@ class Engine:
                 self.guild.team.move_fighter_to_roster(fighter)
 
             if "team triumphant" in event:
-                self.guild.claim_rewards(self.dungeon)
+                guild: Guild = event["team triumphant"][0]
+                dungeon: Dungeon = event["team triumphant"][1]
+                guild.claim_rewards(dungeon)
 
     def _check_action_queue(self):
         for item in self.action_queue:
@@ -135,7 +137,6 @@ def combat_system_run():
 
         if combat.victor() == 0:
             eng.action_queue.extend(combat.team_triumphant(eng.guild, eng.dungeon))
-            eng.guild.claim_rewards(eng.dungeon)
             combat_over = True
 
         if combat.victor() == 1:
@@ -292,6 +293,7 @@ class CombatSystem:
         )
 
         results.append({"message": message})
+        results.append({"team triumphant": (guild, dungeon)})
         return results
 
     def team_defeated(self, team) -> bool:
