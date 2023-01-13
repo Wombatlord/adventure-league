@@ -6,6 +6,7 @@ class Dungeon(Rewarder):
     def __init__(
         self,
         id: int,
+        rooms: list[list[Entity]],
         enemies: list[Entity],
         boss: Entity,
         description: Optional[str] = "NO DESC",
@@ -13,6 +14,7 @@ class Dungeon(Rewarder):
         xp_reward: Optional[int] = 0,
     ) -> None:
         self.id: int = id
+        self.rooms: list[list[Entity]] = rooms
         self.enemies: list[Entity] = enemies
         self.boss: Entity = boss
         self.description: Optional[str] = description
