@@ -34,6 +34,7 @@ class Entity:
         self.inventory = inventory
         self.item = item
         self.is_dead = is_dead
+        self.on_death_hooks = []
 
         # Entities with a fighter component can engage in combat.
         self.fighter = fighter
@@ -57,3 +58,7 @@ class Entity:
             result["item"] = self.item
 
         return result
+
+    def die(self):
+        for hook in self.on_death_hooks:
+            hook(self)

@@ -2,23 +2,47 @@ from typing import Optional
 from src.entities.entity import Entity
 from src.entities.loot import Loot, Rewarder
 
+class Room:
+    def __init__(self) -> None:
+        self.enemies: list[Entity] = []
+        self.cleared = False
+
+    def add_entity(self, entity: Entity):
+        self.enemies.append(entity)
+        entity.on_death_hooks.append(self.remove)
+
+    def remove(self, entity: Entity):
+        if entity.fighter.is_enemy:
+            self.enemies.pop(self.enemies.index(entity))
+
+
 class Dungeon(Rewarder):
     def __init__(
         self,
-        id: int,
+        max_enemies_per_room: int,
+        rooms: list[Room],
         enemies: list[Entity],
         boss: Entity,
         description: Optional[str] = "NO DESC",
         treasure: Optional[int] = 0,
         xp_reward: Optional[int] = 0,
     ) -> None:
-        self.id: int = id
+        self.current_room: Room = Room()
+        self.rooms: list[Room] = rooms
+        self.max_enemies_per_room = max_enemies_per_room
         self.enemies: list[Entity] = enemies
         self.boss: Entity = boss
         self.description: Optional[str] = description
         self.treasure: Optional[int] = treasure
         self.xp_reward: Optional[int] = xp_reward
         self.loot = Loot(xp=self.xp_reward, gp=self.treasure)
+
+    def move_to_next_room(self):
+        self.current_room = next(self.next_room())
+        
+    def next_room(self):
+        for room in self.rooms:
+            yield room
 
     def remove_corpses(self):
         # Iterate through enemies and remove dead enemies from the array.
