@@ -1,5 +1,5 @@
 from src.entities.dungeon import Dungeon
-from src.entities.dungeon_factory import create_random_dungeon
+from src.entities.dungeon_factory import create_random_dungeon, create_dungeon_with_boss_room
 
 
 class MissionBoard:
@@ -9,7 +9,7 @@ class MissionBoard:
 
     def fill_board(self, enemy_amount) -> None:
         for _ in range(self.size):
-            self.missions.append(create_random_dungeon(enemy_amount))
+            self.missions.append(create_dungeon_with_boss_room(enemy_amount))
 
     def clear_board(self) -> None:
         self.missions = []
