@@ -94,13 +94,14 @@ class Team:
     def get_team(self):
         return self.members
 
-    def assign_to_team(self, roster, selection):
-        self.members.append(roster[selection])
+    def assign_to_team(self, entity: Entity):
+        entity.on_death_hooks.append(
+            self.remove_dead_member
+        )
+        self.members.append(entity)
 
     def move_fighter_to_roster(self, entity):
         self.owner.roster.append(self.members.pop(self.members.index(entity)))
 
-    def remove_corpses(self):
-        for merc in self.members:
-            if merc.is_dead:
-                self.members.pop(self.members.index(merc))
+    def remove_dead_member(self, entity):
+        self.members.pop(self.members.index(entity))
