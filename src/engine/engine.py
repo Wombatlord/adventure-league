@@ -84,7 +84,7 @@ class Engine:
 
             if "dying" in event:
                 entity: Entity = event["dying"]
-                self.clear_dead_entities(entity)
+                # self.clear_dead_entities(entity)
 
             if "retreat" in event:
                 fighter: Fighter = event["retreat"]
@@ -125,32 +125,45 @@ def combat_system_run():
     else:
         eng.dungeon = eng.mission_board.missions[eng.selected_mission]
 
-    while len(eng.dungeon.enemies) > 0:
-        print("TURN")
-        combat = CombatSystem(eng.guild.team.members, eng.dungeon.enemies)
-        turn_actions = combat.iterate_turn()
+    # print(f"Initial Room: {eng.dungeon.current_room.enemies}")
+    # eng.dungeon.move_to_next_room()
+    print(eng.dungeon.rooms)
+    
+    for i, room in enumerate(eng.dungeon.next_room()):
+        print(f"{room.enemies=}")
+        while len(room.enemies) > 0:
+            print("TURN")
+            combat = CombatSystem(eng.guild.team.members, room.enemies)
+            turn_actions = combat.iterate_turn()
 
-        for action in turn_actions:
-            eng.action_queue.append(action)
+            for action in turn_actions:
+                eng.action_queue.append(action)
 
-        combat_over = False
+            combat_over = False
 
-        if combat.victor() == 0:
-            eng.action_queue.extend(combat.team_triumphant(eng.guild, eng.dungeon))
-            combat_over = True
+            if combat.victor() == 0:                
+                print(f"2 {room.enemies=}")
+                if len(eng.dungeon.rooms[-1].enemies) == 0:
+                    eng.action_queue.extend(combat.team_triumphant(eng.guild, eng.dungeon))
+                    combat_over = True
 
-        if combat.victor() == 1:
-            eng.action_queue.extend(combat.team_defeated(eng.guild.team))
-            combat_over = True
+            if combat.victor() == 1:
+                print(f"2 {eng.guild.team.members=}")
+                eng.action_queue.extend(combat.team_defeated(eng.guild.team))
+                combat_over = True
 
-        eng.process_action_queue()
+            eng.process_action_queue()
 
-        while eng.messages:
-            print(eng.messages.pop(0))
+            while eng.messages:
+                print(eng.messages.pop(0))
 
-        if combat_over:
+            if combat_over:
+                break
+        if len(eng.guild.team.members) > 0:
+            print(eng.guild.team.members)
+            print(f"ROOM {i} CLEAR")
+        else:
             break
-
     # If this prints, we have broken the While loop iterating combat rounds and no remaining actions in the action_queue will be processed.
     # Checking action_queue here for sanity, it should be empty.
     print("== COMBAT DONE ==")
@@ -225,7 +238,7 @@ class CombatSystem:
                     and cocombatant.incapacitated is False
                 )
             ]
-            print(f"{enemies=}")
+            # print(f"{enemies=}")
             if len(enemies) == 0:
                 yield {"message": "the dust has settled, one team is victorious"}
                 break
@@ -249,6 +262,8 @@ class CombatSystem:
         name = target.owner.name.name_and_title
         results = []
         if target.owner.is_dead:
+            print(f"!{name}!: {target.owner.on_death_hooks=}")
+            target.owner.die()
             results.append({"dying": target.owner})
             results.append({"message": f"{name} is dead!"})
 
