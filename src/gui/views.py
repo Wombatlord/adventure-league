@@ -159,11 +159,9 @@ class RosterView(arcade.View):
         self.roster_pane = 0
         self.team_pane = 1
         self.roster_scroll_window = ScrollWindow([], 0, 4)
-        print(self.roster_scroll_window.visible_size)
-        print(self.roster_scroll_window.stretch_limit)
         self.roster_scroll_window.init_items(self.roster)
         self.team_scroll_window = ScrollWindow([], 0, 4)
-        self.team_scroll_window.init_items(self.team_members)
+        self.team_scroll_window.append_all(self.team_members)
 
 
     def on_draw(self):
@@ -233,11 +231,13 @@ class RosterView(arcade.View):
                     # Move merc from ROSTER to TEAM. Increase Cycle.length for team, decrease Cycle.length for roster.
                     # Assign to Team & Remove from Roster.
                     self.team_scroll_window.append(self.roster_scroll_window.selection)
+                    eng.guild.team.assign_to_team(self.roster_scroll_window.selection)
                     self.roster_scroll_window.pop()
 
                     # Update Engine state.
                     eng.guild.roster = self.roster_scroll_window.items
-                    eng.guild.team.members = self.team_scroll_window.items
+                    # eng.guild.team.members = self.team_scroll_window.items
+
 
                 if self.col_select.pos == self.team_pane and len(self.team_scroll_window.items) > 0:
                     # Move merc from TEAM to ROSTER
