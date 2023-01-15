@@ -84,11 +84,14 @@ class Engine:
 
             if "dying" in event:
                 entity: Entity = event["dying"]
-                # self.clear_dead_entities(entity)
 
             if "retreat" in event:
                 fighter: Fighter = event["retreat"]
-                self.guild.team.move_fighter_to_roster(fighter)
+
+                if fighter.owner.is_dead == False:
+                    self.guild.team.move_fighter_to_roster(fighter.owner)
+                    fighter.retreating = False
+  
 
             if "team triumphant" in event:
                 guild: Guild = event["team triumphant"][0]
@@ -235,7 +238,7 @@ class CombatSystem:
                 for cocombatant in self._turn_order
                 if (
                     self._team_id(cocombatant)[0] == opposing_team
-                    and cocombatant.incapacitated is False
+                    and cocombatant.owner.is_dead is False
                 )
             ]
             # print(f"{enemies=}")
@@ -273,7 +276,7 @@ class CombatSystem:
         results = []
 
         if fighter.retreating == True:
-            results.append({"retreat": fighter.owner})
+            results.append({"retreat": fighter})
             results.append(
                 {"message": f"{fighter.owner.name.name_and_title} is retreating!"}
             )
