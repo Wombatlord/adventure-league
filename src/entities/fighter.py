@@ -77,10 +77,10 @@ class Fighter:
     def attack(self, target: Entity) -> list[dict]:
         results = []
         if self.owner.is_dead:
-            raise ValueError(f"{self.owner.name}: I'm dead jim.")
+            raise ValueError(f"{self.owner.name=}: I'm dead jim.")
 
         if target.is_dead:
-            raise ValueError(f"{target}: He's dead jim.")
+            raise ValueError(f"{target.name=}: He's dead jim.")
         
         my_name = self.owner.name.name_and_title
 
