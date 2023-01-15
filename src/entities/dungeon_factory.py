@@ -59,10 +59,7 @@ def create_dungeon_with_boss_room(room_amount: int):
         3,
         [],
         [],
-        create_random_boss(
-            name=boss_names[randint(0, len(boss_names) - 1)],
-            title=boss_titles[randint(0, len(boss_titles) - 1)],
-        ),
+        None,
         describe_dungeon(),
         treasure=randint(100, 150),
         xp_reward=10,
@@ -73,7 +70,7 @@ def create_dungeon_with_boss_room(room_amount: int):
         d.rooms.append(create_random_enemy_room(enemy_amount=e))
 
     d.rooms.append(create_random_boss_room())
-
+    d.boss = d.rooms[-1].enemies[0]
     return d
 
     # print(f"{d.rooms=}")
