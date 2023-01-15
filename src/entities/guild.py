@@ -95,6 +95,9 @@ class Team:
         return self.members
 
     def assign_to_team(self, entity: Entity):
+        # Clear out any hooks registered from previous assignment
+        entity.on_death_hooks = []
+
         entity.on_death_hooks.append(
             self.remove_dead_member
         )
