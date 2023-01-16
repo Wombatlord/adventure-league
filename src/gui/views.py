@@ -3,6 +3,7 @@ from arcade import Window
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.mission_card import MissionCard
+from src.gui.combat_screen import CombatScreen
 from src.gui.roster_view_components import (
     bottom_bar,
     draw_panels,
@@ -268,6 +269,8 @@ class MissionsView(arcade.View):
         self.selection = Cycle(
             3, 2
         )  # 3 missions on screen, default selected (2) is the top visually.
+        self.state = 0
+        self.combat_screen = None
 
     def on_draw(self):
         self.clear()
@@ -275,26 +278,29 @@ class MissionsView(arcade.View):
         # arcade.draw_lrwh_rectangle_textured(
         #     0, 0, WindowData.width, WindowData.height, self.background
         # )
+        if self.state == 0:
+            for row in range(len(eng.mission_board.missions)):
+                # self.selection is a user controlled value changed via up / down arrow keypress.
+                # set opacity of the MissionCard border to visible if self.selection == the row being drawn.
+                if self.selection.pos == row:
+                    opacity = 255
+                else:
+                    opacity = 25
 
-        for row in range(len(eng.mission_board.missions)):
-            # self.selection is a user controlled value changed via up / down arrow keypress.
-            # set opacity of the MissionCard border to visible if self.selection == the row being drawn.
-            if self.selection.pos == row:
-                opacity = 255
-            else:
-                opacity = 25
+                # Controls size of reserved space beneath MissionCards.
+                reserved_space = 75
 
-            # Controls size of reserved space beneath MissionCards.
-            reserved_space = 75
-
-            MissionCard(
-                width=WindowData.width,
-                height=WindowData.height,
-                mission=eng.mission_board.missions[row],
-                margin=self.margin,
-                opacity=opacity,
-                reserved_space=reserved_space,
-            ).draw_card(row)
+                MissionCard(
+                    width=WindowData.width,
+                    height=WindowData.height,
+                    mission=eng.mission_board.missions[row],
+                    margin=self.margin,
+                    opacity=opacity,
+                    reserved_space=reserved_space,
+                ).draw_card(row)
+            
+        if self.state == 1:
+            self.combat_screen.draw_message()
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
@@ -321,3 +327,11 @@ class MissionsView(arcade.View):
                 eng.selected_mission = self.selection.pos
                 # scripted_run()
                 combat_system_run()
+                self.combat_screen = CombatScreen()
+                self.state = 1
+
+            case arcade.key.SPACE:
+                self.combat_screen.next_message()
+            
+            case arcade.key.M:
+                self.state = 0
