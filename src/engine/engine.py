@@ -96,6 +96,7 @@ class Engine:
             if "team triumphant" in event:
                 guild: Guild = event["team triumphant"][0]
                 dungeon: Dungeon = event["team triumphant"][1]
+                dungeon.cleared = True
                 guild.claim_rewards(dungeon)
 
     def _check_action_queue(self):
@@ -123,7 +124,7 @@ eng.recruit_entity_to_guild(0)
 
 
 def combat_system_run():
-    if len(eng.guild.team.members) == 0:
+    if len(eng.guild.team.members) == 0 or eng.mission_board.missions[eng.selected_mission].cleared is True:
         return
     else:
         eng.dungeon = eng.mission_board.missions[eng.selected_mission]
@@ -157,14 +158,14 @@ def combat_system_run():
 
             eng.process_action_queue()
 
-            while eng.messages:
-                print(eng.messages.pop(0))
+            # while eng.messages:
+            #     print(eng.messages.pop(0))
 
             if combat_over:
                 break
         if len(eng.guild.team.members) > 0:
             print(eng.guild.team.members)
-            print(f"ROOM {i} CLEAR")
+            room.cleared = True
         else:
             break
     # If this prints, we have broken the While loop iterating combat rounds and no remaining actions in the action_queue will be processed.

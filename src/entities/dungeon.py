@@ -5,7 +5,8 @@ from src.entities.loot import Loot, Rewarder
 class Room:
     def __init__(self) -> None:
         self.enemies: list[Entity] = []
-        self.cleared = False
+        self._cleared = False
+        self.on_entry_hooks = []
 
     def add_entity(self, entity: Entity):
         self.enemies.append(entity)
@@ -15,6 +16,16 @@ class Room:
         if entity.fighter.is_enemy:
             self.enemies.pop(self.enemies.index(entity))
 
+    @property
+    def cleared(self):
+        return self._cleared
+    
+    @cleared.setter
+    def cleared(self, new_value):
+        current_value = self.cleared
+
+        if new_value != current_value:            
+            print("ROOM CLEAR!")
 
 class Dungeon(Rewarder):
     def __init__(
@@ -36,6 +47,7 @@ class Dungeon(Rewarder):
         self.treasure: Optional[int] = treasure
         self.xp_reward: Optional[int] = xp_reward
         self.loot = Loot(xp=self.xp_reward, gp=self.treasure)
+        self.cleared = False
 
     def move_to_next_room(self):
         self.current_room = next(self.next_room())
