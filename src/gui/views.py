@@ -270,7 +270,7 @@ class MissionsView(arcade.View):
             3, 2
         )  # 3 missions on screen, default selected (2) is the top visually.
         self.state = 0
-        self.combat_screen = None
+        self.combat_screen = CombatScreen()
 
     def on_draw(self):
         self.clear()
@@ -301,6 +301,9 @@ class MissionsView(arcade.View):
             
         if self.state == 1:
             self.combat_screen.draw_message()
+
+    def on_update(self, delta_time: float):
+        self.combat_screen.on_update(delta_time=delta_time)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
