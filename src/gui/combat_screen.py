@@ -17,7 +17,14 @@ class CombatScreen:
         self.alphas = []
         self.alpha_max = 255
         self.message_id = 0
+        self.time = 0
 
+    def on_update(self, delta_time):
+        self.time += delta_time
+        if self.time > 2:
+            self.next_message()
+            self.time = 0
+    
     def next_message(self):
         if len(self.heights) == 0:
             heights = gen_heights(
@@ -37,12 +44,10 @@ class CombatScreen:
             self.message_id += 1
             if len(self.display_messages) > 5:
                 self.display_messages.pop(0)
-
+        
         if len(self.alphas) < 4:
-            self.alphas.append(self.alpha_max)
+            self.alphas.insert(0, self.alpha_max)
             self.alpha_max -= 50
-            self.alphas.sort()
-            print(self.alphas)
     
     def draw_message(self):
         if len(self.display_messages) > 0:
@@ -52,6 +57,7 @@ class CombatScreen:
                     color = (218, 165, 32, 255)
                 else:
                     color = (255,255,255, self.alphas[i])
+                
                 arcade.Text(
                     text=current_message.message,
                     start_x=WindowData.width / 2,
