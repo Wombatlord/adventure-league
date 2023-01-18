@@ -18,6 +18,7 @@ class CombatScreen:
         self.alpha_max = 255
         self.message_id = 0
         self.time = 0
+        self.turn_prompt = True
 
     def on_update(self, delta_time):
         self.time += delta_time
@@ -39,11 +40,15 @@ class CombatScreen:
                 self.heights.append(height)
 
         if len(self.messages) > 0:
+            self.turn_prompt = False
             self.latest_message = MessageWithID(self.messages.pop(0), self.message_id)
             self.display_messages.append(self.latest_message)
             self.message_id += 1
             if len(self.display_messages) > 5:
                 self.display_messages.pop(0)
+        
+        if len(self.messages) == 0:
+            self.turn_prompt = True
         
         if len(self.alphas) < 4:
             self.alphas.insert(0, self.alpha_max)
@@ -68,5 +73,22 @@ class CombatScreen:
                     width=500,
                     align="center",
                     color=color,
+                    font_name=WindowData.font,
+                ).draw()
+
+    def draw_turn_prompt(self):
+        color = (218, 165, 32, 255)
+
+        arcade.Text(
+                    text="PRESS SPACE TO ADVANCE!",
+                    start_x=WindowData.width / 2,
+                    start_y=50,
+                    anchor_x="center",
+                    anchor_y="center",
+                    # multiline=True,
+                    # width=500,
+                    # align="center",
+                    color=color,
+                    font_size=20,
                     font_name=WindowData.font,
                 ).draw()

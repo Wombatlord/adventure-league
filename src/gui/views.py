@@ -300,6 +300,9 @@ class MissionsView(arcade.View):
                 ).draw_card(row)
             
         if self.state == 1:
+            if self.combat_screen.turn_prompt == True:
+                self.combat_screen.draw_turn_prompt()
+
             self.combat_screen.draw_message()
 
     def on_update(self, delta_time: float):
