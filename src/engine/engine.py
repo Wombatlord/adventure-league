@@ -132,38 +132,42 @@ def combat_system_run():
     # print(f"Initial Room: {eng.dungeon.current_room.enemies}")
     # eng.dungeon.move_to_next_room()
     print(eng.dungeon.rooms)
-    
-    for i, room in enumerate(eng.dungeon.next_room()):
-        print(f"{room.enemies=}")
-        while len(room.enemies) > 0:
-            print("TURN")
-            combat = CombatSystem(eng.guild.team.members, room.enemies)
-            turn_actions = combat.iterate_turn()
+    rooms = eng.dungeon.next_room()
+    cont = True
+    for room in rooms:
+        if cont:
+            print(f"{room.enemies=}")
+            while len(room.enemies) > 0:
+                combat = CombatSystem(eng.guild.team.members, room.enemies)
+                print("TURN")
+                turn_actions = combat.iterate_turn()
 
-            for action in turn_actions:
-                eng.action_queue.append(action)
+                for action in turn_actions:
+                    eng.action_queue.append(action)
 
-            combat_over = False
+                combat_over = False
 
-            if combat.victor() == 0:                
-                print(f"2 {room.enemies=}")
-                if len(eng.dungeon.rooms[-1].enemies) == 0:
-                    eng.action_queue.extend(combat.team_triumphant(eng.guild, eng.dungeon))
+                if combat.victor() == 0:                
+                    print(f"2 {room.enemies=}")
+                    if len(eng.dungeon.rooms[-1].enemies) == 0:
+                        eng.action_queue.extend(combat.team_triumphant(eng.guild, eng.dungeon))
+                        combat_over = True
+
+                if combat.victor() == 1:
+                    print(f"2 {eng.guild.team.members=}")
+                    eng.action_queue.extend(combat.team_defeated(eng.guild.team))
                     combat_over = True
 
-            if combat.victor() == 1:
-                print(f"2 {eng.guild.team.members=}")
-                eng.action_queue.extend(combat.team_defeated(eng.guild.team))
-                combat_over = True
+                eng.process_action_queue()
 
-            eng.process_action_queue()
+                # while eng.messages:
+                #     print(eng.messages.pop(0))
 
-            # while eng.messages:
-            #     print(eng.messages.pop(0))
-
-            if combat_over:
-                break
-        if len(eng.guild.team.members) > 0:
+                if combat_over or combat.turn_complete:
+                    cont = False
+                    break
+        
+        if len(eng.guild.team.members) > 0 and len(room.enemies) == 0:
             print(eng.guild.team.members)
             room.cleared = True
         else:
@@ -179,6 +183,7 @@ class CombatSystem:
 
     _result: bool | None
     _turn_order: list[Fighter]  # fighter
+    turn_complete: bool
 
     def __init__(self, teamA: list[Entity], teamB: list[Entity]) -> None:
         self.teams = (
@@ -259,7 +264,8 @@ class CombatSystem:
                     yield actions.pop(0)
                 except IndexError:
                     break
-
+        self.turn_complete = True
+        print("TURN COMPLETE TRUE")
         self._turn_order = None
 
     def _check_for_death(self, target) -> list[dict[str, str]]:
