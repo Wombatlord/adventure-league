@@ -329,12 +329,12 @@ class MissionsView(arcade.View):
             case arcade.key.RETURN:
                 eng.selected_mission = self.selection.pos
                 # scripted_run()
-                combat_system_run()
                 self.combat_screen = CombatScreen()
                 self.state = 1
 
             case arcade.key.SPACE:
-                self.combat_screen.next_message()
+                combat_system_run()
+                # self.combat_screen.progress_message_deque()
             
             case arcade.key.M:
                 self.state = 0
