@@ -22,10 +22,10 @@ class CombatScreen:
     def on_update(self, delta_time):
         self.time += delta_time
         if self.time > 2:
-            self.next_message()
+            self.progress_message_deque()
             self.time = 0
     
-    def next_message(self):
+    def progress_message_deque(self):
         if len(self.heights) == 0:
             heights = gen_heights(
                 desc=False,
