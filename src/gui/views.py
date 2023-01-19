@@ -306,6 +306,10 @@ class MissionsView(arcade.View):
             self.combat_screen.draw_message()
 
     def on_update(self, delta_time: float):
+        if len(eng.combat_turn_order) > 0:
+            if eng.combat_turn_order[0].is_enemy:
+                combat_system_run()
+        
         self.combat_screen.on_update(delta_time=delta_time)
 
     def on_resize(self, width: int, height: int):
@@ -313,9 +317,6 @@ class MissionsView(arcade.View):
 
         WindowData.width = width
         WindowData.height = height
-
-    # def on_update(self, delta_time: float):
-    #     eng.process_action_queue()
 
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
@@ -331,12 +332,12 @@ class MissionsView(arcade.View):
 
             case arcade.key.RETURN:
                 eng.selected_mission = self.selection.pos
-                # scripted_run()
                 self.combat_screen = CombatScreen()
                 self.state = 1
 
             case arcade.key.SPACE:
-                combat_system_run()
+                if self.combat_screen.turn_prompt == True:
+                    combat_system_run()
                 # self.combat_screen.progress_message_deque()
             
             case arcade.key.M:
