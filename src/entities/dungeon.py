@@ -50,9 +50,9 @@ class Dungeon(Rewarder):
         self.cleared = False
 
     def move_to_next_room(self):
-        self.current_room = next(self.next_room())
+        self.current_room = next(self.room_generator())
         
-    def next_room(self):
+    def room_generator(self):
         for room in self.rooms:
             yield room
 
