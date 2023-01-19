@@ -230,7 +230,6 @@ class CombatSystem:
         return team, (team + 1) % 2
 
     def iterate_turn(self) -> Iterator[dict[str, str]]:
-        self.fighter_turns_taken = []
         actions = self._roll_turn_order()
 
         while True:
@@ -259,7 +258,6 @@ class CombatSystem:
                 target_index = combatant.choose_target(enemies)
                 target = enemies[target_index]
                 actions.extend(combatant.attack(target.owner))
-                self.fighter_turns_taken.append(combatant.turn_taken)
                 actions.extend(self._check_for_death(target))
                 actions.extend(self._check_for_retreat(combatant))
 
@@ -293,7 +291,7 @@ class CombatSystem:
                 target_index = combatant.choose_target(enemies)
                 target = enemies[target_index]
                 actions.extend(combatant.attack(target.owner))
-                self.fighter_turns_taken.append(combatant.turn_taken)
+                # self.fighter_turns_taken.append(combatant.turn_taken)
                 actions.extend(self._check_for_death(target))
                 actions.extend(self._check_for_retreat(combatant))
         
