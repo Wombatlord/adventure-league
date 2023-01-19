@@ -66,7 +66,6 @@ def create_dungeon_with_boss_room(room_amount: int):
     )
     for _ in range(room_amount):
         e = randint(1, d.max_enemies_per_room)
-        print(e)
         d.rooms.append(create_random_enemy_room(enemy_amount=e))
 
     d.rooms.append(create_random_boss_room())
