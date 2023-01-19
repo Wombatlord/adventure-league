@@ -36,7 +36,7 @@ class CombatScreen:
                 max_height=WindowData.height,
             )
             for height in heights:
-                print(height)
+                # print(height)
                 self.heights.append(height)
 
         if len(self.messages) > 0:
