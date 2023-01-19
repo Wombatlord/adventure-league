@@ -20,6 +20,7 @@ class Engine:
         self.selected_mission = None
         self.messages = []
         self.action_queue = []
+        self.combat_turn_order = []
 
     def setup(self) -> None:
         # create a pool of potential recruits
@@ -132,41 +133,39 @@ def combat_system_run():
     # print(f"Initial Room: {eng.dungeon.current_room.enemies}")
     # eng.dungeon.move_to_next_room()
     print(eng.dungeon.rooms)
-    rooms = eng.dungeon.next_room()
+    rooms = eng.dungeon.room_generator()
     cont = True
     for room in rooms:
-        if cont:
-            print(f"{room.enemies=}")
-            while len(room.enemies) > 0:
-                combat = CombatSystem(eng.guild.team.members, room.enemies)
-                print("TURN")
-                turn_actions = combat.iterate_turn()
+        if not cont:
+            break
+    
+        print(f"{room.enemies=}")
+        combat = CombatSystem(eng.guild.team.members, room.enemies, eng.combat_turn_order)
 
-                for action in turn_actions:
-                    eng.action_queue.append(action)
+        if len(room.enemies) > 0:
+            turn_actions = combat.single_fighter_turn()
 
-                combat_over = False
+            for action in turn_actions:
+                eng.action_queue.append(action)
 
-                if combat.victor() == 0:                
-                    print(f"2 {room.enemies=}")
-                    if len(eng.dungeon.rooms[-1].enemies) == 0:
-                        eng.action_queue.extend(combat.team_triumphant(eng.guild, eng.dungeon))
-                        combat_over = True
+            combat_over = False
 
-                if combat.victor() == 1:
-                    print(f"2 {eng.guild.team.members=}")
-                    eng.action_queue.extend(combat.team_defeated(eng.guild.team))
+            if combat.victor() == 0:                
+                print(f"2 {room.enemies=}")
+                if len(eng.dungeon.rooms[-1].enemies) == 0:
+                    eng.action_queue.extend(combat.team_triumphant(eng.guild, eng.dungeon))
                     combat_over = True
 
-                eng.process_action_queue()
+            if combat.victor() == 1:
+                print(f"2 {eng.guild.team.members=}")
+                eng.action_queue.extend(combat.team_defeated(eng.guild.team))
+                combat_over = True
 
-                # while eng.messages:
-                #     print(eng.messages.pop(0))
+            eng.process_action_queue()
 
-                if combat_over or combat.turn_complete:
-                    cont = False
-                    break
-        
+            if combat_over or combat.turn_complete:
+                cont = False
+    
         if len(eng.guild.team.members) > 0 and len(room.enemies) == 0:
             print(eng.guild.team.members)
             room.cleared = True
@@ -182,14 +181,16 @@ class CombatSystem:
     teams: tuple[list[Fighter], list[Fighter]]
 
     _result: bool | None
-    _turn_order: list[Fighter]  # fighter
-    turn_complete: bool
+    _turn_order: list[Fighter] = [] # fighter
+    turn_complete: bool = False
+    fighter_turns_taken: list[bool] = []
 
-    def __init__(self, teamA: list[Entity], teamB: list[Entity]) -> None:
+    def __init__(self, teamA: list[Entity], teamB: list[Entity], order: list) -> None:
         self.teams = (
             [member.fighter for member in teamA],
             [member.fighter for member in teamB],
         )
+        self.order = order
 
     def _roll_turn_order(self) -> list:
         actions = []
@@ -211,10 +212,11 @@ class CombatSystem:
         )
 
         # drop the initiative for the turn order since the index is the battle_size - (initiative + 1)
+        eng.combat_turn_order = [combatant for combatant, _ in initiative_roll]
         self._turn_order = [combatant for combatant, _ in initiative_roll]
         actions.append(
             {
-                "message": f"{self._turn_order[0].owner.name.name_and_title} goes first this turn"
+                "message": f"{eng.combat_turn_order[0].owner.name.name_and_title} goes first this turn"
             }
         )
 
@@ -228,6 +230,7 @@ class CombatSystem:
         return team, (team + 1) % 2
 
     def iterate_turn(self) -> Iterator[dict[str, str]]:
+        self.fighter_turns_taken = []
         actions = self._roll_turn_order()
 
         while True:
@@ -256,6 +259,7 @@ class CombatSystem:
                 target_index = combatant.choose_target(enemies)
                 target = enemies[target_index]
                 actions.extend(combatant.attack(target.owner))
+                self.fighter_turns_taken.append(combatant.turn_taken)
                 actions.extend(self._check_for_death(target))
                 actions.extend(self._check_for_retreat(combatant))
 
@@ -265,14 +269,46 @@ class CombatSystem:
                 except IndexError:
                     break
         self.turn_complete = True
-        print("TURN COMPLETE TRUE")
         self._turn_order = None
+    
+    def single_fighter_turn(self):
+        actions = []
+        if len(eng.combat_turn_order) == 0:
+            a = self._roll_turn_order()
+            actions.append({"message": f"Next round!"})
+            actions.append(a[0])
+
+        combatant = eng.combat_turn_order.pop(0)
+        
+        _, opposing_team = self._team_id(combatant)
+
+        enemies = []
+
+        for team in self.teams:
+            for fighter in team:
+                if self._team_id(fighter)[0] == opposing_team and fighter.owner.is_dead is False:
+                    enemies.append(fighter)
+        
+        if combatant.incapacitated == False:
+                target_index = combatant.choose_target(enemies)
+                target = enemies[target_index]
+                actions.extend(combatant.attack(target.owner))
+                self.fighter_turns_taken.append(combatant.turn_taken)
+                actions.extend(self._check_for_death(target))
+                actions.extend(self._check_for_retreat(combatant))
+        
+        while True:
+                try:
+                    yield actions.pop(0)
+                except IndexError:
+                    break
+        
+        self.turn_complete = True
 
     def _check_for_death(self, target) -> list[dict[str, str]]:
         name = target.owner.name.name_and_title
         results = []
         if target.owner.is_dead:
-            print(f"!{name}!: {target.owner.on_death_hooks=}")
             target.owner.die()
             results.append({"dying": target.owner})
             results.append({"message": f"{name} is dead!"})
