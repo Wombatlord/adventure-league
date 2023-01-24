@@ -1,7 +1,9 @@
 from __future__ import annotations
 from random import randint
-from typing import Optional
+from typing import Optional, Any
 from src.entities.entity import Entity
+
+Action = dict[str, Any]
 
 # A class attached to any Entity that can fight
 class Fighter:
@@ -56,11 +58,10 @@ class Fighter:
     def incapacitated(self) -> bool:
         return self.owner.is_dead or self.retreating
 
-    def take_damage(self, amount) -> list[dict[str, Entity]]:
-        results = []
-
+    def take_damage(self, amount) -> Action:
+        result = {}
         self.hp -= amount
-
+        result.update(**self.owner.annotate_event({}))
         if self.hp <= 0:
             self.hp = 0
             self.owner.is_dead = True
@@ -72,10 +73,10 @@ class Fighter:
             # print("DYING ACTION RETURN")
             # print(f"{results=} {self.owner.name=}")
         
-        # return results
+        return result
 
-    def attack(self, target: Entity) -> list[dict]:
-        results = []
+    def attack(self, target: Entity) -> Action:
+        result = {}
         if self.owner.is_dead:
             raise ValueError(f"{self.owner.name=}: I'm dead jim.")
 
@@ -93,25 +94,20 @@ class Fighter:
                 2 * self.power**2 / (self.power + target.fighter.defence)
             )
 
-            results.append(
-                {
-                    "message": f"{my_name} hits {target_name} for {actual_damage}\n"
-                }
-            )
+            result.update(**{
+                "message": f"{my_name} hits {target_name} for {actual_damage}\n"
+            })
 
-            target.fighter.take_damage(actual_damage)
-            # results.extend(result)
-            
-            return results
-        
+            result.update(**target.fighter.take_damage(actual_damage))
+            print("Fighter.attack: successful hit: result:", result)
+             
         else:
-            results.append(
-                {
-                    "message": f"{my_name} fails to hit {target_name}!"
-                }
-            )
+            result.update(**{
+                "message": f"{my_name} fails to hit {target_name}!"    
+            })
 
             if self.is_enemy != True:
                 self.retreating = True
+            print("Fighter.attack: failed hit: result:", result)
         
-            return results
+        return result

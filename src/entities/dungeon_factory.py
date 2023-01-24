@@ -56,7 +56,7 @@ def create_random_boss_room():
 
 def create_dungeon_with_boss_room(room_amount: int):
     d = Dungeon(
-        3,
+        1,
         [],
         [],
         None,

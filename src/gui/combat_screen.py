@@ -1,8 +1,11 @@
 import arcade
-from typing import NamedTuple
+from typing import NamedTuple, Callable, Generator
 from src.engine.engine import eng
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import gen_heights
+from src.projection import health
+
+Hook = Callable[[], None]
 
 class MessageWithID(NamedTuple):
     message: str
@@ -10,71 +13,69 @@ class MessageWithID(NamedTuple):
 
 class CombatScreen:
     def __init__(self) -> None:
-        self.messages = eng.messages
+        self.messages = eng.last_n_messages(5)
         self.latest_message = MessageWithID("No Message", 0)
         self.display_messages: list[MessageWithID] = []
         self.heights = []
-        self.alphas = []
+        self.alphas = [255 - 50 * i for i in range(5)]
         self.alpha_max = 255
         self.message_id = 0
         self.time = 0
-        self.turn_prompt = True
-
-    def on_update(self, delta_time):
+        self.team = eng.guild.team.members
+    
+    def on_update(self, delta_time, hook: Hook):
         self.time += delta_time
-        if self.time > 2:
-            self.progress_message_deque()
+        call_hook = True
+        if self.time > 0.5:
+            if call_hook:
+                call_hook = hook()
             self.time = 0
     
-    def progress_message_deque(self):
-        if len(self.heights) == 0:
-            heights = gen_heights(
-                desc=False,
-                row_height=40,
-                y=WindowData.height / 2,
-                spacing=2,
-                max_height=WindowData.height,
-            )
-            for height in heights:
-                # print(height)
-                self.heights.append(height)
+    def draw_stats(self):
+        heights = self.msg_height()
+        proj: health.HealthProjection = health.current()
+        proj.configure(heights=[*heights]).draw()
 
-        if len(self.messages) > 0:
-            self.turn_prompt = False
-            self.latest_message = MessageWithID(self.messages.pop(0), self.message_id)
-            self.display_messages.append(self.latest_message)
-            self.message_id += 1
-            if len(self.display_messages) > 5:
-                self.display_messages.pop(0)
-        
-        if len(self.messages) == 0:
-            self.turn_prompt = True
-        
-        if len(self.alphas) < 4:
-            self.alphas.insert(0, self.alpha_max)
-            self.alpha_max -= 50
-    
+    def msg_paint(self) -> Generator[None, None, tuple[int, ...]]:
+        yield (218, 165, 32, 255)
+        yield (255, 255, 255, 255)
+        yield (255, 255, 255, 205)
+        yield (255, 255, 255, 155)
+        yield (255, 255, 255, 105)
+
+    def msg_height(self) -> Generator[None, None, int]:
+        return gen_heights(
+            desc=True,
+            row_height=40,
+            y=0.75 * WindowData.height,
+            spacing=2,
+            max_height=WindowData.height / 2,
+        )
+
     def draw_message(self):
-        if len(self.display_messages) > 0:
-            for i, current_message in enumerate(self.display_messages):
-                
-                if current_message.message == self.latest_message.message and current_message.id == self.latest_message.id:
-                    color = (218, 165, 32, 255)
-                else:
-                    color = (255,255,255, self.alphas[i])
+        paint = (255, 255, 255, 255)
+        paints = self.msg_paint()
+        heights = self.msg_height()
+        if any(msg != "" for msg in eng.last_n_messages(5)):
+            
+            for current_message in eng.last_n_messages(5):
+                height = next(heights)
+                if current_message:
+                    paint = next(paints)
                 
                 arcade.Text(
-                    text=current_message.message,
+                    text=current_message,
                     start_x=WindowData.width / 2,
-                    start_y=self.heights[i],
+                    start_y=height,
                     anchor_x="center",
                     anchor_y="center",
                     multiline=True,
                     width=500,
                     align="center",
-                    color=color,
+                    color=paint,
                     font_name=WindowData.font,
                 ).draw()
+
 
     def draw_turn_prompt(self):
         color = (218, 165, 32, 255)

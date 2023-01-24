@@ -9,3 +9,4 @@ src/config/__pycache__/*
 .vscode/
 venv/
 winvenv/
+scratch.py
