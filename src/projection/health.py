@@ -9,8 +9,8 @@ _health_projection: dict[str, str] = {}
 
 class HealthProjection:
     def __init__(self):
-        self.config = {}
-    
+        self.config = {}            
+
     def configure(self, heights: list[int] = None, **kwargs) -> HealthProjection:
         self.config = kwargs
         self.heights = heights if heights else []

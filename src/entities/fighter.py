@@ -57,6 +57,11 @@ class Fighter:
     @property
     def incapacitated(self) -> bool:
         return self.owner.is_dead or self.retreating
+    
+    def initial_health(self) -> Action:
+        result = {}
+        result.update(**self.owner.annotate_event({}))
+        return result
 
     def take_damage(self, amount) -> Action:
         result = {}

@@ -1,5 +1,5 @@
 from random import randint
-from typing import Optional, Generator, Any
+from typing import Optional, Generator, Any, NamedTuple
 from src.config.constants import guild_names
 from src.entities.fighter_factory import EntityPool
 from src.entities.entity import Entity
@@ -9,6 +9,10 @@ from src.entities.dungeon import Dungeon
 from src.entities.mission_board import MissionBoard
 from src.projection import health
 from src.systems.combat import CombatRound
+
+class MessagesWithAlphas(NamedTuple):
+    messages: list[str]
+    alphas: list[int]
 
 Action = dict[str, Any]
 Turn = Generator[None, None, Action]      # <-
@@ -41,6 +45,8 @@ class Engine:
         self.combat: Generator[None, None, Action] = None
         self.awaiting_input = False
         self.quest_complete = False
+        self.message_alphas = []
+        self.alpha_max = 255
     
     def setup(self) -> None:
         # create a pool of potential recruits
@@ -117,6 +123,13 @@ class Engine:
     def last_n_messages(self, n: int) -> list[str]:
         return self.messages[-n:]
 
+    def last_n_messages_with_alphas(self, n: int) -> MessagesWithAlphas:
+        if len(self.message_alphas) < len(self.messages) and len(self.message_alphas) < n:
+            self.message_alphas.insert(0, self.alpha_max)
+            self.alpha_max -= 50
+        
+        return MessagesWithAlphas(self.messages[-n:], self.message_alphas)
+
     def await_input(self) -> None:
         self.awaiting_input = True
 
@@ -131,17 +144,39 @@ class Engine:
         return actions
 
     def init_combat(self):
+        self.messages = []
+        self.message_alphas = []
+        self.alpha_max = 255
         self.dungeon = self.mission_board.missions[self.selected_mission]
         self.combat = self._generate_combat_actions()
     
+    def initial_health_values(self, team, enemies) -> list:
+        result = []
+        for combatant in team:
+            result.append(combatant.annotate_event({}))
+        
+        for combatant in enemies:
+            result.append(combatant.annotate_event({}))
+
+        return result
+    
     def _generate_combat_actions(self) -> Generator[None, None, Action]:
         quest = self.dungeon.room_generator()
+
         for encounter in quest:
+            
+            healths = self.initial_health_values(self.guild.team.members, encounter.enemies)
+            
+            for health in healths:
+            
+                yield health
 
             while encounter.enemies and self.guild.team.members:
                 # Beginning of encounter actions/state changes go here
-                combat_round = CombatRound(self.guild.team.members, encounter.enemies, self.await_input)
                 
+
+                combat_round = CombatRound(self.guild.team.members, encounter.enemies, self.await_input)
+
                 print("INITIATIVE ROLL")
                 # example of per-round actions
                 for action in combat_round.initiative_roll_actions:
@@ -161,7 +196,7 @@ class Engine:
         
         for action in self.end_of_combat(win=win):
             yield action
- 
+
     @staticmethod
     def team_triumphant_actions(guild, dungeon) -> list[Action]:
         results = []

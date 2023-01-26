@@ -48,18 +48,20 @@ class CombatScreen:
 
     def draw_message(self):
         heights = self.msg_height()
-        self.messages = eng.last_n_messages(self.max_messages)
-        
-        if len(self.messages) < self.max_messages:
-            self.msg_paint(self.max_messages)
+        self.messages, alphas = eng.last_n_messages_with_alphas(self.max_messages)
 
+        
+        # if len(self.messages) < self.max_messages:
+        self.msg_paint(self.max_messages)
+        print(self.alphas)
         for i, current_message in enumerate(self.messages):
             height = next(heights)
             if i == len(self.messages) - 1:
-                paint = (218, 165, 32, self.alphas[-1])
+                paint = (218, 165, 32, alphas[-1])
             
             else:
-                paint = (255, 255, 255, self.alphas[i])
+                paint = (255, 255, 255, alphas[i])
+            
             arcade.Text(
                 text=current_message,
                 start_x=WindowData.width / 2,

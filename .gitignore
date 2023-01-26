@@ -6,7 +6,7 @@ src/entities/__pycache__/*
 src/tests/__pycache__/*
 src/config/__pycache__/*
 src/systems/__pycache__/*
-src/projections/__pycache__/*
+src/projection/__pycache__/*
 .python-version
 .vscode/
 venv/
