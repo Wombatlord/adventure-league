@@ -190,8 +190,12 @@ class Engine:
                     for action in actions:
                         yield action
 
-        guild_win = combat_round.victor == 1
-        for action in self.on_quest_complete(True):
+        if combat_round.victor() == 0:
+            win = True
+        else:
+            win = False
+        
+        for action in self.on_quest_complete(win=win):
             yield action
  
     @staticmethod
