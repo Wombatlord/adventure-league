@@ -138,9 +138,6 @@ class CombatRound:
 
         return victor
 
-    
-
-
 
     def continues(self) -> bool:
         if self.victor() is None and self._round_order:

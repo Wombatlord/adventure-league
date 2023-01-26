@@ -1,5 +1,5 @@
 from random import randint, shuffle
-from typing import Optional, Iterator, Generator, Any
+from typing import Optional, Iterator, Generator, NamedTuple,Any
 from src.config.constants import guild_names
 from src.entities.fighter_factory import EntityPool
 from src.entities.entity import Entity
@@ -16,6 +16,9 @@ Round = Generator[None, None, Turn]       # <- These are internal to the combat 
 Encounter = Generator[None, None, Round]
 Quest = Generator[None, None, Encounter]
 
+class MessagesWithAlphas(NamedTuple):
+    messages: list[str]
+    alphas: list[int]
 
 projections = {
     "entity_data": [health]
@@ -42,7 +45,9 @@ class Engine:
         self.combat: Generator[None, None, Action] = None
         self.awaiting_input = False
         self.quest_complete = False
-
+        self.alpha_max = 255
+        self.message_alphas = []
+    
     def setup(self) -> None:
         # create a pool of potential recruits
         self.entity_pool = EntityPool(8)
@@ -140,6 +145,13 @@ class Engine:
     def last_n_messages(self, n: int) -> list:
         l = ["" for _ in range(0, n)] + self.messages
         return l[-n:] # the last n elements
+
+    def last_n_messages_with_alphas(self, n: int) -> MessagesWithAlphas:
+        if len(self.message_alphas) < len(self.messages) and len(self.message_alphas) < n:
+            self.message_alphas.insert(0, self.alpha_max)
+            self.alpha_max -= 50
+        
+        return MessagesWithAlphas(self.messages[-n:], self.message_alphas)
 
     def await_input(self) -> None:
         self.awaiting_input = True

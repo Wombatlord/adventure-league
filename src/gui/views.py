@@ -320,7 +320,6 @@ class MissionsView(arcade.View):
     
     def on_update(self, delta_time: float):
         if self.state == 1:
-            
 
             hook = lambda: None
             if not eng.awaiting_input:
