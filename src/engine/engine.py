@@ -1,5 +1,5 @@
-from random import randint, shuffle
-from typing import Optional, Iterator, Generator, NamedTuple,Any
+from random import randint
+from typing import Optional, Generator, Any
 from src.config.constants import guild_names
 from src.entities.fighter_factory import EntityPool
 from src.entities.entity import Entity
@@ -15,10 +15,6 @@ Turn = Generator[None, None, Action]      # <-
 Round = Generator[None, None, Turn]       # <- These are internal to the combat system
 Encounter = Generator[None, None, Round]
 Quest = Generator[None, None, Encounter]
-
-class MessagesWithAlphas(NamedTuple):
-    messages: list[str]
-    alphas: list[int]
 
 projections = {
     "entity_data": [health]
@@ -45,8 +41,6 @@ class Engine:
         self.combat: Generator[None, None, Action] = None
         self.awaiting_input = False
         self.quest_complete = False
-        self.alpha_max = 255
-        self.message_alphas = []
     
     def setup(self) -> None:
         # create a pool of potential recruits
@@ -74,27 +68,6 @@ class Engine:
         print(self.guild.get_dict())
         for entity in self.guild.roster:
             print(entity.get_dict())
-
-    def defeat(self) -> bool:
-        if self.victory() is True:
-            # it can't be a defeat if victory is true.
-            return False
-
-        if len(eng.guild.team.members) == 0:
-            eng.action_queue.append({"message": f"{eng.guild.team.name} defeated!"})
-
-            return True
-
-    def clear_dead_entities(self, entity: Entity):
-        try:
-            if entity.fighter.is_enemy:
-                self.dungeon.enemies.pop(self.dungeon.enemies.index(entity))
-
-            if not entity.fighter.is_enemy:
-                self.guild.team.members.pop(self.guild.team.members.index(entity))
-
-        except:
-            raise ValueError(f"Could not remove {entity.name=} from array.")
 
     def process_action_queue(self):
         # new_action_queue = []
@@ -131,7 +104,6 @@ class Engine:
                 self.guild.team.move_fighter_to_roster(fighter.owner)
                 fighter.retreating = False
 
-
         if "team triumphant" in event:
             guild: Guild = event["team triumphant"][0]
             dungeon: Dungeon = event["team triumphant"][1]
@@ -142,21 +114,13 @@ class Engine:
         for item in self.action_queue:
             print(f"item: {item}")
 
-    def last_n_messages(self, n: int) -> list:
-        l = ["" for _ in range(0, n)] + self.messages
-        return l[-n:] # the last n elements
-
-    def last_n_messages_with_alphas(self, n: int) -> MessagesWithAlphas:
-        if len(self.message_alphas) < len(self.messages) and len(self.message_alphas) < n:
-            self.message_alphas.insert(0, self.alpha_max)
-            self.alpha_max -= 50
-        
-        return MessagesWithAlphas(self.messages[-n:], self.message_alphas)
+    def last_n_messages(self, n: int) -> list[str]:
+        return self.messages[-n:]
 
     def await_input(self) -> None:
         self.awaiting_input = True
 
-    def on_quest_complete(self, win: bool = True) -> list[Action]:
+    def end_of_combat(self, win: bool = True) -> list[Action]:
         if win:
             actions = self.team_triumphant_actions(self.guild, self.dungeon)
             self.guild.claim_rewards(self.dungeon)
@@ -195,7 +159,7 @@ class Engine:
         else:
             win = False
         
-        for action in self.on_quest_complete(win=win):
+        for action in self.end_of_combat(win=win):
             yield action
  
     @staticmethod
@@ -220,7 +184,6 @@ class Engine:
         results.append({"message": f"{team.name} defeated!"})
 
         return results
-        
 
 
 # Instantiate & setup the engine
@@ -234,6 +197,3 @@ eng.recruit_entity_to_guild(0)
 eng.recruit_entity_to_guild(0)
 eng.recruit_entity_to_guild(0)
 eng.recruit_entity_to_guild(0)
-
-
-
