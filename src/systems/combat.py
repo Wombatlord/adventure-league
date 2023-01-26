@@ -103,7 +103,7 @@ class CombatRound:
             if (a := self._check_for_death(target)):
                 yield a
 
-            if (a := self._check_for_retreat(target)):
+            if (a := self._check_for_retreat(combatant)):
                 yield a
 
     def _check_for_death(self, target) -> Action:
