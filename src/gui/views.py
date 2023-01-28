@@ -8,7 +8,7 @@ from src.gui.roster_view_components import (
     bottom_bar,
     draw_panels,
 )
-from src.engine.engine import combat_system_run, eng
+from src.engine.engine import eng
 
 class TitleView(arcade.View):
     def __init__(self, window: Window = None):
@@ -261,6 +261,18 @@ class RosterView(arcade.View):
         WindowData.height = height
 
 
+def next_combat_action() -> bool:
+    """
+    This is the source ==Action==> consumer connection
+    """
+    try:
+        action = next(eng.combat)
+        eng.process_one(action)
+        return True
+    except StopIteration:
+        return False
+
+
 class MissionsView(arcade.View):
     def __init__(self, window: Window = None):
         super().__init__(window)
@@ -300,17 +312,20 @@ class MissionsView(arcade.View):
                 ).draw_card(row)
             
         if self.state == 1:
-            if self.combat_screen.turn_prompt == True:
+            if eng.awaiting_input:
                 self.combat_screen.draw_turn_prompt()
 
             self.combat_screen.draw_message()
-
+            self.combat_screen.draw_stats()
+    
     def on_update(self, delta_time: float):
-        if len(eng.combat_turn_order) > 0:
-            if eng.combat_turn_order[0].is_enemy:
-                combat_system_run()
-        
-        self.combat_screen.on_update(delta_time=delta_time)
+        if self.state == 1:
+
+            hook = lambda: None
+            if not eng.awaiting_input:
+                hook = next_combat_action
+            
+            self.combat_screen.on_update(delta_time=delta_time, hook=hook)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
@@ -332,12 +347,16 @@ class MissionsView(arcade.View):
 
             case arcade.key.RETURN:
                 eng.selected_mission = self.selection.pos
+                eng.init_combat()
                 self.combat_screen = CombatScreen()
+
                 self.state = 1
+                eng.await_input()
 
             case arcade.key.SPACE:
-                if self.combat_screen.turn_prompt == True:
-                    combat_system_run()
+                if eng.awaiting_input:
+                    next_combat_action()
+                    eng.awaiting_input = False
                 # self.combat_screen.progress_message_deque()
             
             case arcade.key.M:

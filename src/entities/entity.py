@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Any
 
 class Name(NamedTuple):
     first_name: str = None
@@ -58,6 +58,19 @@ class Entity:
             result["item"] = self.item
 
         return result
+
+    def annotate_event(self, event: dict[str, Any]) -> dict[str, Any]:
+        return {
+            **event,
+            **{
+                "entity_data": {
+                    "health": self.fighter.hp if self.fighter else None,
+                    "name": self.name.name_and_title,
+                    "retreat": self.fighter.retreating,
+                }
+            },
+        }
+        
 
     def die(self):
         for hook in self.on_death_hooks:
