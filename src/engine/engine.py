@@ -108,7 +108,6 @@ class Engine:
 
             if fighter.owner.is_dead == False:
                 self.guild.team.move_fighter_to_roster(fighter.owner)
-                fighter.retreating = False
 
         if "team triumphant" in event:
             guild: Guild = event["team triumphant"][0]
@@ -152,6 +151,7 @@ class Engine:
     
     def initial_health_values(self, team, enemies) -> list:
         result = []
+
         for combatant in team:
             result.append(combatant.annotate_event({}))
         
@@ -167,9 +167,8 @@ class Engine:
             
             healths = self.initial_health_values(self.guild.team.members, encounter.enemies)
             
-            for health in healths:
-            
-                yield health
+            for h in healths:
+                yield h
 
             while encounter.enemies and self.guild.team.members:
                 # Beginning of encounter actions/state changes go here
@@ -188,6 +187,9 @@ class Engine:
                     actions = combat_round.single_fighter_turn()
                     for action in actions:
                         yield action
+
+            if len(self.guild.team.members) == 0:
+                break
 
         if combat_round.victor() == 0:
             win = True

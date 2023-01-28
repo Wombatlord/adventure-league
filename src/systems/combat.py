@@ -91,6 +91,8 @@ class CombatRound:
                 if self._team_id(fighter)[0] == opposing_team and fighter.owner.is_dead is False:
                     enemies.append(fighter)
         
+        print(f"{combatant.owner.name=} : {enemies=}")
+        
         if combatant.incapacitated == False:
             target_index = combatant.choose_target(enemies)
             target = enemies[target_index]
@@ -116,8 +118,11 @@ class CombatRound:
 
 
     def _check_for_retreat(self, fighter: Fighter) -> list[dict[str, str]]:
+        result = {}
         if fighter.retreating == True:
-            return {"retreat": fighter, "message": f"{fighter.owner.name.name_and_title} is retreating!"}
+            result.update(**fighter.owner.annotate_event({}))
+            result.update({"retreat": fighter, "message": f"{fighter.owner.name.name_and_title} is retreating!"})
+            return result
 
         return {}
 

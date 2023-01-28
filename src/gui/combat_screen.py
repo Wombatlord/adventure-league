@@ -17,7 +17,7 @@ class CombatScreen:
         self.team = eng.guild.team.members
         self.alpha_max = 255
         self.alphas = []
-    
+        
     def on_update(self, delta_time, hook: Hook):
         self.time += delta_time
         call_hook = True        
@@ -50,10 +50,8 @@ class CombatScreen:
         heights = self.msg_height()
         self.messages, alphas = eng.last_n_messages_with_alphas(self.max_messages)
 
-        
         # if len(self.messages) < self.max_messages:
         self.msg_paint(self.max_messages)
-        print(self.alphas)
         for i, current_message in enumerate(self.messages):
             height = next(heights)
             if i == len(self.messages) - 1:

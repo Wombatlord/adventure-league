@@ -66,6 +66,7 @@ class Entity:
                 "entity_data": {
                     "health": self.fighter.hp if self.fighter else None,
                     "name": self.name.name_and_title,
+                    "retreat": self.fighter.retreating,
                 }
             },
         }

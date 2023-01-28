@@ -9,15 +9,16 @@ _health_projection: dict[str, str] = {}
 
 class HealthProjection:
     def __init__(self):
-        self.config = {}            
+        self.config = {}
 
     def configure(self, heights: list[int] = None, **kwargs) -> HealthProjection:
         self.config = kwargs
         self.heights = heights if heights else []
         return self
-
+    
     def draw(self) -> None:
         heights = [*self.heights]
+        print(f"{_health_projection=}")
         for name, health in _health_projection.items():
             try:
                 start_y = heights.pop(0)
@@ -25,7 +26,7 @@ class HealthProjection:
                 break
 
             arcade.Text(
-                text=f"{name} : {health}",
+                text=f"{name}: {health}",
                 start_x=WindowData.width / 4,
                 start_y=start_y,
                 anchor_x="center",
@@ -52,7 +53,7 @@ def consume(action: dict[str, Any]) -> None:
     This will be invoked by the action queue
     """
     entity = action.get(_KEY, {})
-
+    retreat = entity.get("retreat")
     name = entity.get("name")
     if name is None:
         return
@@ -62,7 +63,11 @@ def consume(action: dict[str, Any]) -> None:
         return
 
     # The actual projection logic
-    _health_projection[name] = f"{health}" if health > 0 else "dead"
+    if retreat == False:
+        _health_projection[name] = f"{health}" if health > 0 else "dead"
+        
+    if retreat or health <= 0:
+        _health_projection.pop(name)
 
 def get_subscription() -> set[str]:
     """

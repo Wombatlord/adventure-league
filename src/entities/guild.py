@@ -101,6 +101,8 @@ class Team:
         entity.on_death_hooks.append(
             self.remove_dead_member
         )
+
+        entity.fighter.retreating = False
         self.members.append(entity)
 
     def move_fighter_to_roster(self, entity):
