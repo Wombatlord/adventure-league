@@ -104,7 +104,6 @@ class Fighter:
             })
 
             result.update(**target.fighter.take_damage(actual_damage))
-            print("Fighter.attack: successful hit: result:", result)
              
         else:
             result.update(**{
@@ -113,6 +112,5 @@ class Fighter:
 
             if self.is_enemy != True:
                 self.retreating = True
-            print("Fighter.attack: failed hit: result:", result)
         
         return result

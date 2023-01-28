@@ -90,16 +90,13 @@ class CombatRound:
             for fighter in team:
                 if self._team_id(fighter)[0] == opposing_team and fighter.owner.is_dead is False:
                     enemies.append(fighter)
-        
-        print(f"{combatant.owner.name=} : {enemies=}")
-        
+                
         if combatant.incapacitated == False:
             target_index = combatant.choose_target(enemies)
             target = enemies[target_index]
             
             # yield back the actions from the attack/damage taken immediately
             attack_result = combatant.attack(target.owner)
-            print("CombatRound.single_fighter_turn: ", attack_result)
             yield attack_result 
 
             if (a := self._check_for_death(target)):

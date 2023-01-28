@@ -18,7 +18,7 @@ class HealthProjection:
     
     def draw(self) -> None:
         heights = [*self.heights]
-        print(f"{_health_projection=}")
+
         for name, health in _health_projection.items():
             try:
                 start_y = heights.pop(0)

@@ -88,9 +88,6 @@ class Engine:
             self.process_one(event)
 
     def process_one(self, event: Action = None):
-        print(f"{event=}, {type(event)=}")
-        print(f"{projections=}, {type(projections)=}")
-        
         if "message" in event:
             # print("message:", action["message"])
             self.messages.append(event["message"])
@@ -172,16 +169,12 @@ class Engine:
 
             while encounter.enemies and self.guild.team.members:
                 # Beginning of encounter actions/state changes go here
-                
-
                 combat_round = CombatRound(self.guild.team.members, encounter.enemies, self.await_input)
 
-                print("INITIATIVE ROLL")
                 # example of per-round actions
                 for action in combat_round.initiative_roll_actions:
                     yield action
 
-                print("ROUND BEGINS")
                 # then we begin iterating turns
                 while combat_round.continues():
                     actions = combat_round.single_fighter_turn()
