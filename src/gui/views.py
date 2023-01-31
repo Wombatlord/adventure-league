@@ -77,7 +77,7 @@ class TitleView(arcade.View):
 class GuildView(arcade.View):
     """Draw a view displaying information about a guild"""
 
-    commands = ["[m]issions", "[r]oster", "[t]eam"]
+    commands = ["[m]issions", "[r]oster", "[n]ew missions"]
 
     def bottom_bar(self):
         margin = 5
@@ -131,6 +131,10 @@ class GuildView(arcade.View):
                 title_view.title_y = WindowData.height * 0.75
                 title_view.start_y = WindowData.height * 0.3
                 self.window.show_view(title_view)
+
+            case arcade.key.C:
+                eng.mission_board.clear_board()
+                eng.mission_board.fill_board(enemy_amount=3)
 
             case arcade.key.M:
                 missions_view = MissionsView()
