@@ -111,6 +111,8 @@ class Team:
     def remove_dead_member(self, entity):
         if entity in self.members:
             self.members.pop(self.members.index(entity))
-
+        
+        # In the case where an entity has been killed after initiating retreat
+        # The entity must be removed from the roster rather than the team.
         if entity in self.owner.roster:
             self.owner.roster.pop(self.owner.roster.index(entity))
