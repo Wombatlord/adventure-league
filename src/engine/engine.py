@@ -149,7 +149,7 @@ class Engine:
         self.messages = []
         self.message_alphas = []
         self.alpha_max = 255
-        # self.dungeon = self.mission_board.missions[self.selected_mission]
+        flush_all()
         self.combat = self._generate_combat_actions()
     
     def initial_health_values(self, team, enemies) -> list:
