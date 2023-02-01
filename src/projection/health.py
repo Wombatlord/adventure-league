@@ -43,6 +43,7 @@ def current() -> HealthProjection:
     return HealthProjection()
 
 def flush() -> None:
+    global _health_projection
     """
     This should re-initialise the projection to its state on import of this module
     """
@@ -67,6 +68,8 @@ def consume(action: dict[str, Any]) -> None:
         _health_projection[name] = f"{health}" if health > 0 else "dead"
         
     if retreat or health <= 0:
+        # Ensure we don't try to clear the projection twice if the entity
+        # is killed during its retreat.
         if name in _health_projection:
             _health_projection.pop(name)
 
