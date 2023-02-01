@@ -67,7 +67,8 @@ def consume(action: dict[str, Any]) -> None:
         _health_projection[name] = f"{health}" if health > 0 else "dead"
         
     if retreat or health <= 0:
-        _health_projection.pop(name)
+        if name in _health_projection:
+            _health_projection.pop(name)
 
 def get_subscription() -> set[str]:
     """

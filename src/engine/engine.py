@@ -38,6 +38,7 @@ class Engine:
         self.entity_pool: Optional[EntityPool] = None
         self.dungeon: Optional[Dungeon] = None
         self.mission_board: Optional[MissionBoard] = None
+        self.mission_in_progress = False
         self.selected_mission = None
         self.messages = []
         self.action_queue = []
@@ -64,7 +65,7 @@ class Engine:
 
         # create a mission board
         self.mission_board = MissionBoard(size=3)
-        self.mission_board.fill_board(enemy_amount=3)
+        self.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
         flush_all()
 
     def recruit_entity_to_guild(self, selection_id) -> None:
@@ -137,13 +138,18 @@ class Engine:
             actions = self.team_defeated(self.guild.team)
         
         self.dungeon = None
+        self.mission_in_progress = False
         return actions
 
+    def init_dungeon(self):
+        self.dungeon = self.mission_board.missions[self.selected_mission]
+
     def init_combat(self):
+        self.mission_in_progress = True
         self.messages = []
         self.message_alphas = []
         self.alpha_max = 255
-        self.dungeon = self.mission_board.missions[self.selected_mission]
+        # self.dungeon = self.mission_board.missions[self.selected_mission]
         self.combat = self._generate_combat_actions()
     
     def initial_health_values(self, team, enemies) -> list:

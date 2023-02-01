@@ -132,9 +132,9 @@ class GuildView(arcade.View):
                 title_view.start_y = WindowData.height * 0.3
                 self.window.show_view(title_view)
 
-            case arcade.key.C:
+            case arcade.key.N:
                 eng.mission_board.clear_board()
-                eng.mission_board.fill_board(enemy_amount=3)
+                eng.mission_board.fill_board(max_enemies_per_room=3,room_amount=3)
 
             case arcade.key.M:
                 missions_view = MissionsView()
@@ -158,8 +158,6 @@ class RosterView(arcade.View):
         self.team_members = eng.guild.team.members
         self.margin = 5
         self.col_select = Cycle(2)
-        # self.roster_member_selection = Cycle(len(eng.guild.roster))
-        # self.team_member_selection = Cycle(0, 0)
         self.row_height = 25
         self.roster_pane = 0
         self.team_pane = 1
@@ -221,7 +219,6 @@ class RosterView(arcade.View):
                     
                 if self.col_select.pos == 1:
                     self.team_scroll_window.decr_selection()
-
 
             case arcade.key.DOWN:
                 if self.col_select.pos == 0:
@@ -340,8 +337,9 @@ class MissionsView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
             case arcade.key.G:
-                guild_view = GuildView()
-                self.window.show_view(guild_view)
+                if eng.mission_in_progress is False:
+                    guild_view = GuildView()
+                    self.window.show_view(guild_view)
 
             case arcade.key.DOWN:
                 self.selection.decr()
@@ -351,11 +349,14 @@ class MissionsView(arcade.View):
 
             case arcade.key.RETURN:
                 eng.selected_mission = self.selection.pos
-                eng.init_combat()
-                self.combat_screen = CombatScreen()
+                eng.init_dungeon()
 
-                self.state = 1
-                eng.await_input()
+                if not eng.dungeon.cleared:
+                    eng.init_combat()
+                    self.combat_screen = CombatScreen()
+
+                    self.state = 1
+                    eng.await_input()
 
             case arcade.key.SPACE:
                 if eng.awaiting_input:
@@ -364,4 +365,5 @@ class MissionsView(arcade.View):
                 # self.combat_screen.progress_message_deque()
             
             case arcade.key.M:
-                self.state = 0
+                if eng.mission_in_progress is False:
+                    self.state = 0
