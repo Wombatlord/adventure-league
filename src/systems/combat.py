@@ -125,7 +125,7 @@ class CombatRound:
                 # target = enemies[target_index]
 
 
-    def player_fighter_turn(self, target = None):
+    def player_fighter_turn(self, target = None) -> Generator[None, None, Action]:
         """
         While eng.awaiting_input is True, this function will be repeatedly called in eng._generate_combat_actions()
         The target is passed in from that scope as eng.chosen_target, which is updated via the on_keypress hook of the MissionsView.
