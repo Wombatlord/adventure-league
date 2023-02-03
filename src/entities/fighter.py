@@ -50,7 +50,7 @@ class Fighter:
         self.xp_reward = dict.get("xp_reward")
         self.current_xp = dict.get("current_xp")
 
-    def request_target(self):
+    def request_target(self) -> Action:
         return {
             "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target!",
             "await target": self,
