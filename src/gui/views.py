@@ -10,6 +10,7 @@ from src.gui.roster_view_components import (
 )
 from src.engine.engine import eng
 
+
 class TitleView(arcade.View):
     def __init__(self, window: Window = None):
         super().__init__(window)
@@ -134,7 +135,7 @@ class GuildView(arcade.View):
 
             case arcade.key.N:
                 eng.mission_board.clear_board()
-                eng.mission_board.fill_board(max_enemies_per_room=3,room_amount=3)
+                eng.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
 
             case arcade.key.M:
                 missions_view = MissionsView()
@@ -166,7 +167,6 @@ class RosterView(arcade.View):
         self.team_scroll_window = ScrollWindow([], 0, 4)
         self.team_scroll_window.append_all(self.team_members)
 
-
     def on_draw(self):
         self.clear()
         draw_panels(
@@ -176,12 +176,14 @@ class RosterView(arcade.View):
             width=WindowData.width,
             row_height=self.row_height,
             roster_scroll_window=self.roster_scroll_window,
-            team_scroll_window=self.team_scroll_window
+            team_scroll_window=self.team_scroll_window,
         )
         merc = None
         if self.col_select.pos == 0 and len(self.roster_scroll_window.items) > 0:
-            merc = self.roster_scroll_window.items[self.roster_scroll_window.position.pos]
-        
+            merc = self.roster_scroll_window.items[
+                self.roster_scroll_window.position.pos
+            ]
+
         if self.col_select.pos == 1 and len(self.team_scroll_window.items) > 0:
             merc = self.team_scroll_window.items[self.team_scroll_window.position.pos]
 
@@ -216,7 +218,7 @@ class RosterView(arcade.View):
             case arcade.key.UP:
                 if self.col_select.pos == 0:
                     self.roster_scroll_window.decr_selection()
-                    
+
                 if self.col_select.pos == 1:
                     self.team_scroll_window.decr_selection()
 
@@ -226,10 +228,12 @@ class RosterView(arcade.View):
 
                 if self.col_select.pos == 1:
                     self.team_scroll_window.incr_selection()
-                
 
             case arcade.key.ENTER:
-                if self.col_select.pos == self.roster_pane and len(self.roster_scroll_window.items) > 0:
+                if (
+                    self.col_select.pos == self.roster_pane
+                    and len(self.roster_scroll_window.items) > 0
+                ):
                     # Move merc from ROSTER to TEAM. Increase Cycle.length for team, decrease Cycle.length for roster.
                     # Assign to Team & Remove from Roster.
                     self.team_scroll_window.append(self.roster_scroll_window.selection)
@@ -240,18 +244,19 @@ class RosterView(arcade.View):
                     eng.guild.roster = self.roster_scroll_window.items
                     # eng.guild.team.members = self.team_scroll_window.items
 
-
-                if self.col_select.pos == self.team_pane and len(self.team_scroll_window.items) > 0:
+                if (
+                    self.col_select.pos == self.team_pane
+                    and len(self.team_scroll_window.items) > 0
+                ):
                     # Move merc from TEAM to ROSTER
                     self.roster_scroll_window.append(self.team_scroll_window.selection)
-                    
+
                     # Remove from Team array
                     self.team_scroll_window.pop()
 
                     # Update Engine state.
                     eng.guild.roster = self.roster_scroll_window.items
                     eng.guild.team.members = self.team_scroll_window.items
-
 
         self._log_state()
 
@@ -298,21 +303,24 @@ class MissionsView(arcade.View):
                     opacity=opacity,
                     reserved_space=reserved_space,
                 ).draw_card(row)
-            
+
         if self.state == 1:
             if eng.awaiting_input:
+                self.combat_screen.draw_turn_prompt()
+            
+            if eng.mission_in_progress == False:
                 self.combat_screen.draw_turn_prompt()
 
             self.combat_screen.draw_message()
             self.combat_screen.draw_stats()
-    
+
     def on_update(self, delta_time: float):
         if self.state == 1:
 
             hook = lambda: None
             if not eng.awaiting_input:
                 hook = eng.next_combat_action
-            
+
             self.combat_screen.on_update(delta_time=delta_time, hook=hook)
 
     def on_resize(self, width: int, height: int):
@@ -344,21 +352,24 @@ class MissionsView(arcade.View):
 
                     self.state = 1
                     eng.await_input()
+
+            case arcade.key.NUM_0 | arcade.key.KEY_0:
+                if eng.awaiting_input:
+                    eng.set_target(0)
+
+            case arcade.key.NUM_1 | arcade.key.KEY_1:
+                if eng.awaiting_input:
+                    eng.set_target(1)
             
-            case arcade.key.NUM_0:
-                eng.set_target(0)
-
-            case arcade.key.NUM_1:
-                eng.set_target(1)
-
-            case arcade.key.NUM_2:
-                eng.set_target(2)
+            case arcade.key.NUM_2 | arcade.key.KEY_2:
+                if eng.awaiting_input:
+                    eng.set_target(2)
 
             case arcade.key.SPACE:
                 if eng.awaiting_input:
                     eng.next_combat_action()
                     eng.awaiting_input = False
-            
+
             case arcade.key.M:
                 if eng.mission_in_progress is False:
                     self.state = 0
