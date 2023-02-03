@@ -38,17 +38,15 @@ class Engine:
         self.entity_pool: Optional[EntityPool] = None
         self.dungeon: Optional[Dungeon] = None
         self.mission_board: Optional[MissionBoard] = None
-        self.mission_in_progress = False
-        self.selected_mission = None
-        self.messages = []
-        self.action_queue = []
-        self.combat_turn_order = []
+        self.mission_in_progress: bool = False
+        self.selected_mission: int | None = None
+        self.messages: list[str] = []
+        self.action_queue: list[Action] = []
         self.combat: Generator[None, None, Action] = None
-        self.awaiting_input = False
-        self.quest_complete = False
-        self.message_alphas = []
-        self.alpha_max = 255
-        self.chosen_target = None
+        self.awaiting_input: bool = False
+        self.message_alphas: list[int] = []
+        self.alpha_max: int = 255
+        self.chosen_target: int | None = None
     
     def setup(self) -> None:
         # create a pool of potential recruits
@@ -72,12 +70,12 @@ class Engine:
     def recruit_entity_to_guild(self, selection_id) -> None:
         self.guild.recruit(selection_id, self.entity_pool.pool)
 
-    def print_guild(self):
+    def print_guild(self) -> None:
         print(self.guild.get_dict())
         for entity in self.guild.roster:
             print(entity.get_dict())
 
-    def process_action_queue(self):
+    def process_action_queue(self) -> None:
         # new_action_queue = []
         # self._check_action_queue()
         while True:
@@ -89,7 +87,7 @@ class Engine:
             
             self.process_one(event)
 
-    def process_one(self, event: Action = None):
+    def process_one(self, event: Action = None) -> None:
         if "message" in event:
             # print("message:", action["message"])
             self.messages.append(event["message"])
@@ -118,7 +116,7 @@ class Engine:
             dungeon.cleared = True
             guild.claim_rewards(dungeon)
 
-    def _check_action_queue(self):
+    def _check_action_queue(self) -> None:
         for item in self.action_queue:
             print(f"item: {item}")
 
@@ -135,7 +133,7 @@ class Engine:
     def await_input(self) -> None:
         self.awaiting_input = True
     
-    def set_target(self, target_choice):
+    def set_target(self, target_choice) -> None:
         self.chosen_target = target_choice
 
     def end_of_combat(self, win: bool = True) -> list[Action]:
@@ -149,10 +147,10 @@ class Engine:
         self.mission_in_progress = False
         return actions
 
-    def init_dungeon(self):
+    def init_dungeon(self) -> None:
         self.dungeon = self.mission_board.missions[self.selected_mission]
 
-    def init_combat(self):
+    def init_combat(self) -> None:
         self.mission_in_progress = True
         self.messages = []
         self.message_alphas = []
@@ -160,7 +158,7 @@ class Engine:
         flush_all()
         self.combat = self._generate_combat_actions()
     
-    def initial_health_values(self, team, enemies) -> list:
+    def initial_health_values(self, team, enemies) -> list[Action]:
         result = []
 
         for combatant in team:
@@ -184,6 +182,8 @@ class Engine:
     
     def _generate_combat_actions(self) -> Generator[None, None, Action]:
         quest = self.dungeon.room_generator()
+
+        yield {"message": f"The {eng.guild.team.name} of {eng.guild.name} draw their weapons and charge into {eng.dungeon.description}!"}
 
         for encounter in quest:
             
@@ -227,6 +227,9 @@ class Engine:
 
             if len(self.guild.team.members) == 0:
                 break
+            
+            if not eng.dungeon.boss.is_dead:
+                yield {"message": f"Splattered with gore, the {eng.guild.team.name} move deeper into {eng.dungeon.description}!"}
 
         if combat_round.victor() == 0:
             win = True
