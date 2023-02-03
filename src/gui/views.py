@@ -261,19 +261,6 @@ class RosterView(arcade.View):
         WindowData.width = width
         WindowData.height = height
 
-
-def next_combat_action() -> bool:
-    """
-    This is the source ==Action==> consumer connection
-    """
-    try:
-        action = next(eng.combat)
-        eng.process_one(action)
-        return True
-    except StopIteration:
-        return False
-
-
 class MissionsView(arcade.View):
     def __init__(self, window: Window = None):
         super().__init__(window)
@@ -324,7 +311,7 @@ class MissionsView(arcade.View):
 
             hook = lambda: None
             if not eng.awaiting_input:
-                hook = next_combat_action
+                hook = eng.next_combat_action
             
             self.combat_screen.on_update(delta_time=delta_time, hook=hook)
 
@@ -357,12 +344,20 @@ class MissionsView(arcade.View):
 
                     self.state = 1
                     eng.await_input()
+            
+            case arcade.key.NUM_0:
+                eng.set_target(0)
+
+            case arcade.key.NUM_1:
+                eng.set_target(1)
+
+            case arcade.key.NUM_2:
+                eng.set_target(2)
 
             case arcade.key.SPACE:
                 if eng.awaiting_input:
-                    next_combat_action()
+                    eng.next_combat_action()
                     eng.awaiting_input = False
-                # self.combat_screen.progress_message_deque()
             
             case arcade.key.M:
                 if eng.mission_in_progress is False:
