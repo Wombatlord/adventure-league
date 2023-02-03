@@ -50,9 +50,6 @@ class CombatRound:
         )
 
         # drop the initiative for the turn order since the index is the battle_size - (initiative + 1)
-        
-        for combatant in self._round_order:
-            actions.append(combatant.owner.annotate_event({}))
         self._round_order = [combatant for combatant, _ in initiative_roll]
         actions.append(
             {
@@ -70,9 +67,15 @@ class CombatRound:
         return team, (team + 1) % 2
     
     def single_fighter_turn(self) -> Generator[None, None, Action]:
+        """
+        This will play out a turn if the current fighter at the start of the round order is an enemy.
+        If the fighter is a player character, it will instead emit a request_target action from the fighter,
+        initiating a transition into the player_fighter_turn() through the engines _generate_combat_actions() func.
+        """
         if len(self._round_order) == 0:
             # Stop the iteration when the round is over
             raise StopIteration(f"The turn order was empty, {self.teams[0]=}, {self.teams[1]=}")
+
 
         combatant = self._round_order.pop(0)
         if not combatant.is_enemy:
@@ -80,8 +83,8 @@ class CombatRound:
                 CombatHooks.INPUT_PROMPT, # The hook we want, if not supplied we default to:
                 lambda :None              # a safe trivial callable
             )
-            hook()
-        
+            # hook()
+
         _, opposing_team = self._team_id(combatant)
 
         enemies = []
@@ -92,19 +95,83 @@ class CombatRound:
                     enemies.append(fighter)
                 
         if combatant.incapacitated == False:
-            target_index = combatant.choose_target(enemies)
-            target = enemies[target_index]
+            if combatant.is_enemy:
+                # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
+                target_index = combatant.choose_target(enemies)
+                target = enemies[target_index]
             
-            # yield back the actions from the attack/damage taken immediately
-            attack_result = combatant.attack(target.owner)
-            yield attack_result 
+                # yield back the actions from the attack/damage taken immediately
+                attack_result = combatant.attack(target.owner)
+                yield attack_result 
 
-            if (a := self._check_for_death(target)):
-                yield a
+                if (a := self._check_for_death(target)):
+                    yield a
 
-            if (a := self._check_for_retreat(combatant)):
-                yield a
+                if (a := self._check_for_retreat(combatant)):
+                    yield a
+            
+            if not combatant.is_enemy:
+                # If the fighter is a player character, emit a target request action which will cause
+                # the engine to await_input() and instead invoke player_fighter_turn() from eng._generate_combat_actions()
+                yield combatant.request_target()
 
+                # Insert the fighter back at the beginning of the turn order to be handled by player_fighter_turn()
+                self._round_order.insert(0, combatant)
+                
+                # hook()
+                # if combatant.target is None:
+                #     combatant.target = 0
+                # target_index = combatant.target
+                # target = enemies[target_index]
+
+
+    def player_fighter_turn(self, target = None):
+        """
+        While eng.awaiting_input is True, this function will be repeatedly called in eng._generate_combat_actions()
+        The target is passed in from that scope as eng.chosen_target, which is updated via the on_keypress hook of the MissionsView.
+        While the target being passed is None, this function will continue to emit request_target actions which keeps the engine awaiting input.
+        When a valid target is passed in, the turn will resolve the attack actions and yield them.
+        eng.await_input is reset to False when the user presses space to advance after target selection, ending the calls to this function
+        and continuing with eng._generate_combat_actions().
+        """
+
+        if len(self._round_order) == 0:
+            # Stop the iteration when the round is over
+            raise StopIteration(f"The turn order was empty, {self.teams[0]=}, {self.teams[1]=}")
+
+
+        combatant = self._round_order.pop(0)
+
+        _, opposing_team = self._team_id(combatant)
+
+        enemies = []
+
+        for team in self.teams:
+            for fighter in team:
+                if self._team_id(fighter)[0] == opposing_team and fighter.owner.is_dead is False:
+                    enemies.append(fighter)
+        
+        if combatant.incapacitated == False:
+            if target is None or target > len(enemies) - 1:
+                # If we don't have a valid target from the calling scope, keep the fighter at the start of the turn order
+                # and emit another request for a target.
+                self._round_order.insert(0, combatant)
+                yield combatant.request_target()
+            
+            if target is not None and target <= len(enemies) - 1:
+                # If the target is valid, then resolve the attack and yield the resulting actions for display when the user advances.
+                target_index = target
+                _target = enemies[target_index]
+            
+                attack_result = combatant.attack(_target.owner)
+                yield attack_result 
+
+                if (a := self._check_for_death(_target)):
+                    yield a
+
+                if (a := self._check_for_retreat(combatant)):
+                    yield a
+    
     def _check_for_death(self, target) -> Action:
         name = target.owner.name.name_and_title
         if target.owner.is_dead:
