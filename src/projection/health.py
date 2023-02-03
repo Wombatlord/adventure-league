@@ -43,10 +43,10 @@ def current() -> HealthProjection:
     return HealthProjection()
 
 def flush() -> None:
-    global _health_projection
     """
     This should re-initialise the projection to its state on import of this module
     """
+    global _health_projection
     _health_projection = {}
 
 def consume(action: dict[str, Any]) -> None:
