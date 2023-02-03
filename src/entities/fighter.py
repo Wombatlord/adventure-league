@@ -27,6 +27,7 @@ class Fighter:
         self.current_xp = current_xp
         self.retreating = False
         self.is_enemy = is_enemy
+        self.target = None
 
     def get_dict(self) -> dict:
         result = {
@@ -49,6 +50,12 @@ class Fighter:
         self.xp_reward = dict.get("xp_reward")
         self.current_xp = dict.get("current_xp")
 
+    def request_target(self) -> Action:
+        return {
+            "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target!",
+            "await target": self,
+        }
+
     def choose_target(self, targets) -> int:
         possible = len(targets) - 1
 
@@ -57,7 +64,7 @@ class Fighter:
     @property
     def incapacitated(self) -> bool:
         return self.owner.is_dead or self.retreating
-    
+
     def initial_health(self) -> Action:
         result = {}
         result.update(**self.owner.annotate_event({}))
@@ -70,14 +77,14 @@ class Fighter:
         if self.hp <= 0:
             self.hp = 0
             self.owner.is_dead = True
-            
+
             # results.append(
             #     {"dying": self.owner}
             # )
 
             # print("DYING ACTION RETURN")
             # print(f"{results=} {self.owner.name=}")
-        
+
         return result
 
     def attack(self, target: Entity) -> Action:
@@ -87,7 +94,7 @@ class Fighter:
 
         if target.is_dead:
             raise ValueError(f"{target.name=}: He's dead jim.")
-        
+
         my_name = self.owner.name.name_and_title
 
         target_name = target.name.name_and_title
@@ -99,18 +106,16 @@ class Fighter:
                 2 * self.power**2 / (self.power + target.fighter.defence)
             )
 
-            result.update(**{
-                "message": f"{my_name} hits {target_name} for {actual_damage}\n"
-            })
+            result.update(
+                **{"message": f"{my_name} hits {target_name} for {actual_damage}\n"}
+            )
 
             result.update(**target.fighter.take_damage(actual_damage))
-             
+
         else:
-            result.update(**{
-                "message": f"{my_name} fails to hit {target_name}!"    
-            })
+            result.update(**{"message": f"{my_name} fails to hit {target_name}!"})
 
             if self.is_enemy != True:
                 self.retreating = True
-        
+
         return result

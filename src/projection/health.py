@@ -27,7 +27,7 @@ class HealthProjection:
 
             arcade.Text(
                 text=f"{name}: {health}",
-                start_x=WindowData.width / 4,
+                start_x=WindowData.width / 8,
                 start_y=start_y,
                 anchor_x="center",
                 anchor_y="center",
@@ -43,10 +43,10 @@ def current() -> HealthProjection:
     return HealthProjection()
 
 def flush() -> None:
-    global _health_projection
     """
     This should re-initialise the projection to its state on import of this module
     """
+    global _health_projection
     _health_projection = {}
 
 def consume(action: dict[str, Any]) -> None:

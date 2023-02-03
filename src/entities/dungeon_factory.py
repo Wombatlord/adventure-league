@@ -34,7 +34,7 @@ def create_random_dungeon(enemy_amount) -> Dungeon:
 
 
 # Room testing with Room Class
-def create_random_enemy_room(enemy_amount):
+def create_random_enemy_room(enemy_amount) -> Room:
     room = Room()
 
     for enemy in range(enemy_amount):
@@ -42,7 +42,7 @@ def create_random_enemy_room(enemy_amount):
 
     return room
 
-def create_random_boss_room():
+def create_random_boss_room() -> Room:
     room = Room()
 
     room.add_entity(
@@ -54,7 +54,7 @@ def create_random_boss_room():
     return room
 
 
-def create_dungeon_with_boss_room(max_enemies_per_room, room_amount: int):
+def create_dungeon_with_boss_room(max_enemies_per_room, room_amount: int) -> Dungeon:
     d = Dungeon(
         max_enemies_per_room,
         [],
@@ -65,7 +65,7 @@ def create_dungeon_with_boss_room(max_enemies_per_room, room_amount: int):
         xp_reward=10,
     )
     for _ in range(room_amount):
-        e = randint(3, d.max_enemies_per_room)
+        e = randint(1, d.max_enemies_per_room)
         d.rooms.append(create_random_enemy_room(enemy_amount=e))
 
     d.rooms.append(create_random_boss_room())
