@@ -41,7 +41,7 @@ class CombatScreen:
         return gen_heights(
             desc=False,
             row_height=40,
-            y=0.25 * WindowData.height,
+            y=0.3 * WindowData.height,
             spacing=2,
             max_height=WindowData.height / 2,
         )
@@ -76,16 +76,32 @@ class CombatScreen:
     def draw_turn_prompt(self):
         color = (218, 165, 32, 255)
 
-        arcade.Text(
-                    text="PRESS SPACE TO ADVANCE!",
-                    start_x=WindowData.width / 2,
-                    start_y=50,
-                    anchor_x="center",
-                    anchor_y="center",
-                    # multiline=True,
-                    # width=500,
-                    # align="center",
-                    color=color,
-                    font_size=20,
-                    font_name=WindowData.font,
-                ).draw()
+        if not eng.mission_in_progress:
+            arcade.Text(
+                        text="Combat Over! Press G to return to the Guild",
+                        start_x=WindowData.width / 2,
+                        start_y=50,
+                        anchor_x="center",
+                        anchor_y="center",
+                        # multiline=True,
+                        # width=500,
+                        # align="center",
+                        color=color,
+                        font_size=20,
+                        font_name=WindowData.font,
+                    ).draw()
+
+        else:
+            arcade.Text(
+                        text="PRESS SPACE TO ADVANCE!",
+                        start_x=WindowData.width / 2,
+                        start_y=50,
+                        anchor_x="center",
+                        anchor_y="center",
+                        # multiline=True,
+                        # width=500,
+                        # align="center",
+                        color=color,
+                        font_size=20,
+                        font_name=WindowData.font,
+                    ).draw()
