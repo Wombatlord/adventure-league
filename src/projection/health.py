@@ -27,7 +27,7 @@ class HealthProjection:
 
             arcade.Text(
                 text=f"{name}: {health}",
-                start_x=WindowData.width / 4,
+                start_x=WindowData.width / 8,
                 start_y=start_y,
                 anchor_x="center",
                 anchor_y="center",
