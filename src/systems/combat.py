@@ -76,14 +76,7 @@ class CombatRound:
             # Stop the iteration when the round is over
             raise StopIteration(f"The turn order was empty, {self.teams[0]=}, {self.teams[1]=}")
 
-
         combatant = self._round_order.pop(0)
-        if not combatant.is_enemy:
-            hook = self.hooks.get(
-                CombatHooks.INPUT_PROMPT, # The hook we want, if not supplied we default to:
-                lambda :None              # a safe trivial callable
-            )
-            # hook()
 
         _, opposing_team = self._team_id(combatant)
 
@@ -117,15 +110,8 @@ class CombatRound:
 
                 # Insert the fighter back at the beginning of the turn order to be handled by player_fighter_turn()
                 self._round_order.insert(0, combatant)
-                
-                # hook()
-                # if combatant.target is None:
-                #     combatant.target = 0
-                # target_index = combatant.target
-                # target = enemies[target_index]
 
-
-    def player_fighter_turn(self, target = None) -> Generator[None, None, Action]:
+    def player_fighter_turn(self, target: int | None) -> Generator[None, None, Action]:
         """
         While eng.awaiting_input is True, this function will be repeatedly called in eng._generate_combat_actions()
         The target is passed in from that scope as eng.chosen_target, which is updated via the on_keypress hook of the MissionsView.

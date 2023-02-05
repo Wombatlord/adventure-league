@@ -1,4 +1,6 @@
 import arcade
+import arcade.key
+import arcade.color
 from arcade import Window
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import Cycle, ScrollWindow
@@ -12,7 +14,7 @@ from src.engine.engine import eng
 
 
 class TitleView(arcade.View):
-    def __init__(self, window: Window = None):
+    def __init__(self, window: Window | None = None):
         super().__init__(window)
         self.background = WindowData.title_background
         self.title_y = -10
@@ -134,8 +136,9 @@ class GuildView(arcade.View):
                 self.window.show_view(title_view)
 
             case arcade.key.N:
-                eng.mission_board.clear_board()
-                eng.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
+                if eng.mission_board is not None:
+                    eng.mission_board.clear_board()
+                    eng.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
 
             case arcade.key.M:
                 missions_view = MissionsView()
