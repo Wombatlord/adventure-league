@@ -168,28 +168,26 @@ def draw_recruiting_panel(margin: int, height: int, recruitment_scroll_window, r
 
 def populate_recruitment_pane(recruitment_scroll_window, height, row_height):
     if recruitment_scroll_window.visible_items[1] is not None:
-        height = gen_heights(row_height=row_height, y=height, spacing=5)
+        height = gen_heights(row_height=row_height + 6, y=height, spacing=3)
         for merc, y2 in zip(range(recruitment_scroll_window.visible_size), height):
 
             if merc == recruitment_scroll_window.visible_items[1]:
                 # Colour the selected merc Gold
                 color = (218, 165, 32, 255)
-                mark = " >>>"
+                mark1 = ">>> "
+                mark2 = " $"
             else:
                 # otherwise colour white.
                 color = arcade.color.WHITE
-                mark = ""
-
-            merc_index_in_items_array = recruitment_scroll_window.items.index(
-                recruitment_scroll_window.visible_items[0][merc]
-            )
-
+                mark1 = ""
+                mark2 = ""
+            cost = f"{recruitment_scroll_window.visible_items[0][merc].cost} gp"
             arcade.Text(
-                f"{merc_index_in_items_array} {recruitment_scroll_window.visible_items[0][merc].name.first_name.capitalize()} {mark}",
+                f"{mark1} {recruitment_scroll_window.visible_items[0][merc].name.first_name.capitalize()} : {cost}",
                 start_x=WindowData.width / 2,
                 start_y=y2,
                 font_name=WindowData.font,
-                font_size=12,
+                font_size=18,
                 anchor_x="center",
                 color=color,
             ).draw()

@@ -2,6 +2,7 @@ import arcade
 import arcade.key
 import arcade.color
 from arcade import Window
+from enum import Enum
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.mission_card import MissionCard
@@ -155,6 +156,9 @@ class GuildView(arcade.View):
         WindowData.width = width
         WindowData.height = height
 
+class RosterStates(Enum):
+    ROSTER = 0
+    RECRUIT = 1
 
 class RosterView(arcade.View):
     def __init__(self, window: Window = None):
@@ -162,6 +166,7 @@ class RosterView(arcade.View):
         self.recruitment_pool = eng.entity_pool.pool
         self.roster = eng.guild.roster
         self.team_members = eng.guild.team.members
+        self.roster_limit = eng.guild.roster_limit
         self.margin = 5
         self.col_select = Cycle(2)
         self.row_height = 25
@@ -173,12 +178,12 @@ class RosterView(arcade.View):
         self.team_scroll_window.append_all(self.team_members)
         self.recruitment_scroll_window = ScrollWindow([], 0, 4)
         self.recruitment_scroll_window.init_items(self.recruitment_pool)
-        self.state = "Roster"
+        self.state = RosterStates.ROSTER
 
     def on_draw(self):
         self.clear()
         merc = None
-        if self.state == "Roster":
+        if self.state == RosterStates.ROSTER:
             draw_panels(
                 margin=self.margin,
                 col_select=self.col_select,
@@ -198,13 +203,18 @@ class RosterView(arcade.View):
                     self.team_scroll_window.position.pos
                 ]
 
-        if self.state == "Recruit":
+        if self.state == RosterStates.RECRUIT:
             draw_recruiting_panel(
                 margin=self.margin,
                 height=WindowData.height,
                 row_height=self.row_height,
                 recruitment_scroll_window=self.recruitment_scroll_window,
             )
+
+            if len(self.recruitment_scroll_window.items) > 0:
+                merc = self.recruitment_scroll_window.items[
+                    self.recruitment_scroll_window.position.pos
+                ]
 
         bottom_bar(merc)
 
@@ -229,13 +239,12 @@ class RosterView(arcade.View):
                 self.window.show_view(guild_view)
 
             case arcade.key.R:
-                if self.state == "Roster":
-                    self.state = "Recruit"
-                    print(self.state)
+                if self.state == RosterStates.ROSTER:
+                    self.state = RosterStates.RECRUIT
 
-                elif self.state == "Recruit":
-                    self.state = "Roster"
-                    print(self.state)
+                elif self.state == RosterStates.RECRUIT:
+                    self.roster_scroll_window.init_items(self.roster)
+                    self.state = RosterStates.ROSTER
 
             case arcade.key.RIGHT:
                 self.col_select.incr()
@@ -244,47 +253,62 @@ class RosterView(arcade.View):
                 self.col_select.decr()
 
             case arcade.key.UP:
-                if self.col_select.pos == 0:
-                    self.roster_scroll_window.decr_selection()
+                if self.state == RosterStates.ROSTER:
+                    if self.col_select.pos == 0:
+                        self.roster_scroll_window.decr_selection()
 
-                if self.col_select.pos == 1:
-                    self.team_scroll_window.decr_selection()
+                    if self.col_select.pos == 1:
+                        self.team_scroll_window.decr_selection()
+                
+                elif self.state == RosterStates.RECRUIT:
+                    self.recruitment_scroll_window.decr_selection()
 
             case arcade.key.DOWN:
-                if self.col_select.pos == 0:
-                    self.roster_scroll_window.incr_selection()
+                if self.state == RosterStates.ROSTER:
+                    if self.col_select.pos == 0:
+                        self.roster_scroll_window.incr_selection()
 
-                if self.col_select.pos == 1:
-                    self.team_scroll_window.incr_selection()
+                    if self.col_select.pos == 1:
+                        self.team_scroll_window.incr_selection()
+                
+                elif self.state == RosterStates.RECRUIT:
+                    self.recruitment_scroll_window.incr_selection()
 
             case arcade.key.ENTER:
-                if (
-                    self.col_select.pos == self.roster_pane
-                    and len(self.roster_scroll_window.items) > 0
-                ):
-                    # Move merc from ROSTER to TEAM. Increase Cycle.length for team, decrease Cycle.length for roster.
-                    # Assign to Team & Remove from Roster.
-                    self.team_scroll_window.append(self.roster_scroll_window.selection)
-                    eng.guild.team.assign_to_team(self.roster_scroll_window.selection)
-                    self.roster_scroll_window.pop()
+                if self.state == RosterStates.ROSTER:
+                    if (
+                        self.col_select.pos == self.roster_pane
+                        and len(self.roster_scroll_window.items) > 0
+                    ):
+                        # Move merc from ROSTER to TEAM. Increase Cycle.length for team, decrease Cycle.length for roster.
+                        # Assign to Team & Remove from Roster.
+                        self.team_scroll_window.append(self.roster_scroll_window.selection)
+                        eng.guild.team.assign_to_team(self.roster_scroll_window.selection)
+                        self.roster_scroll_window.pop()
 
-                    # Update Engine state.
-                    eng.guild.roster = self.roster_scroll_window.items
-                    # eng.guild.team.members = self.team_scroll_window.items
+                        # Update Engine state.
+                        eng.guild.roster = self.roster_scroll_window.items
+                        # eng.guild.team.members = self.team_scroll_window.items
 
-                if (
-                    self.col_select.pos == self.team_pane
-                    and len(self.team_scroll_window.items) > 0
-                ):
-                    # Move merc from TEAM to ROSTER
-                    self.roster_scroll_window.append(self.team_scroll_window.selection)
+                    if (
+                        self.col_select.pos == self.team_pane
+                        and len(self.team_scroll_window.items) > 0
+                    ):
+                        # Move merc from TEAM to ROSTER
+                        self.roster_scroll_window.append(self.team_scroll_window.selection)
 
-                    # Remove from Team array
-                    self.team_scroll_window.pop()
+                        # Remove from Team array
+                        self.team_scroll_window.pop()
 
-                    # Update Engine state.
-                    eng.guild.roster = self.roster_scroll_window.items
-                    eng.guild.team.members = self.team_scroll_window.items
+                        # Update Engine state.
+                        eng.guild.roster = self.roster_scroll_window.items
+                        eng.guild.team.members = self.team_scroll_window.items
+                
+                elif self.state == RosterStates.RECRUIT:
+                    if len(self.roster) + len(self.team_members) < self.roster_limit:
+                        print(eng.guild.funds)
+                        eng.recruit_entity_to_guild(self.recruitment_pool.index(self.recruitment_scroll_window.selection))
+                        self.recruitment_scroll_window.pop()
 
         self._log_state()
 
