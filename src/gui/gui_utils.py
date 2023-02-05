@@ -128,11 +128,9 @@ class ScrollWindow:
         self._drag_frame()
     
     def init_items(self, items):
-        # size = self.visible_size
-        # print(size)
         self.__init__(
             [*items], 
-            visible_size=4, # grow the frame size by 1 unless at max
+            visible_size=self.visible_size, # grow the frame size by 1 unless at max
             stretch_limit=self.stretch_limit, # preserve stretch limit
         )
 
