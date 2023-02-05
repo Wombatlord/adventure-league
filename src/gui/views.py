@@ -9,8 +9,9 @@ from src.gui.combat_screen import CombatScreen
 from src.gui.roster_view_components import (
     bottom_bar,
     draw_panels,
+    draw_recruiting_panel,
 )
-from src.engine.engine import eng
+from src.engine.init_engine import eng
 
 
 class TitleView(arcade.View):
@@ -158,6 +159,7 @@ class GuildView(arcade.View):
 class RosterView(arcade.View):
     def __init__(self, window: Window = None):
         super().__init__(window)
+        self.recruitment_pool = eng.entity_pool.pool
         self.roster = eng.guild.roster
         self.team_members = eng.guild.team.members
         self.margin = 5
@@ -169,26 +171,40 @@ class RosterView(arcade.View):
         self.roster_scroll_window.init_items(self.roster)
         self.team_scroll_window = ScrollWindow([], 0, 4)
         self.team_scroll_window.append_all(self.team_members)
+        self.recruitment_scroll_window = ScrollWindow([], 0, 4)
+        self.recruitment_scroll_window.init_items(self.recruitment_pool)
+        self.state = "Roster"
 
     def on_draw(self):
         self.clear()
-        draw_panels(
-            margin=self.margin,
-            col_select=self.col_select,
-            height=WindowData.height,
-            width=WindowData.width,
-            row_height=self.row_height,
-            roster_scroll_window=self.roster_scroll_window,
-            team_scroll_window=self.team_scroll_window,
-        )
         merc = None
-        if self.col_select.pos == 0 and len(self.roster_scroll_window.items) > 0:
-            merc = self.roster_scroll_window.items[
-                self.roster_scroll_window.position.pos
-            ]
+        if self.state == "Roster":
+            draw_panels(
+                margin=self.margin,
+                col_select=self.col_select,
+                height=WindowData.height,
+                width=WindowData.width,
+                row_height=self.row_height,
+                roster_scroll_window=self.roster_scroll_window,
+                team_scroll_window=self.team_scroll_window,
+            )
+            if self.col_select.pos == 0 and len(self.roster_scroll_window.items) > 0:
+                merc = self.roster_scroll_window.items[
+                    self.roster_scroll_window.position.pos
+                ]
 
-        if self.col_select.pos == 1 and len(self.team_scroll_window.items) > 0:
-            merc = self.team_scroll_window.items[self.team_scroll_window.position.pos]
+            if self.col_select.pos == 1 and len(self.team_scroll_window.items) > 0:
+                merc = self.team_scroll_window.items[
+                    self.team_scroll_window.position.pos
+                ]
+
+        if self.state == "Recruit":
+            draw_recruiting_panel(
+                margin=self.margin,
+                height=WindowData.height,
+                row_height=self.row_height,
+                recruitment_scroll_window=self.recruitment_scroll_window,
+            )
 
         bottom_bar(merc)
 
@@ -211,6 +227,15 @@ class RosterView(arcade.View):
             case arcade.key.G:
                 guild_view = GuildView()
                 self.window.show_view(guild_view)
+
+            case arcade.key.R:
+                if self.state == "Roster":
+                    self.state = "Recruit"
+                    print(self.state)
+
+                elif self.state == "Recruit":
+                    self.state = "Roster"
+                    print(self.state)
 
             case arcade.key.RIGHT:
                 self.col_select.incr()
@@ -269,6 +294,7 @@ class RosterView(arcade.View):
         WindowData.width = width
         WindowData.height = height
 
+
 class MissionsView(arcade.View):
     def __init__(self, window: Window = None):
         super().__init__(window)
@@ -310,7 +336,7 @@ class MissionsView(arcade.View):
         if self.state == 1:
             if eng.awaiting_input:
                 self.combat_screen.draw_turn_prompt()
-            
+
             if eng.mission_in_progress == False:
                 self.combat_screen.draw_turn_prompt()
 
@@ -363,7 +389,7 @@ class MissionsView(arcade.View):
             case arcade.key.NUM_1 | arcade.key.KEY_1:
                 if eng.awaiting_input:
                     eng.set_target(1)
-            
+
             case arcade.key.NUM_2 | arcade.key.KEY_2:
                 if eng.awaiting_input:
                     eng.set_target(2)
