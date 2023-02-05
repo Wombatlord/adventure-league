@@ -9,20 +9,22 @@ from src.entities.dungeon import Dungeon
 from src.entities.mission_board import MissionBoard
 from src.projection import health
 from src.systems.combat import CombatRound
+from src.engine.describer import Describer
+
 
 class MessagesWithAlphas(NamedTuple):
     messages: list[str]
     alphas: list[int]
 
+
 Action = dict[str, Any]
-Turn = Generator[None, None, Action]      # <-
-Round = Generator[None, None, Turn]       # <- These are internal to the combat system
+Turn = Generator[None, None, Action]  # <-
+Round = Generator[None, None, Turn]  # <- These are internal to the combat system
 Encounter = Generator[None, None, Round]
 Quest = Generator[None, None, Encounter]
 
-projections = {
-    "entity_data": [health]
-}
+projections = {"entity_data": [health]}
+
 
 def flush_all() -> None:
     for subscribers in projections.values():
@@ -33,7 +35,7 @@ def flush_all() -> None:
 class Engine:
     dungeon: Dungeon
 
-    def __init__(self) -> None:
+    def __init__(self, describer) -> None:
         self.guild: Optional[Guild] = None
         self.entity_pool: Optional[EntityPool] = None
         self.dungeon: Optional[Dungeon] = None
@@ -47,7 +49,11 @@ class Engine:
         self.message_alphas: list[int] = []
         self.alpha_max: int = 255
         self.chosen_target: int | None = None
-    
+        self.describer = describer
+
+        if self.describer:
+            self.describer.owner = self
+
     def setup(self) -> None:
         # create a pool of potential recruits
         self.entity_pool = EntityPool(8)
@@ -84,10 +90,10 @@ class Engine:
 
             except IndexError:
                 break
-            
+
             self.process_one(event)
 
-    def process_one(self, event: Action = None) -> None:
+    def process_one(self, event: Action) -> None:
         if "message" in event:
             # print("message:", action["message"])
             self.messages.append(event["message"])
@@ -95,8 +101,8 @@ class Engine:
         if "await target" in event:
             fighter = event["await target"]
             self.await_input()
-        
-        to_project = {*event.keys()}&{*projections.keys()}
+
+        to_project = {*event.keys()} & {*projections.keys()}
         for key in to_project:
             for projection in projections[key]:
                 projection.consume(action=event)
@@ -124,15 +130,18 @@ class Engine:
         return self.messages[-n:]
 
     def last_n_messages_with_alphas(self, n: int) -> MessagesWithAlphas:
-        if len(self.message_alphas) < len(self.messages) and len(self.message_alphas) < n:
+        if (
+            len(self.message_alphas) < len(self.messages)
+            and len(self.message_alphas) < n
+        ):
             self.message_alphas.insert(0, self.alpha_max)
             self.alpha_max -= 50
-        
+
         return MessagesWithAlphas(self.messages[-n:], self.message_alphas)
 
     def await_input(self) -> None:
         self.awaiting_input = True
-    
+
     def set_target(self, target_choice) -> None:
         self.chosen_target = target_choice
 
@@ -142,7 +151,7 @@ class Engine:
             self.guild.claim_rewards(self.dungeon)
         else:
             actions = self.team_defeated(self.guild.team)
-        
+
         self.dungeon = None
         self.mission_in_progress = False
         return actions
@@ -157,18 +166,18 @@ class Engine:
         self.alpha_max = 255
         flush_all()
         self.combat = self._generate_combat_actions()
-    
+
     def initial_health_values(self, team, enemies) -> list[Action]:
         result = []
 
         for combatant in team:
             result.append(combatant.annotate_event({}))
-        
+
         for combatant in enemies:
             result.append(combatant.annotate_event({}))
 
         return result
-    
+
     def next_combat_action(self) -> bool:
         """
         This is the source ==Action==> consumer connection
@@ -179,22 +188,28 @@ class Engine:
             return True
         except StopIteration:
             return False
-    
+
     def _generate_combat_actions(self) -> Generator[None, None, Action]:
         quest = self.dungeon.room_generator()
-
-        yield {"message": f"The {eng.guild.team.name} of {eng.guild.name} draw their weapons and charge into {eng.dungeon.description}!"}
+        
+        yield {
+            "message": self.describer.describe_entrance()
+        }
 
         for encounter in quest:
-            
-            healths = self.initial_health_values(self.guild.team.members, encounter.enemies)
-            
+
+            healths = self.initial_health_values(
+                self.guild.team.members, encounter.enemies
+            )
+
             for h in healths:
                 yield h
 
             while encounter.enemies and self.guild.team.members:
                 # Beginning of encounter actions/state changes go here
-                combat_round = CombatRound(self.guild.team.members, encounter.enemies, self.await_input)
+                combat_round = CombatRound(
+                    self.guild.team.members, encounter.enemies, self.await_input
+                )
 
                 # example of per-round actions
                 for action in combat_round.initiative_roll_actions:
@@ -207,35 +222,37 @@ class Engine:
                         # If that fighter is a player merc, it will skip attacking and instead cause self.awaiting_input to be true
                         # via the combatants request_target() method.
                         actions = combat_round.single_fighter_turn()
-                    
+
                     while self.awaiting_input == True:
                         # We sit in this loop until eng.chosen_target is updated by user input
                         # Once the user inputs a valid target and causes the next iteration,
                         # attack actions will be yielded and awaiting_input will become false.
-                        actions = combat_round.player_fighter_turn(eng.chosen_target)
-                        
+                        actions = combat_round.player_fighter_turn(self.chosen_target)
+
                         # Yield one of the following depending on if the user has selected a target
                         # Reset the target after a loop ending run of player_fighter_turn
-                        if eng.chosen_target is None:
-                            yield {"message": "Use the numpad to choose a target before advancing!"}
+                        if self.chosen_target is None:
+                            yield {
+                                "message": "Use the numpad to choose a target before advancing!"
+                            }
                         else:
-                            eng.chosen_target = None
+                            self.chosen_target = None
                             yield {}
-                    
+
                     for action in actions:
                         yield action
 
             if len(self.guild.team.members) == 0:
                 break
-            
+
             if not eng.dungeon.boss.is_dead:
-                yield {"message": f"Splattered with gore, the {eng.guild.team.name} move deeper into {eng.dungeon.description}!"}
+                yield {"message": self.describer.describe_room_complete()}
 
         if combat_round.victor() == 0:
             win = True
         else:
             win = False
-        
+
         for action in self.end_of_combat(win=win):
             yield action
 
@@ -253,7 +270,7 @@ class Engine:
         results.append({"message": message})
         results.append({"team triumphant": (guild, dungeon)})
         return results
-    
+
     @staticmethod
     def team_defeated(team) -> bool:
         results = []
@@ -264,7 +281,7 @@ class Engine:
 
 
 # Instantiate & setup the engine
-eng = Engine()
+eng = Engine(describer=Describer())
 eng.setup()
 
 # Get some entities in the guild
