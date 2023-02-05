@@ -1,9 +1,11 @@
 from random import randint
+from typing import Optional
+from src.engine.engine import Engine
 
 
 class Describer:
     def __init__(self) -> None:
-        self.owner = None
+        self.owner: Optional[Engine]
 
     def describe_entrance(self) -> str:
         if self.owner is None:
@@ -31,7 +33,7 @@ class Describer:
         room_complete_messages = [
             f"Splattered with gore, the {self.owner.guild.team.name} move deeper into {self.owner.dungeon.description}!",
             f"With bloodied weapons, the {self.owner.guild.team.name} press onward!",
-            f"The {self.owner.guild.team.name} step over the fallen, pushing further into {self.owner.dungeon.description}!"
+            f"The {self.owner.guild.team.name} step over the fallen, pushing further into {self.owner.dungeon.description}!",
             f"The {self.owner.guild.team.name} cheer before continuing their assault!",
             f"Jagged teeth leer from the darkness as more enemies arrive and fall upon the {self.owner.guild.team.name}!",
             f"The {self.owner.guild.team.name} win a brief reprieve and gird themselves for further bloodshed!",

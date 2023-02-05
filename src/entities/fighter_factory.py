@@ -45,7 +45,7 @@ create_random_boss = _boss.factory
 class EntityPool:
     def __init__(self, size: int = None) -> None:
         self.size = size
-        self.pool = []
+        self.pool: list[Entity] = []
 
     def increase_pool_size(self, new_size: int) -> None:
         # Set the new pool size and clear the previous pool

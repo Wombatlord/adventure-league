@@ -9,7 +9,6 @@ from src.entities.dungeon import Dungeon
 from src.entities.mission_board import MissionBoard
 from src.projection import health
 from src.systems.combat import CombatRound
-from src.engine.describer import Describer
 
 
 class MessagesWithAlphas(NamedTuple):
@@ -33,8 +32,6 @@ def flush_all() -> None:
 
 
 class Engine:
-    dungeon: Dungeon
-
     def __init__(self, describer) -> None:
         self.guild: Optional[Guild] = None
         self.entity_pool: Optional[EntityPool] = None
@@ -44,7 +41,7 @@ class Engine:
         self.selected_mission: int | None = None
         self.messages: list[str] = []
         self.action_queue: list[Action] = []
-        self.combat: Generator[None, None, Action] = None
+        self.combat: Generator[None, None, Action]
         self.awaiting_input: bool = False
         self.message_alphas: list[int] = []
         self.alpha_max: int = 255
@@ -245,7 +242,7 @@ class Engine:
             if len(self.guild.team.members) == 0:
                 break
 
-            if not eng.dungeon.boss.is_dead:
+            if not self.dungeon.boss.is_dead:
                 yield {"message": self.describer.describe_room_complete()}
 
         if combat_round.victor() == 0:
@@ -278,16 +275,3 @@ class Engine:
         results.append({"message": f"{team.name} defeated!"})
 
         return results
-
-
-# Instantiate & setup the engine
-eng = Engine(describer=Describer())
-eng.setup()
-
-# Get some entities in the guild
-eng.recruit_entity_to_guild(0)
-eng.recruit_entity_to_guild(0)
-eng.recruit_entity_to_guild(0)
-eng.recruit_entity_to_guild(0)
-eng.recruit_entity_to_guild(0)
-eng.recruit_entity_to_guild(0)

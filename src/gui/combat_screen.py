@@ -1,6 +1,6 @@
 import arcade
 from typing import Callable, Generator
-from src.engine.engine import eng
+from src.engine.init_engine import eng
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import gen_heights
 from src.projection import health

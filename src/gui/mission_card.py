@@ -1,5 +1,4 @@
 import arcade
-from src.engine.engine import eng
 from src.entities.dungeon import Dungeon
 
 
