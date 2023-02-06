@@ -30,7 +30,7 @@ class CombatScreen:
     def draw_stats(self):
         heights = self.msg_height()
         proj: health.HealthProjection = health.current()
-        proj.configure(heights=[*heights]).draw()
+        proj.configure(team=self.team,heights=[*heights]).draw()
 
     def msg_paint(self, n) -> list:
         if len(self.alphas) < len(self.messages) and len(self.alphas) < n:

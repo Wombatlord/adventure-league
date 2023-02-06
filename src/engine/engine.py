@@ -53,7 +53,7 @@ class Engine:
 
     def setup(self) -> None:
         # create a pool of potential recruits
-        self.entity_pool = EntityPool(8)
+        self.entity_pool = EntityPool(15)
         self.entity_pool.fill_pool()
 
         # create a guild

@@ -11,33 +11,53 @@ class HealthProjection:
     def __init__(self):
         self.config = {}
 
-    def configure(self, heights: list[int] = None, **kwargs) -> HealthProjection:
+    def configure(self, team: list, heights: list[int] = None, **kwargs) -> HealthProjection:
         self.config = kwargs
         self.heights = heights if heights else []
+        self.names = [member.name.name_and_title for member in team]
         return self
     
     def draw(self) -> None:
-        heights = [*self.heights]
+        merc_heights = [*self.heights]
+        enemy_heights = [*self.heights]
 
         for name, health in _health_projection.items():
             try:
-                start_y = heights.pop(0)
+                if name in self.names:
+                    start_y = merc_heights.pop(0)
+                else:
+                    start_y = enemy_heights.pop(0)
             except IndexError:
                 break
+            if name in self.names:
+                arcade.Text(
+                    text=f"{name}: {health}",
+                    start_x=WindowData.width / 8,
+                    start_y=start_y,
+                    anchor_x="center",
+                    anchor_y="center",
+                    multiline=True,
+                    width=500,
+                    align="center",
+                    color=arcade.color.AIR_SUPERIORITY_BLUE,
+                    font_name=WindowData.font,
+                    **self.config
+                ).draw()
+            else:
+                arcade.Text(
+                    text=f"{name}: {health}",
+                    start_x=WindowData.width * 0.85,
+                    start_y=start_y,
+                    anchor_x="center",
+                    anchor_y="center",
+                    multiline=True,
+                    width=500,
+                    align="center",
+                    color=arcade.color.AIR_SUPERIORITY_BLUE,
+                    font_name=WindowData.font,
+                    **self.config
+                ).draw()
 
-            arcade.Text(
-                text=f"{name}: {health}",
-                start_x=WindowData.width / 8,
-                start_y=start_y,
-                anchor_x="center",
-                anchor_y="center",
-                multiline=True,
-                width=500,
-                align="center",
-                color=arcade.color.AIR_SUPERIORITY_BLUE,
-                font_name=WindowData.font,
-                **self.config
-            ).draw()
 
 def current() -> HealthProjection:
     return HealthProjection()
