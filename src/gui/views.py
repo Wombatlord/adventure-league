@@ -288,8 +288,10 @@ class RosterView(arcade.View):
                         self.roster_scroll_window.pop()
 
                         # Update Engine state.
-                        eng.guild.roster = self.roster_scroll_window.items
-                        # eng.guild.team.members = self.team_scroll_window.items
+                        self.roster = self.roster_scroll_window.items
+                        eng.guild.roster = self.roster
+                        self.team_members = self.team_scroll_window.items
+                        eng.guild.team.members = self.team_members
 
                     if (
                         self.col_select.pos == self.team_pane
@@ -302,8 +304,10 @@ class RosterView(arcade.View):
                         self.team_scroll_window.pop()
 
                         # Update Engine state.
-                        eng.guild.roster = self.roster_scroll_window.items
-                        eng.guild.team.members = self.team_scroll_window.items
+                        self.roster = self.roster_scroll_window.items
+                        eng.guild.roster = self.roster
+                        self.team_members = self.team_scroll_window.items
+                        eng.guild.team.members = self.team_members
                 
                 elif self.state == ViewStates.RECRUIT:
                     if len(self.roster) + len(self.team_members) < self.roster_limit:
