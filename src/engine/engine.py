@@ -46,6 +46,7 @@ class Engine:
         self.message_alphas: list[int] = []
         self.alpha_max: int = 255
         self.chosen_target: int | None = None
+        self.update_clock = 0.3
         self.describer = describer
 
         if self.describer:
@@ -104,6 +105,11 @@ class Engine:
             for projection in projections[key]:
                 projection.consume(action=event)
 
+        if "delay" in event:
+            delay = event["delay"]
+            print(f"DELAY! {delay}")
+            self.increase_update_clock_by_delay(delay)
+
         if "dying" in event:
             entity: Entity = event["dying"]
 
@@ -122,6 +128,9 @@ class Engine:
     def _check_action_queue(self) -> None:
         for item in self.action_queue:
             print(f"item: {item}")
+    
+    def increase_update_clock_by_delay(self, delay):
+        self.update_clock += delay
 
     def last_n_messages(self, n: int) -> list[str]:
         return self.messages[-n:]
@@ -190,7 +199,8 @@ class Engine:
         quest = self.dungeon.room_generator()
         
         yield {
-            "message": self.describer.describe_entrance()
+            "message": self.describer.describe_entrance(),
+            "delay": 3
         }
 
         for encounter in quest:
@@ -243,7 +253,10 @@ class Engine:
                 break
 
             if not self.dungeon.boss.is_dead:
-                yield {"message": self.describer.describe_room_complete()}
+                yield {
+                    "message": self.describer.describe_room_complete(),
+                    "delay": 3
+                }
 
         if combat_round.victor() == 0:
             win = True
