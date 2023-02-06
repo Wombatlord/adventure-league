@@ -53,7 +53,7 @@ class HealthProjection:
                     multiline=True,
                     width=500,
                     align="center",
-                    color=arcade.color.AIR_SUPERIORITY_BLUE,
+                    color=arcade.color.RED_DEVIL,
                     font_name=WindowData.font,
                     **self.config
                 ).draw()
