@@ -9,7 +9,7 @@ from src.entities.dungeon import Dungeon
 from src.entities.mission_board import MissionBoard
 from src.projection import health
 from src.systems.combat import CombatRound
-
+from src.engine.describer import Describer
 
 class MessagesWithAlphas(NamedTuple):
     messages: list[str]
@@ -32,25 +32,24 @@ def flush_all() -> None:
 
 
 class Engine:
-    def __init__(self, describer) -> None:
-        self.guild: Optional[Guild] = None
-        self.entity_pool: Optional[EntityPool] = None
-        self.dungeon: Optional[Dungeon] = None
-        self.mission_board: Optional[MissionBoard] = None
-        self.mission_in_progress: bool = False
-        self.selected_mission: int | None = None
-        self.messages: list[str] = []
+    def __init__(self) -> None:
         self.action_queue: list[Action] = []
+        self.messages: list[str] = []
         self.combat: Generator[None, None, Action]
         self.awaiting_input: bool = False
         self.message_alphas: list[int] = []
         self.alpha_max: int = 255
         self.chosen_target: int | None = None
         self.update_clock = 0.3
-        self.describer = describer
+        self.selected_mission: int | None = None
+        self.mission_in_progress: bool = False
 
-        if self.describer:
-            self.describer.owner = self
+        # game state
+        self.guild: Optional[Guild] = None
+        self.entity_pool: Optional[EntityPool] = None
+        self.dungeon: Optional[Dungeon] = None
+        self.mission_board: Optional[MissionBoard] = None
+
 
     def setup(self) -> None:
         # create a pool of potential recruits
@@ -107,7 +106,6 @@ class Engine:
 
         if "delay" in event:
             delay = event["delay"]
-            print(f"DELAY! {delay}")
             self.increase_update_clock_by_delay(delay)
 
         if "dying" in event:
@@ -199,7 +197,7 @@ class Engine:
         quest = self.dungeon.room_generator()
         
         yield {
-            "message": self.describer.describe_entrance(),
+            "message": Describer.describe_entrance(self),
             "delay": 3
         }
 
@@ -254,7 +252,7 @@ class Engine:
 
             if not self.dungeon.boss.is_dead:
                 yield {
-                    "message": self.describer.describe_room_complete(),
+                    "message": Describer.describe_room_complete(self),
                     "delay": 3
                 }
 
