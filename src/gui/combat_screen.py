@@ -22,12 +22,10 @@ class CombatScreen:
         eng.update_clock -= delta_time
         call_hook = True
         print(eng.update_clock)
-        if eng.update_clock <= 0:
-            if call_hook:
-                call_hook = hook()
-            print(eng.update_clock)
         if eng.update_clock < 0:
             eng.reset_update_clock()
+            if call_hook:
+                call_hook = hook()
 
     def draw_stats(self):
         heights = self.msg_height()
