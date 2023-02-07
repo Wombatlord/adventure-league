@@ -17,16 +17,17 @@ class CombatScreen:
         self.team = eng.guild.team.members
         self.alpha_max = 255
         self.alphas = []
-        self.default_update_clock = 0.3
         
     def on_update(self, delta_time, hook: Hook):
         eng.update_clock -= delta_time
         call_hook = True
-
+        print(eng.update_clock)
         if eng.update_clock <= 0:
             if call_hook:
                 call_hook = hook()
-            eng.update_clock = self.default_update_clock
+            print(eng.update_clock)
+        if eng.update_clock < 0:
+            eng.reset_update_clock()
 
     def draw_stats(self):
         heights = self.msg_height()

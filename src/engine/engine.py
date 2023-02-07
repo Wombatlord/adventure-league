@@ -40,7 +40,8 @@ class Engine:
         self.message_alphas: list[int] = []
         self.alpha_max: int = 255
         self.chosen_target: int | None = None
-        self.update_clock = 0.3
+        self.default_clock_value = 0.5
+        self.update_clock = self.default_clock_value
         self.selected_mission: int | None = None
         self.mission_in_progress: bool = False
 
@@ -126,6 +127,9 @@ class Engine:
     def _check_action_queue(self) -> None:
         for item in self.action_queue:
             print(f"item: {item}")
+    
+    def reset_update_clock(self):
+        self.update_clock = self.default_clock_value
     
     def increase_update_clock_by_delay(self, delay):
         self.update_clock += delay
@@ -253,7 +257,7 @@ class Engine:
             if not self.dungeon.boss.is_dead:
                 yield {
                     "message": Describer.describe_room_complete(self),
-                    "delay": 3
+                    "delay": 30
                 }
 
         if combat_round.victor() == 0:
