@@ -400,15 +400,17 @@ class MissionsView(arcade.View):
                 self.selection.incr()
 
             case arcade.key.RETURN:
-                eng.selected_mission = self.selection.pos
-                eng.init_dungeon()
+                if len(eng.game_state.guild.team.members) > 0:
+                    eng.selected_mission = self.selection.pos
+                    eng.init_dungeon()
 
-                if not eng.game_state.dungeon.cleared:
-                    eng.init_combat()
-                    self.combat_screen = CombatScreen()
+                    if not eng.game_state.dungeon.cleared:
+                        eng.init_combat()
+                        self.combat_screen = CombatScreen()
 
-                    self.state = ViewStates.COMBAT
-                    eng.await_input()
+                        self.state = ViewStates.COMBAT
+                        eng.await_input()
+
 
             case arcade.key.NUM_0 | arcade.key.KEY_0:
                 if eng.awaiting_input:
