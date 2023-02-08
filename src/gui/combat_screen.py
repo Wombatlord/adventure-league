@@ -14,7 +14,7 @@ class CombatScreen:
         self.heights = []
         self.message_id = 0
         self.time = 0
-        self.team = eng.guild.team.members
+        self.team = eng.game_state.guild.team.members
         self.alpha_max = 255
         self.alphas = []
         
