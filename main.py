@@ -7,6 +7,7 @@ def start_adventure_league():
     window = arcade.Window(
         WindowData.width, WindowData.height, "Adventure League!", resizable=True
     )
+    window.set_icon(WindowData.window_icon)
     title_view = TitleView(window=window)
     window.show_view(title_view)
     arcade.run()

@@ -257,7 +257,7 @@ class Engine:
             if not self.dungeon.boss.is_dead:
                 yield {
                     "message": Describer.describe_room_complete(self),
-                    "delay": 30
+                    "delay": 3
                 }
 
         if combat_round.victor() == 0:
