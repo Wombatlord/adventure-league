@@ -21,7 +21,7 @@ class CombatScreen:
     def on_update(self, delta_time, hook: Hook):
         eng.update_clock -= delta_time
         call_hook = True
-        print(eng.update_clock)
+
         if eng.update_clock < 0:
             eng.reset_update_clock()
             if call_hook:
