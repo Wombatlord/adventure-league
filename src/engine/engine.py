@@ -34,6 +34,7 @@ def flush_all() -> None:
 
 class Engine:
     game_state: GameState
+    default_clock_value = 0.5
     
     def __init__(self) -> None:
         self.action_queue: list[Action] = []
@@ -43,41 +44,37 @@ class Engine:
         self.message_alphas: list[int] = []
         self.alpha_max: int = 255
         self.chosen_target: int | None = None
-        self.default_clock_value = 0.5
         self.update_clock = self.default_clock_value
         self.selected_mission: int | None = None
         self.mission_in_progress: bool = False
 
-        # game state
-        # self.guild: Optional[Guild] = None
-        # self.entity_pool: Optional[EntityPool] = None
-        # self.dungeon: Optional[Dungeon] = None
-        # self.mission_board: Optional[MissionBoard] = None
-
-
     def setup(self) -> None:
-        # create a pool of potential recruits
         self.game_state = GameState()
-        
-        self.game_state.entity_pool = EntityPool(15)
-        self.game_state.entity_pool.fill_pool()
+        # create a pool of potential recruits
+        pool = EntityPool(15)
+        pool.fill_pool()
+        self.game_state.set_entity_pool(pool)
 
         # create a guild
-        self.game_state.guild = Guild(
+        guild = Guild(
             name=guild_names[randint(0, len(guild_names) - 1)],
             xp=4000,
             funds=100,
             roster=[],
         )
-        self.game_state.guild.team.name_team()
+        guild.team.name_team()
+        self.game_state.set_guild(guild)
 
         # create a mission board
-        self.game_state.mission_board = MissionBoard(size=3)
-        self.game_state.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
+        mission_board = MissionBoard(size=3)
+        mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
+        self.game_state.set_mission_board(mission_board)
         flush_all()
 
     def recruit_entity_to_guild(self, selection_id) -> None:
-        self.game_state.guild.recruit(selection_id, self.game_state.entity_pool.pool)
+        guild = self.game_state.get_guild()
+        entity_pool = self.game_state.get_entity_pool()
+        guild.recruit(selection_id, entity_pool.pool)
 
     def process_action_queue(self) -> None:
         # new_action_queue = []
@@ -154,18 +151,24 @@ class Engine:
         self.chosen_target = target_choice
 
     def end_of_combat(self, win: bool = True) -> list[Action]:
+        guild = self.game_state.get_guild()
+        dungeon = self.game_state.get_dungeon()
+        
         if win:
-            actions = self.team_triumphant_actions(self.game_state.guild, self.game_state.dungeon)
-            self.game_state.guild.claim_rewards(self.game_state.dungeon)
+            actions = self.team_triumphant_actions(guild, dungeon)
+            self.game_state.guild.claim_rewards(dungeon)
         else:
-            actions = self.team_defeated(self.game_state.guild.team)
+            actions = self.team_defeated(guild.team)
 
         self.game_state.dungeon = None
         self.mission_in_progress = False
         return actions
 
     def init_dungeon(self) -> None:
-        self.game_state.dungeon = self.game_state.mission_board.missions[self.selected_mission]
+        mission_board = self.game_state.get_mission_board()
+        self.game_state.set_dungeon(mission_board.missions[self.selected_mission])
+        
+        # self.game_state.dungeon = self.game_state.mission_board.missions[self.selected_mission]
 
     def init_combat(self) -> None:
         self.mission_in_progress = True
@@ -293,8 +296,31 @@ class Engine:
 
 
 class GameState:
-    def __init__(self) -> None:
-        self.guild: Optional[Guild] = None
-        self.entity_pool: Optional[EntityPool] = None
-        self.dungeon: Optional[Dungeon] = None
-        self.mission_board: Optional[MissionBoard] = None
+    guild: Optional[Guild] = None
+    entity_pool: Optional[EntityPool] = None
+    dungeon: Optional[Dungeon] = None
+    mission_board: Optional[MissionBoard] = None
+        
+    def get_guild(self):
+        return self.guild
+    
+    def get_entity_pool(self):
+        return self.entity_pool
+    
+    def get_dungeon(self):
+        return self.dungeon
+    
+    def get_mission_board(self):
+        return self.mission_board
+    
+    def set_guild(self, guild):
+        self.guild = guild
+    
+    def set_entity_pool(self, pool):
+        self.entity_pool = pool
+    
+    def set_dungeon(self, dungeon):
+        self.dungeon = dungeon
+
+    def set_mission_board(self, board):
+        self.mission_board = board
