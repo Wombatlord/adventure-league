@@ -14,14 +14,14 @@ class CombatScreen:
         self.heights = []
         self.message_id = 0
         self.time = 0
-        self.team = eng.guild.team.members
+        self.team = eng.game_state.guild.team.members
         self.alpha_max = 255
         self.alphas = []
         
     def on_update(self, delta_time, hook: Hook):
         eng.update_clock -= delta_time
         call_hook = True
-        print(eng.update_clock)
+
         if eng.update_clock < 0:
             eng.reset_update_clock()
             if call_hook:

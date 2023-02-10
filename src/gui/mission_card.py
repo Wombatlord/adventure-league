@@ -26,17 +26,23 @@ class MissionCard:
             + self.margin
             + (self.height - self.reserved_space) // 2
         )
+        
+        y2 = (
+            (self.margin + self.height - self.reserved_space) * row
+            + self.margin
+            + (self.height - self.reserved_space) * 0.8
+        )
 
         line_separation = 0.05*self.height
 
         arcade.draw_rectangle_outline(
             center_x=self.width * 0.5,
-            center_y=y / 3 + self.reserved_space,
+            center_y=y2 * 0.24 + (self.height * 0.263),
             width=self.width - self.margin,
-            height=(self.height - self.reserved_space) * 0.3,
+            height=(self.height - self.reserved_space) * 0.23,
             color=(218, 165, 32, self.opacity),
         )
-        cursor = [self.margin * 5, y / 3 + self.height*0.2]
+        cursor = [self.margin * 5, y2 * 0.24 + (self.height * 0.3)]
         arcade.Text(
             text=self.mission.description,
             start_x=cursor[0],
@@ -59,7 +65,7 @@ class MissionCard:
         arcade.Text(
             text=f"{self.mission.boss.name.name_and_title}",
             start_x=self.margin * 20,
-            start_y=y / 3 + self.height * 0.15,
+            start_y=y2 * 0.24 + (self.height * 0.25),
             font_name="Alagard",
             color=arcade.color.RED,
         ).draw()

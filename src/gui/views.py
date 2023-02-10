@@ -7,18 +7,14 @@ from src.gui.window_data import WindowData
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.mission_card import MissionCard
 from src.gui.combat_screen import CombatScreen
+from src.gui.states import ViewStates
 from src.gui.roster_view_components import (
-    bottom_bar,
     draw_panels,
     draw_recruiting_panel,
 )
+from src.gui.info_panels import *
 from src.engine.init_engine import eng
 
-class ViewStates(Enum):
-    ROSTER = "roster_view"
-    RECRUIT = "recruit_view"
-    MISSIONS = "missions_view"
-    COMBAT = "combat_view"
 
 
 class TitleView(arcade.View):
@@ -87,52 +83,12 @@ class TitleView(arcade.View):
 
 class GuildView(arcade.View):
     """Draw a view displaying information about a guild"""
-
-    commands = ["[m]issions", "[r]oster", "[n]ew missions"]
-
-    def bottom_bar(self):
-        margin = 5
-
-        arcade.draw_lrtb_rectangle_outline(
-            left=margin,
-            right=WindowData.width - margin,
-            top=WindowData.height * 0.3,
-            bottom=margin * 6,
-            color=arcade.color.GOLDENROD,
-        )
-
-        guild_name = arcade.Text(
-            f"{eng.guild.name}",
-            WindowData.width / 2,
-            WindowData.height * 0.3 - 25,
-            anchor_x="center",
-            color=arcade.color.GOLDENROD,
-            font_name=WindowData.font,
-        )
-
-        for col in range(len(self.commands)):
-            x = (margin + WindowData.width) * col + margin + WindowData.width // 2
-            arcade.draw_rectangle_outline(
-                center_x=x / 3 - margin,
-                center_y=margin * 3,
-                width=WindowData.width * 0.3,
-                height=margin * 4,
-                color=arcade.color.GOLDENROD,
-            )
-
-            arcade.Text(
-                text=self.commands[col],
-                start_x=(x / 3),
-                start_y=margin * 2,
-                anchor_x="center",
-                font_name=WindowData.font,
-            ).draw()
-
-        guild_name.draw()
+    state = ViewStates.GUILD
 
     def on_draw(self):
         self.clear()
-        self.bottom_bar()
+        populate_guild_view_info_panel()
+        command_bar(self.state)
 
     def on_key_press(self, symbol: int, modifiers: int):
 
@@ -144,9 +100,9 @@ class GuildView(arcade.View):
                 self.window.show_view(title_view)
 
             case arcade.key.N:
-                if eng.mission_board is not None:
-                    eng.mission_board.clear_board()
-                    eng.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
+                if eng.game_state.mission_board is not None:
+                    eng.game_state.mission_board.clear_board()
+                    eng.game_state.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
 
             case arcade.key.M:
                 missions_view = MissionsView()
@@ -164,12 +120,13 @@ class GuildView(arcade.View):
 
 
 class RosterView(arcade.View):
+    state = ViewStates.ROSTER
     def __init__(self, window: Window = None):
         super().__init__(window)
-        self.recruitment_pool = eng.entity_pool.pool
-        self.roster = eng.guild.roster
-        self.team_members = eng.guild.team.members
-        self.roster_limit = eng.guild.roster_limit
+        self.recruitment_pool = eng.game_state.entity_pool.pool
+        self.roster = eng.game_state.guild.roster
+        self.team_members = eng.game_state.guild.team.members
+        self.roster_limit = eng.game_state.guild.roster_limit
         self.margin = 5
         self.col_select = Cycle(2)
         self.row_height = 25
@@ -178,7 +135,6 @@ class RosterView(arcade.View):
         self.roster_scroll_window = ScrollWindow(self.roster, 10, 10)
         self.team_scroll_window = ScrollWindow(self.team_members, 10, 10)
         self.recruitment_scroll_window = ScrollWindow(self.recruitment_pool, 10, 10)
-        self.state = ViewStates.ROSTER
 
     def on_draw(self):
         self.clear()
@@ -202,6 +158,7 @@ class RosterView(arcade.View):
                 merc = self.team_scroll_window.items[
                     self.team_scroll_window.position.pos
                 ]
+            
 
         if self.state == ViewStates.RECRUIT:
             draw_recruiting_panel(
@@ -216,7 +173,8 @@ class RosterView(arcade.View):
                     self.recruitment_scroll_window.position.pos
                 ]
 
-        bottom_bar(merc)
+        populate_roster_view_info_panel(merc, self.state)
+        command_bar(self.state)
 
     def decr_col(self, col_count: int):
         self.col_select = (self.col_select - 1) % col_count
@@ -284,14 +242,14 @@ class RosterView(arcade.View):
                         # Move merc from ROSTER to TEAM. Increase Cycle.length for team, decrease Cycle.length for roster.
                         # Assign to Team & Remove from Roster.
                         self.team_scroll_window.append(self.roster_scroll_window.selection)
-                        eng.guild.team.assign_to_team(self.roster_scroll_window.selection)
+                        eng.game_state.guild.team.assign_to_team(self.roster_scroll_window.selection)
                         self.roster_scroll_window.pop()
 
                         # Update Engine state.
                         self.roster = self.roster_scroll_window.items
-                        eng.guild.roster = self.roster
+                        eng.game_state.guild.roster = self.roster
                         self.team_members = self.team_scroll_window.items
-                        eng.guild.team.members = self.team_members
+                        eng.game_state.guild.team.members = self.team_members
 
                     if (
                         self.col_select.pos == self.team_pane
@@ -305,9 +263,9 @@ class RosterView(arcade.View):
 
                         # Update Engine state.
                         self.roster = self.roster_scroll_window.items
-                        eng.guild.roster = self.roster
+                        eng.game_state.guild.roster = self.roster
                         self.team_members = self.team_scroll_window.items
-                        eng.guild.team.members = self.team_members
+                        eng.game_state.guild.team.members = self.team_members
                 
                 elif self.state == ViewStates.RECRUIT:
                     if len(self.roster) + len(self.team_members) < self.roster_limit:
@@ -324,6 +282,7 @@ class RosterView(arcade.View):
 
 
 class MissionsView(arcade.View):
+    state = ViewStates.MISSIONS
     def __init__(self, window: Window = None):
         super().__init__(window)
         self.background = WindowData.mission_background
@@ -331,9 +290,31 @@ class MissionsView(arcade.View):
         self.selection = Cycle(
             3, 2
         )  # 3 missions on screen, default selected (2) is the top visually.
-        self.state = ViewStates.MISSIONS
         self.combat_screen = CombatScreen()
 
+    def bottom_bar(self):
+        margin = 5
+        bar_height = 80
+        arcade.draw_lrtb_rectangle_outline(
+            left=margin * 2,
+            right=WindowData.width - margin * 2,
+            top=bar_height,
+            bottom=margin,
+            color=arcade.color.GOLDENROD,
+        )
+
+
+        stat_bar = f"Team: {len(eng.game_state.team.members)}"
+        arcade.Text(
+            stat_bar,
+            start_x=(WindowData.width / 2),
+            start_y=20,
+            font_name=WindowData.font,
+            font_size=20,
+            anchor_x="center",
+        ).draw()
+
+    
     def on_draw(self):
         self.clear()
 
@@ -341,7 +322,7 @@ class MissionsView(arcade.View):
         #     0, 0, WindowData.width, WindowData.height, self.background
         # )
         if self.state == ViewStates.MISSIONS:
-            for row in range(len(eng.mission_board.missions)):
+            for row in range(len(eng.game_state.mission_board.missions)):
                 # self.selection is a user controlled value changed via up / down arrow keypress.
                 # set opacity of the MissionCard border to visible if self.selection == the row being drawn.
                 if self.selection.pos == row:
@@ -355,12 +336,16 @@ class MissionsView(arcade.View):
                 MissionCard(
                     width=WindowData.width,
                     height=WindowData.height,
-                    mission=eng.mission_board.missions[row],
+                    mission=eng.game_state.mission_board.missions[row],
                     margin=self.margin,
                     opacity=opacity,
                     reserved_space=reserved_space,
                 ).draw_card(row)
 
+            # self.bottom_bar()
+            populate_mission_view_info_panel()
+            command_bar(self.state)
+            
         if self.state == ViewStates.COMBAT:
             if eng.awaiting_input:
                 self.combat_screen.draw_turn_prompt()
@@ -400,15 +385,17 @@ class MissionsView(arcade.View):
                 self.selection.incr()
 
             case arcade.key.RETURN:
-                eng.selected_mission = self.selection.pos
-                eng.init_dungeon()
+                if len(eng.game_state.guild.team.members) > 0:
+                    eng.selected_mission = self.selection.pos
+                    eng.init_dungeon()
 
-                if not eng.dungeon.cleared:
-                    eng.init_combat()
-                    self.combat_screen = CombatScreen()
+                    if not eng.game_state.dungeon.cleared:
+                        eng.init_combat()
+                        self.combat_screen = CombatScreen()
 
-                    self.state = ViewStates.COMBAT
-                    eng.await_input()
+                        self.state = ViewStates.COMBAT
+                        eng.await_input()
+
 
             case arcade.key.NUM_0 | arcade.key.KEY_0:
                 if eng.awaiting_input:
