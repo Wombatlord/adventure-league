@@ -2,32 +2,6 @@ import arcade
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import gen_heights, ScrollWindow
 
-
-def bottom_bar(merc):
-    margin = 5
-    bar_height = 80
-    arcade.draw_lrtb_rectangle_outline(
-        left=margin * 2,
-        right=WindowData.width - margin * 2,
-        top=bar_height,
-        bottom=margin,
-        color=arcade.color.GOLDENROD,
-    )
-
-    if merc is not None:
-        stat_bar = f"LVL: {merc.fighter.level}  |  HP: {merc.fighter.hp}  |  ATK: {merc.fighter.power}  |  DEF: {merc.fighter.defence}"
-        arcade.Text(
-            stat_bar,
-            start_x=(WindowData.width / 2),
-            start_y=20,
-            font_name=WindowData.font,
-            font_size=20,
-            anchor_x="center",
-        ).draw()
-
-    # print(merc.name.first_name)
-
-
 # This should probably be broken up a little.
 # Handles drawing the panel outlines and populating with calls to populate_x_pane
 def draw_panels(
@@ -49,19 +23,18 @@ def draw_panels(
         x = (margin + width) * col + (margin + width) // 2
 
         """
-            center_x: x / 2 positions center_x of the column at 1/4 of above x. ie, one column will fill half the vertical view.
-            center_y: position center_y point slightly above halfway to leave space at the bottom.
-            width: half the total window width with some adjustment by margin amounts.
-            height: column is the full height of the window minus some adjustment by margin amounts.
-            """
-        content_height = height - margin * 10
+        center_x: x / 2 positions center_x of the column at 1/4 of above x. ie, one column will fill half the vertical view.
+        center_y: position center_y point slightly above halfway to leave space at the bottom.
+        width: half the total window width with some adjustment by margin amounts.
+        height: column is the full height of the window minus some adjustment by margin amounts.
+        """
         if col_select.pos == col:
             # Highlight the selected column and write instructions at the bottom.
             arcade.draw_rectangle_outline(
                 center_x=x / 2 - margin / 2,
-                center_y=height * 0.5 + margin * 8,
-                width=width * 0.5 - margin * 4,
-                height=height - margin * 18,
+                center_y=height * 0.65,
+                width=width * 0.485,
+                height=height * 0.69,
                 color=(218, 165, 32, 255),
             )
 
@@ -74,7 +47,7 @@ def draw_panels(
             arcade.Text(
                 instruction_text,
                 start_x=(x / 2),
-                start_y=120,
+                start_y=height * 0.35,
                 font_name=WindowData.font,
                 font_size=10,
                 anchor_x="center",
@@ -148,10 +121,10 @@ def draw_panels(
 
 def draw_recruiting_panel(margin: int, height: int, recruitment_scroll_window, row_height):
     arcade.draw_rectangle_outline(
-        center_x=WindowData.width / 2,
-        center_y=height * 0.5 + margin * 8,
-        width=WindowData.width - margin,
-        height=height - margin * 18,
+        center_x=(WindowData.width / 2) - 0.5,
+        center_y=height * 0.65,
+        width=WindowData.width *0.988,
+        height=height * 0.69,
         color=(218, 165, 32, 255),
     )
 

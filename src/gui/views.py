@@ -7,19 +7,50 @@ from src.gui.window_data import WindowData
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.mission_card import MissionCard
 from src.gui.combat_screen import CombatScreen
+from src.gui.states import ViewStates
 from src.gui.roster_view_components import (
-    bottom_bar,
     draw_panels,
     draw_recruiting_panel,
 )
+from src.gui.info_panels import *
 from src.engine.init_engine import eng
 
-class ViewStates(Enum):
-    ROSTER = "roster_view"
-    RECRUIT = "recruit_view"
-    MISSIONS = "missions_view"
-    COMBAT = "combat_view"
+def command_bar(viewstate: ViewStates):
+    margin = 5
+    match viewstate:
+        case ViewStates.GUILD:
+            commands = ["[m]issions", "[r]oster", "[n]ew missions"]
+            width=WindowData.width * 0.3
+        
+        case ViewStates.ROSTER:
+            commands = ["[r]ecruit", "[g]uild"]
+            width=WindowData.width * 0.48
+            
+        case ViewStates.RECRUIT:
+            commands = ["[r]oster", "[g]uild"]
+            width=WindowData.width * 0.48
+            
+        case ViewStates.MISSIONS:
+            print("missions")
+    
+    # View navigation command bar
+    for col in range(len(commands)):
+        x = (margin + WindowData.width) * col + margin + WindowData.width // 2
+        arcade.draw_rectangle_outline(
+            center_x=x / len(commands) - margin,
+            center_y=margin * 3,
+            width=width,
+            height=margin * 4,
+            color=arcade.color.GOLDENROD,
+        )
 
+        arcade.Text(
+            text=commands[col],
+            start_x=(x / len(commands)),
+            start_y=margin * 2,
+            anchor_x="center",
+            font_name=WindowData.font,
+        ).draw()
 
 class TitleView(arcade.View):
     def __init__(self, window: Window | None = None):
@@ -87,52 +118,12 @@ class TitleView(arcade.View):
 
 class GuildView(arcade.View):
     """Draw a view displaying information about a guild"""
-
-    commands = ["[m]issions", "[r]oster", "[n]ew missions"]
-
-    def bottom_bar(self):
-        margin = 5
-
-        arcade.draw_lrtb_rectangle_outline(
-            left=margin,
-            right=WindowData.width - margin,
-            top=WindowData.height * 0.3,
-            bottom=margin * 6,
-            color=arcade.color.GOLDENROD,
-        )
-
-        guild_name = arcade.Text(
-            f"{eng.game_state.guild.name}",
-            WindowData.width / 2,
-            WindowData.height * 0.3 - 25,
-            anchor_x="center",
-            color=arcade.color.GOLDENROD,
-            font_name=WindowData.font,
-        )
-
-        for col in range(len(self.commands)):
-            x = (margin + WindowData.width) * col + margin + WindowData.width // 2
-            arcade.draw_rectangle_outline(
-                center_x=x / 3 - margin,
-                center_y=margin * 3,
-                width=WindowData.width * 0.3,
-                height=margin * 4,
-                color=arcade.color.GOLDENROD,
-            )
-
-            arcade.Text(
-                text=self.commands[col],
-                start_x=(x / 3),
-                start_y=margin * 2,
-                anchor_x="center",
-                font_name=WindowData.font,
-            ).draw()
-
-        guild_name.draw()
+    state = ViewStates.GUILD
 
     def on_draw(self):
         self.clear()
-        self.bottom_bar()
+        populate_guild_view_info_panel()
+        command_bar(self.state)
 
     def on_key_press(self, symbol: int, modifiers: int):
 
@@ -164,6 +155,7 @@ class GuildView(arcade.View):
 
 
 class RosterView(arcade.View):
+    state = ViewStates.ROSTER
     def __init__(self, window: Window = None):
         super().__init__(window)
         self.recruitment_pool = eng.game_state.entity_pool.pool
@@ -178,7 +170,6 @@ class RosterView(arcade.View):
         self.roster_scroll_window = ScrollWindow(self.roster, 10, 10)
         self.team_scroll_window = ScrollWindow(self.team_members, 10, 10)
         self.recruitment_scroll_window = ScrollWindow(self.recruitment_pool, 10, 10)
-        self.state = ViewStates.ROSTER
 
     def on_draw(self):
         self.clear()
@@ -202,6 +193,7 @@ class RosterView(arcade.View):
                 merc = self.team_scroll_window.items[
                     self.team_scroll_window.position.pos
                 ]
+            
 
         if self.state == ViewStates.RECRUIT:
             draw_recruiting_panel(
@@ -216,7 +208,8 @@ class RosterView(arcade.View):
                     self.recruitment_scroll_window.position.pos
                 ]
 
-        bottom_bar(merc)
+        populate_roster_view_info_panel(merc, self.state)
+        command_bar(self.state)
 
     def decr_col(self, col_count: int):
         self.col_select = (self.col_select - 1) % col_count
@@ -324,6 +317,7 @@ class RosterView(arcade.View):
 
 
 class MissionsView(arcade.View):
+    state = ViewStates.MISSIONS
     def __init__(self, window: Window = None):
         super().__init__(window)
         self.background = WindowData.mission_background
@@ -331,9 +325,31 @@ class MissionsView(arcade.View):
         self.selection = Cycle(
             3, 2
         )  # 3 missions on screen, default selected (2) is the top visually.
-        self.state = ViewStates.MISSIONS
         self.combat_screen = CombatScreen()
 
+    def bottom_bar(self):
+        margin = 5
+        bar_height = 80
+        arcade.draw_lrtb_rectangle_outline(
+            left=margin * 2,
+            right=WindowData.width - margin * 2,
+            top=bar_height,
+            bottom=margin,
+            color=arcade.color.GOLDENROD,
+        )
+
+
+        stat_bar = f"Team: {len(eng.game_state.team.members)}"
+        arcade.Text(
+            stat_bar,
+            start_x=(WindowData.width / 2),
+            start_y=20,
+            font_name=WindowData.font,
+            font_size=20,
+            anchor_x="center",
+        ).draw()
+
+    
     def on_draw(self):
         self.clear()
 
@@ -361,6 +377,10 @@ class MissionsView(arcade.View):
                     reserved_space=reserved_space,
                 ).draw_card(row)
 
+            self.bottom_bar()
+            # populate_mission_view_info_panel()
+            # command_bar(ViewStates.GUILD)
+            
         if self.state == ViewStates.COMBAT:
             if eng.awaiting_input:
                 self.combat_screen.draw_turn_prompt()
