@@ -4,6 +4,44 @@ from src.engine.init_engine import eng
 from src.gui.states import ViewStates
 
 # This module provides functions for populating the information bar in a particular view
+def command_bar(viewstate: ViewStates):
+    margin = 5
+    match viewstate:
+        case ViewStates.GUILD:
+            commands = ["[m]issions", "[r]oster", "[n]ew missions"]
+            width=WindowData.width * 0.3
+        
+        case ViewStates.ROSTER:
+            commands = ["[r]ecruit", "[g]uild"]
+            width=WindowData.width * 0.48
+            
+        case ViewStates.RECRUIT:
+            commands = ["[r]oster", "[g]uild"]
+            width=WindowData.width * 0.48
+            
+        case ViewStates.MISSIONS:
+            commands = ["[g]uild"]
+            width = WindowData.width * 0.98
+    
+    # View navigation command bar
+    for col in range(len(commands)):
+        x = (margin + WindowData.width) * col + margin + WindowData.width // 2
+        arcade.draw_rectangle_outline(
+            center_x=x / len(commands) - margin,
+            center_y=margin * 3,
+            width=width,
+            height=margin * 4,
+            color=arcade.color.GOLDENROD,
+        )
+
+        arcade.Text(
+            text=commands[col],
+            start_x=(x / len(commands)),
+            start_y=margin * 2,
+            anchor_x="center",
+            font_name=WindowData.font,
+        ).draw()
+
 
 def populate_guild_view_info_panel():
     margin = 5
@@ -78,10 +116,33 @@ def populate_mission_view_info_panel():
     )
     
     arcade.Text(
-            f"{eng.game_state.guild.name}",
+            f"Press Enter to embark on a mission!",
             WindowData.width / 2,
             WindowData.height * 0.3 - 25,
             anchor_x="center",
             color=arcade.color.GOLDENROD,
+            font_size=18,
             font_name=WindowData.font,
         ).draw()
+    
+    if len(eng.game_state.team.members) == 0:
+        arcade.Text(
+                f"No guild members are assigned to the team!",
+                start_x=WindowData.width / 2,
+                start_y=WindowData.height * 0.3 - 75,
+                anchor_x="center",
+                color=arcade.color.RED_DEVIL,
+                font_size=18,
+                font_name=WindowData.font,
+            ).draw()
+    
+    else:
+        arcade.Text(
+                f"{len(eng.game_state.team.members)} guild members are ready for battle!",
+                start_x=WindowData.width / 2,
+                start_y=WindowData.height * 0.3 - 75,
+                anchor_x="center",
+                color=arcade.color.GOLDENROD,
+                font_size=16,
+                font_name=WindowData.font,
+            ).draw()

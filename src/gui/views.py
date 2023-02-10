@@ -15,42 +15,7 @@ from src.gui.roster_view_components import (
 from src.gui.info_panels import *
 from src.engine.init_engine import eng
 
-def command_bar(viewstate: ViewStates):
-    margin = 5
-    match viewstate:
-        case ViewStates.GUILD:
-            commands = ["[m]issions", "[r]oster", "[n]ew missions"]
-            width=WindowData.width * 0.3
-        
-        case ViewStates.ROSTER:
-            commands = ["[r]ecruit", "[g]uild"]
-            width=WindowData.width * 0.48
-            
-        case ViewStates.RECRUIT:
-            commands = ["[r]oster", "[g]uild"]
-            width=WindowData.width * 0.48
-            
-        case ViewStates.MISSIONS:
-            print("missions")
-    
-    # View navigation command bar
-    for col in range(len(commands)):
-        x = (margin + WindowData.width) * col + margin + WindowData.width // 2
-        arcade.draw_rectangle_outline(
-            center_x=x / len(commands) - margin,
-            center_y=margin * 3,
-            width=width,
-            height=margin * 4,
-            color=arcade.color.GOLDENROD,
-        )
 
-        arcade.Text(
-            text=commands[col],
-            start_x=(x / len(commands)),
-            start_y=margin * 2,
-            anchor_x="center",
-            font_name=WindowData.font,
-        ).draw()
 
 class TitleView(arcade.View):
     def __init__(self, window: Window | None = None):
@@ -377,9 +342,9 @@ class MissionsView(arcade.View):
                     reserved_space=reserved_space,
                 ).draw_card(row)
 
-            self.bottom_bar()
-            # populate_mission_view_info_panel()
-            # command_bar(ViewStates.GUILD)
+            # self.bottom_bar()
+            populate_mission_view_info_panel()
+            command_bar(self.state)
             
         if self.state == ViewStates.COMBAT:
             if eng.awaiting_input:
