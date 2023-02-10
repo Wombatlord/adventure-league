@@ -5,7 +5,7 @@ from src.config.constants import guild_names
 from src.entities.fighter_factory import EntityPool
 from src.entities.entity import Entity
 from src.entities.fighter import Fighter
-from src.entities.guild import Guild
+from src.entities.guild import Guild, Team
 from src.entities.dungeon import Dungeon
 from src.entities.mission_board import MissionBoard
 from src.projection import health
@@ -64,6 +64,7 @@ class Engine:
         )
         guild.team.name_team()
         self.game_state.set_guild(guild)
+        self.game_state.set_team()
 
         # create a mission board
         mission_board = MissionBoard(size=3)
@@ -297,12 +298,16 @@ class Engine:
 
 class GameState:
     guild: Optional[Guild] = None
+    team: Optional[Team] = None
     entity_pool: Optional[EntityPool] = None
     dungeon: Optional[Dungeon] = None
     mission_board: Optional[MissionBoard] = None
         
     def get_guild(self):
         return self.guild
+    
+    def get_team(self):
+        return self.team
     
     def get_entity_pool(self):
         return self.entity_pool
@@ -315,6 +320,9 @@ class GameState:
     
     def set_guild(self, guild):
         self.guild = guild
+    
+    def set_team(self):
+        self.team = self.guild.team
     
     def set_entity_pool(self, pool):
         self.entity_pool = pool
