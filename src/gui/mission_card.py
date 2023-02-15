@@ -42,7 +42,7 @@ class MissionCard:
             height=(self.height - self.reserved_space) * 0.23,
             color=(218, 165, 32, self.opacity),
         )
-        cursor = [self.margin * 5, y2 * 0.24 + (self.height * 0.3)]
+        cursor = [self.margin * 5, y2 * 0.24 + (self.height * 0.325)]
         arcade.Text(
             text=self.mission.description,
             start_x=cursor[0],
@@ -65,7 +65,7 @@ class MissionCard:
         arcade.Text(
             text=f"{self.mission.boss.name.name_and_title}",
             start_x=self.margin * 20,
-            start_y=y2 * 0.24 + (self.height * 0.25),
+            start_y=y2 * 0.24 + (self.height * 0.275),
             font_name="Alagard",
             color=arcade.color.RED,
         ).draw()

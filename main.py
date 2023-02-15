@@ -11,7 +11,6 @@ def start_adventure_league():
     window.set_minimum_size(800, 600)
     title_view = TitleView(window=window)
     window.show_view(title_view)
-    window.fullscreen
     arcade.run()
 
 start_adventure_league()
