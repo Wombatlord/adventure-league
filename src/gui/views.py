@@ -2,7 +2,10 @@ import arcade
 import arcade.key
 import arcade.color
 from arcade import Window
-from enum import Enum
+from arcade.gui import UIManager, UIBoxLayout
+from arcade.gui.widgets.buttons import UIFlatButton
+from arcade.gui.widgets.layout import UIAnchorLayout
+from arcade.gui.events import UIEvent
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.mission_card import MissionCard
@@ -84,11 +87,53 @@ class TitleView(arcade.View):
 class GuildView(arcade.View):
     """Draw a view displaying information about a guild"""
     state = ViewStates.GUILD
+    manager = UIManager()
+    anchor: UIAnchorLayout
+    v_box: UIBoxLayout
+    buttons: list
+    
+    def change_view(self, es: str):
+        match es:
+            case "Missions":
+                self.window.show_view(MissionsView())
+            case "Roster":
+                self.window.show_view(RosterView())
+            case "New Missions":
+                if eng.game_state.mission_board is not None:
+                    eng.game_state.mission_board.clear_board()
+                    eng.game_state.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
 
+    def on_button_click(self, event: UIEvent):
+        self.change_view(event.source.text)
+        print(f"{event.source.text=}", event)
+    
+    def on_show_view(self):
+        self.manager.enable()
+        self.anchor = self.manager.add(UIAnchorLayout())
+        
+        self.buttons = command_bar_GUI(self.state, self.on_button_click)
+        
+        self.v_box = (
+            UIBoxLayout(
+                vertical=False,
+                height = 50,
+                children=self.buttons,
+                size_hint=(1,None),
+            )
+            .with_padding()
+        )
+
+        self.anchor.add(
+            anchor_x="center_x",
+            anchor_y="bottom",
+            child=self.v_box,
+        )
+    
     def on_draw(self):
         self.clear()
         populate_guild_view_info_panel()
-        command_bar(self.state)
+        # command_bar(self.state)
+        self.manager.draw()
 
     def on_key_press(self, symbol: int, modifiers: int):
 

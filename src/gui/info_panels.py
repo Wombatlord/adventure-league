@@ -1,4 +1,11 @@
 import arcade
+from typing import Optional
+from arcade import Color
+from arcade.text import FontNameOrNames
+from dataclasses import dataclass
+from arcade.gui.widgets.buttons import UIFlatButton
+from arcade.gui.events import UIEvent
+from arcade.gui.style import UIStyleBase
 from src.gui.window_data import WindowData
 from src.engine.init_engine import eng
 from src.gui.states import ViewStates
@@ -42,6 +49,73 @@ def command_bar(viewstate: ViewStates):
             font_name=WindowData.font,
         ).draw()
 
+def on_button_click(event: UIEvent):
+    # change_view(event.source)    
+    print(f"{event.source.text=}", event)
+
+
+@dataclass
+class UIStyle(UIStyleBase):
+    font_size: int = 12
+    font_name: FontNameOrNames = WindowData.font
+    font_color: Color = arcade.color.WHITE
+    bg: Color = (21, 19, 21)
+    border: Optional[Color] = None
+    border_width: int = 0
+    bold=False
+
+ADVENTURE_STYLE = {
+        "normal": UIStyle(),
+        "hover": UIStyle(
+            font_size=12,
+            font_name=WindowData.font,
+            font_color=arcade.color.WHITE,
+            bg=(21, 19, 21),
+            border=(77, 81, 87),
+            border_width=2,
+        ),
+        "press": UIStyle(
+            font_size=12,
+            font_name=WindowData.font,
+            font_color=arcade.color.BLACK,
+            bg=arcade.color.WHITE,
+            border=arcade.color.WHITE,
+            border_width=2,
+        ),
+        "disabled": UIStyle(
+            font_size=12,
+            font_name=WindowData.font,
+            font_color=arcade.color.WHITE,
+            bg=arcade.color.GRAY,
+            border=None,
+            border_width=2,
+        )
+    }
+
+def command_bar_GUI(viewstate: ViewStates, handler):
+    buttons = []
+    match viewstate:
+        case ViewStates.GUILD:
+            commands = ["Missions", "Roster", "New Missions"]
+        
+        case ViewStates.ROSTER:
+            commands = ["Recruit", "Guild"]
+            
+        case ViewStates.RECRUIT:
+            commands = ["Roster", "Guild"]
+            
+        case ViewStates.MISSIONS:
+            commands = ["Guild"]
+    
+    # View navigation command bar
+    for _, command in enumerate(commands):
+        buttons.append(UIFlatButton(text=f"{command}", size_hint=(1/len(commands), None), style=ADVENTURE_STYLE))
+    
+    for button in buttons:
+            button.with_border(width=2, color=arcade.color.GOLDENROD)
+            button.on_click = handler
+    
+    return buttons
 
 def populate_guild_view_info_panel():
     margin = 5
