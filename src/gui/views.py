@@ -3,7 +3,6 @@ import arcade.key
 import arcade.color
 from arcade import Window
 from arcade.gui import UIManager, UIBoxLayout
-from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.layout import UIAnchorLayout
 from arcade.gui.events import UIEvent
 from src.gui.window_data import WindowData
@@ -86,12 +85,16 @@ class TitleView(arcade.View):
 class GuildView(arcade.View):
     """Draw a view displaying information about a guild"""
     state = ViewStates.GUILD
-    manager = UIManager()
+    manager: UIManager
     anchor: UIAnchorLayout
     command_box: UIBoxLayout
     buttons: list
     
-    def handle_click(self, event_source_text: str):
+    def __init__(self, window: Window = None):
+        super().__init__(window)
+        self.manager = UIManager()
+    
+    def handle_click(self, event_source_text: str) -> None:
         match event_source_text:
             case ViewStates.MISSIONS.value:
                 self.window.show_view(MissionsView())
@@ -102,11 +105,11 @@ class GuildView(arcade.View):
                     eng.game_state.mission_board.clear_board()
                     eng.game_state.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
 
-    def on_button_click(self, event: UIEvent):
+    def on_button_click(self, event: UIEvent) -> None:
         self.handle_click(event.source.text)
         print(f"{event.source.text=}", event)
     
-    def on_show_view(self):
+    def on_show_view(self) -> None:
         self.manager.enable()
         self.anchor = self.manager.add(UIAnchorLayout())
         
@@ -128,15 +131,19 @@ class GuildView(arcade.View):
             child=self.command_box,
         )
     
-    def on_hide_view(self):
+    def on_hide_view(self) -> None:
+        """Disable the UIManager for this view.
+        Ensures that a fresh UIManager can create buttons, assign handlers, and receive events
+        from its own view after changing out of this view.
+        """
         self.manager.disable()
     
-    def on_draw(self):
+    def on_draw(self) -> None:
         self.clear()
         populate_guild_view_info_panel()
         self.manager.draw()
 
-    def on_key_press(self, symbol: int, modifiers: int):
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
 
         match symbol:
             case arcade.key.G:
@@ -158,7 +165,7 @@ class GuildView(arcade.View):
                 roster_view = RosterView()
                 self.window.show_view(roster_view)
 
-    def on_resize(self, width: int, height: int):
+    def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
 
         WindowData.width = width
@@ -167,13 +174,14 @@ class GuildView(arcade.View):
 
 class RosterView(arcade.View):
     state = ViewStates.ROSTER
-    manager = UIManager()
+    manager: UIManager
     anchor: UIAnchorLayout
     command_box: UIBoxLayout
     buttons: list
     
     def __init__(self, window: Window = None):
         super().__init__(window)
+        self.manager = UIManager()
         self.recruitment_pool = eng.game_state.entity_pool.pool
         self.roster = eng.game_state.guild.roster
         self.team_members = eng.game_state.guild.team.members
@@ -187,8 +195,10 @@ class RosterView(arcade.View):
         self.team_scroll_window = ScrollWindow(self.team_members, 10, 10)
         self.recruitment_scroll_window = ScrollWindow(self.recruitment_pool, 10, 10)
 
-    def prepare_buttons(self):
-        """Prepares the UI elements for this view and assigns the appropriate click handler for each button.
+    def prepare_buttons(self) -> None:
+        """
+        As this view can change between Recruitment and Roster display, we need to be able to recreate the buttons outside of on_show_view.
+        Calling this will prepare the UI elements for this view and assigns the appropriate click handler for each button.
         This must be called either when switching to this view, or if the buttons in the view need to change without changing the view.
         """
         self.anchor = self.manager.add(UIAnchorLayout())
@@ -211,7 +221,7 @@ class RosterView(arcade.View):
             child=self.command_box,
         )
     
-    def handle_click(self, event_source_text: str):
+    def handle_click(self, event_source_text: str) -> None:
         """If we change the view, then simply call self.window.show_view with the desired View.
         The new view will provide its own UIManager etc via its on_show_view and set up its buttons.
         If we are changing the display of the current view and associated buttons,
@@ -234,17 +244,21 @@ class RosterView(arcade.View):
                 self.state = ViewStates.RECRUIT
                 self.prepare_buttons()
 
-    def on_button_click(self, event: UIEvent):
+    def on_button_click(self, event: UIEvent) -> None:
         self.handle_click(event.source.text)
     
-    def on_show_view(self):
+    def on_show_view(self) -> None:
         self.manager.enable()
         self.prepare_buttons()
     
-    def on_hide_view(self):
+    def on_hide_view(self) -> None:
+        """Disable the UIManager for this view.
+        Ensures that a fresh UIManager can create buttons, assign handlers, and receive events
+        from its own view after changing out of this view.
+        """
         self.manager.disable()
     
-    def on_draw(self):
+    def on_draw(self) -> None:
         self.clear()
         merc = None
         if self.state == ViewStates.ROSTER:
@@ -284,10 +298,10 @@ class RosterView(arcade.View):
         populate_roster_view_info_panel(merc, self.state)
         self.manager.draw()
 
-    def decr_col(self, col_count: int):
+    def decr_col(self, col_count: int) -> None:
         self.col_select = (self.col_select - 1) % col_count
 
-    def incr_col(self, col_count: int):
+    def incr_col(self, col_count: int) -> None:
         self.col_select = (self.col_select + 1) % col_count
 
     def _log_input(self, symbol, modifiers):
@@ -296,7 +310,7 @@ class RosterView(arcade.View):
     def _log_state(self):
         ...
 
-    def on_key_press(self, symbol: int, modifiers: int):
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
         self._log_input(symbol, modifiers)
 
         match symbol:
@@ -308,10 +322,12 @@ class RosterView(arcade.View):
                 if self.state == ViewStates.ROSTER:
                     self.recruitment_scroll_window = ScrollWindow(self.recruitment_pool, 10, 10)
                     self.state = ViewStates.RECRUIT
+                    self.prepare_buttons()
 
                 elif self.state == ViewStates.RECRUIT:
                     self.roster_scroll_window = ScrollWindow(self.roster, 10, 10)
                     self.state = ViewStates.ROSTER
+                    self.prepare_buttons()
 
             case arcade.key.RIGHT:
                 self.col_select.incr()
@@ -382,7 +398,7 @@ class RosterView(arcade.View):
 
         self._log_state()
 
-    def on_resize(self, width: int, height: int):
+    def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
 
         WindowData.width = width
@@ -391,13 +407,14 @@ class RosterView(arcade.View):
 
 class MissionsView(arcade.View):
     state = ViewStates.MISSIONS
-    manager = UIManager()
+    manager: UIManager
     anchor: UIAnchorLayout
     command_box: UIBoxLayout
     buttons: list
     
     def __init__(self, window: Window = None):
         super().__init__(window)
+        self.manager = UIManager()
         self.background = WindowData.mission_background
         self.margin = 5
         self.selection = Cycle(
@@ -405,16 +422,16 @@ class MissionsView(arcade.View):
         )  # 3 missions on screen, default selected (2) is the top visually.
         self.combat_screen = CombatScreen()
     
-    def handle_click(self, event_source_text: str):
+    def handle_click(self, event_source_text: str) -> None:
         match event_source_text:
             case ViewStates.GUILD.value:
                 self.window.show_view(GuildView())
 
-    def on_button_click(self, event: UIEvent):
+    def on_button_click(self, event: UIEvent) -> None:
         self.handle_click(event.source.text)
         print(f"{event.source.text=}", event)
     
-    def on_show_view(self):
+    def on_show_view(self) -> None:
         self.manager.enable()
         self.anchor = self.manager.add(UIAnchorLayout())
         
@@ -436,10 +453,14 @@ class MissionsView(arcade.View):
             child=self.command_box,
         )
     
-    def on_hide_view(self):
+    def on_hide_view(self) -> None:
+        """Disable the UIManager for this view.
+        Ensures that a fresh UIManager can create buttons, assign handlers, and receive events
+        from its own view after changing out of this view.
+        """
         self.manager.disable()
     
-    def on_draw(self):
+    def on_draw(self) -> None:
         self.clear()
 
         if self.state == ViewStates.MISSIONS:
@@ -476,7 +497,7 @@ class MissionsView(arcade.View):
             self.combat_screen.draw_message()
             self.combat_screen.draw_stats()
 
-    def on_update(self, delta_time: float):
+    def on_update(self, delta_time: float) -> None:
         if self.state == ViewStates.COMBAT:
 
             hook = lambda: None
@@ -485,13 +506,13 @@ class MissionsView(arcade.View):
 
             self.combat_screen.on_update(delta_time=delta_time, hook=hook)
 
-    def on_resize(self, width: int, height: int):
+    def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
 
         WindowData.width = width
         WindowData.height = height
 
-    def on_key_press(self, symbol: int, modifiers: int):
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.G:
                 if eng.mission_in_progress is False:
