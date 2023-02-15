@@ -89,14 +89,14 @@ class GuildView(arcade.View):
     state = ViewStates.GUILD
     manager = UIManager()
     anchor: UIAnchorLayout
-    v_box: UIBoxLayout
+    command_box: UIBoxLayout
     buttons: list
     
-    def change_view(self, es: str):
-        match es:
-            case "Missions":
+    def change_view(self, event_source_text: str):
+        match event_source_text:
+            case ViewStates.MISSIONS.value:
                 self.window.show_view(MissionsView())
-            case "Roster":
+            case ViewStates.ROSTER.value:
                 self.window.show_view(RosterView())
             case "New Missions":
                 if eng.game_state.mission_board is not None:
@@ -113,10 +113,10 @@ class GuildView(arcade.View):
         
         self.buttons = command_bar_GUI(self.state, self.on_button_click)
         
-        self.v_box = (
+        self.command_box = (
             UIBoxLayout(
                 vertical=False,
-                height = 50,
+                height = 30,
                 children=self.buttons,
                 size_hint=(1,None),
             )
@@ -126,8 +126,11 @@ class GuildView(arcade.View):
         self.anchor.add(
             anchor_x="center_x",
             anchor_y="bottom",
-            child=self.v_box,
+            child=self.command_box,
         )
+    
+    def on_hide_view(self):
+        self.manager.disable()
     
     def on_draw(self):
         self.clear()
@@ -166,6 +169,11 @@ class GuildView(arcade.View):
 
 class RosterView(arcade.View):
     state = ViewStates.ROSTER
+    manager = UIManager()
+    anchor: UIAnchorLayout
+    command_box: UIBoxLayout
+    buttons: list
+    
     def __init__(self, window: Window = None):
         super().__init__(window)
         self.recruitment_pool = eng.game_state.entity_pool.pool
@@ -181,6 +189,50 @@ class RosterView(arcade.View):
         self.team_scroll_window = ScrollWindow(self.team_members, 10, 10)
         self.recruitment_scroll_window = ScrollWindow(self.recruitment_pool, 10, 10)
 
+    def prepare_buttons(self):
+        self.anchor = self.manager.add(UIAnchorLayout())
+        
+        self.buttons = command_bar_GUI(self.state, self.on_button_click)
+        
+        self.command_box = (
+            UIBoxLayout(
+                vertical=False,
+                height = 30,
+                children=self.buttons,
+                size_hint=(1,None),
+            )
+            .with_padding()
+        )
+
+        self.anchor.add(
+            anchor_x="center_x",
+            anchor_y="bottom",
+            child=self.command_box,
+        )
+    
+    def change_view(self, event_source_text: str):
+        match event_source_text:
+            case ViewStates.GUILD.value:
+                self.window.show_view(GuildView())
+            case ViewStates.ROSTER.value:
+                self.roster_scroll_window = ScrollWindow(self.roster, 10, 10)
+                self.state = ViewStates.ROSTER
+                self.prepare_buttons()
+            case ViewStates.RECRUIT.value:
+                self.recruitment_scroll_window = ScrollWindow(self.recruitment_pool, 10, 10)
+                self.state = ViewStates.RECRUIT
+                self.prepare_buttons()
+
+    def on_button_click(self, event: UIEvent):
+        self.change_view(event.source.text)
+    
+    def on_show_view(self):
+        self.manager.enable()
+        self.prepare_buttons()
+    
+    def on_hide_view(self):
+        self.manager.disable()
+    
     def on_draw(self):
         self.clear()
         merc = None
@@ -219,7 +271,8 @@ class RosterView(arcade.View):
                 ]
 
         populate_roster_view_info_panel(merc, self.state)
-        command_bar(self.state)
+        # command_bar(self.state)
+        self.manager.draw()
 
     def decr_col(self, col_count: int):
         self.col_select = (self.col_select - 1) % col_count

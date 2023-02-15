@@ -49,38 +49,32 @@ def command_bar(viewstate: ViewStates):
             font_name=WindowData.font,
         ).draw()
 
-def on_button_click(event: UIEvent):
-    # change_view(event.source)    
-    print(f"{event.source.text=}", event)
-
-
 @dataclass
 class UIStyle(UIStyleBase):
     font_size: int = 12
     font_name: FontNameOrNames = WindowData.font
     font_color: Color = arcade.color.WHITE
-    bg: Color = (21, 19, 21)
+    bg: Color = arcade.color.BLACK
     border: Optional[Color] = None
     border_width: int = 0
-    bold=False
 
 ADVENTURE_STYLE = {
         "normal": UIStyle(),
         "hover": UIStyle(
             font_size=12,
             font_name=WindowData.font,
-            font_color=arcade.color.WHITE,
+            font_color=arcade.color.GOLD,
             bg=(21, 19, 21),
-            border=(77, 81, 87),
-            border_width=2,
+            border=None,
+            border_width=0,
         ),
         "press": UIStyle(
             font_size=12,
             font_name=WindowData.font,
             font_color=arcade.color.BLACK,
             bg=arcade.color.WHITE,
-            border=arcade.color.WHITE,
-            border_width=2,
+            border=None,
+            border_width=0,
         ),
         "disabled": UIStyle(
             font_size=12,
@@ -88,7 +82,7 @@ ADVENTURE_STYLE = {
             font_color=arcade.color.WHITE,
             bg=arcade.color.GRAY,
             border=None,
-            border_width=2,
+            border_width=0,
         )
     }
 
@@ -99,7 +93,7 @@ def command_bar_GUI(viewstate: ViewStates, handler):
             commands = ["Missions", "Roster", "New Missions"]
         
         case ViewStates.ROSTER:
-            commands = ["Recruit", "Guild"]
+            commands = ["Recruit ", "Guild"]
             
         case ViewStates.RECRUIT:
             commands = ["Roster", "Guild"]
@@ -108,8 +102,8 @@ def command_bar_GUI(viewstate: ViewStates, handler):
             commands = ["Guild"]
     
     # View navigation command bar
-    for _, command in enumerate(commands):
-        buttons.append(UIFlatButton(text=f"{command}", size_hint=(1/len(commands), None), style=ADVENTURE_STYLE))
+    for command in commands:
+        buttons.append(UIFlatButton(text=f"{command}", size_hint=(1/len(commands), 1), style=ADVENTURE_STYLE))
     
     for button in buttons:
             button.with_border(width=2, color=arcade.color.GOLDENROD)
