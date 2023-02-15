@@ -1,91 +1,11 @@
 import arcade
-from typing import Optional
-from arcade import Color
-from arcade.text import FontNameOrNames
-from dataclasses import dataclass
 from arcade.gui.widgets.buttons import UIFlatButton
-from arcade.gui.events import UIEvent
-from arcade.gui.style import UIStyleBase
 from src.gui.window_data import WindowData
 from src.engine.init_engine import eng
 from src.gui.states import ViewStates
+from src.gui.ui_styles import ADVENTURE_STYLE
 
 # This module provides functions for populating the information bar in a particular view
-def command_bar(viewstate: ViewStates):
-    margin = 5
-    match viewstate:
-        case ViewStates.GUILD:
-            commands = ["[m]issions", "[r]oster", "[n]ew missions"]
-            width=WindowData.width * 0.3
-        
-        case ViewStates.ROSTER:
-            commands = ["[r]ecruit", "[g]uild"]
-            width=WindowData.width * 0.48
-            
-        case ViewStates.RECRUIT:
-            commands = ["[r]oster", "[g]uild"]
-            width=WindowData.width * 0.48
-            
-        case ViewStates.MISSIONS:
-            commands = ["[g]uild"]
-            width = WindowData.width * 0.98
-    
-    # View navigation command bar
-    for col in range(len(commands)):
-        x = (margin + WindowData.width) * col + margin + WindowData.width // 2
-        arcade.draw_rectangle_outline(
-            center_x=x / len(commands) - margin,
-            center_y=margin * 3,
-            width=width,
-            height=margin * 4,
-            color=arcade.color.GOLDENROD,
-        )
-
-        arcade.Text(
-            text=commands[col],
-            start_x=(x / len(commands)),
-            start_y=margin * 2,
-            anchor_x="center",
-            font_name=WindowData.font,
-        ).draw()
-
-@dataclass
-class UIStyle(UIStyleBase):
-    font_size: int = 12
-    font_name: FontNameOrNames = WindowData.font
-    font_color: Color = arcade.color.WHITE
-    bg: Color = arcade.color.BLACK
-    border: Optional[Color] = None
-    border_width: int = 0
-
-ADVENTURE_STYLE = {
-        "normal": UIStyle(),
-        "hover": UIStyle(
-            font_size=12,
-            font_name=WindowData.font,
-            font_color=arcade.color.GOLD,
-            bg=(21, 19, 21),
-            border=None,
-            border_width=0,
-        ),
-        "press": UIStyle(
-            font_size=12,
-            font_name=WindowData.font,
-            font_color=arcade.color.BLACK,
-            bg=arcade.color.WHITE,
-            border=None,
-            border_width=0,
-        ),
-        "disabled": UIStyle(
-            font_size=12,
-            font_name=WindowData.font,
-            font_color=arcade.color.WHITE,
-            bg=arcade.color.GRAY,
-            border=None,
-            border_width=0,
-        )
-    }
-
 def command_bar_GUI(viewstate: ViewStates, handler):
     buttons = []
     match viewstate:

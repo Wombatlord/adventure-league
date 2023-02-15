@@ -19,7 +19,6 @@ from src.gui.info_panels import *
 from src.engine.init_engine import eng
 
 
-
 class TitleView(arcade.View):
     def __init__(self, window: Window | None = None):
         super().__init__(window)
@@ -92,7 +91,7 @@ class GuildView(arcade.View):
     command_box: UIBoxLayout
     buttons: list
     
-    def change_view(self, event_source_text: str):
+    def handle_click(self, event_source_text: str):
         match event_source_text:
             case ViewStates.MISSIONS.value:
                 self.window.show_view(MissionsView())
@@ -104,7 +103,7 @@ class GuildView(arcade.View):
                     eng.game_state.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
 
     def on_button_click(self, event: UIEvent):
-        self.change_view(event.source.text)
+        self.handle_click(event.source.text)
         print(f"{event.source.text=}", event)
     
     def on_show_view(self):
@@ -135,7 +134,6 @@ class GuildView(arcade.View):
     def on_draw(self):
         self.clear()
         populate_guild_view_info_panel()
-        # command_bar(self.state)
         self.manager.draw()
 
     def on_key_press(self, symbol: int, modifiers: int):
@@ -190,6 +188,9 @@ class RosterView(arcade.View):
         self.recruitment_scroll_window = ScrollWindow(self.recruitment_pool, 10, 10)
 
     def prepare_buttons(self):
+        """Prepares the UI elements for this view and assigns the appropriate click handler for each button.
+        This must be called either when switching to this view, or if the buttons in the view need to change without changing the view.
+        """
         self.anchor = self.manager.add(UIAnchorLayout())
         
         self.buttons = command_bar_GUI(self.state, self.on_button_click)
@@ -210,7 +211,17 @@ class RosterView(arcade.View):
             child=self.command_box,
         )
     
-    def change_view(self, event_source_text: str):
+    def handle_click(self, event_source_text: str):
+        """If we change the view, then simply call self.window.show_view with the desired View.
+        The new view will provide its own UIManager etc via its on_show_view and set up its buttons.
+        If we are changing the display of the current view and associated buttons,
+        the buttons must be re-prepared as if the view had been changed to ensure
+        correct button text and handler are assigned to the button and rendered.
+        ie. the swapping Recruit / Roster button.
+
+        Args:
+            event_source_text (str): this str is the text field of a UIFlatButton and is emitted by the on_button_click hook.
+        """
         match event_source_text:
             case ViewStates.GUILD.value:
                 self.window.show_view(GuildView())
@@ -224,7 +235,7 @@ class RosterView(arcade.View):
                 self.prepare_buttons()
 
     def on_button_click(self, event: UIEvent):
-        self.change_view(event.source.text)
+        self.handle_click(event.source.text)
     
     def on_show_view(self):
         self.manager.enable()
@@ -271,7 +282,6 @@ class RosterView(arcade.View):
                 ]
 
         populate_roster_view_info_panel(merc, self.state)
-        # command_bar(self.state)
         self.manager.draw()
 
     def decr_col(self, col_count: int):
@@ -381,6 +391,11 @@ class RosterView(arcade.View):
 
 class MissionsView(arcade.View):
     state = ViewStates.MISSIONS
+    manager = UIManager()
+    anchor: UIAnchorLayout
+    command_box: UIBoxLayout
+    buttons: list
+    
     def __init__(self, window: Window = None):
         super().__init__(window)
         self.background = WindowData.mission_background
@@ -389,36 +404,44 @@ class MissionsView(arcade.View):
             3, 2
         )  # 3 missions on screen, default selected (2) is the top visually.
         self.combat_screen = CombatScreen()
+    
+    def handle_click(self, event_source_text: str):
+        match event_source_text:
+            case ViewStates.GUILD.value:
+                self.window.show_view(GuildView())
 
-    def bottom_bar(self):
-        margin = 5
-        bar_height = 80
-        arcade.draw_lrtb_rectangle_outline(
-            left=margin * 2,
-            right=WindowData.width - margin * 2,
-            top=bar_height,
-            bottom=margin,
-            color=arcade.color.GOLDENROD,
+    def on_button_click(self, event: UIEvent):
+        self.handle_click(event.source.text)
+        print(f"{event.source.text=}", event)
+    
+    def on_show_view(self):
+        self.manager.enable()
+        self.anchor = self.manager.add(UIAnchorLayout())
+        
+        self.buttons = command_bar_GUI(self.state, self.on_button_click)
+        
+        self.command_box = (
+            UIBoxLayout(
+                vertical=False,
+                height = 30,
+                children=self.buttons,
+                size_hint=(1,None),
+            )
+            .with_padding()
         )
 
-
-        stat_bar = f"Team: {len(eng.game_state.team.members)}"
-        arcade.Text(
-            stat_bar,
-            start_x=(WindowData.width / 2),
-            start_y=20,
-            font_name=WindowData.font,
-            font_size=20,
-            anchor_x="center",
-        ).draw()
-
+        self.anchor.add(
+            anchor_x="center_x",
+            anchor_y="bottom",
+            child=self.command_box,
+        )
+    
+    def on_hide_view(self):
+        self.manager.disable()
     
     def on_draw(self):
         self.clear()
 
-        # arcade.draw_lrwh_rectangle_textured(
-        #     0, 0, WindowData.width, WindowData.height, self.background
-        # )
         if self.state == ViewStates.MISSIONS:
             for row in range(len(eng.game_state.mission_board.missions)):
                 # self.selection is a user controlled value changed via up / down arrow keypress.
@@ -440,9 +463,8 @@ class MissionsView(arcade.View):
                     reserved_space=reserved_space,
                 ).draw_card(row)
 
-            # self.bottom_bar()
             populate_mission_view_info_panel()
-            command_bar(self.state)
+            self.manager.draw()
             
         if self.state == ViewStates.COMBAT:
             if eng.awaiting_input:
