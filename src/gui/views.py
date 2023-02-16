@@ -1,21 +1,25 @@
+from typing import Callable
+
 import arcade
-import arcade.key
 import arcade.color
+import arcade.key
 from arcade import Window
-from arcade.gui import UIManager, UIBoxLayout
-from arcade.gui.widgets.layout import UIAnchorLayout
+from arcade.gui import UIBoxLayout, UIManager
 from arcade.gui.events import UIEvent
-from src.gui.window_data import WindowData
-from src.gui.gui_utils import Cycle, ScrollWindow
-from src.gui.mission_card import MissionCard
-from src.gui.combat_screen import CombatScreen
-from src.gui.states import ViewStates
-from src.gui.roster_view_components import (
-    draw_panels,
-    draw_recruiting_panel,
-)
-from src.gui.info_panels import *
+from arcade.gui.widgets.buttons import UIFlatButton
+from arcade.gui.widgets.layout import UIAnchorLayout
+from arcade.window_commands import get_window
+
 from src.engine.init_engine import eng
+from src.gui.buttons import CommandBarMixin, compose_command_bar, nav_button
+from src.gui.combat_screen import CombatScreen
+from src.gui.gui_utils import Cycle, ScrollWindow
+from src.gui.info_panels import *
+from src.gui.mission_card import MissionCard
+from src.gui.roster_view_components import draw_panels, draw_recruiting_panel
+from src.gui.states import ViewStates
+from src.gui.window_data import WindowData
+
 
 
 class TitleView(arcade.View):
@@ -82,7 +86,7 @@ class TitleView(arcade.View):
         WindowData.height = height
 
 
-class GuildView(arcade.View):
+class GuildView(arcade.View, CommandBarMixin):
     """Draw a view displaying information about a guild"""
     state = ViewStates.GUILD
     manager: UIManager
@@ -93,43 +97,26 @@ class GuildView(arcade.View):
     def __init__(self, window: Window = None):
         super().__init__(window)
         self.manager = UIManager()
-    
-    def handle_click(self, event_source_text: str) -> None:
-        match event_source_text:
-            case ViewStates.MISSIONS.value:
-                self.window.show_view(MissionsView())
-            case ViewStates.ROSTER.value:
-                self.window.show_view(RosterView())
-            case "New Missions":
-                if eng.game_state.mission_board is not None:
-                    eng.game_state.mission_board.clear_board()
-                    eng.game_state.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
 
-    def on_button_click(self, event: UIEvent) -> None:
-        self.handle_click(event.source.text)
-        print(f"{event.source.text=}", event)
+    def get_new_missions_button(self) -> UIFlatButton:
+        btn = UIFlatButton(text="New Missions")
+        btn.on_click = eng.refresh_mission_board
+
+        return btn
     
+    @property
+    def command_bar(self) -> list[UIFlatButton]:
+        return style_command_bar(
+            buttons=[
+                nav_button(MissionsView, "Missions"),
+                nav_button(RosterView, "Roster"),
+                self.get_new_missions_button(),
+            ]
+        )
+
     def on_show_view(self) -> None:
         self.manager.enable()
-        self.anchor = self.manager.add(UIAnchorLayout())
-        
-        self.buttons = command_bar_GUI(self.state, self.on_button_click)
-        
-        self.command_box = (
-            UIBoxLayout(
-                vertical=False,
-                height = 30,
-                children=self.buttons,
-                size_hint=(1,None),
-            )
-            .with_padding()
-        )
-
-        self.anchor.add(
-            anchor_x="center_x",
-            anchor_y="bottom",
-            child=self.command_box,
-        )
+        compose_command_bar(self.manager, self.command_bar)
     
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.
@@ -144,7 +131,6 @@ class GuildView(arcade.View):
         self.manager.draw()
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
-
         match symbol:
             case arcade.key.G:
                 title_view = TitleView()
@@ -172,7 +158,7 @@ class GuildView(arcade.View):
         WindowData.height = height
 
 
-class RosterView(arcade.View):
+class RosterView(arcade.View, CommandBarMixin):
     state = ViewStates.ROSTER
     manager: UIManager
     anchor: UIAnchorLayout
@@ -195,61 +181,47 @@ class RosterView(arcade.View):
         self.team_scroll_window = ScrollWindow(self.team_members, 10, 10)
         self.recruitment_scroll_window = ScrollWindow(self.recruitment_pool, 10, 10)
 
-    def prepare_buttons(self) -> None:
-        """
-        As this view can change between Recruitment and Roster display, we need to be able to recreate the buttons outside of on_show_view.
-        Calling this will prepare the UI elements for this view and assigns the appropriate click handler for each button.
-        This must be called either when switching to this view, or if the buttons in the view need to change without changing the view.
-        """
-        self.anchor = self.manager.add(UIAnchorLayout())
-        
-        self.buttons = command_bar_GUI(self.state, self.on_button_click)
-        
-        self.command_box = (
-            UIBoxLayout(
-                vertical=False,
-                height = 30,
-                children=self.buttons,
-                size_hint=(1,None),
-            )
-            .with_padding()
-        )
-
-        self.anchor.add(
-            anchor_x="center_x",
-            anchor_y="bottom",
-            child=self.command_box,
+    @property
+    def roster_command_bar(self) -> list[UIFlatButton]:
+        return style_command_bar(
+            buttons=[
+                self.recruit_button(),
+                nav_button(GuildView, "Guild"),
+            ]
         )
     
-    def handle_click(self, event_source_text: str) -> None:
-        """If we change the view, then simply call self.window.show_view with the desired View.
-        The new view will provide its own UIManager etc via its on_show_view and set up its buttons.
-        If we are changing the display of the current view and associated buttons,
-        the buttons must be re-prepared as if the view had been changed to ensure
-        correct button text and handler are assigned to the button and rendered.
-        ie. the swapping Recruit / Roster button.
-
-        Args:
-            event_source_text (str): this str is the text field of a UIFlatButton and is emitted by the on_button_click hook.
-        """
-        match event_source_text:
-            case ViewStates.GUILD.value:
-                self.window.show_view(GuildView())
-            case ViewStates.ROSTER.value:
-                self.roster_scroll_window = ScrollWindow(self.roster, 10, 10)
-                self.state = ViewStates.ROSTER
-                self.prepare_buttons()
-            case ViewStates.RECRUIT.value:
-                self.recruitment_scroll_window = ScrollWindow(self.recruitment_pool, 10, 10)
-                self.state = ViewStates.RECRUIT
-                self.prepare_buttons()
-
-    def on_button_click(self, event: UIEvent) -> None:
-        self.handle_click(event.source.text)
+    @property
+    def recruit_command_bar(self) -> list[UIFlatButton]:
+        return style_command_bar(
+            buttons=[
+                self.roster_button(),
+                nav_button(GuildView, "Guild"),
+            ]
+        )
+    
+    def display_recruits(self, event: UIEvent) -> None:
+        self.recruitment_scroll_window = ScrollWindow(self.roster, 10, 10)
+        self.state = ViewStates.RECRUIT
+        compose_command_bar(self.manager, self.recruit_command_bar)
+    
+    def display_roster(self, event: UIEvent) -> None:
+        self.roster_scroll_window = ScrollWindow(self.roster, 10, 10)
+        self.state = ViewStates.ROSTER
+        compose_command_bar(self.manager, self.roster_command_bar)
+    
+    def recruit_button(self) -> UIFlatButton:
+        btn = UIFlatButton(text="Recruit ") # Space at the end here to stop the t getting clipped
+        btn.on_click = self.display_recruits
+        return btn
+    
+    def roster_button(self) -> UIFlatButton:
+        btn = UIFlatButton(text="Roster")
+        btn.on_click = self.display_roster
+        return btn
     
     def on_show_view(self) -> None:
         self.manager.enable()
-        self.prepare_buttons()
+        compose_command_bar(self.manager, self.roster_command_bar)
     
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.
@@ -322,12 +294,12 @@ class RosterView(arcade.View):
                 if self.state == ViewStates.ROSTER:
                     self.recruitment_scroll_window = ScrollWindow(self.recruitment_pool, 10, 10)
                     self.state = ViewStates.RECRUIT
-                    self.prepare_buttons()
+                    compose_command_bar(self.manager, self.recruit_command_bar)
 
                 elif self.state == ViewStates.RECRUIT:
                     self.roster_scroll_window = ScrollWindow(self.roster, 10, 10)
                     self.state = ViewStates.ROSTER
-                    self.prepare_buttons()
+                    compose_command_bar(self.manager, self.roster_command_bar)
 
             case arcade.key.RIGHT:
                 self.col_select.incr()
@@ -405,7 +377,7 @@ class RosterView(arcade.View):
         WindowData.height = height
 
 
-class MissionsView(arcade.View):
+class MissionsView(arcade.View, CommandBarMixin):
     state = ViewStates.MISSIONS
     manager: UIManager
     anchor: UIAnchorLayout
@@ -421,37 +393,18 @@ class MissionsView(arcade.View):
             3, 2
         )  # 3 missions on screen, default selected (2) is the top visually.
         self.combat_screen = CombatScreen()
-    
-    def handle_click(self, event_source_text: str) -> None:
-        match event_source_text:
-            case ViewStates.GUILD.value:
-                self.window.show_view(GuildView())
 
-    def on_button_click(self, event: UIEvent) -> None:
-        self.handle_click(event.source.text)
-        print(f"{event.source.text=}", event)
+    @property
+    def command_bar(self) -> list[UIFlatButton]:
+        return style_command_bar(
+            buttons=[
+                nav_button(GuildView, "Guild"),
+            ]
+        )
     
     def on_show_view(self) -> None:
         self.manager.enable()
-        self.anchor = self.manager.add(UIAnchorLayout())
-        
-        self.buttons = command_bar_GUI(self.state, self.on_button_click)
-        
-        self.command_box = (
-            UIBoxLayout(
-                vertical=False,
-                height = 30,
-                children=self.buttons,
-                size_hint=(1,None),
-            )
-            .with_padding()
-        )
-
-        self.anchor.add(
-            anchor_x="center_x",
-            anchor_y="bottom",
-            child=self.command_box,
-        )
+        compose_command_bar(self.manager, self.command_bar)
     
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.

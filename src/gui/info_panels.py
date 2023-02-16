@@ -1,34 +1,35 @@
+from typing import Callable
+
 import arcade
+from arcade.gui import UIEvent
 from arcade.gui.widgets.buttons import UIFlatButton
-from src.gui.window_data import WindowData
+
 from src.engine.init_engine import eng
 from src.gui.states import ViewStates
 from src.gui.ui_styles import ADVENTURE_STYLE
+from src.gui.window_data import WindowData
+
 
 # This module provides functions for populating the information bar in a particular view
-def command_bar_GUI(viewstate: ViewStates, handler):
-    buttons = []
-    match viewstate:
-        case ViewStates.GUILD:
-            commands = ["Missions", "Roster", "New Missions"]
-        
-        case ViewStates.ROSTER:
-            commands = ["Recruit ", "Guild"]
-            
-        case ViewStates.RECRUIT:
-            commands = ["Roster", "Guild"]
-            
-        case ViewStates.MISSIONS:
-            commands = ["Guild"]
+def style_command_bar(buttons: list[UIFlatButton]) -> list[UIFlatButton]:
+    """style_command_bar expects to be passed a list of buttons that will occupy
+    the command bar UI component. It applies consistent styling and spacing to the buttons
+    in place so that they have responsive scaling.
     
-    # View navigation command bar
-    for command in commands:
-        buttons.append(UIFlatButton(text=f"{command}", size_hint=(1/len(commands), 1), style=ADVENTURE_STYLE))
-    
+    Args:
+        buttons (list[UIFlatButton]): the list of buttons to be styled.
+
+    Returns:
+        list[UIFlatButton]: the styled (in place) buttons.
+    """    
+    if not buttons:
+        return []
+
     for button in buttons:
-            button.with_border(width=2, color=arcade.color.GOLDENROD)
-            button.on_click = handler
-    
+        button.size_hint=(1/len(buttons), 1)
+        button.style=ADVENTURE_STYLE
+        button.with_border(width=2, color=arcade.color.GOLDENROD)
+
     return buttons
 
 def populate_guild_view_info_panel():
