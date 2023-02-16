@@ -1,6 +1,8 @@
 import arcade
-from src.gui.views import WindowData, TitleView
+
 from src.engine.init_engine import eng
+from src.gui.views import TitleView, WindowData
+
 
 def start_adventure_league():
     """Startup"""

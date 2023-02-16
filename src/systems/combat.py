@@ -1,9 +1,9 @@
-from random import shuffle
-from typing import Generator, Any, Callable
 from enum import Enum
+from random import shuffle
+from typing import Any, Callable, Generator
 
-from src.entities.fighter import Fighter
 from src.entities.entity import Entity
+from src.entities.fighter import Fighter
 
 Action = dict[str, Any]
 Hook = Callable[[], None]

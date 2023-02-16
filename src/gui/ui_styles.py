@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 from typing import Optional
+
 import arcade
 from arcade import Color
-from arcade.text import FontNameOrNames
 from arcade.gui import UIStyleBase
+from arcade.text import FontNameOrNames
+
 from src.gui.window_data import WindowData
+
 
 @dataclass
 class UIStyle(UIStyleBase):
@@ -21,15 +24,15 @@ ADVENTURE_STYLE = {
             font_size=12,
             font_name=WindowData.font,
             font_color=arcade.color.GOLD,
-            bg=(21, 19, 21),
+            bg=(41, 39, 41),
             border=None,
             border_width=0,
         ),
         "press": UIStyle(
             font_size=12,
             font_name=WindowData.font,
-            font_color=arcade.color.BLACK,
-            bg=arcade.color.WHITE,
+            font_color=arcade.color.GOLD,
+            bg=arcade.color.BLACK,
             border=None,
             border_width=0,
         ),

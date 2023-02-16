@@ -1,16 +1,19 @@
 from __future__ import annotations
+
 from random import randint
-from typing import Optional, Generator, Any, NamedTuple
+from typing import Any, Generator, NamedTuple, Optional
+
 from src.config.constants import guild_names
-from src.entities.fighter_factory import EntityPool
+from src.engine.describer import Describer
+from src.entities.dungeon import Dungeon
 from src.entities.entity import Entity
 from src.entities.fighter import Fighter
+from src.entities.fighter_factory import EntityPool
 from src.entities.guild import Guild, Team
-from src.entities.dungeon import Dungeon
 from src.entities.mission_board import MissionBoard
 from src.projection import health
 from src.systems.combat import CombatRound
-from src.engine.describer import Describer
+
 
 class MessagesWithAlphas(NamedTuple):
     messages: list[str]
@@ -294,6 +297,13 @@ class Engine:
         results.append({"message": f"{team.name} defeated!"})
 
         return results
+
+    def refresh_mission_board(self):
+        if self.game_state.mission_board is None:
+                return
+
+        self.game_state.mission_board.clear_board()
+        self.game_state.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
 
 
 class GameState:

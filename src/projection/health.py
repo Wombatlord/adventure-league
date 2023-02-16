@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 from typing import Any
-from src.gui.window_data import WindowData
+
 import arcade
+
+from src.gui.window_data import WindowData
 
 _KEY = "entity_data"
 

@@ -1,6 +1,8 @@
-from typing import Optional, Generator
+from typing import Generator, Optional
+
 from src.entities.entity import Entity
 from src.entities.loot import Loot, Rewarder
+
 
 class Room:
     def __init__(self) -> None:

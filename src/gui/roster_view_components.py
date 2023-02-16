@@ -1,6 +1,8 @@
 import arcade
+
+from src.gui.gui_utils import ScrollWindow, gen_heights
 from src.gui.window_data import WindowData
-from src.gui.gui_utils import gen_heights, ScrollWindow
+
 
 # This should probably be broken up a little.
 # Handles drawing the panel outlines and populating with calls to populate_x_pane

@@ -1,4 +1,5 @@
-from typing import NamedTuple, Optional, Any
+from typing import Any, NamedTuple, Optional
+
 
 class Name(NamedTuple):
     first_name: str = None

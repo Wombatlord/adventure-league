@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 from random import randint
-from typing import Optional, Any
+from typing import Any, Optional
+
 from src.entities.entity import Entity
 
 Action = dict[str, Any]

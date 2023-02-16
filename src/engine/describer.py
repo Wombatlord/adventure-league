@@ -1,5 +1,6 @@
 from random import choice
 
+
 class Describer:
     @staticmethod
     def describe_entrance(eng) -> str:

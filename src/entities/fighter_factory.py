@@ -1,9 +1,10 @@
+from copy import deepcopy
+from random import randint
+from typing import Callable, NamedTuple
+
+from src.config.constants import merc_names
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
-from src.config.constants import merc_names
-from typing import NamedTuple, Callable
-from random import randint
-from copy import deepcopy
 
 Factory = Callable[[str], Entity]
 
