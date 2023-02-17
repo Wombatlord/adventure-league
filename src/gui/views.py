@@ -106,6 +106,11 @@ class GuildView(arcade.View, CommandBarMixin):
     
     @property
     def command_bar(self) -> list[UIFlatButton]:
+        """Composition of the command bar into a styled set of buttons with attached handlers and labels.
+
+        Returns:
+            list[UIFlatButton]: The array of buttons ready to be attached to the UIManager.
+        """
         return style_command_bar(
             buttons=[
                 nav_button(MissionsView, "Missions"),
@@ -183,6 +188,12 @@ class RosterView(arcade.View, CommandBarMixin):
 
     @property
     def roster_command_bar(self) -> list[UIFlatButton]:
+        """Composition of the command bar for when the roster & team pane is being displayed.
+        Provides a button for switching to Recruitment and a nav_button.
+
+        Returns:
+            list[UIFlatButton]: The final styled list of buttons ready to be attached to the UIManager.
+        """
         return style_command_bar(
             buttons=[
                 self.recruit_button(),
@@ -192,6 +203,12 @@ class RosterView(arcade.View, CommandBarMixin):
     
     @property
     def recruit_command_bar(self) -> list[UIFlatButton]:
+        """Composition of the command bar for when the recruitment pane is being displayed.
+        Provides a button for switching to Roster & Team pane and a nav_button.
+
+        Returns:
+            list[UIFlatButton]: The final styled list of buttons ready to be attached to the UIManager.
+        """
         return style_command_bar(
             buttons=[
                 self.roster_button(),

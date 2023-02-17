@@ -8,6 +8,10 @@ from arcade.text import FontNameOrNames
 
 from src.gui.window_data import WindowData
 
+"""
+Module for declaring UI styling which can be provided to UI elements such as UIFlatButtons.
+Default style is provided. To create a style compose a dict as in ADVENTURE_STYLE.
+"""
 
 @dataclass
 class UIStyle(UIStyleBase):
