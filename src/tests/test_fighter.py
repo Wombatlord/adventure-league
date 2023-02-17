@@ -3,6 +3,7 @@ import unittest
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
 
+
 class TestFighter(unittest.TestCase):
     def test_attack(self):
         # Arrange

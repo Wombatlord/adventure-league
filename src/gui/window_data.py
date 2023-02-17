@@ -1,6 +1,7 @@
+from dataclasses import dataclass
+
 import arcade
 import pyglet
-from dataclasses import dataclass
 
 pyglet.font.add_file("./assets/alagard.ttf")
 

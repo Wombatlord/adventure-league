@@ -1,5 +1,6 @@
-from typing import NamedTuple, Sequence, Any
 import json
+from typing import Any, NamedTuple, Sequence
+
 
 class Cycle:
     def __init__(self, length: int, pos: int = 0) -> None:

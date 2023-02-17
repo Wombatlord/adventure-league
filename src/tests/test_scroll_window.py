@@ -1,5 +1,7 @@
 import unittest
+
 from src.gui.gui_utils import ScrollWindow
+
 
 class ScrollWindowTest(unittest.TestCase):
     strings = ["foo", "bar", "baz", "buzz", "bez", "bezos"]
