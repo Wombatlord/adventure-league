@@ -6,32 +6,10 @@ from arcade.gui.widgets.buttons import UIFlatButton
 
 from src.engine.init_engine import eng
 from src.gui.states import ViewStates
-from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
 
 
 # This module provides functions for populating the information bar in a particular view
-def style_command_bar(buttons: list[UIFlatButton]) -> list[UIFlatButton]:
-    """style_command_bar expects to be passed a list of buttons that will occupy
-    the command bar UI component. It applies consistent styling and spacing to the buttons
-    in place so that they have responsive scaling.
-    
-    Args:
-        buttons (list[UIFlatButton]): the list of buttons to be styled.
-
-    Returns:
-        list[UIFlatButton]: the styled (in place) buttons.
-    """    
-    if not buttons:
-        return []
-
-    for button in buttons:
-        button.size_hint=(1/len(buttons), 1)
-        button.style=ADVENTURE_STYLE
-        button.with_border(width=2, color=arcade.color.GOLDENROD)
-
-    return buttons
-
 def populate_guild_view_info_panel():
     margin = 5
     arcade.draw_lrtb_rectangle_outline(
