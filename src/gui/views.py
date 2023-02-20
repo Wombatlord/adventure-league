@@ -6,9 +6,10 @@ import arcade.key
 from arcade import Window
 from arcade.gui.events import UIEvent
 from arcade.gui.widgets.buttons import UIFlatButton
+from arcade.gui.widgets.text import UILabel, UITextArea
 
 from src.engine.init_engine import eng
-from src.gui.sections import CommandBarSection
+from src.gui.sections import CommandBarSection, InfoPaneSection
 from src.gui.buttons import nav_button, get_new_missions_button
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_utils import Cycle, ScrollWindow
@@ -90,6 +91,25 @@ class GuildView(arcade.View):
 
     def __init__(self, window: Window = None):
         super().__init__(window)
+        # InfoPane config.
+        self.guild_label = UILabel(
+            text=eng.game_state.guild.name,
+            width=WindowData.width,
+            font_size=18,
+            font_name=WindowData.font,
+            align="center",
+            size_hint=(1,None)
+        )
+        self.info_pane_section = InfoPaneSection(
+            left=0,
+            bottom=32,
+            width=WindowData.width,
+            height=148,
+            prevent_dispatch_view = {False},
+            margin=5,
+            texts=[self.guild_label],
+        )
+        # CommandBar config
         self.buttons = [
             nav_button(MissionsView, "Missions"),
             nav_button(RosterView, "Roster"),
@@ -103,22 +123,27 @@ class GuildView(arcade.View):
             buttons=self.buttons,
             prevent_dispatch_view = {False}
         )
+        # Add sections to section manager.
+        self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
     
     def on_show_view(self) -> None:
+        self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
+        self.info_pane_section.setup()
         self.command_bar_section.setup()
-
+        
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.
         Ensures that a fresh UIManager can create buttons, assign handlers, and receive events
         from its own view after changing out of this view.
         """
         self.command_bar_section.manager.disable()
+        self.info_pane_section.manager.disable()
 
     def on_draw(self) -> None:
         self.clear()
-        populate_guild_view_info_panel()
+        # populate_guild_view_info_panel()
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
@@ -145,7 +170,6 @@ class GuildView(arcade.View):
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
-
         WindowData.width = width
         WindowData.height = height
 
@@ -160,9 +184,41 @@ class RosterView(arcade.View):
         self.row_height = 25
         self.roster_pane = 0
         self.team_pane = 1
+        self.merc = None
+        self.color = arcade.color.WHITE
         self.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
         self.team_scroll_window = ScrollWindow(eng.game_state.guild.team.members, 10, 10)
         self.recruitment_scroll_window = ScrollWindow(eng.game_state.entity_pool.pool, 10, 10)
+        
+        # InfoPane Config
+        self.instruction = UILabel(
+            text=f"Assign members to the team before embarking on a mission!",
+            width=WindowData.width,
+            font_size=18,
+            font_name=WindowData.font,
+            align="center",
+            size_hint=(1,1),
+            text_color=self.color
+        )
+        self.entity_info = UILabel(
+            text="",
+            width=WindowData.width,
+            font_size=18,
+            font_name=WindowData.font,
+            align="center",
+            size_hint=(1,1)
+        )
+        self.info_pane_section = InfoPaneSection(
+            left=0,
+            bottom=32,
+            width=WindowData.width,
+            height=148,
+            prevent_dispatch_view = {False},
+            margin=self.margin,
+            texts=[self.instruction, self.entity_info],
+        )
+        
+        # CommandBar Config
         self.recruitment_pane_buttons = [
             self.roster_button(),
             nav_button(GuildView, "Guild"),
@@ -179,6 +235,7 @@ class RosterView(arcade.View):
             buttons=self.roster_pane_buttons,
             prevent_dispatch_view = {False}
         )
+        self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
 
     def display_recruits(self, event: UIEvent) -> None:
@@ -233,16 +290,50 @@ class RosterView(arcade.View):
         btn.on_click = self.display_roster
         return btn
 
+    def _roster_entity(self):
+        if self.col_select.pos == 0 and len(self.roster_scroll_window.items) > 0:
+                self.merc = self.roster_scroll_window.items[
+                    self.roster_scroll_window.position.pos
+                ]
+    
+    def _team_entity(self):
+        if self.col_select.pos == 1 and len(self.team_scroll_window.items) > 0:
+                self.merc = self.team_scroll_window.items[
+                    self.team_scroll_window.position.pos
+                ]
+    
+    def _recruits_entity(self):
+        if len(self.recruitment_scroll_window.items) > 0:
+                self.merc = self.recruitment_scroll_window.items[
+                    self.recruitment_scroll_window.position.pos
+                ]
+            
     def on_show_view(self) -> None:
+        self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
+        self.info_pane_section.setup()
         self.command_bar_section.setup()
 
     def on_hide_view(self) -> None:
+        self.info_pane_section.manager.disable()
         self.command_bar_section.manager.disable()
 
+    def on_update(self, delta_time: float):
+        self.merc = None
+        if self.state == ViewStates.ROSTER:
+            self._roster_entity()
+            self._team_entity()
+        
+        if self.state == ViewStates.RECRUIT:
+            self._recruits_entity()
+
+        if self.merc is None:
+            self.entity_info.text = ""
+        else:
+            self.entity_info.text = f"LVL: {self.merc.fighter.level}  |  HP: {self.merc.fighter.hp}  |  ATK: {self.merc.fighter.power}  |  DEF: {self.merc.fighter.defence}"
+        
     def on_draw(self) -> None:
         self.clear()
-        merc = None
         if self.state == ViewStates.ROSTER:
             draw_panels(
                 margin=self.margin,
@@ -253,15 +344,6 @@ class RosterView(arcade.View):
                 roster_scroll_window=self.roster_scroll_window,
                 team_scroll_window=self.team_scroll_window,
             )
-            if self.col_select.pos == 0 and len(self.roster_scroll_window.items) > 0:
-                merc = self.roster_scroll_window.items[
-                    self.roster_scroll_window.position.pos
-                ]
-
-            if self.col_select.pos == 1 and len(self.team_scroll_window.items) > 0:
-                merc = self.team_scroll_window.items[
-                    self.team_scroll_window.position.pos
-                ]
 
         if self.state == ViewStates.RECRUIT:
             draw_recruiting_panel(
@@ -270,19 +352,8 @@ class RosterView(arcade.View):
                 row_height=self.row_height,
                 recruitment_scroll_window=self.recruitment_scroll_window,
             )
-
-            if len(self.recruitment_scroll_window.items) > 0:
-                merc = self.recruitment_scroll_window.items[
-                    self.recruitment_scroll_window.position.pos
-                ]
-
-        populate_roster_view_info_panel(merc, self.state)
-
-    # def decr_col(self, col_count: int) -> None:
-    #     self.col_select = (self.col_select - 1) % col_count
-
-    # def incr_col(self, col_count: int) -> None:
-    #     self.col_select = (self.col_select + 1) % col_count
+        
+        
 
     def _log_input(self, symbol, modifiers):
         ...
@@ -294,6 +365,8 @@ class RosterView(arcade.View):
         self._log_input(symbol, modifiers)
 
         match symbol:
+            case arcade.key.L:
+                self.color = arcade.color.RED
             case arcade.key.G:
                 guild_view = GuildView()
                 self.window.show_view(guild_view)
@@ -404,6 +477,35 @@ class MissionsView(arcade.View):
             3, 2
         )  # 3 missions on screen, default selected (2) is the top visually.
         self.combat_screen = CombatScreen()
+        
+        # InfoPane config
+        self.instruction = UILabel(
+            text="",
+            width=WindowData.width,
+            font_size=18,
+            font_name=WindowData.font,
+            align="center",
+            size_hint=(1,1)
+        )
+        self.team_info = UILabel(
+            text="",
+            width=WindowData.width,
+            font_size=18,
+            font_name=WindowData.font,
+            align="center",
+            size_hint=(1,1)
+        )
+        self.info_pane_section = InfoPaneSection(
+            left=0,
+            bottom=32,
+            width=WindowData.width,
+            height=148,
+            prevent_dispatch_view = {False},
+            margin=self.margin,
+            texts=[self.instruction, self.team_info],
+        )
+        
+        # CommandBar Config
         self.buttons: list[UIFlatButton] = [nav_button(GuildView, "Guild")]
         self.command_bar_section: CommandBarSection = CommandBarSection(
             left=0,
@@ -413,11 +515,26 @@ class MissionsView(arcade.View):
             buttons=self.buttons,
             prevent_dispatch_view = {False}
         )
+        self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
 
     def on_show_view(self) -> None:
+        self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
+        self.info_pane_section.setup()
         self.command_bar_section.setup()
+        
+        # Prepare text for display in InfoPaneSection.
+        if len(eng.game_state.team.members) > 0:
+                self.instruction.text = "Press Enter to Embark on a Mission!"
+                self.team_info.text = f"{len(eng.game_state.team.members)} Guild Members are ready to Embark!"
+                self.instruction.label.color = arcade.color.GOLD
+                self.team_info.label.color = arcade.color.GOLD
+        else:
+            self.instruction.text = "No Guild Members are assigned to a team!"
+            self.instruction.label.color = arcade.color.RED_DEVIL
+            self.team_info.text = "Assign Guild Members to a Team from the Roster before Embarking!"
+            self.team_info.label.color = arcade.color.RED_DEVIL
 
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.
@@ -425,6 +542,7 @@ class MissionsView(arcade.View):
         from its own view after changing out of this view.
         """
         self.command_bar_section.manager.disable()
+        self.info_pane_section.manager.disable()
 
     def on_draw(self) -> None:
         self.clear()
@@ -449,8 +567,6 @@ class MissionsView(arcade.View):
                     opacity=opacity,
                     reserved_space=reserved_space,
                 ).draw_card(row)
-
-            populate_mission_view_info_panel()
 
         if self.state == ViewStates.COMBAT:
             if eng.awaiting_input:
@@ -478,6 +594,8 @@ class MissionsView(arcade.View):
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
+            case arcade.key.L:
+                self.instruction.label.color = arcade.color.GREEN
             case arcade.key.G:
                 if eng.mission_in_progress is False:
                     guild_view = GuildView()
@@ -492,6 +610,7 @@ class MissionsView(arcade.View):
             case arcade.key.RETURN:
                 if len(eng.game_state.guild.team.members) > 0:
                     self.command_bar_section.enabled = False
+                    self.info_pane_section.enabled = False
                     eng.selected_mission = self.selection.pos
                     eng.init_dungeon()
 
@@ -518,8 +637,3 @@ class MissionsView(arcade.View):
                 if eng.awaiting_input:
                     eng.next_combat_action()
                     eng.awaiting_input = False
-
-            case arcade.key.M:
-                if eng.mission_in_progress is False:
-                    self.command_bar_section.enabled = True
-                    self.state = ViewStates.MISSIONS
