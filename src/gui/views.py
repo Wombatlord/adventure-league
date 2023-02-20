@@ -6,14 +6,13 @@ import arcade.key
 from arcade import Window
 from arcade.gui.events import UIEvent
 from arcade.gui.widgets.buttons import UIFlatButton
-from arcade.gui.widgets.text import UILabel, UITextArea
+from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
 from src.gui.sections import CommandBarSection, InfoPaneSection
 from src.gui.buttons import nav_button, get_new_missions_button
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_utils import Cycle, ScrollWindow
-from src.gui.info_panels import *
 from src.gui.mission_card import MissionCard
 from src.gui.roster_view_components import draw_panels, draw_recruiting_panel
 from src.gui.states import ViewStates
@@ -290,19 +289,25 @@ class RosterView(arcade.View):
         btn.on_click = self.display_roster
         return btn
 
-    def _roster_entity(self):
+    def _roster_entity(self) -> None:
+        """Sets self.merc to the selected entry in the roster scroll window.
+        """
         if self.col_select.pos == 0 and len(self.roster_scroll_window.items) > 0:
                 self.merc = self.roster_scroll_window.items[
                     self.roster_scroll_window.position.pos
                 ]
     
-    def _team_entity(self):
+    def _team_entity(self) -> None:
+        """Sets self.merc to the selected entry in the team scroll window.
+        """
         if self.col_select.pos == 1 and len(self.team_scroll_window.items) > 0:
                 self.merc = self.team_scroll_window.items[
                     self.team_scroll_window.position.pos
                 ]
     
-    def _recruits_entity(self):
+    def _recruits_entity(self) -> None:
+        """Sets self.merc to the selected entry in the recruitment scroll window.
+        """
         if len(self.recruitment_scroll_window.items) > 0:
                 self.merc = self.recruitment_scroll_window.items[
                     self.recruitment_scroll_window.position.pos
@@ -352,8 +357,6 @@ class RosterView(arcade.View):
                 row_height=self.row_height,
                 recruitment_scroll_window=self.recruitment_scroll_window,
             )
-        
-        
 
     def _log_input(self, symbol, modifiers):
         ...
