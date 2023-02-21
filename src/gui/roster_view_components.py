@@ -120,52 +120,52 @@ def draw_panels(
                     team_scroll_window=team_scroll_window,
                 )
 
+# REFACTOR IN PROGRESS. BEHAVIOR NOW IMPLEMENTED IN RecruitmentPaneSection
+# def draw_recruiting_panel(margin: int, height: int, recruitment_scroll_window, row_height):
+#     arcade.draw_rectangle_outline(
+#         center_x=(WindowData.width / 2) - 0.5,
+#         center_y=height * 0.65,
+#         width=WindowData.width *0.988,
+#         height=height * 0.69,
+#         color=(218, 165, 32, 255),
+#     )
 
-def draw_recruiting_panel(margin: int, height: int, recruitment_scroll_window, row_height):
-    arcade.draw_rectangle_outline(
-        center_x=(WindowData.width / 2) - 0.5,
-        center_y=height * 0.65,
-        width=WindowData.width *0.988,
-        height=height * 0.69,
-        color=(218, 165, 32, 255),
-    )
+#     arcade.Text(
+#         "Mercenaries for Hire!",
+#         start_x=WindowData.width / 2,
+#         start_y=height - margin * 8,
+#         font_name=WindowData.font,
+#         font_size=25,
+#         anchor_x="center",
+#     ).draw()
 
-    arcade.Text(
-        "Mercenaries for Hire!",
-        start_x=WindowData.width / 2,
-        start_y=height - margin * 8,
-        font_name=WindowData.font,
-        font_size=25,
-        anchor_x="center",
-    ).draw()
+#     populate_recruitment_pane(recruitment_scroll_window, height, row_height)
 
-    populate_recruitment_pane(recruitment_scroll_window, height, row_height)
+# def populate_recruitment_pane(recruitment_scroll_window, height, row_height):
+#     if recruitment_scroll_window.visible_items[1] is not None:
+#         height = gen_heights(row_height=row_height + 6, y=height, spacing=3)
+#         for merc, y2 in zip(range(recruitment_scroll_window.visible_size), height):
 
-def populate_recruitment_pane(recruitment_scroll_window, height, row_height):
-    if recruitment_scroll_window.visible_items[1] is not None:
-        height = gen_heights(row_height=row_height + 6, y=height, spacing=3)
-        for merc, y2 in zip(range(recruitment_scroll_window.visible_size), height):
-
-            if merc == recruitment_scroll_window.visible_items[1]:
-                # Colour the selected merc Gold
-                color = (218, 165, 32, 255)
-                mark1 = ">>> "
-                mark2 = " $"
-            else:
-                # otherwise colour white.
-                color = arcade.color.WHITE
-                mark1 = ""
-                mark2 = ""
-            cost = f"{recruitment_scroll_window.visible_items[0][merc].cost} gp"
-            arcade.Text(
-                f"{mark1} {recruitment_scroll_window.visible_items[0][merc].name.first_name.capitalize()} : {cost}",
-                start_x=WindowData.width / 2,
-                start_y=y2,
-                font_name=WindowData.font,
-                font_size=18,
-                anchor_x="center",
-                color=color,
-            ).draw()
+#             if merc == recruitment_scroll_window.visible_items[1]:
+#                 # Colour the selected merc Gold
+#                 color = (218, 165, 32, 255)
+#                 mark1 = ">>> "
+#                 mark2 = " $"
+#             else:
+#                 # otherwise colour white.
+#                 color = arcade.color.WHITE
+#                 mark1 = ""
+#                 mark2 = ""
+#             cost = f"{recruitment_scroll_window.visible_items[0][merc].cost} gp"
+#             arcade.Text(
+#                 f"{mark1} {recruitment_scroll_window.visible_items[0][merc].name.first_name.capitalize()} : {cost}",
+#                 start_x=WindowData.width / 2,
+#                 start_y=y2,
+#                 font_name=WindowData.font,
+#                 font_size=18,
+#                 anchor_x="center",
+#                 color=color,
+#             ).draw()
 
 def populate_roster_pane(x, col, row_height, margin, height, roster_scroll_window):
     """
