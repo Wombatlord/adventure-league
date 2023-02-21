@@ -5,6 +5,7 @@ from arcade.gui.widgets.text import UILabel, UITextArea
 from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
 
 from src.engine.init_engine import eng
+from src.entities.entity import Entity
 from src.gui.window_data import WindowData
 from src.gui.gui_utils import ScrollWindow
 from src.gui.buttons import CommandBarMixin
@@ -150,9 +151,31 @@ class InfoPaneSection(arcade.Section):
         self.width = width
 
 
+def _entity_labels_with_cost(scroll_window):
+    """
+    Prototyping construction of hireable merc names as an array of UILabels for RecruitmentSection UIManager.
+    """
+    labels = []
+
+    for entity in scroll_window.items:
+        label = UILabel(
+            text=f"{entity.name.name_and_title}: {entity.cost} gp",
+            width=WindowData.width,
+            font_size=18,
+            font_name=WindowData.font,
+            align="center",
+            size_hint=(0.5, None),
+        ).with_border(color=arcade.color.GENERIC_VIRIDIAN)
+
+        labels.append(label)
+
+    return labels
+
+
 class RecruitmentPaneSection(arcade.Section):
     labels: list[UILabel]
-    
+    merc: Entity
+
     def __init__(
         self,
         left: int,
@@ -168,7 +191,7 @@ class RecruitmentPaneSection(arcade.Section):
         self.recruitment_scroll_window = ScrollWindow(
             eng.game_state.entity_pool.pool, 10, 10
         )
-
+        self.labels = _entity_labels_with_cost(self.recruitment_scroll_window)
         self.margin = 2
         self.header = UILabel(
             text="Mercenaries For Hire!",
@@ -182,8 +205,9 @@ class RecruitmentPaneSection(arcade.Section):
         )
 
     def setup(self) -> None:
-        self._entity_labels()
+        # self._entity_labels()
         self.recruitment_pane()
+        print(self.view.info_pane_section.texts[1].label.text)
 
     # def on_update(self, delta_time: float):
     #     print(delta_time)
@@ -197,24 +221,6 @@ class RecruitmentPaneSection(arcade.Section):
             bottom=self.bottom,
             color=arcade.color.PURPLE_HEART,
         )
-
-    def _entity_labels(self):
-        """
-        Prototyping construction of hireable merc names as an array of UILabels for RecruitmentSection UIManager.
-        """
-        self.labels = []
-
-        for entity in self.recruitment_scroll_window.items:
-            label = UILabel(
-                text=f"{entity.name.name_and_title}",
-                width=WindowData.width,
-                font_size=18,
-                font_name=WindowData.font,
-                align="center",
-                size_hint=(0.25, None),
-            ).with_border(color=arcade.color.GENERIC_VIRIDIAN)
-
-            self.labels.append(label)
 
     def recruitment_pane(self) -> None:
         """
@@ -239,6 +245,7 @@ class RecruitmentPaneSection(arcade.Section):
             height=self.height,
             children=self.labels,
             size_hint=(1, 1),
+            space_between=5,
         ).with_padding(top=50)
 
         anchor.add(
@@ -265,6 +272,23 @@ class RecruitmentPaneSection(arcade.Section):
         #     for child in children.children[1].children:
         #         print(child.text)
 
+    def highlight_selection(self):
+        """Forgive me Father for I have sinned.
+
+        Highlight the currently selected entry in the recruitment pane with a color and ">>" selection mark prepended to the text
+        """
+        for child in self.manager.children[0][0].children[1].children:
+            child.label.color = arcade.color.WHITE
+            child.label.text = f"{self.recruitment_scroll_window.items[self.manager.children[0][0].children[1].children.index(child)].name.name_and_title}: {self.recruitment_scroll_window.items[self.manager.children[0][0].children[1].children.index(child)].cost} gp"
+
+        self.manager.children[0][0].children[1].children[
+            self.recruitment_scroll_window.position.pos
+        ].label.color = arcade.color.GOLD
+
+        self.manager.children[0][0].children[1].children[
+            self.recruitment_scroll_window.position.pos
+        ].label.text = f">> {self.recruitment_scroll_window.items[self.recruitment_scroll_window.position.pos].name.name_and_title}: {self.recruitment_scroll_window.items[self.recruitment_scroll_window.position.pos].cost} gp"
+
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
         self.height = height - self.margin
@@ -286,15 +310,7 @@ class RecruitmentPaneSection(arcade.Section):
             """
             self.recruitment_scroll_window.decr_selection()
 
-            """
-            Highlight current selection by iterating over children of UIBoxLayout
-            which contains UILabels. Set the label color depending on
-            the recruitment_scroll_window.position.pos.  
-            """
-            for child in self.manager.children[0][0].children[1].children:
-                child.label.color = arcade.color.WHITE
-
-            self.manager.children[0][0].children[1].children[self.recruitment_scroll_window.position.pos].label.color = arcade.color.GOLD
+            self.highlight_selection()
             self.manager.trigger_render()
 
         if symbol == arcade.key.DOWN:
@@ -304,17 +320,9 @@ class RecruitmentPaneSection(arcade.Section):
             """
             self.recruitment_scroll_window.incr_selection()
 
-            """
-            Highlight current selection by iterating over children of UIBoxLayout
-            which contains UILabels. Set the label color depending on
-            the recruitment_scroll_window.position.pos.  
-            """    
-            for child in self.manager.children[0][0].children[1].children:
-                child.label.color = arcade.color.WHITE
-
-            self.manager.children[0][0].children[1].children[self.recruitment_scroll_window.position.pos].label.color = arcade.color.GOLD
+            self.highlight_selection()
             self.manager.trigger_render()
-            
+
         if symbol == arcade.key.ENTER:
             # If the total amount of guild members does not equal the roster_limit, recruit the selected mercenary to the guild.
             if (
