@@ -9,12 +9,12 @@ from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
-from src.gui.sections import CommandBarSection, InfoPaneSection
+from src.gui.sections import CommandBarSection, InfoPaneSection, RecruitmentPaneSection
 from src.gui.buttons import nav_button, get_new_missions_button
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.mission_card import MissionCard
-from src.gui.roster_view_components import draw_panels, draw_recruiting_panel
+from src.gui.roster_view_components import draw_panels
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
 
@@ -144,6 +144,9 @@ class GuildView(arcade.View):
         self.clear()
         # populate_guild_view_info_panel()
 
+    # def on_update(self, delta_time: float):
+    #     print(delta_time)
+    
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.G:
@@ -187,7 +190,16 @@ class RosterView(arcade.View):
         self.color = arcade.color.WHITE
         self.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
         self.team_scroll_window = ScrollWindow(eng.game_state.guild.team.members, 10, 10)
-        self.recruitment_scroll_window = ScrollWindow(eng.game_state.entity_pool.pool, 10, 10)
+        # self.recruitment_scroll_window = ScrollWindow(eng.game_state.entity_pool.pool, 10, 10)
+        
+        # RecruitmentPane Config
+        self.recruitment_pane_section = RecruitmentPaneSection(
+            left=2,
+            bottom=182,
+            width = WindowData.width - 2,
+            height = WindowData.height - 2,
+            prevent_dispatch_view = {False},
+        )
         
         # InfoPane Config
         self.instruction = UILabel(
@@ -234,6 +246,8 @@ class RosterView(arcade.View):
             buttons=self.roster_pane_buttons,
             prevent_dispatch_view = {False}
         )
+        
+        self.add_section(self.recruitment_pane_section)
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
 
@@ -246,8 +260,8 @@ class RosterView(arcade.View):
         Args:
             event (UIEvent): The UIEvent which called this handler.
         """
-        self.recruitment_scroll_window = ScrollWindow(eng.game_state.entity_pool.pool, 10, 10)
         self.state = ViewStates.RECRUIT
+        self.recruitment_pane_section.enabled = True
         self.command_bar_section.buttons = self.recruitment_pane_buttons
         self.command_bar_section.setup()
 
@@ -262,6 +276,7 @@ class RosterView(arcade.View):
         """
         self.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
         self.state = ViewStates.ROSTER
+        self.recruitment_pane_section.enabled = False
         self.command_bar_section.buttons = self.roster_pane_buttons
         self.command_bar_section.setup()
 
@@ -305,20 +320,25 @@ class RosterView(arcade.View):
                     self.team_scroll_window.position.pos
                 ]
     
-    def _recruits_entity(self) -> None:
-        """Sets self.merc to the selected entry in the recruitment scroll window.
-        """
-        if len(self.recruitment_scroll_window.items) > 0:
-                self.merc = self.recruitment_scroll_window.items[
-                    self.recruitment_scroll_window.position.pos
-                ]
-            
+    # def _recruits_entity(self) -> None:
+    #     """Sets self.merc to the selected entry in the recruitment scroll window.
+    #     """
+    #     if len(self.recruitment_scroll_window.items) > 0:
+    #             self.merc = self.recruitment_scroll_window.items[
+    #                 self.recruitment_scroll_window.position.pos
+    #             ]
+    
     def on_show_view(self) -> None:
+        self.recruitment_pane_section.manager.enable()
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
+        
+        self.recruitment_pane_section.setup()
         self.info_pane_section.setup()
         self.command_bar_section.setup()
 
+        self.recruitment_pane_section.enabled = False
+        
     def on_hide_view(self) -> None:
         self.info_pane_section.manager.disable()
         self.command_bar_section.manager.disable()
@@ -329,8 +349,8 @@ class RosterView(arcade.View):
             self._roster_entity()
             self._team_entity()
         
-        if self.state == ViewStates.RECRUIT:
-            self._recruits_entity()
+        # if self.state == ViewStates.RECRUIT:
+        #     self._recruits_entity()
 
         if self.merc is None:
             self.entity_info.text = ""
@@ -350,13 +370,13 @@ class RosterView(arcade.View):
                 team_scroll_window=self.team_scroll_window,
             )
 
-        if self.state == ViewStates.RECRUIT:
-            draw_recruiting_panel(
-                margin=self.margin,
-                height=WindowData.height,
-                row_height=self.row_height,
-                recruitment_scroll_window=self.recruitment_scroll_window,
-            )
+        # if self.state == ViewStates.RECRUIT:
+            # draw_recruiting_panel(
+            #     margin=self.margin,
+            #     height=WindowData.height,
+            #     row_height=self.row_height,
+            #     recruitment_scroll_window=self.recruitment_scroll_window,
+            # )
 
     def _log_input(self, symbol, modifiers):
         ...
@@ -368,8 +388,6 @@ class RosterView(arcade.View):
         self._log_input(symbol, modifiers)
 
         match symbol:
-            case arcade.key.L:
-                self.color = arcade.color.RED
             case arcade.key.G:
                 guild_view = GuildView()
                 self.window.show_view(guild_view)
@@ -377,11 +395,13 @@ class RosterView(arcade.View):
             case arcade.key.R:
                 if self.state == ViewStates.ROSTER:
                     self.state = ViewStates.RECRUIT
+                    self.recruitment_pane_section.enabled = True
                     self.command_bar_section.buttons = self.recruitment_pane_buttons
                     self.command_bar_section.setup()
 
                 elif self.state == ViewStates.RECRUIT:
                     # reinstantiate the roster_scroll_window to ensure new recruits are present.
+                    self.recruitment_pane_section.enabled = False
                     self.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
                     self.state = ViewStates.ROSTER
                     self.command_bar_section.buttons = self.roster_pane_buttons
@@ -401,8 +421,9 @@ class RosterView(arcade.View):
                     if self.col_select.pos == 1:
                         self.team_scroll_window.decr_selection()
 
-                elif self.state == ViewStates.RECRUIT:
-                    self.recruitment_scroll_window.decr_selection()
+                # elif self.state == ViewStates.RECRUIT:
+                #     self.recruitment_scroll_window.decr_selection()
+                #     self.recruitment_pane_section.pos = self.recruitment_scroll_window.position.pos
 
             case arcade.key.DOWN:
                 if self.state == ViewStates.ROSTER:
@@ -412,8 +433,8 @@ class RosterView(arcade.View):
                     if self.col_select.pos == 1:
                         self.team_scroll_window.incr_selection()
 
-                elif self.state == ViewStates.RECRUIT:
-                    self.recruitment_scroll_window.incr_selection()
+                # elif self.state == ViewStates.RECRUIT:
+                #     self.recruitment_scroll_window.incr_selection()
 
             case arcade.key.ENTER:
                 if self.state == ViewStates.ROSTER:
@@ -451,20 +472,22 @@ class RosterView(arcade.View):
                         eng.game_state.guild.roster = self.roster_scroll_window.items
                         eng.game_state.guild.team.members = self.team_scroll_window.items
 
-                elif self.state == ViewStates.RECRUIT:
-                    if len(eng.game_state.guild.roster) + len(eng.game_state.team.members) < eng.game_state.guild.roster_limit:
-                        eng.recruit_entity_to_guild(
-                            eng.game_state.entity_pool.pool.index(
-                                self.recruitment_scroll_window.selection
-                            )
-                        )
-                        self.recruitment_scroll_window.pop()
+                # elif self.state == ViewStates.RECRUIT:
+                #     if len(eng.game_state.guild.roster) + len(eng.game_state.team.members) < eng.game_state.guild.roster_limit:
+                #         eng.recruit_entity_to_guild(
+                #             eng.game_state.entity_pool.pool.index(
+                #                 self.recruitment_scroll_window.selection
+                #             )
+                #         )
+                #         self.recruitment_scroll_window.pop()
 
         self._log_state()
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
 
+        self.recruitment_pane_section.width = width - self.recruitment_pane_section.margin
+        
         WindowData.width = width
         WindowData.height = height
 
