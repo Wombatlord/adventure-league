@@ -320,26 +320,27 @@ class RosterView(arcade.View):
                     self.team_scroll_window.position.pos
                 ]
     
-    # def _recruits_entity(self) -> None:
-    #     """Sets self.merc to the selected entry in the recruitment scroll window.
-    #     """
-    #     if len(self.recruitment_scroll_window.items) > 0:
-    #             self.merc = self.recruitment_scroll_window.items[
-    #                 self.recruitment_scroll_window.position.pos
-    #             ]
+    def _recruits_entity(self) -> None:
+        """Sets self.merc to the selected entry in the recruitment scroll window.
+        """
+        if len(self.recruitment_pane_section.recruitment_scroll_window.items) > 0:
+                self.merc = self.recruitment_pane_section.recruitment_scroll_window.items[
+                    self.recruitment_pane_section.recruitment_scroll_window.position.pos
+                ]
     
     def on_show_view(self) -> None:
-        self.recruitment_pane_section.manager.enable()
         self.info_pane_section.manager.enable()
+        self.recruitment_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
         
-        self.recruitment_pane_section.setup()
         self.info_pane_section.setup()
+        self.recruitment_pane_section.setup()
         self.command_bar_section.setup()
 
         self.recruitment_pane_section.enabled = False
         
     def on_hide_view(self) -> None:
+        self.recruitment_pane_section.manager.disable()
         self.info_pane_section.manager.disable()
         self.command_bar_section.manager.disable()
 
@@ -349,8 +350,8 @@ class RosterView(arcade.View):
             self._roster_entity()
             self._team_entity()
         
-        # if self.state == ViewStates.RECRUIT:
-        #     self._recruits_entity()
+        if self.state == ViewStates.RECRUIT:
+            self._recruits_entity()
 
         if self.merc is None:
             self.entity_info.text = ""
