@@ -1,5 +1,6 @@
 import arcade
 from arcade.gui import UIManager
+from arcade.gui.widgets import UIWidget
 from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel, UITextArea
 from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
@@ -151,30 +152,55 @@ class InfoPaneSection(arcade.Section):
         self.width = width
 
 
-def _entity_labels_with_cost(scroll_window):
+def _entity_labels_with_cost(scroll_window: ScrollWindow) -> tuple[UIWidget]:
+    """Returns a tuple of UILabels which can be attached to a UILayout
+
+    Args:
+        scroll_window (ScrollWindow): ScrollWindow containing an array of entities with names and costs.
+
+    Returns:
+        tuple[UIWidget]: Tuple of UILabels. Can simply be attached to the children parameter of a UILayout.
     """
-    Prototyping construction of hireable merc names as an array of UILabels for RecruitmentSection UIManager.
+    return tuple(
+        map(
+            lambda entity: UILabel(
+                text=f"{entity.name.name_and_title}: {entity.cost} gp",
+                width=WindowData.width,
+                font_size=18,
+                font_name=WindowData.font,
+                align="center",
+                size_hint=(0.5, None),
+            ).with_border(color=arcade.color.GENERIC_VIRIDIAN),
+            scroll_window.items,
+        )
+    )
+
+
+def _highlight_selection(scroll_window: ScrollWindow, labels: tuple[UIWidget]) -> None:
     """
-    labels = []
+    Highlight the currently selected entry in the recruitment pane with a color and ">>" selection mark prepended to the text
 
-    for entity in scroll_window.items:
-        label = UILabel(
-            text=f"{entity.name.name_and_title}: {entity.cost} gp",
-            width=WindowData.width,
-            font_size=18,
-            font_name=WindowData.font,
-            align="center",
-            size_hint=(0.5, None),
-        ).with_border(color=arcade.color.GENERIC_VIRIDIAN)
+    Args:
+        scroll_window (ScrollWindow): ScrollWindow contains both the selection tracking via ScrollWindow.position.pos,
+                                      and an array of the entities which are represented in the UILabels.
 
-        labels.append(label)
+        labels (tuple[UIWidget]): The UILabels which are actually drawn in the UI by the UIManager.
+                                  Use ScrollWindow.items fields to recreate the non-selected label text.
+    """
+    entity_labels = labels
+    
+    # Set all entity_label colors to white and text to non-selected string.
+    for entity_label in entity_labels:
+        entity_label.label.color = arcade.color.WHITE
+        entity_label.label.text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}: {scroll_window.items[entity_labels.index(entity_label)].cost} gp"
 
-    return labels
+    # Set selected entity_label color to gold and text to selection string
+    entity_labels[scroll_window.position.pos].label.color = arcade.color.GOLD
+    entity_labels[scroll_window.position.pos].label.text = f">> {entity_labels[scroll_window.position.pos].label.text}"
 
 
 class RecruitmentPaneSection(arcade.Section):
-    labels: list[UILabel]
-    merc: Entity
+    recruits_box_children: tuple[UIWidget] 
 
     def __init__(
         self,
@@ -187,12 +213,11 @@ class RecruitmentPaneSection(arcade.Section):
         super().__init__(left, bottom, width, height, **kwargs)
 
         self.manager = UIManager()
-
         self.recruitment_scroll_window = ScrollWindow(
             eng.game_state.entity_pool.pool, 10, 10
         )
-        self.labels = _entity_labels_with_cost(self.recruitment_scroll_window)
         self.margin = 2
+        self.recruits_labels: tuple[UIWidget] = _entity_labels_with_cost(self.recruitment_scroll_window)
         self.header = UILabel(
             text="Mercenaries For Hire!",
             width=WindowData.width,
@@ -205,9 +230,7 @@ class RecruitmentPaneSection(arcade.Section):
         )
 
     def setup(self) -> None:
-        # self._entity_labels()
         self.recruitment_pane()
-        print(self.view.info_pane_section.texts[1].label.text)
 
     # def on_update(self, delta_time: float):
     #     print(delta_time)
@@ -227,6 +250,9 @@ class RecruitmentPaneSection(arcade.Section):
         Attaches the root node of the layout to the provided manager.
         UILabels are attached to the UIBoxLayouts, which are the children of the root node.
 
+        Finally saves a reference to the recruits_box.children as self.recruits_box_children
+        and applies selection highlighting for initial display of the UILabels.
+        
         Args:
             manager (UIManager): The UIManager of a View which wants to have a command bar.
             buttons (list[UIFlatButton]): An array of UIFlatButtons with their own handlers already attached.
@@ -243,7 +269,7 @@ class RecruitmentPaneSection(arcade.Section):
         recruits_box = UIBoxLayout(
             vertical=True,
             height=self.height,
-            children=self.labels,
+            children=self.recruits_labels,
             size_hint=(1, 1),
             space_between=5,
         ).with_padding(top=50)
@@ -260,34 +286,15 @@ class RecruitmentPaneSection(arcade.Section):
             child=recruits_box,
         )
 
-        # Set the color of the label corresponding to the recruitment_scroll_window.position.pos
-        # to indicate the initial selection when this section is enabled.
-        self.manager.children[0][0].children[1].children[
-            self.recruitment_scroll_window.position.pos
-        ].label.color = arcade.color.GOLD
+        self.recruits_box_children = self.manager.children[0][0].children[1].children
+
+        _highlight_selection(self.recruitment_scroll_window, self.recruits_box_children)
 
         # This is how you get to the children.
         # Investigate for refactoring selection highlighting
         # for children in self.manager.children[0]:
         #     for child in children.children[1].children:
         #         print(child.text)
-
-    def highlight_selection(self):
-        """Forgive me Father for I have sinned.
-
-        Highlight the currently selected entry in the recruitment pane with a color and ">>" selection mark prepended to the text
-        """
-        for child in self.manager.children[0][0].children[1].children:
-            child.label.color = arcade.color.WHITE
-            child.label.text = f"{self.recruitment_scroll_window.items[self.manager.children[0][0].children[1].children.index(child)].name.name_and_title}: {self.recruitment_scroll_window.items[self.manager.children[0][0].children[1].children.index(child)].cost} gp"
-
-        self.manager.children[0][0].children[1].children[
-            self.recruitment_scroll_window.position.pos
-        ].label.color = arcade.color.GOLD
-
-        self.manager.children[0][0].children[1].children[
-            self.recruitment_scroll_window.position.pos
-        ].label.text = f">> {self.recruitment_scroll_window.items[self.recruitment_scroll_window.position.pos].name.name_and_title}: {self.recruitment_scroll_window.items[self.recruitment_scroll_window.position.pos].cost} gp"
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
@@ -310,7 +317,10 @@ class RecruitmentPaneSection(arcade.Section):
             """
             self.recruitment_scroll_window.decr_selection()
 
-            self.highlight_selection()
+            _highlight_selection(
+                self.recruitment_scroll_window,
+                self.recruits_box_children,
+            )
             self.manager.trigger_render()
 
         if symbol == arcade.key.DOWN:
@@ -320,7 +330,10 @@ class RecruitmentPaneSection(arcade.Section):
             """
             self.recruitment_scroll_window.incr_selection()
 
-            self.highlight_selection()
+            _highlight_selection(
+                self.recruitment_scroll_window,
+                self.recruits_box_children,
+            )
             self.manager.trigger_render()
 
         if symbol == arcade.key.ENTER:
@@ -337,18 +350,23 @@ class RecruitmentPaneSection(arcade.Section):
 
                 # Assign currently selected child to pass to the remove() func of the UIBoxLayout
                 # to maintain correspondence with the recruitment_scroll_window.items
-                highlighted_label = (
-                    self.manager.children[0][0]
-                    .children[1]
-                    .children[self.recruitment_scroll_window.position.pos]
-                )
+                highlighted_label = self.recruits_box_children[
+                    self.recruitment_scroll_window.position.pos
+                ]
 
                 # Remove the UILabel from UIBoxLayout and pop the corresponding item from the recruitment_scroll_window.
                 self.manager.children[0][0].children[1].remove(highlighted_label)
                 self.recruitment_scroll_window.pop()
 
-                # Carry the selection highlighting to the next selection after removing the current selection.
-                self.manager.children[0][0].children[1].children[
-                    self.recruitment_scroll_window.position.pos
-                ].label.color = arcade.color.GOLD
+                # Update state
+                self.recruits_box_children = (
+                    self.manager.children[0][0].children[1].children
+                )
+
+                # Ensure highlighting carries over to the now selected recruit.
+                _highlight_selection(
+                    self.recruitment_scroll_window,
+                    self.recruits_box_children,
+                )
+
                 self.manager.trigger_render()
