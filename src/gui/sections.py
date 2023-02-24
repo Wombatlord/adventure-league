@@ -493,9 +493,8 @@ class RosterAndTeamPaneSection(arcade.Section):
 
     def roster_pane(self):
         """
-        TODO:
-        Create UIBoxLayout and attach to UIManager
-        UIBoxLayout children should correspond to the current eng.game_state.guild.roster / eng.game_state.guild.team
+        Creates two UIBoxLayouts and attaches them to UIManager.
+        First UIBoxLayout contains the pane header, the second is for the UILabels representing mercenaries currently on the Roster.
         """
         anchor = self.manager.add(UIAnchorLayout(size_hint=(0.5, 1)))
 
@@ -533,9 +532,8 @@ class RosterAndTeamPaneSection(arcade.Section):
         
     def team_pane(self):
         """
-        TODO:
-        Create UIBoxLayout and attach to UIManager
-        UIBoxLayout children should be the current eng.game_state.team.members
+        Creates two UIBoxLayouts and attaches them to UIManager
+        First UIBoxLayout contains the pane header, the second is for the UILabels representing mercenaries assigned to the team.
         """
         anchor = self.manager.add(UIAnchorLayout(size_hint=(1, 1)))
 
@@ -577,10 +575,9 @@ class RosterAndTeamPaneSection(arcade.Section):
 
     def on_key_press(self, symbol: int, modifiers: int):
         """
-        TODO:
-        Left / Right should change focus between Roster & Team panes: 
-        Up / Down should change label selection and apply highlighting
-        Enter should assign the highlighted member to the team or the roster
+        Left / Right changes focus between Roster & Team panes: 
+        Up / Down to change label selection and apply highlighting
+        Enter assigns the highlighted member to the team or the roster
         """
         match symbol:
             case arcade.key.LEFT:
@@ -600,7 +597,6 @@ class RosterAndTeamPaneSection(arcade.Section):
 
                 if self.pane_selector.pos == self.pane_id[1]:
                     self.team_scroll_window.decr_selection()
-                    print(self.team_box_children)
                     _highlight_selection(
                         self.team_scroll_window,
                         self.team_box_children,
