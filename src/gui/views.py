@@ -402,6 +402,41 @@ class RosterView(arcade.View):
     def _log_state(self):
         ...
 
+    def switch_to_recruitment_pane(self):
+        """
+        Do any necessary reconfiguration of recruitment_pane_section when switching to this section from the roster and team display.
+        Ensures the section has appropriate window size values if the window was resized while recruitment section was disabled.
+        Assigns the correct buttons to the command bar for this section.        
+        """
+        self.roster_and_team_pane_section.enabled = False
+        self.roster_and_team_pane_section.manager.disable()
+        self.recruitment_pane_section.width = WindowData.width - 2
+        self.recruitment_pane_section.height = WindowData.height - 2
+        self.recruitment_pane_section.enabled = True
+        self.command_bar_section.buttons = self.recruitment_pane_buttons
+        self.command_bar_section.setup()
+
+    def switch_to_roster_and_team_panes(self):
+        """
+        Do any necessary reconfiguration of roster_and_team_pane_section when switching to this section from the recruitment display.
+        Ensures the section has appropriate window size values if the window was resized while roster_and_team_pane_section was disabled.
+        Assigns the correct buttons to the command bar for this section.        
+        """
+        self.recruitment_pane_section.enabled = False
+        
+        # reinstantiate the roster_scroll_window to ensure new recruits are present and that the length covers all selectable entities.
+        self.roster_and_team_pane_section.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
+        self.roster_and_team_pane_section.width = WindowData.width - 2
+        self.roster_and_team_pane_section.height = WindowData.height - 2
+        self.roster_and_team_pane_section.flush()
+        self.roster_and_team_pane_section.setup()
+        self.roster_and_team_pane_section.manager.enable()
+        self.roster_and_team_pane_section.enabled = True
+        
+        # Setup CommandBarSection with appropriate buttons
+        self.command_bar_section.buttons = self.roster_pane_buttons
+        self.command_bar_section.setup()
+    
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         self._log_input(symbol, modifiers)
 
@@ -413,26 +448,11 @@ class RosterView(arcade.View):
             case arcade.key.R:
                 if self.state == ViewStates.ROSTER:
                     self.state = ViewStates.RECRUIT
-                    self.roster_and_team_pane_section.enabled = False
-                    self.roster_and_team_pane_section.manager.disable()
-
-                    self.recruitment_pane_section.width = WindowData.width - 2
-                    self.recruitment_pane_section.enabled = True
-                    self.command_bar_section.buttons = self.recruitment_pane_buttons
-                    self.command_bar_section.setup()
+                    self.switch_to_recruitment_pane()
 
                 elif self.state == ViewStates.RECRUIT:
                     self.state = ViewStates.ROSTER
-                    self.recruitment_pane_section.enabled = False
-                    self.command_bar_section.buttons = self.roster_pane_buttons
-                    # reinstantiate the roster_scroll_window to ensure new recruits are present.
-                    self.roster_and_team_pane_section.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
-                    self.roster_and_team_pane_section.width = WindowData.width
-                    self.roster_and_team_pane_section.flush()
-                    self.roster_and_team_pane_section.setup()
-                    self.roster_and_team_pane_section.manager.enable()
-                    self.roster_and_team_pane_section.enabled = True
-                    self.command_bar_section.setup()
+                    self.switch_to_roster_and_team_panes()
 
             # case arcade.key.RIGHT:
             #     self.col_select.incr()
