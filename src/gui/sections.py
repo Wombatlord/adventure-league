@@ -329,12 +329,6 @@ class RecruitmentPaneSection(arcade.Section):
 
         _highlight_selection(self.recruitment_scroll_window, self.recruits_box_children)
 
-        # This is how you get to the children.
-        # Investigate for refactoring selection highlighting
-        # for children in self.manager.children[0]:
-        #     for child in children.children[1].children:
-        #         print(child.text)
-
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
         self.height = height - self.margin
