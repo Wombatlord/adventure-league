@@ -658,25 +658,8 @@ class MissionsSection(arcade.Section):
 
         self.manager = UIManager()
         self.missions = missions
-
-        self.m1 = UILabel(
-            text=f"{self.missions[0].description}",
-            width=WindowData.width,
-            font_size=18,
-            font_name=WindowData.font,
-            align="center",
-            size_hint=(1, 1),
-        ).with_border(color=arcade.color.GENERIC_VIRIDIAN)
-
-        self.m2 = UILabel(
-            text=f"Boss: {self.missions[0].boss.name.name_and_title}",
-            width=WindowData.width,
-            font_size=18,
-            font_name=WindowData.font,
-            align="center",
-            size_hint=(1, 1),
-        ).with_border(color=arcade.color.GENERIC_VIRIDIAN)
-
+        self.mission_selection = Cycle(3,0)
+        
         self.headers = (
             create_colored_UILabel_header(header_string=self.missions[0].description, color=arcade.color.GOLD),
             create_colored_UILabel_header(header_string=self.missions[1].description, color=arcade.color.GOLD),
@@ -688,8 +671,8 @@ class MissionsSection(arcade.Section):
                 self.headers[0],
                 box_containing_horizontal_label_pair(
                     (
-                        ("Sub-Title One:", 13, arcade.color.GOLD),
-                        (f"Sub-Title One Part Deux", 18, arcade.color.ALABAMA_CRIMSON),
+                        ("Boss:", 16, arcade.color.GOLD),
+                        (self.missions[0].boss.name.name_and_title, 16, arcade.color.ALABAMA_CRIMSON),
                     ),
                     padding=(
                         0,
@@ -717,8 +700,8 @@ class MissionsSection(arcade.Section):
                 self.headers[1],
                 box_containing_horizontal_label_pair(
                     (
-                        ("Sub-Title One:", 13, arcade.color.GOLD),
-                        (f"Sub-Title One Part Deux", 18, arcade.color.ALABAMA_CRIMSON),
+                        ("Boss:", 16, arcade.color.GOLD),
+                        (self.missions[1].boss.name.name_and_title, 16, arcade.color.ALABAMA_CRIMSON),
                     ),
                     padding=(
                         0,
@@ -746,8 +729,8 @@ class MissionsSection(arcade.Section):
                 self.headers[2],
                 box_containing_horizontal_label_pair(
                     (
-                        ("Sub-Title One:", 13, arcade.color.GOLD),
-                        (f"Sub-Title One Part Deux", 18, arcade.color.ALABAMA_CRIMSON),
+                        ("Boss:", 16, arcade.color.GOLD),
+                        (self.missions[2].boss.name.name_and_title, 16, arcade.color.ALABAMA_CRIMSON),
                     ),
                     padding=(
                         0,
@@ -780,7 +763,11 @@ class MissionsSection(arcade.Section):
                 *self.labels,
             ),
         )
-
+        
+        self.manager.children[0][0].children[0]._border_width = 5
+        self.manager.children[0][0].children[1]._border_width = 0
+        self.manager.children[0][0].children[2]._border_width = 0
+        
     def mission_cards(self):
         anchor = self.manager.add(UIAnchorLayout(y=self.bottom, size_hint=(1, 0.5)))
 
@@ -797,9 +784,37 @@ class MissionsSection(arcade.Section):
     def setup(self):
         self.mission_cards()
 
+    def scroll_mission_selection(self):
+        if self.mission_selection.pos == 0:
+            self.manager.children[0][0].children[0]._border_width = 5
+            self.manager.children[0][0].children[1]._border_width = 0
+            self.manager.children[0][0].children[2]._border_width = 0
+        
+        if self.mission_selection.pos == 1:
+            self.manager.children[0][0].children[0]._border_width = 0
+            self.manager.children[0][0].children[1]._border_width = 5
+            self.manager.children[0][0].children[2]._border_width = 0
+        
+        if self.mission_selection.pos == 2:
+            self.manager.children[0][0].children[0]._border_width = 0
+            self.manager.children[0][0].children[1]._border_width = 0
+            self.manager.children[0][0].children[2]._border_width = 5
+    
     def on_draw(self):
         self.manager.draw()
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
         self.manager.children[0][0].resize(width=width - 2, height=height - self.bottom)
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        match symbol:
+            case arcade.key.UP:
+                self.mission_selection.decr()
+                self.scroll_mission_selection()
+                print(self.missions[self.mission_selection.pos].description)
+            
+            case arcade.key.DOWN:
+                self.mission_selection.incr()
+                self.scroll_mission_selection()
+                print(self.missions[self.mission_selection.pos].description)
