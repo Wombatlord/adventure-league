@@ -684,8 +684,8 @@ class MissionsSection(arcade.Section):
                 ),
                 box_containing_horizontal_label_pair(
                     (
-                        ("Sub-Title 1.1:", 14, arcade.color.GOLD),
-                        (f"Sub-Title 1.1 Part Deux", 16, arcade.color.PALATINATE_BLUE),
+                        ("Rewards:", 14, arcade.color.GOLD),
+                        (self.missions[0].peek_reward(), 16, arcade.color.PALATINATE_BLUE),
                     ),
                     padding=(
                         0,
@@ -693,7 +693,7 @@ class MissionsSection(arcade.Section):
                         0,
                         50,
                     ),
-                    space_between_labels=50,
+                    space_between_labels=25,
                 ),
             ),
             (
@@ -713,8 +713,8 @@ class MissionsSection(arcade.Section):
                 ),
                 box_containing_horizontal_label_pair(
                     (
-                        ("Sub-Title 1.1:", 14, arcade.color.GOLD),
-                        (f"Sub-Title 1.1 Part Deux", 16, arcade.color.PALATINATE_BLUE),
+                        ("Rewards:", 14, arcade.color.GOLD),
+                        (self.missions[1].peek_reward(), 16, arcade.color.PALATINATE_BLUE),
                     ),
                     padding=(
                         0,
@@ -722,7 +722,7 @@ class MissionsSection(arcade.Section):
                         0,
                         50,
                     ),
-                    space_between_labels=50,
+                    space_between_labels=25,
                 ),
             ),
             (
@@ -742,8 +742,8 @@ class MissionsSection(arcade.Section):
                 ),
                 box_containing_horizontal_label_pair(
                     (
-                        ("Sub-Title 1.1:", 14, arcade.color.GOLD),
-                        (f"Sub-Title 1.1 Part Deux", 16, arcade.color.PALATINATE_BLUE),
+                        ("Rewards:", 14, arcade.color.GOLD),
+                        (self.missions[2].peek_reward(), 16, arcade.color.PALATINATE_BLUE),
                     ),
                     padding=(
                         0,
@@ -751,7 +751,7 @@ class MissionsSection(arcade.Section):
                         0,
                         50,
                     ),
-                    space_between_labels=50,
+                    space_between_labels=25,
                 ),
             ),
         )
