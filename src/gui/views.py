@@ -9,7 +9,7 @@ from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
-from src.gui.sections import CommandBarSection, InfoPaneSection, RecruitmentPaneSection, RosterAndTeamPaneSection
+from src.gui.sections import CommandBarSection, InfoPaneSection, RecruitmentPaneSection, RosterAndTeamPaneSection, MissionsSection
 from src.gui.buttons import nav_button, get_new_missions_button
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_utils import Cycle, ScrollWindow
@@ -272,8 +272,11 @@ class RosterView(arcade.View):
         self.recruitment_pane_section.enabled = True
         
         # Set up CommandBar with appropriate buttons
+        self.command_bar_section.manager.disable()
+        self.command_bar_section.flush()
         self.command_bar_section.buttons = self.recruitment_pane_buttons
         self.command_bar_section.setup()
+        self.command_bar_section.manager.enable()
 
     def switch_to_roster_and_team_panes(self, event: UIEvent = None):
         """
@@ -299,8 +302,11 @@ class RosterView(arcade.View):
         self.roster_and_team_pane_section.enabled = True
         
         # Setup CommandBarSection with appropriate buttons
+        self.command_bar_section.manager.disable()
+        self.command_bar_section.flush()
         self.command_bar_section.buttons = self.roster_pane_buttons
         self.command_bar_section.setup()
+        self.command_bar_section.manager.enable()
     
 
     def recruit_button(self) -> UIFlatButton:
@@ -450,6 +456,15 @@ class MissionsView(arcade.View):
         )  # 3 missions on screen, default selected (2) is the top visually.
         self.combat_screen = CombatScreen()
         
+        self.mission_section = MissionsSection(
+            left=0,
+            bottom=182,
+            width=WindowData.width,
+            height=WindowData.height - 182,
+            prevent_dispatch_view = {False},
+            missions=eng.game_state.mission_board.missions,
+        )
+        
         # InfoPane config
         self.instruction = UILabel(
             text="",
@@ -487,12 +502,15 @@ class MissionsView(arcade.View):
             buttons=self.buttons,
             prevent_dispatch_view = {False}
         )
+        self.add_section(self.mission_section)
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
 
     def on_show_view(self) -> None:
+        self.mission_section.manager.enable()
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
+        # self.mission_section.setup()
         self.info_pane_section.setup()
         self.command_bar_section.setup()
         
@@ -519,26 +537,26 @@ class MissionsView(arcade.View):
     def on_draw(self) -> None:
         self.clear()
 
-        if self.state == ViewStates.MISSIONS:
-            for row in range(len(eng.game_state.mission_board.missions)):
-                # self.selection is a user controlled value changed via up / down arrow keypress.
-                # set opacity of the MissionCard border to visible if self.selection == the row being drawn.
-                if self.selection.pos == row:
-                    opacity = 255
-                else:
-                    opacity = 25
+        # if self.state == ViewStates.MISSIONS:
+        #     for row in range(len(eng.game_state.mission_board.missions)):
+        #         # self.selection is a user controlled value changed via up / down arrow keypress.
+        #         # set opacity of the MissionCard border to visible if self.selection == the row being drawn.
+        #         if self.selection.pos == row:
+        #             opacity = 255
+        #         else:
+        #             opacity = 25
 
-                # Controls size of reserved space beneath MissionCards.
-                reserved_space = 75
+        #         # Controls size of reserved space beneath MissionCards.
+        #         reserved_space = 75
 
-                MissionCard(
-                    width=WindowData.width,
-                    height=WindowData.height,
-                    mission=eng.game_state.mission_board.missions[row],
-                    margin=self.margin,
-                    opacity=opacity,
-                    reserved_space=reserved_space,
-                ).draw_card(row)
+        #         MissionCard(
+        #             width=WindowData.width,
+        #             height=WindowData.height,
+        #             mission=eng.game_state.mission_board.missions[row],
+        #             margin=self.margin,
+        #             opacity=opacity,
+        #             reserved_space=reserved_space,
+        #         ).draw_card(row)
 
         if self.state == ViewStates.COMBAT:
             if eng.awaiting_input:
