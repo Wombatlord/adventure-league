@@ -20,7 +20,7 @@ def box_containing_horizontal_label_pair(
 ):
     box = UIBoxLayout(
         vertical=False,
-        size_hint=(1, 0.3),
+        size_hint=(1, 0.2),
         space_between=space_between_labels,
     ).with_padding(top=padding[0], right=padding[1], bottom=padding[2], left=padding[3])
 
@@ -28,6 +28,7 @@ def box_containing_horizontal_label_pair(
         lambda x: UILabel(
             text=x[0],
             font_size=x[1],
+            font_name=WindowData.font,
             align="left",
             size_hint=(None, None),
             text_color=x[2],
@@ -46,11 +47,10 @@ def create_colored_UILabel_header(
     return UILabel(
         text=f"{header_string}",
         width=WindowData.width,
-        height=50,
         font_size=25,
         font_name=WindowData.font,
         align="center",
-        size_hint=(1, None),
+        size_hint=(1, 0.3),
         text_color=color,
     )
 
