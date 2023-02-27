@@ -601,7 +601,8 @@ class MissionsView(arcade.View):
                 if len(eng.game_state.guild.team.members) > 0:
                     self.command_bar_section.enabled = False
                     self.info_pane_section.enabled = False
-                    eng.selected_mission = self.selection.pos
+                    self.mission_section.enabled = False
+                    eng.selected_mission = self.mission_section.mission_selection.pos
                     eng.init_dungeon()
 
                     if not eng.game_state.dungeon.cleared:
