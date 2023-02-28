@@ -8,12 +8,13 @@ from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
 from src.gui.gui_components import (
+    entity_labels_names_only,
     entity_labels_with_cost,
     create_colored_UILabel_header,
     vstack_of_three_boxes,
     box_containing_horizontal_label_pair,
 )
-from src.gui.window_data import WindowData
+from src.gui.states import MissionCards
 from src.gui.gui_utils import ScrollWindow, Cycle
 from src.gui.buttons import CommandBarMixin
 from src.gui.ui_styles import ADVENTURE_STYLE
@@ -191,7 +192,6 @@ def _highlight_selection(
         entity_labels[
             scroll_window.position.pos
         ].label.text = f">> {entity_labels[scroll_window.position.pos].label.text}"
-
 
 def _clear_highlight_selection(
     scroll_window: ScrollWindow, labels: tuple[UIWidget, ...]
@@ -376,6 +376,53 @@ class RecruitmentPaneSection(arcade.Section):
 
                 self.manager.trigger_render()
 
+def _highlight_roster_or_team_selection(
+    scroll_window: ScrollWindow, labels: tuple[UIWidget, ...]
+) -> None:
+    """
+    Highlight the currently selected entry in the recruitment pane with a color and ">>" selection mark prepended to the text
+
+    Args:
+        scroll_window (ScrollWindow): ScrollWindow contains both the selection tracking via ScrollWindow.position.pos,
+                                      and an array of the entities which are represented in the UILabels.
+
+        labels (tuple[UIWidget]): The UILabels which are actually drawn in the UI by the UIManager.
+                                  Use ScrollWindow.items fields to recreate the non-selected label text.
+                                  May be empty if for example all roster members are assigned to team or vice versa.
+    """
+    if len(labels) > 0:
+        entity_labels = labels
+
+        # Set all entity_label colors to white and text to non-selected string.
+        for entity_label in entity_labels:
+            entity_label.label.color = arcade.color.WHITE
+            entity_label.label.text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}"
+
+        # Set selected entity_label color to gold and text to selection string
+        entity_labels[scroll_window.position.pos].label.color = arcade.color.GOLD
+        entity_labels[
+            scroll_window.position.pos
+        ].label.text = f">> {entity_labels[scroll_window.position.pos].label.text}"
+
+def _clear_highlight_roster_or_team_selection(
+    scroll_window: ScrollWindow, labels: tuple[UIWidget, ...]
+) -> None:
+    """
+    Highlight the currently selected entry in the recruitment pane with a color and ">>" selection mark prepended to the text
+
+    Args:
+        scroll_window (ScrollWindow): ScrollWindow contains both the selection tracking via ScrollWindow.position.pos,
+                                      and an array of the entities which are represented in the UILabels.
+
+        labels (tuple[UIWidget]): The UILabels which are actually drawn in the UI by the UIManager.
+                                  Use ScrollWindow.items fields to recreate the non-selected label text.
+    """
+    entity_labels = labels
+
+    # Set all entity_label colors to white and text to non-selected string.
+    for entity_label in entity_labels:
+        entity_label.label.color = arcade.color.WHITE
+        entity_label.label.text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}"
 
 class RosterAndTeamPaneSection(arcade.Section):
     roster_box_children: tuple[UIWidget]
@@ -406,10 +453,11 @@ class RosterAndTeamPaneSection(arcade.Section):
         )
         self.team_header = create_colored_UILabel_header("Team", arcade.color.BRASS)
 
-        self.roster_labels: tuple[UIWidget] = entity_labels_with_cost(
+        self.roster_labels: tuple[UIWidget] = entity_labels_names_only(
             self.roster_scroll_window
         )
-        self.team_labels: tuple[UIWidget] = entity_labels_with_cost(
+
+        self.team_labels: tuple[UIWidget] = entity_labels_names_only(
             self.team_scroll_window
         )
 
@@ -419,10 +467,10 @@ class RosterAndTeamPaneSection(arcade.Section):
     def flush(self):
         self.manager = UIManager()
 
-        self.roster_labels: tuple[UIWidget] = entity_labels_with_cost(
+        self.roster_labels: tuple[UIWidget] = entity_labels_names_only(
             self.roster_scroll_window
         )
-        self.team_labels: tuple[UIWidget] = entity_labels_with_cost(
+        self.team_labels: tuple[UIWidget] = entity_labels_names_only(
             self.team_scroll_window
         )
 
@@ -442,12 +490,12 @@ class RosterAndTeamPaneSection(arcade.Section):
             right = self.width / 2
 
             if len(self.team_box_children) > 0:
-                _clear_highlight_selection(
+                _clear_highlight_roster_or_team_selection(
                     self.team_scroll_window, self.team_box_children
                 )
 
             if len(self.roster_box_children) > 0:
-                _highlight_selection(
+                _highlight_roster_or_team_selection(
                     self.roster_scroll_window, self.roster_box_children
                 )
 
@@ -456,12 +504,12 @@ class RosterAndTeamPaneSection(arcade.Section):
             right = self.width
 
             if len(self.roster_box_children) > 0:
-                _clear_highlight_selection(
+                _clear_highlight_roster_or_team_selection(
                     self.roster_scroll_window, self.roster_box_children
                 )
 
             if len(self.team_box_children) > 0:
-                _highlight_selection(self.team_scroll_window, self.team_box_children)
+                _highlight_roster_or_team_selection(self.team_scroll_window, self.team_box_children)
 
         arcade.draw_lrtb_rectangle_outline(
             left=self.left,
@@ -509,7 +557,7 @@ class RosterAndTeamPaneSection(arcade.Section):
         self.roster_box_children = self.manager.children[0][0].children[1].children
 
         if self.pane_selector.pos == self.pane_id[0]:
-            _highlight_selection(self.roster_scroll_window, self.roster_box_children)
+            _highlight_roster_or_team_selection(self.roster_scroll_window, self.roster_box_children)
 
     def team_pane(self):
         """
@@ -568,7 +616,7 @@ class RosterAndTeamPaneSection(arcade.Section):
             case arcade.key.UP:
                 if self.pane_selector.pos == self.pane_id[0]:
                     self.roster_scroll_window.decr_selection()
-                    _highlight_selection(
+                    _highlight_roster_or_team_selection(
                         self.roster_scroll_window,
                         self.roster_box_children,
                     )
@@ -576,7 +624,7 @@ class RosterAndTeamPaneSection(arcade.Section):
 
                 if self.pane_selector.pos == self.pane_id[1]:
                     self.team_scroll_window.decr_selection()
-                    _highlight_selection(
+                    _highlight_roster_or_team_selection(
                         self.team_scroll_window,
                         self.team_box_children,
                     )
@@ -585,7 +633,7 @@ class RosterAndTeamPaneSection(arcade.Section):
             case arcade.key.DOWN:
                 if self.pane_selector.pos == self.pane_id[0]:
                     self.roster_scroll_window.incr_selection()
-                    _highlight_selection(
+                    _highlight_roster_or_team_selection(
                         self.roster_scroll_window,
                         self.roster_box_children,
                     )
@@ -593,7 +641,7 @@ class RosterAndTeamPaneSection(arcade.Section):
 
                 if self.pane_selector.pos == self.pane_id[1]:
                     self.team_scroll_window.incr_selection()
-                    _highlight_selection(
+                    _highlight_roster_or_team_selection(
                         self.team_scroll_window,
                         self.team_box_children,
                     )
@@ -638,7 +686,7 @@ class RosterAndTeamPaneSection(arcade.Section):
                     self.flush()
                     self.setup()
                     self.manager.enable()
-                    _highlight_selection(
+                    _highlight_roster_or_team_selection(
                         self.team_scroll_window, self.team_box_children
                     )
                     self.manager.trigger_render()
@@ -768,37 +816,22 @@ class MissionsSection(arcade.Section):
         self.manager.children[0][0].children[1]._border_width = 0
         self.manager.children[0][0].children[2]._border_width = 0
         
-    def mission_cards(self):
-        anchor = self.manager.add(UIAnchorLayout(y=self.bottom, size_hint=(1, 0.5)))
-
-        first_mission = UIBoxLayout(
-            vertical=True,
-            height=5,
-            children=self.labels,
-            size_hint=(1, 0.5),
-            space_between=5,
-        ).with_border(color=arcade.color.ELECTRIC_BLUE)
-
-        anchor.add(anchor_x="center", anchor_y="bottom", child=first_mission)
-
-    def setup(self):
-        self.mission_cards()
-
     def scroll_mission_selection(self):
-        if self.mission_selection.pos == 0:
-            self.manager.children[0][0].children[0]._border_width = 5
-            self.manager.children[0][0].children[1]._border_width = 0
-            self.manager.children[0][0].children[2]._border_width = 0
-        
-        if self.mission_selection.pos == 1:
-            self.manager.children[0][0].children[0]._border_width = 0
-            self.manager.children[0][0].children[1]._border_width = 5
-            self.manager.children[0][0].children[2]._border_width = 0
-        
-        if self.mission_selection.pos == 2:
-            self.manager.children[0][0].children[0]._border_width = 0
-            self.manager.children[0][0].children[1]._border_width = 0
-            self.manager.children[0][0].children[2]._border_width = 5
+        match self.mission_selection.pos:
+            case MissionCards.TOP.value:
+                self.manager.children[0][0].children[0]._border_width = 5
+                self.manager.children[0][0].children[1]._border_width = 0
+                self.manager.children[0][0].children[2]._border_width = 0
+            
+            case MissionCards.MIDDLE.value:
+                self.manager.children[0][0].children[0]._border_width = 0
+                self.manager.children[0][0].children[1]._border_width = 5
+                self.manager.children[0][0].children[2]._border_width = 0
+            
+            case MissionCards.BOTTOM.value:
+                self.manager.children[0][0].children[0]._border_width = 0
+                self.manager.children[0][0].children[1]._border_width = 0
+                self.manager.children[0][0].children[2]._border_width = 5
     
     def on_draw(self):
         self.manager.draw()
