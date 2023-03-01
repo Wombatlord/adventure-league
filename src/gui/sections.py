@@ -14,6 +14,8 @@ from src.gui.gui_components import (
     vstack_of_three_boxes,
     box_containing_horizontal_label_pair,
     horizontal_box_pair,
+    vertical_box_pair,
+    single_box,
 )
 from src.gui.states import MissionCards
 from src.gui.gui_utils import ScrollWindow, Cycle
@@ -240,25 +242,39 @@ class RecruitmentPaneSection(arcade.Section):
         self.header = create_colored_UILabel_header(
             "Mercenaries For Hire!", arcade.color.GO_GREEN
         )
-
+        
+        self.manager.add(
+            vertical_box_pair(
+                self.bottom,
+                self.height - self.bottom,
+                self.header,
+                self.recruits_labels,
+                top_size_hint=(1, 0.1),
+                bottom_size_hint=(1, 0.9)
+            )
+        )
+        
+        _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
+        
     def flush(self):
         self.manager = UIManager()
 
     def setup(self) -> None:
-        self.recruitment_pane()
+        # self.recruitment_pane()
+        pass
 
     # def on_update(self, delta_time: float):
     #     print(delta_time)
 
     def on_draw(self):
         self.manager.draw()
-        arcade.draw_lrtb_rectangle_outline(
-            left=self.left,
-            right=self.width,
-            top=self.height,
-            bottom=self.bottom,
-            color=arcade.color.PURPLE_HEART,
-        )
+        # arcade.draw_lrtb_rectangle_outline(
+        #     left=self.left,
+        #     right=self.width,
+        #     top=self.height,
+        #     bottom=self.bottom,
+        #     color=arcade.color.PURPLE_HEART,
+        # )
 
     def recruitment_pane(self) -> None:
         """
@@ -326,10 +342,7 @@ class RecruitmentPaneSection(arcade.Section):
             ie. move selection position up in the UI.
             """
             self.recruitment_scroll_window.decr_selection()
-            _highlight_selection(
-                self.recruitment_scroll_window,
-                self.recruits_box_children,
-            )
+            _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
             self.manager.trigger_render()
 
         if symbol == arcade.key.DOWN:
@@ -338,10 +351,7 @@ class RecruitmentPaneSection(arcade.Section):
             ie. move selection position down in the UI.
             """
             self.recruitment_scroll_window.incr_selection()
-            _highlight_selection(
-                self.recruitment_scroll_window,
-                self.recruits_box_children,
-            )
+            _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
             self.manager.trigger_render()
 
         if symbol == arcade.key.ENTER:
@@ -358,23 +368,24 @@ class RecruitmentPaneSection(arcade.Section):
 
                 # Assign currently selected child to pass to the remove() func of the UIBoxLayout
                 # to maintain correspondence with the recruitment_scroll_window.items
-                highlighted_label = self.recruits_box_children[
+                highlighted_label = self.recruits_labels[
                     self.recruitment_scroll_window.position.pos
                 ]
-
+                print(highlighted_label)
                 # Remove the UILabel from UIBoxLayout and pop the corresponding item from the recruitment_scroll_window.
+                
                 self.manager.children[0][0].children[1].remove(highlighted_label)
                 self.recruitment_scroll_window.pop()
 
                 # Update state
-                self.recruits_box_children = (
+                self.recruits_labels = (
                     self.manager.children[0][0].children[1].children
                 )
 
                 # Ensure highlighting carries over to the now selected recruit.
                 _highlight_selection(
                     self.recruitment_scroll_window,
-                    self.recruits_box_children,
+                    self.recruits_labels,
                 )
 
                 self.manager.trigger_render()
@@ -466,8 +477,8 @@ class RosterAndTeamPaneSection(arcade.Section):
             self.team_scroll_window
         )
 
-        self.roster_content = (self.roster_header, *self.roster_labels)
-        self.team_content = (self.team_header, *self.team_labels)
+        self.roster_content = (*self.roster_header, *self.roster_labels)
+        self.team_content = (*self.team_header, *self.team_labels)
         self.manager.add(
             horizontal_box_pair(
                 self.bottom,
@@ -491,8 +502,8 @@ class RosterAndTeamPaneSection(arcade.Section):
             self.team_scroll_window
         )
 
-        self.roster_content = (self.roster_header, *self.roster_labels)
-        self.team_content = (self.team_header, *self.team_labels)
+        self.roster_content = (*self.roster_header, *self.roster_labels)
+        self.team_content = (*self.team_header, *self.team_labels)
         
         self.manager.add(
             horizontal_box_pair(
