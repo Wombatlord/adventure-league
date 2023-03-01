@@ -29,16 +29,17 @@ def box_containing_horizontal_label_pair(
                 align="left",
                 size_hint=(None, None),
                 text_color=x[2],
-            ), 
-            labels_with_colors
+            ),
+            labels_with_colors,
         ),
         space_between=space_between_labels,
     ).with_padding(top=padding[0], right=padding[1], bottom=padding[2], left=padding[3])
 
+
 def create_colored_UILabel_header(
     header_string: str, color: tuple[int, int, int, int]
-) -> UILabel:
-    return UILabel(
+) -> tuple[UIWidget]:
+    return (UILabel(
         text=f"{header_string}",
         width=WindowData.width,
         font_size=25,
@@ -46,7 +47,8 @@ def create_colored_UILabel_header(
         align="center",
         size_hint=(1, None),
         text_color=color,
-    )
+    ),)
+
 
 def entity_labels_with_cost(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]:
     """Returns a tuple of UILabels which can be attached to a UILayout
@@ -71,6 +73,7 @@ def entity_labels_with_cost(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]
         )
     )
 
+
 def entity_labels_names_only(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]:
     """Returns a tuple of UILabels which can be attached to a UILayout
 
@@ -93,6 +96,7 @@ def entity_labels_names_only(scroll_window: ScrollWindow) -> tuple[UIWidget, ...
             scroll_window.items,
         )
     )
+
 
 def vstack_of_three_boxes(
     bottom: int,
@@ -123,11 +127,11 @@ def vstack_of_three_boxes(
 
     return anchor
 
-def horizontal_box_pair(
+
+def single_box(
     bottom,
     height,
-    left_content,
-    right_content,
+    children,
 ) -> UIAnchorLayout:
     anchor = UIAnchorLayout(
         y=bottom,
@@ -135,12 +139,64 @@ def horizontal_box_pair(
         size_hint=(1, None),
     ).with_border(color=arcade.color.GOLD, width=5)
 
-    for anchor_x, element in zip(["left", "right"], [left_content, right_content]):
+    anchor.add(
+        child=UIBoxLayout(
+            vertical=True,
+            size_hint=(0.5, 1),
+            children=children,
+        )
+    )
+
+    return anchor
+
+
+def vertical_box_pair(
+    bottom,
+    height,
+    top_content,
+    bottom_content,
+    top_size_hint = (1, 0.5),
+    bottom_size_hint = (1, 0.5),
+) -> UIAnchorLayout:
+    anchor = UIAnchorLayout(
+        y=bottom,
+        height=height,
+        size_hint=(1, None),
+    ).with_border(color=arcade.color.GOLD, width=5)
+
+    for anchor_y, element, size_hint in zip(["top", "bottom"], [top_content, bottom_content], [top_size_hint, bottom_size_hint]):
+        anchor.add(
+            anchor_y=anchor_y,
+            child=UIBoxLayout(
+                vertical=True,
+                size_hint=size_hint,
+                children=element,
+            ).with_border(color=arcade.color.ELECTRIC_BLUE, width=0),
+        )
+
+    return anchor
+
+
+def horizontal_box_pair(
+    bottom,
+    height,
+    left_content,
+    right_content,
+    left_size_hint = (0.5, 1),
+    right_size_hint = (0.5, 1),
+) -> UIAnchorLayout:
+    anchor = UIAnchorLayout(
+        y=bottom,
+        height=height,
+        size_hint=(1, None),
+    ).with_border(color=arcade.color.GOLD, width=5)
+
+    for anchor_x, element, size_hint in zip(["left", "right"], [left_content, right_content], [left_size_hint, right_size_hint]):
         anchor.add(
             anchor_x=anchor_x,
             child=UIBoxLayout(
                 vertical=True,
-                size_hint=(0.5, 1),
+                size_hint=size_hint,
                 children=element,
             ).with_border(color=arcade.color.ELECTRIC_BLUE, width=5),
         )
