@@ -13,6 +13,7 @@ from src.gui.gui_components import (
     create_colored_UILabel_header,
     vstack_of_three_boxes,
     box_containing_horizontal_label_pair,
+    horizontal_box_pair,
 )
 from src.gui.states import MissionCards
 from src.gui.gui_utils import ScrollWindow, Cycle
@@ -193,6 +194,7 @@ def _highlight_selection(
             scroll_window.position.pos
         ].label.text = f">> {entity_labels[scroll_window.position.pos].label.text}"
 
+
 def _clear_highlight_selection(
     scroll_window: ScrollWindow, labels: tuple[UIWidget, ...]
 ) -> None:
@@ -307,6 +309,7 @@ class RecruitmentPaneSection(arcade.Section):
         super().on_resize(width, height)
         self.height = height - self.margin
         self.width = width - self.margin
+        self.manager.children[0][0].resize(width=width -2, height=height-self.bottom)
 
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.X:
@@ -376,6 +379,7 @@ class RecruitmentPaneSection(arcade.Section):
 
                 self.manager.trigger_render()
 
+
 def _highlight_roster_or_team_selection(
     scroll_window: ScrollWindow, labels: tuple[UIWidget, ...]
 ) -> None:
@@ -404,6 +408,7 @@ def _highlight_roster_or_team_selection(
             scroll_window.position.pos
         ].label.text = f">> {entity_labels[scroll_window.position.pos].label.text}"
 
+
 def _clear_highlight_roster_or_team_selection(
     scroll_window: ScrollWindow, labels: tuple[UIWidget, ...]
 ) -> None:
@@ -423,6 +428,7 @@ def _clear_highlight_roster_or_team_selection(
     for entity_label in entity_labels:
         entity_label.label.color = arcade.color.WHITE
         entity_label.label.text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}"
+
 
 class RosterAndTeamPaneSection(arcade.Section):
     roster_box_children: tuple[UIWidget]
@@ -456,11 +462,22 @@ class RosterAndTeamPaneSection(arcade.Section):
         self.roster_labels: tuple[UIWidget] = entity_labels_names_only(
             self.roster_scroll_window
         )
-
         self.team_labels: tuple[UIWidget] = entity_labels_names_only(
             self.team_scroll_window
         )
 
+        self.roster_content = (self.roster_header, *self.roster_labels)
+        self.team_content = (self.team_header, *self.team_labels)
+        self.manager.add(
+            horizontal_box_pair(
+                self.bottom,
+                self.height - self.bottom,
+                self.roster_content,
+                self.team_content,
+            )
+        )
+        self._highlight_pane()
+    
     # def on_update(self, delta_time: float):
     #     print(delta_time)
 
@@ -474,132 +491,56 @@ class RosterAndTeamPaneSection(arcade.Section):
             self.team_scroll_window
         )
 
+        self.roster_content = (self.roster_header, *self.roster_labels)
+        self.team_content = (self.team_header, *self.team_labels)
+        
+        self.manager.add(
+            horizontal_box_pair(
+                self.bottom,
+                self.height - self.bottom,
+                self.roster_content,
+                self.team_content,
+            )
+        )
+        
+        self._highlight_pane()
+    
+    def _highlight_pane(self):
+        if self.pane_selector.pos == self.pane_id[0]:
+            self.manager.children[0][0].children[0]._border_width = 5
+            self.manager.children[0][0].children[1]._border_width = 0
+            
+            if len(self.team_labels) > 0:
+                _clear_highlight_roster_or_team_selection(
+                    self.team_scroll_window, self.team_labels
+                )
+
+            if len(self.roster_labels) > 0:
+                _highlight_roster_or_team_selection(
+                    self.roster_scroll_window, self.roster_labels
+                )
+            
+        if self.pane_selector.pos == self.pane_id[1]:
+            self.manager.children[0][0].children[0]._border_width = 0
+            self.manager.children[0][0].children[1]._border_width = 5
+
+            if len(self.roster_labels) > 0:
+                _clear_highlight_roster_or_team_selection(
+                    self.roster_scroll_window, self.roster_labels
+                )
+
+            if len(self.team_labels) > 0:
+                _highlight_roster_or_team_selection(
+                    self.team_scroll_window, self.team_labels
+                )
+    
     def on_draw(self):
         self.manager.draw()
-        self.highlight_pane()
-
-    def setup(self):
-        # self.width = WindowData.width - 2,
-        # self.height = WindowData.height - 2,
-        self.roster_pane()
-        self.team_pane()
-
-    def highlight_pane(self):
-        if self.pane_selector.pos == self.pane_id[0]:
-            self.left = 0
-            right = self.width / 2
-
-            if len(self.team_box_children) > 0:
-                _clear_highlight_roster_or_team_selection(
-                    self.team_scroll_window, self.team_box_children
-                )
-
-            if len(self.roster_box_children) > 0:
-                _highlight_roster_or_team_selection(
-                    self.roster_scroll_window, self.roster_box_children
-                )
-
-        if self.pane_selector.pos == self.pane_id[1]:
-            self.left = self.width / 2
-            right = self.width
-
-            if len(self.roster_box_children) > 0:
-                _clear_highlight_roster_or_team_selection(
-                    self.roster_scroll_window, self.roster_box_children
-                )
-
-            if len(self.team_box_children) > 0:
-                _highlight_roster_or_team_selection(self.team_scroll_window, self.team_box_children)
-
-        arcade.draw_lrtb_rectangle_outline(
-            left=self.left,
-            right=right,
-            top=self.height,
-            bottom=self.bottom,
-            color=arcade.color.ATOMIC_TANGERINE,
-        )
-        self.manager.trigger_render()
-
-    def roster_pane(self):
-        """
-        Creates two UIBoxLayouts and attaches them to UIManager.
-        First UIBoxLayout contains the pane header, the second is for the UILabels representing mercenaries currently on the Roster.
-        """
-        anchor = self.manager.add(UIAnchorLayout(size_hint=(0.5, 1)))
-
-        header_box = UIBoxLayout(
-            vertical=True,
-            # height=self.height,
-            children=[self.roster_header],
-            size_hint=(1, 1),
-        ).with_padding(top=10)
-
-        roster_box = UIBoxLayout(
-            vertical=True,
-            # height=self.height,
-            children=self.roster_labels,
-            size_hint=(1, 1),
-            space_between=5,
-        ).with_padding(top=50)
-
-        anchor.add(
-            anchor_x="center_x",
-            anchor_y="bottom",
-            child=header_box,
-        )
-
-        anchor.add(
-            anchor_x="center_x",
-            anchor_y="bottom",
-            child=roster_box,
-        )
-
-        self.roster_box_children = self.manager.children[0][0].children[1].children
-
-        if self.pane_selector.pos == self.pane_id[0]:
-            _highlight_roster_or_team_selection(self.roster_scroll_window, self.roster_box_children)
-
-    def team_pane(self):
-        """
-        Creates two UIBoxLayouts and attaches them to UIManager
-        First UIBoxLayout contains the pane header, the second is for the UILabels representing mercenaries assigned to the team.
-        """
-        anchor = self.manager.add(UIAnchorLayout(size_hint=(1, 1)))
-
-        header_box = UIBoxLayout(
-            vertical=True,
-            height=self.height,
-            children=[self.team_header],
-            size_hint=(0.5, 1),
-        ).with_padding(top=10)
-
-        team_box = UIBoxLayout(
-            vertical=True,
-            height=self.height,
-            children=self.team_labels,
-            size_hint=(0.5, 1),
-            space_between=5,
-        ).with_padding(top=50)
-
-        anchor.add(
-            anchor_x="right",
-            anchor_y="bottom",
-            child=header_box,
-        )
-
-        anchor.add(
-            anchor_x="right",
-            anchor_y="bottom",
-            child=team_box,
-        )
-        self.team_box_children = self.manager.children[0][1].children[1].children
-        # _highlight_selection(self.team_scroll_window, self.team_box_children)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.height = height - 2
-        self.width = width - 2
-
+        self.manager.children[0][0].resize(width=width -2, height=height-self.bottom)
+        
     def on_key_press(self, symbol: int, modifiers: int):
         """
         Left / Right changes focus between Roster & Team panes:
@@ -609,16 +550,18 @@ class RosterAndTeamPaneSection(arcade.Section):
         match symbol:
             case arcade.key.LEFT:
                 self.pane_selector.decr()
-
+                self._highlight_pane()
+            
             case arcade.key.RIGHT:
                 self.pane_selector.incr()
+                self._highlight_pane()
 
             case arcade.key.UP:
                 if self.pane_selector.pos == self.pane_id[0]:
                     self.roster_scroll_window.decr_selection()
                     _highlight_roster_or_team_selection(
                         self.roster_scroll_window,
-                        self.roster_box_children,
+                        self.roster_labels,
                     )
                     self.manager.trigger_render()
 
@@ -626,7 +569,7 @@ class RosterAndTeamPaneSection(arcade.Section):
                     self.team_scroll_window.decr_selection()
                     _highlight_roster_or_team_selection(
                         self.team_scroll_window,
-                        self.team_box_children,
+                        self.team_labels,
                     )
                     self.manager.trigger_render()
 
@@ -635,7 +578,7 @@ class RosterAndTeamPaneSection(arcade.Section):
                     self.roster_scroll_window.incr_selection()
                     _highlight_roster_or_team_selection(
                         self.roster_scroll_window,
-                        self.roster_box_children,
+                        self.roster_labels,
                     )
                     self.manager.trigger_render()
 
@@ -643,7 +586,7 @@ class RosterAndTeamPaneSection(arcade.Section):
                     self.team_scroll_window.incr_selection()
                     _highlight_roster_or_team_selection(
                         self.team_scroll_window,
-                        self.team_box_children,
+                        self.team_labels,
                     )
                     self.manager.trigger_render()
 
@@ -663,10 +606,8 @@ class RosterAndTeamPaneSection(arcade.Section):
                     # Update Engine state.
                     eng.game_state.guild.roster = self.roster_scroll_window.items
                     eng.game_state.guild.team.members = self.team_scroll_window.items
-                    self.manager.disable()
+
                     self.flush()
-                    self.setup()
-                    self.manager.enable()
                     self.manager.trigger_render()
 
                 if (
@@ -682,13 +623,8 @@ class RosterAndTeamPaneSection(arcade.Section):
                     # Update Engine state.
                     eng.game_state.guild.roster = self.roster_scroll_window.items
                     eng.game_state.guild.team.members = self.team_scroll_window.items
-                    self.manager.disable()
+
                     self.flush()
-                    self.setup()
-                    self.manager.enable()
-                    _highlight_roster_or_team_selection(
-                        self.team_scroll_window, self.team_box_children
-                    )
                     self.manager.trigger_render()
 
 
@@ -706,21 +642,31 @@ class MissionsSection(arcade.Section):
 
         self.manager = UIManager()
         self.missions = missions
-        self.mission_selection = Cycle(3,0)
-        
-        self.headers = (
-            create_colored_UILabel_header(header_string=self.missions[0].description, color=arcade.color.GOLD),
-            create_colored_UILabel_header(header_string=self.missions[1].description, color=arcade.color.GOLD),
-            create_colored_UILabel_header(header_string=self.missions[2].description, color=arcade.color.GOLD),
+        self.mission_selection = Cycle(3, 0)
+
+        headers = (
+            create_colored_UILabel_header(
+                header_string=self.missions[0].description, color=arcade.color.GOLD
+            ),
+            create_colored_UILabel_header(
+                header_string=self.missions[1].description, color=arcade.color.GOLD
+            ),
+            create_colored_UILabel_header(
+                header_string=self.missions[2].description, color=arcade.color.GOLD
+            ),
         )
 
-        self.labels = (
+        labels = (
             (
-                self.headers[0],
+                headers[0],
                 box_containing_horizontal_label_pair(
                     (
                         ("Boss:", 16, arcade.color.GOLD),
-                        (self.missions[0].boss.name.name_and_title, 16, arcade.color.ALABAMA_CRIMSON),
+                        (
+                            self.missions[0].boss.name.name_and_title,
+                            16,
+                            arcade.color.ALABAMA_CRIMSON,
+                        ),
                     ),
                     padding=(
                         0,
@@ -733,7 +679,11 @@ class MissionsSection(arcade.Section):
                 box_containing_horizontal_label_pair(
                     (
                         ("Rewards:", 14, arcade.color.GOLD),
-                        (self.missions[0].peek_reward(), 16, arcade.color.PALATINATE_BLUE),
+                        (
+                            self.missions[0].peek_reward(),
+                            16,
+                            arcade.color.PALATINATE_BLUE,
+                        ),
                     ),
                     padding=(
                         0,
@@ -745,11 +695,15 @@ class MissionsSection(arcade.Section):
                 ),
             ),
             (
-                self.headers[1],
+                headers[1],
                 box_containing_horizontal_label_pair(
                     (
                         ("Boss:", 16, arcade.color.GOLD),
-                        (self.missions[1].boss.name.name_and_title, 16, arcade.color.ALABAMA_CRIMSON),
+                        (
+                            self.missions[1].boss.name.name_and_title,
+                            16,
+                            arcade.color.ALABAMA_CRIMSON,
+                        ),
                     ),
                     padding=(
                         0,
@@ -762,7 +716,11 @@ class MissionsSection(arcade.Section):
                 box_containing_horizontal_label_pair(
                     (
                         ("Rewards:", 14, arcade.color.GOLD),
-                        (self.missions[1].peek_reward(), 16, arcade.color.PALATINATE_BLUE),
+                        (
+                            self.missions[1].peek_reward(),
+                            16,
+                            arcade.color.PALATINATE_BLUE,
+                        ),
                     ),
                     padding=(
                         0,
@@ -774,11 +732,15 @@ class MissionsSection(arcade.Section):
                 ),
             ),
             (
-                self.headers[2],
+                headers[2],
                 box_containing_horizontal_label_pair(
                     (
                         ("Boss:", 16, arcade.color.GOLD),
-                        (self.missions[2].boss.name.name_and_title, 16, arcade.color.ALABAMA_CRIMSON),
+                        (
+                            self.missions[2].boss.name.name_and_title,
+                            16,
+                            arcade.color.ALABAMA_CRIMSON,
+                        ),
                     ),
                     padding=(
                         0,
@@ -791,7 +753,11 @@ class MissionsSection(arcade.Section):
                 box_containing_horizontal_label_pair(
                     (
                         ("Rewards:", 14, arcade.color.GOLD),
-                        (self.missions[2].peek_reward(), 16, arcade.color.PALATINATE_BLUE),
+                        (
+                            self.missions[2].peek_reward(),
+                            16,
+                            arcade.color.PALATINATE_BLUE,
+                        ),
                     ),
                     padding=(
                         0,
@@ -808,31 +774,31 @@ class MissionsSection(arcade.Section):
             vstack_of_three_boxes(
                 self.bottom,
                 self.height,
-                *self.labels,
+                *labels,
             ),
         )
-        
+
         self.manager.children[0][0].children[0]._border_width = 5
         self.manager.children[0][0].children[1]._border_width = 0
         self.manager.children[0][0].children[2]._border_width = 0
-        
+
     def scroll_mission_selection(self):
         match self.mission_selection.pos:
             case MissionCards.TOP.value:
                 self.manager.children[0][0].children[0]._border_width = 5
                 self.manager.children[0][0].children[1]._border_width = 0
                 self.manager.children[0][0].children[2]._border_width = 0
-            
+
             case MissionCards.MIDDLE.value:
                 self.manager.children[0][0].children[0]._border_width = 0
                 self.manager.children[0][0].children[1]._border_width = 5
                 self.manager.children[0][0].children[2]._border_width = 0
-            
+
             case MissionCards.BOTTOM.value:
                 self.manager.children[0][0].children[0]._border_width = 0
                 self.manager.children[0][0].children[1]._border_width = 0
                 self.manager.children[0][0].children[2]._border_width = 5
-    
+
     def on_draw(self):
         self.manager.draw()
 
@@ -846,7 +812,7 @@ class MissionsSection(arcade.Section):
                 self.mission_selection.decr()
                 self.scroll_mission_selection()
                 print(self.missions[self.mission_selection.pos].description)
-            
+
             case arcade.key.DOWN:
                 self.mission_selection.incr()
                 self.scroll_mission_selection()

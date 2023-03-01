@@ -292,12 +292,10 @@ class RosterView(arcade.View):
         
         # reinstantiate the roster_scroll_window to ensure new recruits are present and that the length covers all selectable entities.
         self.roster_and_team_pane_section.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
-        self.roster_and_team_pane_section.width = WindowData.width - 2
-        self.roster_and_team_pane_section.height = WindowData.height - 2
         
         # Flush and setup the section so that new recruits are present and selectable via the UIManager
+        self.roster_and_team_pane_section.height = WindowData.height
         self.roster_and_team_pane_section.flush()
-        self.roster_and_team_pane_section.setup()
         self.roster_and_team_pane_section.manager.enable()
         self.roster_and_team_pane_section.enabled = True
         
@@ -368,7 +366,6 @@ class RosterView(arcade.View):
         
         self.info_pane_section.setup()
         self.recruitment_pane_section.setup()
-        self.roster_and_team_pane_section.setup()
         self.command_bar_section.setup()
 
         self.recruitment_pane_section.enabled = False
