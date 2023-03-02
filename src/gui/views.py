@@ -11,6 +11,7 @@ from arcade.gui.widgets.text import UILabel
 from src.engine.init_engine import eng
 from src.gui.sections import CommandBarSection, InfoPaneSection, RecruitmentPaneSection, RosterAndTeamPaneSection, MissionsSection
 from src.gui.buttons import nav_button, get_new_missions_button
+from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.mission_card import MissionCard
@@ -100,7 +101,7 @@ class GuildView(arcade.View):
         )
         self.info_pane_section = InfoPaneSection(
             left=0,
-            bottom=32,
+            bottom=52,
             width=WindowData.width,
             height=148,
             prevent_dispatch_view = {False},
@@ -117,7 +118,7 @@ class GuildView(arcade.View):
             left=0,
             bottom=0,
             width=WindowData.width,
-            height=30,
+            height=50,
             buttons=self.buttons,
             prevent_dispatch_view = {False}
         )
@@ -128,8 +129,6 @@ class GuildView(arcade.View):
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-        self.info_pane_section.setup()
-        self.command_bar_section.setup()
         
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.
@@ -187,7 +186,7 @@ class RosterView(arcade.View):
         # RosterAndTeamPane Config
         self.roster_and_team_pane_section = RosterAndTeamPaneSection(
             left = 2,
-            bottom=182,
+            bottom=242,
             width = WindowData.width - 2,
             height = WindowData.height - 2,
             prevent_dispatch_view = {False} 
@@ -197,7 +196,7 @@ class RosterView(arcade.View):
         self.recruitment_pane_section = RecruitmentPaneSection(
             name = "recruitment_pane_section",
             left=2,
-            bottom=182,
+            bottom=242,
             width = WindowData.width - 2,
             height = WindowData.height - 2,
             prevent_dispatch_view = {False},
@@ -221,14 +220,21 @@ class RosterView(arcade.View):
             align="center",
             size_hint=(1,1)
         )
+
+        self.guild_funds = box_containing_horizontal_label_pair(
+            ((" ", "right", 18, arcade.color.WHITE), (" ", "left", 18, arcade.color.GOLD)),
+            padding=(0,0,0,50),
+            size_hint=(1,None)
+        )
+        
         self.info_pane_section = InfoPaneSection(
             left=0,
-            bottom=32,
+            bottom=52,
             width=WindowData.width,
-            height=148,
+            height=188,
             prevent_dispatch_view = {False},
             margin=self.margin,
-            texts=[self.instruction, self.entity_info],
+            texts=[self.instruction, self.entity_info, self.guild_funds],
         )
         
         # CommandBar Config
@@ -244,7 +250,7 @@ class RosterView(arcade.View):
             left=0,
             bottom=0,
             width=WindowData.width,
-            height=30,
+            height=50,
             buttons=self.roster_pane_buttons,
             prevent_dispatch_view = {False}
         )
@@ -263,19 +269,20 @@ class RosterView(arcade.View):
         Attached to self.recruit_button as click_handler or called directly in on_key_press.
         """
         self.state = ViewStates.RECRUIT
+        self.info_pane_section.manager.children[0][0].children[0].children[2].children[0].label.text = "Guild Coffers: "
+        self.info_pane_section.manager.children[0][0].children[0].children[2].children[1].label.text = f"{eng.game_state.guild.funds} gp"
         # Disable the roster_and_team_pane_section
         self.roster_and_team_pane_section.enabled = False
         self.roster_and_team_pane_section.manager.disable()
-        # Ensure recruitment_pane_section has correct dimensions in case window was resized.
-        self.recruitment_pane_section.width = WindowData.width - 2
-        self.recruitment_pane_section.height = WindowData.height - 2
+        
+        self.recruitment_pane_section.flush()
+        self.recruitment_pane_section.manager.enable()
         self.recruitment_pane_section.enabled = True
         
         # Set up CommandBar with appropriate buttons
         self.command_bar_section.manager.disable()
-        self.command_bar_section.flush()
         self.command_bar_section.buttons = self.recruitment_pane_buttons
-        self.command_bar_section.setup()
+        self.command_bar_section.flush()
         self.command_bar_section.manager.enable()
 
     def switch_to_roster_and_team_panes(self, event: UIEvent = None):
@@ -287,23 +294,19 @@ class RosterView(arcade.View):
         Attached to self.roster_button as click_handler and called directly in on_key_press.        
         """
         self.state = ViewStates.ROSTER
+        self.info_pane_section.manager.children[0][0].children[0].children[2].children[0].label.text = ""
+        self.info_pane_section.manager.children[0][0].children[0].children[2].children[1].label.text = ""
         # Disable the recruitment_pane_section
         self.recruitment_pane_section.enabled = False
-        
-        # reinstantiate the roster_scroll_window to ensure new recruits are present and that the length covers all selectable entities.
-        self.roster_and_team_pane_section.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
-        
+
         # Flush and setup the section so that new recruits are present and selectable via the UIManager
-        self.roster_and_team_pane_section.height = WindowData.height
         self.roster_and_team_pane_section.flush()
-        self.roster_and_team_pane_section.manager.enable()
         self.roster_and_team_pane_section.enabled = True
         
         # Setup CommandBarSection with appropriate buttons
         self.command_bar_section.manager.disable()
-        self.command_bar_section.flush()
         self.command_bar_section.buttons = self.roster_pane_buttons
-        self.command_bar_section.setup()
+        self.command_bar_section.flush()
         self.command_bar_section.manager.enable()
     
 
@@ -364,10 +367,6 @@ class RosterView(arcade.View):
         self.roster_and_team_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
         
-        self.info_pane_section.setup()
-        self.recruitment_pane_section.setup()
-        self.command_bar_section.setup()
-
         self.recruitment_pane_section.enabled = False
         
     def on_hide_view(self) -> None:
@@ -392,24 +391,6 @@ class RosterView(arcade.View):
         
     def on_draw(self) -> None:
         self.clear()
-        # if self.state == ViewStates.ROSTER:
-            # draw_panels(
-            #     margin=self.margin,
-            #     col_select=self.col_select,
-            #     height=WindowData.height,
-            #     width=WindowData.width,
-            #     row_height=self.row_height,
-            #     roster_scroll_window=self.roster_scroll_window,
-            #     team_scroll_window=self.team_scroll_window,
-            # )
-
-        # if self.state == ViewStates.RECRUIT:
-        #     draw_recruiting_panel(
-        #         margin=self.margin,
-        #         height=WindowData.height,
-        #         row_height=self.row_height,
-        #         recruitment_scroll_window=self.recruitment_scroll_window,
-        #     )
 
     def _log_input(self, symbol, modifiers):
         ...
@@ -455,9 +436,9 @@ class MissionsView(arcade.View):
         
         self.mission_section = MissionsSection(
             left=0,
-            bottom=182,
+            bottom=242,
             width=WindowData.width,
-            height=WindowData.height - 182,
+            height=WindowData.height - 242,
             prevent_dispatch_view = {False},
             missions=eng.game_state.mission_board.missions,
         )
@@ -481,9 +462,9 @@ class MissionsView(arcade.View):
         )
         self.info_pane_section = InfoPaneSection(
             left=0,
-            bottom=32,
+            bottom=52,
             width=WindowData.width,
-            height=148,
+            height=188,
             prevent_dispatch_view = {False},
             margin=self.margin,
             texts=[self.instruction, self.team_info],
@@ -495,7 +476,7 @@ class MissionsView(arcade.View):
             left=0,
             bottom=0,
             width=WindowData.width,
-            height=30,
+            height=50,
             buttons=self.buttons,
             prevent_dispatch_view = {False}
         )
@@ -507,9 +488,6 @@ class MissionsView(arcade.View):
         self.mission_section.manager.enable()
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-        # self.mission_section.setup()
-        self.info_pane_section.setup()
-        self.command_bar_section.setup()
         
         # Prepare text for display in InfoPaneSection.
         if len(eng.game_state.team.members) > 0:
@@ -533,27 +511,6 @@ class MissionsView(arcade.View):
 
     def on_draw(self) -> None:
         self.clear()
-
-        # if self.state == ViewStates.MISSIONS:
-        #     for row in range(len(eng.game_state.mission_board.missions)):
-        #         # self.selection is a user controlled value changed via up / down arrow keypress.
-        #         # set opacity of the MissionCard border to visible if self.selection == the row being drawn.
-        #         if self.selection.pos == row:
-        #             opacity = 255
-        #         else:
-        #             opacity = 25
-
-        #         # Controls size of reserved space beneath MissionCards.
-        #         reserved_space = 75
-
-        #         MissionCard(
-        #             width=WindowData.width,
-        #             height=WindowData.height,
-        #             mission=eng.game_state.mission_board.missions[row],
-        #             margin=self.margin,
-        #             opacity=opacity,
-        #             reserved_space=reserved_space,
-        #         ).draw_card(row)
 
         if self.state == ViewStates.COMBAT:
             if eng.awaiting_input:
