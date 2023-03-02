@@ -81,8 +81,6 @@ class Engine:
         guild.recruit(selection_id, entity_pool.pool)
 
     def process_action_queue(self) -> None:
-        # new_action_queue = []
-        # self._check_action_queue()
         while True:
             try:
                 event = self.action_queue.pop(0)
@@ -94,7 +92,6 @@ class Engine:
 
     def process_one(self, event: Action) -> None:
         if "message" in event:
-            # print("message:", action["message"])
             self.messages.append(event["message"])
 
         if "await target" in event:
@@ -171,8 +168,6 @@ class Engine:
     def init_dungeon(self) -> None:
         mission_board = self.game_state.get_mission_board()
         self.game_state.set_dungeon(mission_board.missions[self.selected_mission])
-        
-        # self.game_state.dungeon = self.game_state.mission_board.missions[self.selected_mission]
 
     def init_combat(self) -> None:
         self.mission_in_progress = True

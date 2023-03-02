@@ -116,42 +116,9 @@ class InfoPaneSection(arcade.Section):
         self.manager.add(
             single_box(self.bottom, self.height, self.texts, (10, 0, 0, 0))
         )
-
+        
     def flush(self):
         self.manager = UIManager()
-
-    def setup(self) -> None:
-        # self.compose_info_bar()
-        pass
-
-    def compose_info_bar(self) -> None:
-        """
-        Attaches the root node of the layout to the provided manager.
-        Buttons are attached to the UIBoxLayout, which is the child of the root node.
-
-        Args:
-            manager (UIManager): The UIManager of a View which wants to have a command bar.
-            buttons (list[UIFlatButton]): An array of UIFlatButtons with their own handlers already attached.
-        """
-        anchor = self.manager.add(UIAnchorLayout())
-        command_box = (
-            UIBoxLayout(
-                vertical=True,
-                height=self.height,
-                size_hint=(1, None),
-                align="top",
-                children=self.texts,
-            )
-            .with_padding(top=10)
-            .with_border(color=arcade.color.RED_DEVIL)
-        )
-
-        anchor.add(
-            anchor_x="center_x",
-            anchor_y="bottom",
-            align_y=self.bottom,
-            child=command_box,
-        )
 
     def on_draw(self):
         self.manager.draw()
@@ -243,7 +210,8 @@ class RecruitmentPaneSection(arcade.Section):
                 self.bottom, self.height - self.bottom, content, padding=(50, 0, 0, 0)
             )
         )
-
+        self.guild_funds_label = None
+        
         _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
 
     def flush(self):
@@ -267,6 +235,8 @@ class RecruitmentPaneSection(arcade.Section):
             )
         )
 
+        self.guild_funds_label = self.view.info_pane_section.manager.children[0][0].children[0].children[2].children[1]
+        
         _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
 
     # def on_update(self, delta_time: float):
@@ -282,14 +252,6 @@ class RecruitmentPaneSection(arcade.Section):
         )
 
     def on_key_press(self, symbol: int, modifiers: int):
-        if symbol == arcade.key.X:
-            print(
-                self.manager.children[0][0]
-                .children[1]
-                .children[self.recruitment_scroll_window.position.pos]
-                .label.color
-            )
-
         if symbol == arcade.key.UP:
             """
             Decrement the recruitment_scroll_window.position.pos
@@ -340,7 +302,7 @@ class RecruitmentPaneSection(arcade.Section):
                     self.recruitment_scroll_window,
                     self.recruits_labels,
                 )
-                self.view.info_pane_section.manager.children[0][0].children[0].children[2].children[1].label.text = f"{eng.game_state.guild.funds} gp"
+                self.guild_funds_label.label.text = f"{eng.game_state.guild.funds} gp"
 
                 self.manager.trigger_render()
 

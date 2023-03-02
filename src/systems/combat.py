@@ -185,8 +185,6 @@ class CombatRound:
                 if (cocombatant.incapacitated is False)
             ]
 
-            # print(f"{team_idx=}; ", f"{enemies=}")
-
             if len(enemies) < 1:
                 victor = team_idx
                 break
