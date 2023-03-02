@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import arcade
-from arcade import Color
+from arcade.types import Color
 from arcade.gui import UIStyleBase
 from arcade.text import FontNameOrNames
 

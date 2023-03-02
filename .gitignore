@@ -9,6 +9,7 @@ src/systems/__pycache__/*
 src/projection/__pycache__/*
 .python-version
 .vscode/
+experimental/*
 venv/
 winvenv/
 scratch.py
