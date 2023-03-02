@@ -1,5 +1,3 @@
-from typing import Callable
-
 import arcade
 import arcade.color
 import arcade.key
@@ -13,8 +11,7 @@ from src.gui.sections import CommandBarSection, InfoPaneSection, RecruitmentPane
 from src.gui.buttons import nav_button, get_new_missions_button
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.combat_screen import CombatScreen
-from src.gui.gui_utils import Cycle, ScrollWindow
-from src.gui.mission_card import MissionCard
+from src.gui.gui_utils import Cycle
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
 
@@ -140,7 +137,6 @@ class GuildView(arcade.View):
 
     def on_draw(self) -> None:
         self.clear()
-        # populate_guild_view_info_panel()
 
     # def on_update(self, delta_time: float):
     #     print(delta_time)
@@ -491,10 +487,11 @@ class MissionsView(arcade.View):
         
         # Prepare text for display in InfoPaneSection.
         if len(eng.game_state.team.members) > 0:
-                self.instruction.text = "Press Enter to Embark on a Mission!"
-                self.team_info.text = f"{len(eng.game_state.team.members)} Guild Members are ready to Embark!"
-                self.instruction.label.color = arcade.color.GOLD
-                self.team_info.label.color = arcade.color.GOLD
+            self.instruction.text = "Press Enter to Embark on a Mission!"
+            self.team_info.text = f"{len(eng.game_state.team.members)} Guild Members are ready to Embark!"
+            self.instruction.label.color = arcade.color.GOLD
+            self.team_info.label.color = arcade.color.GOLD
+            
         else:
             self.instruction.text = "No Guild Members are assigned to a team!"
             self.instruction.label.color = arcade.color.RED_DEVIL
@@ -538,8 +535,6 @@ class MissionsView(arcade.View):
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
-            case arcade.key.L:
-                self.instruction.label.color = arcade.color.GREEN
             case arcade.key.G:
                 if eng.mission_in_progress is False:
                     guild_view = GuildView()
@@ -552,14 +547,17 @@ class MissionsView(arcade.View):
                 self.selection.incr()
 
             case arcade.key.RETURN:
+                
                 if len(eng.game_state.guild.team.members) > 0:
-                    self.command_bar_section.enabled = False
-                    self.info_pane_section.enabled = False
-                    self.mission_section.enabled = False
+                    
                     eng.selected_mission = self.mission_section.mission_selection.pos
                     eng.init_dungeon()
 
                     if not eng.game_state.dungeon.cleared:
+                        self.command_bar_section.enabled = False
+                        self.info_pane_section.enabled = False
+                        self.mission_section.enabled = False
+                        
                         eng.init_combat()
                         self.combat_screen = CombatScreen()
 
