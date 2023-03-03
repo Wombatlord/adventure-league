@@ -15,4 +15,5 @@ def start_adventure_league():
     window.show_view(title_view)
     arcade.run()
 
+
 start_adventure_league()

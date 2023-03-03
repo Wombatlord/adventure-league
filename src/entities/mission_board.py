@@ -10,8 +10,9 @@ class MissionBoard:
 
     def fill_board(self, max_enemies_per_room, room_amount) -> None:
         for _ in range(self.size):
-            self.missions.append(create_dungeon_with_boss_room(max_enemies_per_room, room_amount))
+            self.missions.append(
+                create_dungeon_with_boss_room(max_enemies_per_room, room_amount)
+            )
 
     def clear_board(self) -> None:
         self.missions = []
-

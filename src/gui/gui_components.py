@@ -1,10 +1,10 @@
 import arcade.color
 from arcade.gui.widgets import UIWidget
-from arcade.gui.widgets.text import UILabel
 from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
+from arcade.gui.widgets.text import UILabel
 
-from src.gui.window_data import WindowData
 from src.gui.gui_utils import ScrollWindow
+from src.gui.window_data import WindowData
 
 Rgba = tuple[int, int, int, int]
 Colored_Label = tuple[str, str, int, Rgba]
@@ -18,7 +18,7 @@ def box_containing_horizontal_label_pair(
     padding: Top_Right_Bottom_Left_Padding = (0, 0, 0, 0),
     space_between_labels: int = 6,
     width=None,
-    size_hint=(None, None)
+    size_hint=(None, None),
 ):
     return UIBoxLayout(
         vertical=False,
@@ -189,7 +189,11 @@ def vertical_box_pair(
                 vertical=True,
                 size_hint=size_hint,
                 children=element,
-            ).with_border(color=arcade.color.ELECTRIC_BLUE, width=0).with_padding(top=padding[0], right=padding[1], bottom=padding[2], left=padding[3]),
+            )
+            .with_border(color=arcade.color.ELECTRIC_BLUE, width=0)
+            .with_padding(
+                top=padding[0], right=padding[1], bottom=padding[2], left=padding[3]
+            ),
         )
 
     return anchor
@@ -221,7 +225,11 @@ def horizontal_box_pair(
                 vertical=True,
                 size_hint=size_hint,
                 children=element,
-            ).with_border(color=arcade.color.ELECTRIC_BLUE, width=5).with_padding(top=padding[0], right=padding[1], bottom=padding[2], left=padding[3]),
+            )
+            .with_border(color=arcade.color.ELECTRIC_BLUE, width=5)
+            .with_padding(
+                top=padding[0], right=padding[1], bottom=padding[2], left=padding[3]
+            ),
         )
 
     return anchor

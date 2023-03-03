@@ -44,6 +44,7 @@ def create_random_enemy_room(enemy_amount) -> Room:
 
     return room
 
+
 def create_random_boss_room() -> Room:
     room = Room()
 

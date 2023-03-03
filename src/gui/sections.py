@@ -2,25 +2,21 @@ import arcade
 from arcade.gui import UIManager
 from arcade.gui.widgets import UIWidget
 from arcade.gui.widgets.buttons import UIFlatButton
-from arcade.gui.widgets.text import UILabel
 from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
+from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
-from src.gui.gui_components import (
-    entity_labels_names_only,
-    entity_labels_with_cost,
-    create_colored_UILabel_header,
-    vstack_of_three_boxes,
-    box_containing_horizontal_label_pair,
-    horizontal_box_pair,
-    vertical_box_pair,
-    single_box,
-)
-from src.gui.window_data import WindowData
-from src.gui.states import MissionCards
-from src.gui.gui_utils import ScrollWindow, Cycle
 from src.gui.buttons import CommandBarMixin
+from src.gui.gui_components import (box_containing_horizontal_label_pair,
+                                    create_colored_UILabel_header,
+                                    entity_labels_names_only,
+                                    entity_labels_with_cost,
+                                    horizontal_box_pair, single_box,
+                                    vertical_box_pair, vstack_of_three_boxes)
+from src.gui.gui_utils import Cycle, ScrollWindow
+from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
+from src.gui.window_data import WindowData
 
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
@@ -116,7 +112,7 @@ class InfoPaneSection(arcade.Section):
         self.manager.add(
             single_box(self.bottom, self.height, self.texts, (10, 0, 0, 0))
         )
-        
+
     def flush(self):
         self.manager = UIManager()
 
@@ -211,7 +207,7 @@ class RecruitmentPaneSection(arcade.Section):
             )
         )
         self.guild_funds_label = None
-        
+
         _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
 
     def flush(self):
@@ -235,8 +231,13 @@ class RecruitmentPaneSection(arcade.Section):
             )
         )
 
-        self.guild_funds_label = self.view.info_pane_section.manager.children[0][0].children[0].children[2].children[1]
-        
+        self.guild_funds_label = (
+            self.view.info_pane_section.manager.children[0][0]
+            .children[0]
+            .children[2]
+            .children[1]
+        )
+
         _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
 
     # def on_update(self, delta_time: float):

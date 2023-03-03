@@ -1,4 +1,5 @@
 import unittest
+
 from parameterized import parameterized
 
 from src.utils.pathing.grid_utils import Node, Space
@@ -25,11 +26,15 @@ class TestPathing(unittest.TestCase):
     # this decorator runs the test for every args tuple supplied, in this case it's width*(height - 2) different
     # inputs. Being this exhaustive is probably unnecessary so if it's slow, it could be restricted to a fixed gap
     # position or something.
-    @parameterized.expand([
-        (gap, wall_v_pos)
-        for gap in range(width)  # gap can be anywhere in the wall
-        for wall_v_pos in range(1, height - 1)  # wall can be any height except covering start or finish
-    ])
+    @parameterized.expand(
+        [
+            (gap, wall_v_pos)
+            for gap in range(width)  # gap can be anywhere in the wall
+            for wall_v_pos in range(
+                1, height - 1
+            )  # wall can be any height except covering start or finish
+        ]
+    )
     def test_path_respects_obstructions(self, gap: int, wall_v_pos: int) -> None:
         """
         This test is specifically concerned with ensuring that the space in which

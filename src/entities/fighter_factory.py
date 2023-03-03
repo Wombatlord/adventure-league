@@ -8,6 +8,7 @@ from src.entities.fighter import Fighter
 
 Factory = Callable[[str], Entity]
 
+
 class StatBlock(NamedTuple):
     hp: tuple[int, int]
     defence: tuple[int, int]
@@ -30,7 +31,7 @@ def get_fighter_factory(stats: StatBlock) -> Factory:
             hp=randint(*stats.hp),
             defence=randint(*stats.defence),
             power=randint(*stats.power),
-            is_enemy=stats.is_enemy
+            is_enemy=stats.is_enemy,
         )
         entity_name = Name(title=title, first_name=name, last_name=last_name)
         return Entity(name=entity_name, cost=randint(1, 5), fighter=fighter)
