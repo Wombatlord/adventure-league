@@ -13,3 +13,5 @@ experimental/*
 venv/
 winvenv/
 scratch.py
+.idea/
+
