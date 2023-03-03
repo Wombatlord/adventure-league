@@ -20,9 +20,6 @@ width, height = 10, 10
 
 
 class TestPathing(unittest.TestCase):
-    # The dimensions of the space used in the test
-    width, height = width, height
-
     # this decorator runs the test for every args tuple supplied, in this case it's width*(height - 2) different
     # inputs. Being this exhaustive is probably unnecessary so if it's slow, it could be restricted to a fixed gap
     # position or something.
@@ -49,7 +46,7 @@ class TestPathing(unittest.TestCase):
 
         # Arrange
         # construct the set of excluded nodes
-        wall = gated_wall(gap, wall_v_pos, self.width)
+        wall = gated_wall(gap, wall_v_pos, width)
 
         # construct the space in which to find paths with the wall passed
         # as the exclusions
