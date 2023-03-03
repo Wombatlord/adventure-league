@@ -75,7 +75,7 @@ class Node(NamedTuple):
         return self.x == other.x and self.y == other.y
 
 
-def show_space(space: Space, path: list[Node]) -> str:
+def pretty_path(space: Space, start: Node, end: Node) -> str:
     row = [" "] * space.width
     empty = [[*row] for _ in range(space.height)]
 
@@ -88,16 +88,3 @@ def show_space(space: Space, path: list[Node]) -> str:
     lines = map("".join, empty[::-1])
 
     return "\n".join(lines)
-
-
-def gated_wall(gap: int, height: int):
-    return {Node(x=x, y=y) for x in {*range(30)} - {gap} for y in (height,)}
-
-
-if __name__ == "__main__":
-    space = Space(
-        Node(0, 0), Node(30, 30), exclusions=gated_wall(9, 2) | gated_wall(1, 6)
-    )
-    path = [*space.astar(Node(0, 0), Node(29, 29))]
-    print(path)
-    print(show_space(space, path))

@@ -11,9 +11,13 @@ from src.gui.buttons import get_new_missions_button, nav_button
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
-from src.gui.sections import (CommandBarSection, InfoPaneSection,
-                              MissionsSection, RecruitmentPaneSection,
-                              RosterAndTeamPaneSection)
+from src.gui.sections import (
+    CommandBarSection,
+    InfoPaneSection,
+    MissionsSection,
+    RecruitmentPaneSection,
+    RosterAndTeamPaneSection,
+)
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
 
