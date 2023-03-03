@@ -12,3 +12,5 @@ src/projection/__pycache__/*
 venv/
 winvenv/
 scratch.py
+.idea/
+
