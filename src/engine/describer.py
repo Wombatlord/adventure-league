@@ -15,7 +15,7 @@ class Describer:
             f"Wicked laughter echoes from within {eng.game_state.dungeon.description} while the {eng.game_state.guild.team.name} of {eng.game_state.guild.name} prepare for battle!",
             f"Uneasy silence settles over {eng.game_state.dungeon.description} before the {eng.game_state.guild.team.name}' symphony of steel begins!",
             f"Foul odours pour from {eng.game_state.dungeon.description} as the {eng.game_state.guild.team.name} of {eng.game_state.guild.name} cross the threshold!",
-            f"Hoisting the banner of {eng.game_state.guild.name}, the {eng.game_state.guild.team.name} enter {eng.game_state.dungeon.description}!"
+            f"Hoisting the banner of {eng.game_state.guild.name}, the {eng.game_state.guild.team.name} enter {eng.game_state.dungeon.description}!",
         ]
 
         return choice(dungeon_entrance_messages)
@@ -32,7 +32,7 @@ class Describer:
             f"The ragged edges of well used iron glint from the shadows of {eng.game_state.dungeon.description}! The {eng.game_state.guild.team.name} prepare their steel!",
             f"Heavy footsteps echo from deeper within {eng.game_state.dungeon.description}!",
             f"With a mortal strike delivered, the {eng.game_state.guild.team.name} wave the banner of {eng.game_state.guild.name} before continuing the song of battle!",
-            f"The {eng.game_state.guild.team.name} tighten their armour and charge ahead!"
+            f"The {eng.game_state.guild.team.name} tighten their armour and charge ahead!",
         ]
 
         return choice(room_complete_messages)

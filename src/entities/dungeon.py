@@ -21,13 +21,14 @@ class Room:
     @property
     def cleared(self):
         return self._cleared
-    
+
     @cleared.setter
     def cleared(self, new_value):
         current_value = self.cleared
 
-        if new_value != current_value:            
+        if new_value != current_value:
             print("ROOM CLEAR!")
+
 
 class Dungeon(Rewarder):
     def __init__(
@@ -53,7 +54,7 @@ class Dungeon(Rewarder):
 
     def move_to_next_room(self):
         self.current_room = next(self.room_generator())
-        
+
     def room_generator(self) -> Generator[None, None, Room]:
         for room in self.rooms:
             yield room

@@ -8,6 +8,7 @@ from src.entities.fighter import Fighter
 Action = dict[str, Any]
 Hook = Callable[[], None]
 
+
 class CombatHooks(Enum):
     INPUT_PROMPT = 0
 
@@ -16,11 +17,13 @@ class CombatRound:
     teams: tuple[list[Fighter], list[Fighter]]
 
     _result: bool | None
-    _round_order: list[Fighter] = [] # fighter
+    _round_order: list[Fighter] = []  # fighter
     turn_complete: bool = False
     fighter_turns_taken: list[bool] = []
 
-    def __init__(self, teamA: list[Entity], teamB: list[Entity], prompt_hook: Hook | None = None) -> None:
+    def __init__(
+        self, teamA: list[Entity], teamB: list[Entity], prompt_hook: Hook | None = None
+    ) -> None:
         self.teams = (
             [member.fighter for member in teamA],
             [member.fighter for member in teamB],
@@ -29,7 +32,7 @@ class CombatRound:
         self.hooks = {}
         if prompt_hook:
             self.hooks = {CombatHooks.INPUT_PROMPT: prompt_hook}
-        
+
     def _roll_initiative(self) -> list:
         actions = []
 
@@ -65,7 +68,7 @@ class CombatRound:
             team = 1
         # return team, opposing_team
         return team, (team + 1) % 2
-    
+
     def single_fighter_turn(self) -> Generator[None, None, Action]:
         """
         This will play out a turn if the current fighter at the start of the round order is an enemy.
@@ -74,7 +77,9 @@ class CombatRound:
         """
         if len(self._round_order) == 0:
             # Stop the iteration when the round is over
-            raise StopIteration(f"The turn order was empty, {self.teams[0]=}, {self.teams[1]=}")
+            raise StopIteration(
+                f"The turn order was empty, {self.teams[0]=}, {self.teams[1]=}"
+            )
 
         combatant = self._round_order.pop(0)
 
@@ -84,25 +89,28 @@ class CombatRound:
 
         for team in self.teams:
             for fighter in team:
-                if self._team_id(fighter)[0] == opposing_team and fighter.owner.is_dead is False:
+                if (
+                    self._team_id(fighter)[0] == opposing_team
+                    and fighter.owner.is_dead is False
+                ):
                     enemies.append(fighter)
-                
+
         if combatant.incapacitated == False:
             if combatant.is_enemy:
                 # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
                 target_index = combatant.choose_target(enemies)
                 target = enemies[target_index]
-            
+
                 # yield back the actions from the attack/damage taken immediately
                 attack_result = combatant.attack(target.owner)
-                yield attack_result 
+                yield attack_result
 
-                if (a := self._check_for_death(target)):
+                if a := self._check_for_death(target):
                     yield a
 
-                if (a := self._check_for_retreat(combatant)):
+                if a := self._check_for_retreat(combatant):
                     yield a
-            
+
             if not combatant.is_enemy:
                 # If the fighter is a player character, emit a target request action which will cause
                 # the engine to await_input() and instead invoke player_fighter_turn() from eng._generate_combat_actions()
@@ -123,8 +131,9 @@ class CombatRound:
 
         if len(self._round_order) == 0:
             # Stop the iteration when the round is over
-            raise StopIteration(f"The turn order was empty, {self.teams[0]=}, {self.teams[1]=}")
-
+            raise StopIteration(
+                f"The turn order was empty, {self.teams[0]=}, {self.teams[1]=}"
+            )
 
         combatant = self._round_order.pop(0)
 
@@ -134,30 +143,33 @@ class CombatRound:
 
         for team in self.teams:
             for fighter in team:
-                if self._team_id(fighter)[0] == opposing_team and fighter.owner.is_dead is False:
+                if (
+                    self._team_id(fighter)[0] == opposing_team
+                    and fighter.owner.is_dead is False
+                ):
                     enemies.append(fighter)
-        
+
         if combatant.incapacitated == False:
             if target is None or target > len(enemies) - 1:
                 # If we don't have a valid target from the calling scope, keep the fighter at the start of the turn order
                 # and emit another request for a target.
                 self._round_order.insert(0, combatant)
                 yield combatant.request_target()
-            
+
             if target is not None and target <= len(enemies) - 1:
                 # If the target is valid, then resolve the attack and yield the resulting actions for display when the user advances.
                 target_index = target
                 _target = enemies[target_index]
-            
+
                 attack_result = combatant.attack(_target.owner)
-                yield attack_result 
+                yield attack_result
 
-                if (a := self._check_for_death(_target)):
+                if a := self._check_for_death(_target):
                     yield a
 
-                if (a := self._check_for_retreat(combatant)):
+                if a := self._check_for_retreat(combatant):
                     yield a
-    
+
     def _check_for_death(self, target) -> Action:
         name = target.owner.name.name_and_title
         if target.owner.is_dead:
@@ -166,12 +178,16 @@ class CombatRound:
 
         return {}
 
-
     def _check_for_retreat(self, fighter: Fighter) -> list[dict[str, str]]:
         result = {}
         if fighter.retreating == True:
             result.update(**fighter.owner.annotate_event({}))
-            result.update({"retreat": fighter, "message": f"{fighter.owner.name.name_and_title} is retreating!"})
+            result.update(
+                {
+                    "retreat": fighter,
+                    "message": f"{fighter.owner.name.name_and_title} is retreating!",
+                }
+            )
             return result
 
         return {}
@@ -191,14 +207,11 @@ class CombatRound:
 
         return victor
 
-
     def continues(self) -> bool:
         if self.victor() is None and self._round_order:
             return True
-        
+
         return False
 
     def is_complete(self) -> bool:
         return not self.is_complete()
-
-

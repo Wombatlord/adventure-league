@@ -10,16 +10,19 @@ _KEY = "entity_data"
 
 _health_projection: dict[str, str] = {}
 
+
 class HealthProjection:
     def __init__(self):
         self.config = {}
 
-    def configure(self, team: list, heights: list[int] = None, **kwargs) -> HealthProjection:
+    def configure(
+        self, team: list, heights: list[int] = None, **kwargs
+    ) -> HealthProjection:
         self.config = kwargs
         self.heights = heights if heights else []
         self.names = [member.name.name_and_title for member in team]
         return self
-    
+
     def draw(self) -> None:
         merc_heights = [*self.heights]
         enemy_heights = [*self.heights]
@@ -44,7 +47,7 @@ class HealthProjection:
                     align="center",
                     color=arcade.color.AIR_SUPERIORITY_BLUE,
                     font_name=WindowData.font,
-                    **self.config
+                    **self.config,
                 ).draw()
             else:
                 arcade.Text(
@@ -58,12 +61,13 @@ class HealthProjection:
                     align="center",
                     color=arcade.color.RED_DEVIL,
                     font_name=WindowData.font,
-                    **self.config
+                    **self.config,
                 ).draw()
 
 
 def current() -> HealthProjection:
     return HealthProjection()
+
 
 def flush() -> None:
     """
@@ -71,6 +75,7 @@ def flush() -> None:
     """
     global _health_projection
     _health_projection = {}
+
 
 def consume(action: dict[str, Any]) -> None:
     """
@@ -89,12 +94,13 @@ def consume(action: dict[str, Any]) -> None:
     # The actual projection logic
     if retreat == False:
         _health_projection[name] = f"{health}" if health > 0 else "dead"
-        
+
     if retreat or health <= 0:
         # Ensure we don't try to clear the projection twice if the entity
         # is killed during its retreat.
         if name in _health_projection:
             _health_projection.pop(name)
+
 
 def get_subscription() -> set[str]:
     """

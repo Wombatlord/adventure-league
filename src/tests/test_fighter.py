@@ -25,5 +25,6 @@ class TestFighter(unittest.TestCase):
         # Assert
         self.assertGreaterEqual(f1.max_hp, f1.hp)
 
+
 if __name__ == "__main__":
     unittest.main()

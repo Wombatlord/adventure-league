@@ -38,7 +38,7 @@ def flush_all() -> None:
 class Engine:
     game_state: GameState
     default_clock_value = 0.5
-    
+
     def __init__(self) -> None:
         self.action_queue: list[Action] = []
         self.messages: list[str] = []
@@ -125,10 +125,10 @@ class Engine:
     def _check_action_queue(self) -> None:
         for item in self.action_queue:
             print(f"item: {item}")
-    
+
     def reset_update_clock(self):
         self.update_clock = self.default_clock_value
-    
+
     def increase_update_clock_by_delay(self, delay):
         self.update_clock += delay
 
@@ -154,7 +154,7 @@ class Engine:
     def end_of_combat(self, win: bool = True) -> list[Action]:
         guild = self.game_state.get_guild()
         dungeon = self.game_state.get_dungeon()
-        
+
         if win:
             actions = self.team_triumphant_actions(guild, dungeon)
             self.game_state.guild.claim_rewards(dungeon)
@@ -201,11 +201,8 @@ class Engine:
 
     def _generate_combat_actions(self) -> Generator[None, None, Action]:
         quest = self.game_state.dungeon.room_generator()
-        
-        yield {
-            "message": Describer.describe_entrance(self),
-            "delay": 3
-        }
+
+        yield {"message": Describer.describe_entrance(self), "delay": 3}
 
         for encounter in quest:
 
@@ -219,7 +216,9 @@ class Engine:
             while encounter.enemies and self.game_state.guild.team.members:
                 # Beginning of encounter actions/state changes go here
                 combat_round = CombatRound(
-                    self.game_state.guild.team.members, encounter.enemies, self.await_input
+                    self.game_state.guild.team.members,
+                    encounter.enemies,
+                    self.await_input,
                 )
 
                 # example of per-round actions
@@ -257,10 +256,7 @@ class Engine:
                 break
 
             if not self.game_state.dungeon.boss.is_dead:
-                yield {
-                    "message": Describer.describe_room_complete(self),
-                    "delay": 3
-                }
+                yield {"message": Describer.describe_room_complete(self), "delay": 3}
 
         if combat_round.victor() == 0:
             win = True
@@ -295,7 +291,7 @@ class Engine:
 
     def refresh_mission_board(self):
         if self.game_state.mission_board is None:
-                return
+            return
 
         self.game_state.mission_board.clear_board()
         self.game_state.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
@@ -307,31 +303,31 @@ class GameState:
     entity_pool: Optional[EntityPool] = None
     dungeon: Optional[Dungeon] = None
     mission_board: Optional[MissionBoard] = None
-        
+
     def get_guild(self):
         return self.guild
-    
+
     def get_team(self):
         return self.team
-    
+
     def get_entity_pool(self):
         return self.entity_pool
-    
+
     def get_dungeon(self):
         return self.dungeon
-    
+
     def get_mission_board(self):
         return self.mission_board
-    
+
     def set_guild(self, guild):
         self.guild = guild
-    
+
     def set_team(self):
         self.team = self.guild.team
-    
+
     def set_entity_pool(self, pool):
         self.entity_pool = pool
-    
+
     def set_dungeon(self, dungeon):
         self.dungeon = dungeon
 

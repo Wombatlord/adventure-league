@@ -7,11 +7,17 @@ from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
-from src.gui.sections import CommandBarSection, InfoPaneSection, RecruitmentPaneSection, RosterAndTeamPaneSection, MissionsSection
-from src.gui.buttons import nav_button, get_new_missions_button
-from src.gui.gui_components import box_containing_horizontal_label_pair
+from src.gui.buttons import get_new_missions_button, nav_button
 from src.gui.combat_screen import CombatScreen
+from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
+from src.gui.sections import (
+    CommandBarSection,
+    InfoPaneSection,
+    MissionsSection,
+    RecruitmentPaneSection,
+    RosterAndTeamPaneSection,
+)
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
 
@@ -94,14 +100,14 @@ class GuildView(arcade.View):
             font_size=18,
             font_name=WindowData.font,
             align="center",
-            size_hint=(1,None)
+            size_hint=(1, None),
         )
         self.info_pane_section = InfoPaneSection(
             left=0,
             bottom=52,
             width=WindowData.width,
             height=148,
-            prevent_dispatch_view = {False},
+            prevent_dispatch_view={False},
             margin=5,
             texts=[self.guild_label],
         )
@@ -117,16 +123,16 @@ class GuildView(arcade.View):
             width=WindowData.width,
             height=50,
             buttons=self.buttons,
-            prevent_dispatch_view = {False}
+            prevent_dispatch_view={False},
         )
         # Add sections to section manager.
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
-    
+
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-        
+
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.
         Ensures that a fresh UIManager can create buttons, assign handlers, and receive events
@@ -140,7 +146,7 @@ class GuildView(arcade.View):
 
     # def on_update(self, delta_time: float):
     #     print(delta_time)
-    
+
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.G:
@@ -178,26 +184,26 @@ class RosterView(arcade.View):
         self.margin = 5
         self.merc = None
         self.color = arcade.color.WHITE
-        
+
         # RosterAndTeamPane Config
         self.roster_and_team_pane_section = RosterAndTeamPaneSection(
-            left = 2,
-            bottom=242,
-            width = WindowData.width - 2,
-            height = WindowData.height - 2,
-            prevent_dispatch_view = {False} 
-        )
-        
-        # RecruitmentPane Config
-        self.recruitment_pane_section = RecruitmentPaneSection(
-            name = "recruitment_pane_section",
             left=2,
             bottom=242,
-            width = WindowData.width - 2,
-            height = WindowData.height - 2,
-            prevent_dispatch_view = {False},
+            width=WindowData.width - 2,
+            height=WindowData.height - 2,
+            prevent_dispatch_view={False},
         )
-        
+
+        # RecruitmentPane Config
+        self.recruitment_pane_section = RecruitmentPaneSection(
+            name="recruitment_pane_section",
+            left=2,
+            bottom=242,
+            width=WindowData.width - 2,
+            height=WindowData.height - 2,
+            prevent_dispatch_view={False},
+        )
+
         # InfoPane Config
         self.instruction = UILabel(
             text=f"Assign members to the team before embarking on a mission!",
@@ -205,8 +211,8 @@ class RosterView(arcade.View):
             font_size=18,
             font_name=WindowData.font,
             align="center",
-            size_hint=(1,1),
-            text_color=self.color
+            size_hint=(1, 1),
+            text_color=self.color,
         )
         self.entity_info = UILabel(
             text="",
@@ -214,25 +220,28 @@ class RosterView(arcade.View):
             font_size=18,
             font_name=WindowData.font,
             align="center",
-            size_hint=(1,1)
+            size_hint=(1, 1),
         )
 
         self.guild_funds = box_containing_horizontal_label_pair(
-            ((" ", "right", 18, arcade.color.WHITE), (" ", "left", 18, arcade.color.GOLD)),
-            padding=(0,0,0,50),
-            size_hint=(1,None)
+            (
+                (" ", "right", 18, arcade.color.WHITE),
+                (" ", "left", 18, arcade.color.GOLD),
+            ),
+            padding=(0, 0, 0, 50),
+            size_hint=(1, None),
         )
-        
+
         self.info_pane_section = InfoPaneSection(
             left=0,
             bottom=52,
             width=WindowData.width,
             height=188,
-            prevent_dispatch_view = {False},
+            prevent_dispatch_view={False},
             margin=self.margin,
             texts=[self.instruction, self.entity_info, self.guild_funds],
         )
-        
+
         # CommandBar Config
         self.recruitment_pane_buttons = [
             self.roster_button(),
@@ -248,9 +257,9 @@ class RosterView(arcade.View):
             width=WindowData.width,
             height=50,
             buttons=self.roster_pane_buttons,
-            prevent_dispatch_view = {False}
+            prevent_dispatch_view={False},
         )
-        
+
         self.add_section(self.roster_and_team_pane_section)
         self.add_section(self.recruitment_pane_section)
         self.add_section(self.info_pane_section)
@@ -261,20 +270,24 @@ class RosterView(arcade.View):
         Do any necessary reconfiguration of recruitment_pane_section when switching to this section from the roster and team display.
         Ensures the section has appropriate window size values if the window was resized while recruitment section was disabled.
         Assigns the correct buttons to the command bar for this section.
-        
+
         Attached to self.recruit_button as click_handler or called directly in on_key_press.
         """
         self.state = ViewStates.RECRUIT
-        self.info_pane_section.manager.children[0][0].children[0].children[2].children[0].label.text = "Guild Coffers: "
-        self.info_pane_section.manager.children[0][0].children[0].children[2].children[1].label.text = f"{eng.game_state.guild.funds} gp"
+        self.info_pane_section.manager.children[0][0].children[0].children[2].children[
+            0
+        ].label.text = "Guild Coffers: "
+        self.info_pane_section.manager.children[0][0].children[0].children[2].children[
+            1
+        ].label.text = f"{eng.game_state.guild.funds} gp"
         # Disable the roster_and_team_pane_section
         self.roster_and_team_pane_section.enabled = False
         self.roster_and_team_pane_section.manager.disable()
-        
+
         self.recruitment_pane_section.flush()
         self.recruitment_pane_section.manager.enable()
         self.recruitment_pane_section.enabled = True
-        
+
         # Set up CommandBar with appropriate buttons
         self.command_bar_section.manager.disable()
         self.command_bar_section.buttons = self.recruitment_pane_buttons
@@ -286,25 +299,28 @@ class RosterView(arcade.View):
         Do any necessary reconfiguration of roster_and_team_pane_section when switching to this section from the recruitment display.
         Ensures the section has appropriate window size values if the window was resized while roster_and_team_pane_section was disabled.
         Assigns the correct buttons to the command bar for this section.
-        
-        Attached to self.roster_button as click_handler and called directly in on_key_press.        
+
+        Attached to self.roster_button as click_handler and called directly in on_key_press.
         """
         self.state = ViewStates.ROSTER
-        self.info_pane_section.manager.children[0][0].children[0].children[2].children[0].label.text = ""
-        self.info_pane_section.manager.children[0][0].children[0].children[2].children[1].label.text = ""
+        self.info_pane_section.manager.children[0][0].children[0].children[2].children[
+            0
+        ].label.text = ""
+        self.info_pane_section.manager.children[0][0].children[0].children[2].children[
+            1
+        ].label.text = ""
         # Disable the recruitment_pane_section
         self.recruitment_pane_section.enabled = False
 
         # Flush and setup the section so that new recruits are present and selectable via the UIManager
         self.roster_and_team_pane_section.flush()
         self.roster_and_team_pane_section.enabled = True
-        
+
         # Setup CommandBarSection with appropriate buttons
         self.command_bar_section.manager.disable()
         self.command_bar_section.buttons = self.roster_pane_buttons
         self.command_bar_section.flush()
         self.command_bar_section.manager.enable()
-    
 
     def recruit_button(self) -> UIFlatButton:
         """Attached Handler will change from displaying the roster & team panes
@@ -334,37 +350,43 @@ class RosterView(arcade.View):
         """Sets self.merc to the selected entry in the roster scroll window.
         Allows the InfoPaneSection to display entity reference from RosterAndTeamPaneSection
         """
-        if self.roster_and_team_pane_section.pane_selector.pos == 0 and len(self.roster_and_team_pane_section.roster_scroll_window.items) > 0:
-                self.merc = self.roster_and_team_pane_section.roster_scroll_window.items[
-                    self.roster_and_team_pane_section.roster_scroll_window.position.pos
-                ]
-    
+        if (
+            self.roster_and_team_pane_section.pane_selector.pos == 0
+            and len(self.roster_and_team_pane_section.roster_scroll_window.items) > 0
+        ):
+            self.merc = self.roster_and_team_pane_section.roster_scroll_window.items[
+                self.roster_and_team_pane_section.roster_scroll_window.position.pos
+            ]
+
     def _team_entity(self) -> None:
         """Sets self.merc to the selected entry in the team scroll window.
         Allows the InfoPaneSection to display entity reference from RosterAndTeamPaneSection
         """
-        if self.roster_and_team_pane_section.pane_selector.pos == 1 and len(self.roster_and_team_pane_section.team_scroll_window.items) > 0:
-                self.merc = self.roster_and_team_pane_section.team_scroll_window.items[
-                    self.roster_and_team_pane_section.team_scroll_window.position.pos
-                ]
-    
+        if (
+            self.roster_and_team_pane_section.pane_selector.pos == 1
+            and len(self.roster_and_team_pane_section.team_scroll_window.items) > 0
+        ):
+            self.merc = self.roster_and_team_pane_section.team_scroll_window.items[
+                self.roster_and_team_pane_section.team_scroll_window.position.pos
+            ]
+
     def _recruits_entity(self) -> None:
         """Sets self.merc to the selected entry in the recruitment scroll window.
         Allows the InfoPaneSection to display entity reference from RecruitmentPaneSection
         """
         if len(self.recruitment_pane_section.recruitment_scroll_window.items) > 0:
-                self.merc = self.recruitment_pane_section.recruitment_scroll_window.items[
-                    self.recruitment_pane_section.recruitment_scroll_window.position.pos
-                ]
-    
+            self.merc = self.recruitment_pane_section.recruitment_scroll_window.items[
+                self.recruitment_pane_section.recruitment_scroll_window.position.pos
+            ]
+
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
         self.recruitment_pane_section.manager.enable()
         self.roster_and_team_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-        
+
         self.recruitment_pane_section.enabled = False
-        
+
     def on_hide_view(self) -> None:
         self.recruitment_pane_section.manager.disable()
         self.roster_and_team_pane_section.manager.disable()
@@ -376,7 +398,7 @@ class RosterView(arcade.View):
         if self.state == ViewStates.ROSTER:
             self._roster_entity()
             self._team_entity()
-        
+
         if self.state == ViewStates.RECRUIT:
             self._recruits_entity()
 
@@ -384,7 +406,7 @@ class RosterView(arcade.View):
             self.entity_info.text = ""
         else:
             self.entity_info.text = f"LVL: {self.merc.fighter.level}  |  HP: {self.merc.fighter.hp}  |  ATK: {self.merc.fighter.power}  |  DEF: {self.merc.fighter.defence}"
-        
+
     def on_draw(self) -> None:
         self.clear()
 
@@ -393,7 +415,7 @@ class RosterView(arcade.View):
 
     def _log_state(self):
         ...
-    
+
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         self._log_input(symbol, modifiers)
 
@@ -413,7 +435,7 @@ class RosterView(arcade.View):
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
-        
+
         WindowData.width = width
         WindowData.height = height
 
@@ -429,16 +451,16 @@ class MissionsView(arcade.View):
             3, 2
         )  # 3 missions on screen, default selected (2) is the top visually.
         self.combat_screen = CombatScreen()
-        
+
         self.mission_section = MissionsSection(
             left=0,
             bottom=242,
             width=WindowData.width,
             height=WindowData.height - 242,
-            prevent_dispatch_view = {False},
+            prevent_dispatch_view={False},
             missions=eng.game_state.mission_board.missions,
         )
-        
+
         # InfoPane config
         self.instruction = UILabel(
             text="",
@@ -446,7 +468,7 @@ class MissionsView(arcade.View):
             font_size=18,
             font_name=WindowData.font,
             align="center",
-            size_hint=(1,1)
+            size_hint=(1, 1),
         )
         self.team_info = UILabel(
             text="",
@@ -454,18 +476,18 @@ class MissionsView(arcade.View):
             font_size=18,
             font_name=WindowData.font,
             align="center",
-            size_hint=(1,1)
+            size_hint=(1, 1),
         )
         self.info_pane_section = InfoPaneSection(
             left=0,
             bottom=52,
             width=WindowData.width,
             height=188,
-            prevent_dispatch_view = {False},
+            prevent_dispatch_view={False},
             margin=self.margin,
             texts=[self.instruction, self.team_info],
         )
-        
+
         # CommandBar Config
         self.buttons: list[UIFlatButton] = [nav_button(GuildView, "Guild")]
         self.command_bar_section: CommandBarSection = CommandBarSection(
@@ -474,7 +496,7 @@ class MissionsView(arcade.View):
             width=WindowData.width,
             height=50,
             buttons=self.buttons,
-            prevent_dispatch_view = {False}
+            prevent_dispatch_view={False},
         )
         self.add_section(self.mission_section)
         self.add_section(self.info_pane_section)
@@ -484,18 +506,22 @@ class MissionsView(arcade.View):
         self.mission_section.manager.enable()
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-        
+
         # Prepare text for display in InfoPaneSection.
         if len(eng.game_state.team.members) > 0:
             self.instruction.text = "Press Enter to Embark on a Mission!"
-            self.team_info.text = f"{len(eng.game_state.team.members)} Guild Members are ready to Embark!"
+            self.team_info.text = (
+                f"{len(eng.game_state.team.members)} Guild Members are ready to Embark!"
+            )
             self.instruction.label.color = arcade.color.GOLD
             self.team_info.label.color = arcade.color.GOLD
-            
+
         else:
             self.instruction.text = "No Guild Members are assigned to a team!"
             self.instruction.label.color = arcade.color.RED_DEVIL
-            self.team_info.text = "Assign Guild Members to a Team from the Roster before Embarking!"
+            self.team_info.text = (
+                "Assign Guild Members to a Team from the Roster before Embarking!"
+            )
             self.team_info.label.color = arcade.color.RED_DEVIL
 
     def on_hide_view(self) -> None:
@@ -547,9 +573,9 @@ class MissionsView(arcade.View):
                 self.selection.incr()
 
             case arcade.key.RETURN:
-                
+
                 if len(eng.game_state.guild.team.members) > 0:
-                    
+
                     eng.selected_mission = self.mission_section.mission_selection.pos
                     eng.init_dungeon()
 
@@ -557,7 +583,7 @@ class MissionsView(arcade.View):
                         self.command_bar_section.enabled = False
                         self.info_pane_section.enabled = False
                         self.mission_section.enabled = False
-                        
+
                         eng.init_combat()
                         self.combat_screen = CombatScreen()
 

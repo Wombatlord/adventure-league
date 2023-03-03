@@ -1,11 +1,11 @@
-
 class Rewarder:
     def claim_gp(self) -> int:
         raise NotImplementedError()
 
     def claim_xp(self) -> int:
         raise NotImplementedError()
-        
+
+
 class Loot(Rewarder):
     xp: int
     gp: int
@@ -19,7 +19,6 @@ class Loot(Rewarder):
         self.xp = max(0, xp)
         self.gp = max(0, gp)
 
-        
     @property
     def claimed(self) -> bool:
         return self.xp == 0 and self.gp == 0
@@ -37,4 +36,3 @@ class Loot(Rewarder):
             return "This reward has already been claimed"
 
         return f"XP: {self.xp}, GP: {self.gp}"
-    
