@@ -4,7 +4,6 @@ from random import choice
 class Describer:
     @staticmethod
     def describe_entrance(eng) -> str:
-
         dungeon_entrance_messages = [
             f"The {eng.game_state.guild.team.name} of {eng.game_state.guild.name} draw their weapons and charge into {eng.game_state.dungeon.description}!",
             f"The {eng.game_state.guild.team.name} of {eng.game_state.guild.name} storm the gates of {eng.game_state.dungeon.description}!",
@@ -21,7 +20,6 @@ class Describer:
         return choice(dungeon_entrance_messages)
 
     def describe_room_complete(eng) -> str:
-
         room_complete_messages = [
             f"Splattered with gore, the {eng.game_state.guild.team.name} move deeper into {eng.game_state.dungeon.description}!",
             f"With bloodied weapons, the {eng.game_state.guild.team.name} press onward!",

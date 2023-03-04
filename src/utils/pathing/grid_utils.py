@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Generator, NamedTuple
+from random import randint
+from typing import Generator, Iterable, NamedTuple
 
 from astar import AStar
 
@@ -42,6 +43,47 @@ class Space(AStar):
     @property
     def width(self) -> int:
         return self.maxima.x - self.minima.x
+
+    def get_path(self, start: Node, end: Node) -> tuple[Node, ...] | None:
+        path = self.astar(start, end)
+        if path is None:
+            return
+
+        return tuple(path)
+
+    def get_path_len(self, start: Node, end: Node) -> int | None:
+        path = self.astar(start, end)
+        if path is None:
+            return
+
+        return len([*path])
+
+    def choose_random_node(self, excluding: set[Node] = ()) -> Node:
+        # if there are extra exclusions create a temp space with those exclusions as well as the pre-existing exclusions
+        tmp_space = self
+        if excluding:
+            tmp_space = Space(
+                self.minima, self.maxima, exclusions=self.exclusions | set(excluding)
+            )
+
+        def _try_node() -> Node:
+            return Node(
+                x=randint(tmp_space.minima.x, tmp_space.maxima.x),
+                y=randint(tmp_space.minima.y, tmp_space.maxima.y),
+            )
+
+        while (node := _try_node()) not in tmp_space:
+            continue
+
+        return node
+
+    @property
+    def y_range(self) -> Iterable[int]:
+        return range(self.minima.y, self.maxima.y)
+
+    @property
+    def x_range(self) -> Iterable[int]:
+        return range(self.minima.x, self.maxima.x)
 
 
 class Node(NamedTuple):

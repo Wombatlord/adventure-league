@@ -37,7 +37,7 @@ def flush_all() -> None:
 
 class Engine:
     game_state: GameState
-    default_clock_value = 0.5
+    default_clock_value = 0.1
 
     def __init__(self) -> None:
         self.action_queue: list[Action] = []
@@ -205,9 +205,10 @@ class Engine:
         yield {"message": Describer.describe_entrance(self), "delay": 3}
 
         for encounter in quest:
+            encounter.include_party(self.game_state.team.members)
 
             healths = self.initial_health_values(
-                self.game_state.guild.team.members, encounter.enemies
+                self.game_state.team.members, encounter.enemies
             )
 
             for h in healths:
