@@ -124,7 +124,7 @@ def pretty_path(space: Space, start: Node, end: Node) -> str:
     for exclusion in space.exclusions:
         empty[exclusion.y][exclusion.x] = "X"
 
-    for place in path:
+    for place in space.astar(start, end):
         empty[place.y][place.x] = "·"
 
     lines = map("".join, empty[::-1])
