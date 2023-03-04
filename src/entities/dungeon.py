@@ -2,21 +2,43 @@ from typing import Generator, Optional
 
 from src.entities.entity import Entity
 from src.entities.loot import Loot, Rewarder
+from src.utils.pathing.grid_utils import Node, Space
 
 
 class Room:
-    def __init__(self) -> None:
+    def __init__(self, size: tuple[int, int] = (10, 10)) -> None:
         self.enemies: list[Entity] = []
+        self.occupants: list[Entity] = []
         self._cleared = False
         self.on_entry_hooks = []
+        self.space = Space(Node(x=0, y=0), Node(*size), exclusions=set())
+        self.entry_door = Node(x=0, y=5)
 
     def add_entity(self, entity: Entity):
-        self.enemies.append(entity)
+        mob_spawns = self.mob_spawns_points()
+        if entity.fighter.is_enemy:
+            spawn_point = next(mob_spawns)
+        else:
+            spawn_point = self.entry_door
+
+        entity.make_locatable(self.space, spawn_point=spawn_point)
+        self.occupants.append(entity)
+        if entity.fighter.is_enemy:
+            self.enemies.append(entity)
         entity.on_death_hooks.append(self.remove)
+        entity.on_death_hooks.append(Entity.flush_locatable)
+
+    def mob_spawns_points(self) -> Generator[Node, None, None]:
+        left_wall = {Node(x=0, y=y) for y in self.space.y_range}
+        while True:
+            yield self.space.choose_random_node(
+                excluding=left_wall,
+            )
 
     def remove(self, entity: Entity):
         if entity.fighter.is_enemy:
             self.enemies.pop(self.enemies.index(entity))
+        self.occupants.pop(self.occupants.index(entity))
 
     @property
     def cleared(self):

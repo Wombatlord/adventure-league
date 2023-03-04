@@ -98,12 +98,18 @@ class CombatRound:
         if combatant.incapacitated == False:
             if combatant.is_enemy:
                 # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
-                target_index = combatant.choose_target(enemies)
+                target_index = combatant.choose_nearest_target(enemies)
+
                 target = enemies[target_index]
 
-                # yield back the actions from the attack/damage taken immediately
-                attack_result = combatant.attack(target.owner)
-                yield attack_result
+                # Move toward the target as far as speed allows
+                move_result = combatant.locatable.approach_target(target)
+                yield move_result
+
+                # if we got to the destination and can attack, then attack
+                if move_result.get("move", {})["in_motion"] is False:
+                    # yield back the actions from the attack/damage taken immediately
+                    yield combatant.attack(target.owner)
 
                 if a := self._check_for_death(target):
                     yield a
@@ -161,8 +167,13 @@ class CombatRound:
                 target_index = target
                 _target = enemies[target_index]
 
-                attack_result = combatant.attack(_target.owner)
-                yield attack_result
+                # Move toward the target as far as speed allows
+                move_result = combatant.locatable.approach_target(_target)
+                yield move_result
+                # if we got to the destination and can attack, then attack
+                if move_result.get("move", {})["in_motion"] is False:
+                    # yield back the actions from the attack/damage taken immediately
+                    yield combatant.attack(_target.owner)
 
                 if a := self._check_for_death(_target):
                     yield a

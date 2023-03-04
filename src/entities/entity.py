@@ -1,5 +1,8 @@
 from typing import Any, NamedTuple, Optional
 
+from src.entities.locatable import Locatable
+from src.utils.pathing.grid_utils import Node, Space
+
 
 class Name(NamedTuple):
     first_name: str = None
@@ -41,6 +44,19 @@ class Entity:
         self.fighter = fighter
         if self.fighter:
             self.fighter.owner = self
+
+        self.locatable = None
+
+    def make_locatable(self, space: Space, spawn_point: Node):
+        self.locatable = Locatable(
+            owner=self,
+            location=spawn_point,
+            speed=self.fighter.speed,
+            space=space,
+        )
+
+    def flush_locatable(self) -> None:
+        self.locatable = None
 
     def get_dict(self) -> dict:
         # returns a dict for serialisation of an entity.

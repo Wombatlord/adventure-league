@@ -14,15 +14,18 @@ class StatBlock(NamedTuple):
     defence: tuple[int, int]
     power: tuple[int, int]
     is_enemy: bool
+    speed: int
 
     @property
     def factory(self) -> Factory:
         return get_fighter_factory(self)
 
 
-_mercenary = StatBlock(hp=(25, 25), defence=(1, 3), power=(3, 5), is_enemy=False)
-_monster = StatBlock(hp=(10, 10), defence=(1, 3), power=(1, 3), is_enemy=True)
-_boss = StatBlock(hp=(30, 30), defence=(2, 4), power=(2, 4), is_enemy=True)
+_mercenary = StatBlock(
+    hp=(25, 25), defence=(1, 3), power=(3, 5), speed=1, is_enemy=False
+)
+_monster = StatBlock(hp=(10, 10), defence=(1, 3), power=(1, 3), speed=1, is_enemy=True)
+_boss = StatBlock(hp=(30, 30), defence=(2, 4), power=(2, 4), speed=1, is_enemy=True)
 
 
 def get_fighter_factory(stats: StatBlock) -> Factory:
@@ -32,6 +35,7 @@ def get_fighter_factory(stats: StatBlock) -> Factory:
             defence=randint(*stats.defence),
             power=randint(*stats.power),
             is_enemy=stats.is_enemy,
+            speed=stats.speed,
         )
         entity_name = Name(title=title, first_name=name, last_name=last_name)
         return Entity(name=entity_name, cost=randint(1, 5), fighter=fighter)

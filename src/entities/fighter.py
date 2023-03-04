@@ -4,8 +4,10 @@ from random import randint
 from typing import Any, Optional
 
 from src.entities.entity import Entity
+from src.utils.pathing.grid_utils import Node
 
 Action = dict[str, Any]
+
 
 # A class attached to any Entity that can fight
 class Fighter:
@@ -18,6 +20,7 @@ class Fighter:
         level: int = 0,
         xp_reward: int = 0,
         current_xp: int = 0,
+        speed: int = 0,
     ) -> None:
         self.owner: Optional[Entity] = None
         self.max_hp = hp
@@ -30,6 +33,7 @@ class Fighter:
         self.retreating = False
         self.is_enemy = is_enemy
         self.target = None
+        self.speed = speed
 
     def get_dict(self) -> dict:
         result = {
@@ -62,6 +66,61 @@ class Fighter:
         possible = len(targets) - 1
 
         return randint(0, possible)
+
+    @property
+    def location(self) -> Node | None:
+        if self.is_locatable:
+            return self.owner.locatable.location
+
+    @property
+    def locatable(self):
+        if self.is_locatable():
+            return self.owner.locatable
+
+    def is_locatable(self):
+        return self.owner.locatable is not None
+
+    def choose_nearest_target(self, targets: list[Fighter]) -> int:
+        if len(targets) < 1:
+            raise ValueError("Supply at least one potential target")
+
+        if self.owner.locatable is None:
+            raise TypeError(
+                f"The attacker is not locateable: {self.owner.name.name_and_title=}"
+            )
+
+        closest = None
+        # bigger than any dungeon room, so the first checked target will always be closer
+        min_distance = 100000
+
+        for target_idx, possible_target in enumerate(targets):
+            if possible_target.owner.locatable is None:
+                raise TypeError(
+                    f"The target is not locateable: {possible_target.owner.name.name_and_title=}"
+                )
+
+            distance = self.owner.locatable.space.get_path_len(
+                self.owner.locatable.location,
+                possible_target.owner.locatable.location,
+            )
+            if distance is None:
+                continue
+
+            # is the possible target the closest so far?
+            if distance < min_distance:
+                min_distance = distance
+                closest = target_idx
+
+            # We can attack already
+            if min_distance <= 1:
+                break
+
+        if closest is None:
+            raise ValueError(
+                f"The fighter {self.owner.name.name_and_title} could not traverse to any of the potential targets"
+            )
+
+        return closest
 
     @property
     def incapacitated(self) -> bool:

@@ -11,13 +11,9 @@ from src.gui.buttons import get_new_missions_button, nav_button
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
-from src.gui.sections import (
-    CommandBarSection,
-    InfoPaneSection,
-    MissionsSection,
-    RecruitmentPaneSection,
-    RosterAndTeamPaneSection,
-)
+from src.gui.sections import (CommandBarSection, InfoPaneSection,
+                              MissionsSection, RecruitmentPaneSection,
+                              RosterAndTeamPaneSection)
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
 
@@ -573,9 +569,7 @@ class MissionsView(arcade.View):
                 self.selection.incr()
 
             case arcade.key.RETURN:
-
                 if len(eng.game_state.guild.team.members) > 0:
-
                     eng.selected_mission = self.mission_section.mission_selection.pos
                     eng.init_dungeon()
 
