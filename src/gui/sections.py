@@ -833,9 +833,6 @@ class CombatGridSection(arcade.Section):
     def on_resize(self, width: int, height: int):
         self.manager.children[0][0].resize(width=width - 2, height=height - self.bottom)
         
-        for sprite in self.tile_sprite_list:
-            sprite.rescale_relative_to_point
-        
         super().on_resize(width, height)
     
     
