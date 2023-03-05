@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from random import randint
-from typing import Any, Generator, NamedTuple, Optional
+from typing import Any, Generator, NamedTuple, Optional, Callable
 
 from src.config.constants import guild_names
 from src.engine.describer import Describer
@@ -50,6 +50,11 @@ class Engine:
         self.update_clock = self.default_clock_value
         self.selected_mission: int | None = None
         self.mission_in_progress: bool = False
+        self.current_room = None
+        self.subscriptions = {}
+
+    def subscribe(self, topic: str, handler: Callable[[dict], None]):
+        self.subscriptions[topic] = [*self.subscriptions.get(topic, []), handler]
 
     def setup(self) -> None:
         self.game_state = GameState()
@@ -102,6 +107,11 @@ class Engine:
         for key in to_project:
             for projection in projections[key]:
                 projection.consume(action=event)
+
+        for key in event.keys():
+            subscribers = self.subscriptions.get(key, [])
+            for subscriber in subscribers:
+                subscriber(event)
 
         if "delay" in event:
             delay = event["delay"]
@@ -206,6 +216,7 @@ class Engine:
 
         for encounter in quest:
             encounter.include_party(self.game_state.team.members)
+            yield {"new_encounter": encounter}
 
             healths = self.initial_health_values(
                 self.game_state.team.members, encounter.enemies

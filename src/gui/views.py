@@ -13,7 +13,7 @@ from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
 from src.gui.sections import (CommandBarSection, InfoPaneSection,
                               MissionsSection, RecruitmentPaneSection,
-                              RosterAndTeamPaneSection)
+                              RosterAndTeamPaneSection, CombatGridSection)
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
 
@@ -448,6 +448,15 @@ class MissionsView(arcade.View):
         )  # 3 missions on screen, default selected (2) is the top visually.
         self.combat_screen = CombatScreen()
 
+        self.combat_grid_section = CombatGridSection(
+            left=0,
+            bottom=WindowData.height / 2,
+            width=WindowData.width,
+            height=(WindowData.height /2) - 1,
+            prevent_dispatch_view={False},
+        )
+        eng.subscribe("new_encounter", self.combat_grid_section.set_encounter)
+        
         self.mission_section = MissionsSection(
             left=0,
             bottom=242,
@@ -495,6 +504,7 @@ class MissionsView(arcade.View):
             prevent_dispatch_view={False},
         )
         self.add_section(self.mission_section)
+        self.add_section(self.combat_grid_section)
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
 
@@ -502,7 +512,7 @@ class MissionsView(arcade.View):
         self.mission_section.manager.enable()
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-
+        self.combat_grid_section.enabled = False
         # Prepare text for display in InfoPaneSection.
         if len(eng.game_state.team.members) > 0:
             self.instruction.text = "Press Enter to Embark on a Mission!"
@@ -527,7 +537,8 @@ class MissionsView(arcade.View):
         """
         self.command_bar_section.manager.disable()
         self.info_pane_section.manager.disable()
-
+        self.combat_grid_section.manager.disable()
+        
     def on_draw(self) -> None:
         self.clear()
 
@@ -570,6 +581,8 @@ class MissionsView(arcade.View):
 
             case arcade.key.RETURN:
                 if len(eng.game_state.guild.team.members) > 0:
+                    self.combat_grid_section.manager.enable()
+                    self.combat_grid_section.enabled = True
                     eng.selected_mission = self.mission_section.mission_selection.pos
                     eng.init_dungeon()
 

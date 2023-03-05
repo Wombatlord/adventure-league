@@ -7,12 +7,16 @@ from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
 from src.gui.buttons import CommandBarMixin
-from src.gui.gui_components import (box_containing_horizontal_label_pair,
-                                    create_colored_UILabel_header,
-                                    entity_labels_names_only,
-                                    entity_labels_with_cost,
-                                    horizontal_box_pair, single_box,
-                                    vertical_box_pair, vstack_of_three_boxes)
+from src.gui.gui_components import (
+    box_containing_horizontal_label_pair,
+    create_colored_UILabel_header,
+    entity_labels_names_only,
+    entity_labels_with_cost,
+    horizontal_box_pair,
+    single_box,
+    vertical_box_pair,
+    vstack_of_three_boxes,
+)
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
@@ -756,3 +760,87 @@ class MissionsSection(arcade.Section):
                 self.mission_selection.incr()
                 self.scroll_mission_selection()
                 print(self.missions[self.mission_selection.pos].description)
+
+
+class CombatGridSection(arcade.Section):
+    TILE_BASE_DIMS = (256, 512)
+    Y_OFFSET = WindowData.height
+    SCALE_FACTOR = 0.2
+
+    def __init__(
+        self,
+        left: int,
+        bottom: int,
+        width: int,
+        height: int,
+        **kwargs,
+    ):
+        super().__init__(left, bottom, width, height, **kwargs)
+        self.encounter_room = None
+
+        self.manager = UIManager()
+
+        self.manager.add(
+            single_box(
+                bottom,
+                height,
+                children=[]
+            ).with_border(width=2, color=arcade.color.BLUEBONNET),
+        )
+        
+        self.tile_sprite_list = arcade.SpriteList()
+        for x in range(9, -1, -1):
+            for y in range(9, -1, -1):
+                self.tile_sprite_list.append(self.tile_at(x,y))
+
+        self.dudes_sprite_list = arcade.SpriteList()
+
+    def grid_offset(self, x: int, y: int) -> tuple[int, int]:
+        grid_scale = 0.75
+        return (
+            (-y + x)*grid_scale*self.TILE_BASE_DIMS[0]*self.SCALE_FACTOR*(0.7),
+            (x + y)*grid_scale*self.TILE_BASE_DIMS[0]*self.SCALE_FACTOR*(1/3),
+        )
+         
+    def tile_at(self, x: int, y: int) -> arcade.Sprite:
+        tile = arcade.Sprite("assets/sprites/kenny_dungeon_pack/Isometric/stone_E.png", self.SCALE_FACTOR)
+        return self.sprite_at(tile, x, y)
+
+    def dude_at(self, x: int, y: int) -> arcade.Sprite:
+        dude = arcade.Sprite("assets/sprites/kenny_dungeon_pack/Characters/Male/Male_0_Idle0.png", self.SCALE_FACTOR)
+        return self.sprite_at(dude, x, y)
+        
+    def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
+        offset = self.grid_offset(x, y)
+        sprite.center_x, sprite.center_y = self.get_xy_section_relative(
+            self.width/2 + offset[0],
+            self.Y_OFFSET + self.height/10 + offset[1],
+        )
+        return sprite
+
+    def on_update(self, delta_time: float):
+        self.init_dudes()
+
+    def on_draw(self):
+        self.manager.draw()
+        self.tile_sprite_list.draw()
+        self.dudes_sprite_list.draw()
+        
+    def on_resize(self, width: int, height: int):
+        super().on_resize(width, height)
+        self.manager.children[0][0].resize(width=width - 2, height=height - self.bottom)
+
+    def set_encounter(self, event: dict) -> None:
+        encounter_room = event.get("new_encounter", None)
+        if encounter_room:
+            self.encounter_room = encounter_room
+            self.init_dudes()
+
+    def init_dudes(self):
+        if self.encounter_room is None:
+            return
+        self.dudes_sprite_list = arcade.SpriteList()
+        for dude in self.encounter_room.occupants:
+            self.dudes_sprite_list.append(
+                self.dude_at(*dude.locatable.location)
+            )

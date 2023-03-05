@@ -5,5 +5,5 @@ venv/
 winvenv/
 scratch.py
 .idea/
-
+assets/sprites/
 __pycache__/
