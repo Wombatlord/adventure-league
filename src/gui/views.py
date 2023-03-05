@@ -452,7 +452,7 @@ class MissionsView(arcade.View):
             left=0,
             bottom=WindowData.height / 2,
             width=WindowData.width,
-            height=(WindowData.height /2) - 1,
+            height=WindowData.height /2,
             prevent_dispatch_view={False},
         )
         eng.subscribe("new_encounter", self.combat_grid_section.set_encounter)
