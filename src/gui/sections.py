@@ -21,6 +21,9 @@ from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
+from pyglet.math import Vec2
+
+from src.utils.geometry.aspect_ratio import AspectRatio
 
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
@@ -794,13 +797,15 @@ class CombatGridSection(arcade.Section):
                 self.tile_sprite_list.append(self.tile_at(x, y))
 
         self.dudes_sprite_list = arcade.SpriteList()
-
-    def grid_offset(self, x: int, y: int) -> tuple[int, int]:
+        
+        self.camera = arcade.Camera(viewport=(0,0,WindowData.width, WindowData.height))
+        
+    def grid_offset(self, x: int, y: int) -> Vec2:
         grid_scale = 0.75
-        return (
-            (-y + x) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.7),
+        return Vec2(
+            (-x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.7),
             (x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (1 / 3),
-        )
+        ) + Vec2(WindowData.width/2, 3*WindowData.height/5)
 
     def tile_at(self, x: int, y: int) -> arcade.Sprite:
         tile = arcade.Sprite(
@@ -818,8 +823,7 @@ class CombatGridSection(arcade.Section):
 
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
         offset = self.grid_offset(x, y)
-        sprite.center_x, sprite.center_y = self.width / 2 + offset[0], self.Y_OFFSET + self.height + offset[1],
-        
+        sprite.center_x, sprite.center_y = offset
         return sprite
 
     def on_update(self, delta_time: float):
@@ -827,14 +831,15 @@ class CombatGridSection(arcade.Section):
 
     def on_draw(self):
         self.manager.draw()
+        self.camera.use()
+
         self.tile_sprite_list.draw()
         self.dudes_sprite_list.draw()
         
     def on_resize(self, width: int, height: int):
         self.manager.children[0][0].resize(width=width - 2, height=height - self.bottom)
-        
+        self.camera.set_viewport((0, 0, width, height))
         super().on_resize(width, height)
-    
     
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)

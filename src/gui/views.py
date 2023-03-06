@@ -124,6 +124,7 @@ class GuildView(arcade.View):
         # Add sections to section manager.
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
+        
 
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
@@ -562,7 +563,6 @@ class MissionsView(arcade.View):
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
-
         WindowData.width = width
         WindowData.height = height
 
