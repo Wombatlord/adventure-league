@@ -23,7 +23,7 @@ from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
 from pyglet.math import Vec2
 
-from src.utils.geometry.aspect_ratio import AspectRatio
+from src.utils.pathing.grid_utils import Node
 
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
@@ -781,24 +781,24 @@ class CombatGridSection(arcade.Section):
         super().__init__(left, bottom, width, height, **kwargs)
         self.encounter_room = None
 
-        self.manager = UIManager()
-
-        self.manager.add(
-            UIAnchorLayout(
-                y=bottom,
-                height=height,
-                size_hint=(1, None),
-            ).with_border(color=arcade.color.GOLD, width=2)
-        )
-
         self.tile_sprite_list = arcade.SpriteList()
+
         for x in range(9, -1, -1):
             for y in range(9, -1, -1):
-                self.tile_sprite_list.append(self.tile_at(x, y))
+                self.tile_sprite_list.append(self.floor_tile_at(x, y))
+                wall_sprite = None
+                if y == 9 and x < 9:
+                    wall_sprite = self.wall_tile_at(x, y, Node(0,1)) # top right wall
+                if x == 9 and y < 9:
+                    wall_sprite = self.wall_tile_at(x, y, Node(1,0))
+                if x == 9 and y == 9:
+                    wall_sprite = self.wall_tile_at(x, y, Node(1,1))
+                if wall_sprite:
+                    self.tile_sprite_list.append(wall_sprite)
 
         self.dudes_sprite_list = arcade.SpriteList()
-        
-        self.camera = arcade.Camera(viewport=(0,0,WindowData.width, WindowData.height))
+        self.combat_started = False
+        self.camera = arcade.Camera()
         
     def grid_offset(self, x: int, y: int) -> Vec2:
         grid_scale = 0.75
@@ -807,18 +807,30 @@ class CombatGridSection(arcade.Section):
             (x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (1 / 3),
         ) + Vec2(WindowData.width/2, 3*WindowData.height/5)
 
-    def tile_at(self, x: int, y: int) -> arcade.Sprite:
+    def wall_tile_at(self, x:int, y:int, orientation: Node) -> arcade.Sprite:
+        if orientation == Node(1,0):
+            sprite_orientation = "_E"
+        elif orientation == Node(1,1):
+            sprite_orientation = "Corner_S"
+        else:
+            sprite_orientation = "_S"
+        
+        sprite = arcade.Sprite(f"assets/sprites/kenny_dungeon_pack/Isometric/stoneWall{sprite_orientation}.png", self.SCALE_FACTOR)
+        return self.sprite_at(sprite, x, y)
+
+    
+    def floor_tile_at(self, x: int, y: int) -> arcade.Sprite:
         tile = arcade.Sprite(
             "assets/sprites/kenny_dungeon_pack/Isometric/stone_E.png", self.SCALE_FACTOR
         )
         
         return self.sprite_at(tile, x, y)
 
-    def dude_at(self, x: int, y: int) -> arcade.Sprite:
-        dude = arcade.Sprite(
-            "assets/sprites/kenny_dungeon_pack/Characters/Male/Male_0_Idle0.png",
-            self.SCALE_FACTOR,
-        )
+    def dude_at(self, x: int, y: int, orientation: Node, is_gob: bool, is_boss: bool) -> arcade.Sprite:
+        scale = self.SCALE_FACTOR
+        if is_boss:
+            scale=scale*1.5
+        dude = dude_sprite_factory(orientation, scale, is_gob)
         return self.sprite_at(dude, x, y)
 
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
@@ -827,17 +839,18 @@ class CombatGridSection(arcade.Section):
         return sprite
 
     def on_update(self, delta_time: float):
+        # If I comment this out, resizing works but obviously sprites no longer move around.
+        # Should probably be checking if things need moving and then acting on that.
+        # print(delta_time)
         self.init_dudes()
-
+    
     def on_draw(self):
-        self.manager.draw()
         self.camera.use()
 
         self.tile_sprite_list.draw()
         self.dudes_sprite_list.draw()
         
     def on_resize(self, width: int, height: int):
-        self.manager.children[0][0].resize(width=width - 2, height=height - self.bottom)
         self.camera.set_viewport((0, 0, width, height))
         super().on_resize(width, height)
     
@@ -846,10 +859,35 @@ class CombatGridSection(arcade.Section):
         if encounter_room:
             self.encounter_room = encounter_room
             self.init_dudes()
-
+        self.combat_started = True
+        
     def init_dudes(self):
         if self.encounter_room is None:
             return
         self.dudes_sprite_list = arcade.SpriteList()
         for dude in self.encounter_room.occupants:
-            self.dudes_sprite_list.append(self.dude_at(*dude.locatable.location))
+            self.dudes_sprite_list.append(self.dude_at(
+                *dude.locatable.location, 
+                dude.locatable.orientation, 
+                dude.fighter.is_enemy,
+                dude.fighter.is_boss,
+            ))
+
+
+def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool) -> arcade.Sprite:
+    match orientation:
+        case Node(0, 1):
+            sprite_index = 0
+        case Node(1, 0):
+            sprite_index = 6
+        case Node(0, -1):
+            sprite_index = 4
+        case Node(-1, 0):
+            sprite_index = 2
+        case _:
+            sprite_index = 0
+        
+    return arcade.Sprite(
+        f"assets/sprites/kenny_dungeon_pack/Characters/{'Gobs' if is_gob else 'Male'}/Male_{sprite_index}_Idle0{'_Gob' if is_gob else ''}.png",
+        scale,
+    )

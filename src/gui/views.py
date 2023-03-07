@@ -538,7 +538,6 @@ class MissionsView(arcade.View):
         """
         self.command_bar_section.manager.disable()
         self.info_pane_section.manager.disable()
-        self.combat_grid_section.manager.disable()
         
     def on_draw(self) -> None:
         self.clear()
@@ -581,7 +580,7 @@ class MissionsView(arcade.View):
 
             case arcade.key.RETURN:
                 if len(eng.game_state.guild.team.members) > 0:
-                    self.combat_grid_section.manager.enable()
+                    self.command_bar_section.manager.disable()
                     self.combat_grid_section.enabled = True
                     eng.selected_mission = self.mission_section.mission_selection.pos
                     eng.init_dungeon()
