@@ -21,6 +21,7 @@ class Fighter:
         xp_reward: int = 0,
         current_xp: int = 0,
         speed: int = 0,
+        is_boss: bool = False
     ) -> None:
         self.owner: Optional[Entity] = None
         self.max_hp = hp
@@ -32,6 +33,7 @@ class Fighter:
         self.current_xp = current_xp
         self.retreating = False
         self.is_enemy = is_enemy
+        self.is_boss = is_boss
         self.target = None
         self.speed = speed
 

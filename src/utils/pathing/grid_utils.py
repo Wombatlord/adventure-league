@@ -116,6 +116,12 @@ class Node(NamedTuple):
     def __eq__(self, other: Node) -> bool:
         return self.x == other.x and self.y == other.y
 
+    def __sub__(self, other: Node) -> Node:
+        return Node(self.x-other.x, self.y-other.y)
+
+    def __add__(self, other: Node) -> Node:
+        return Node(self.x + other.x, self.y + other.y)
+
 
 def pretty_path(space: Space, start: Node, end: Node) -> str:
     row = [" "] * space.width
