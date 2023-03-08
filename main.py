@@ -1,6 +1,6 @@
 import arcade
 
-from src.engine.init_engine import eng
+import src.engine.init_engine as _
 from src.gui.views import TitleView, WindowData
 
 

@@ -456,7 +456,6 @@ class MissionsView(arcade.View):
             height=WindowData.height /2,
             prevent_dispatch_view={False},
         )
-        eng.subscribe("new_encounter", self.combat_grid_section.set_encounter)
         
         self.mission_section = MissionsSection(
             left=0,

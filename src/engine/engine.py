@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from random import randint
 from typing import Any, Generator, NamedTuple, Optional, Callable
+import weakref
 
 from src.config.constants import guild_names
 from src.engine.describer import Describer
@@ -35,9 +36,11 @@ def flush_all() -> None:
             subscriber.flush()
 
 
+Handler = Callable[[dict], None]
+
 class Engine:
     game_state: GameState
-    default_clock_value = 0.1
+    default_clock_value = 0.3
 
     def __init__(self) -> None:
         self.action_queue: list[Action] = []
@@ -51,10 +54,26 @@ class Engine:
         self.selected_mission: int | None = None
         self.mission_in_progress: bool = False
         self.current_room = None
-        self.subscriptions = {}
+        self.subscriptions: dict[str, dict[str, Handler]] = {}
+        self._handler_registry = set()
 
-    def subscribe(self, topic: str, handler: Callable[[dict], None]):
-        self.subscriptions[topic] = [*self.subscriptions.get(topic, []), handler]
+    def subscribe(self, topic: str, handler_id: str, handler: Handler):
+        # check the subscription is a new one
+        subs = {}
+        if topic in self.subscriptions and handler_id in (subs := self.subscriptions[topic]):
+            ref = self.subscriptions[topic][handler_id]
+            # ignore sub if the topic is already subscribed by that handler
+            if ref() is not None:
+                return
+
+            
+        # IMPORTANT: we use a weakref to make sure we don't retain subscriptions
+        # from components that would otherwise be garbage collected.
+        handler_ref = weakref.WeakMethod(handler)
+        self.subscriptions[topic] = {
+            **subs, 
+            handler_id: handler_ref
+        }
 
     def setup(self) -> None:
         self.game_state = GameState()
@@ -108,10 +127,7 @@ class Engine:
             for projection in projections[key]:
                 projection.consume(action=event)
 
-        for key in event.keys():
-            subscribers = self.subscriptions.get(key, [])
-            for subscriber in subscribers:
-                subscriber(event)
+        self._handle_subscriptions(event)
 
         if "delay" in event:
             delay = event["delay"]
@@ -131,6 +147,29 @@ class Engine:
             dungeon: Dungeon = event["team triumphant"][1]
             dungeon.cleared = True
             guild.claim_rewards(dungeon)
+
+    def _handle_subscriptions(self, event: dict) -> None:
+        print(self.subscriptions)
+        for topic in event.keys():
+            subscribers = self.subscriptions.get(topic, {})    
+            
+            living_subs = {}
+            for subscriber_id, subscriber_ref in subscribers.items():
+                # Dereference the weakref, none if garbage collected
+                subscriber = subscriber_ref()
+                
+                # since the subscriber is only a weakref, it might be stale, we handle that below
+                if subscriber is not None:
+                    # This is the case where the instance that owns the handler has strong refs
+                    # still kicking about, so we can keep the ref/id pair in the remaining subs for the
+                    # topic.
+                    living_subs[subscriber_id] = subscriber_ref
+                    subscriber(event)
+            
+            # Actually replace the subscribers with the ones that remain after collection of garbage
+            self.subscriptions[topic] = living_subs
+
+
 
     def _check_action_queue(self) -> None:
         for item in self.action_queue:

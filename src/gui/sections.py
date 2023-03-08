@@ -765,10 +765,13 @@ class MissionsSection(arcade.Section):
                 print(self.missions[self.mission_selection.pos].description)
 
 
+
 class CombatGridSection(arcade.Section):
     TILE_BASE_DIMS = (256, 512)
     Y_OFFSET = 75
     SCALE_FACTOR = 0.2
+
+    SET_ENCOUNTER_HANDLER_ID = "set_encounter"
 
     def __init__(
         self,
@@ -780,6 +783,7 @@ class CombatGridSection(arcade.Section):
     ):
         super().__init__(left, bottom, width, height, **kwargs)
         self.encounter_room = None
+        self._original_dims = width, height
 
         self.tile_sprite_list = arcade.SpriteList()
 
@@ -799,12 +803,39 @@ class CombatGridSection(arcade.Section):
         self.dudes_sprite_list = arcade.SpriteList()
         self.combat_started = False
         self.camera = arcade.Camera()
+        self._subscribe_to_events()
+
+    def _subscribe_to_events(self):
+        eng.subscribe(
+            topic="new_encounter", 
+            handler_id="CombatGrid.set_encounter", 
+            handler=self.set_encounter
+        )
+        
+        eng.subscribe(
+            topic="move", 
+            handler_id="CombatGrid.update_dudes", 
+            handler=self.update_dudes
+        )
+        
+        eng.subscribe(
+            topic="message",
+            handler_id="CombatGrid.update_dudes",
+            handler=self.update_dudes
+        )
+
+    def scaling(self) -> Vec2:
+        return Vec2(
+            self.width/self._original_dims[0],
+            self.height/self._original_dims[1],
+        )
         
     def grid_offset(self, x: int, y: int) -> Vec2:
         grid_scale = 0.75
+        sx, sy = self.scaling()
         return Vec2(
-            (-x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.7),
-            (x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (1 / 3),
+            sx*(-x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.7),
+            sy*(x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (1 / 3),
         ) + Vec2(WindowData.width/2, 3*WindowData.height/5)
 
     def wall_tile_at(self, x:int, y:int, orientation: Node) -> arcade.Sprite:
@@ -842,8 +873,9 @@ class CombatGridSection(arcade.Section):
         # If I comment this out, resizing works but obviously sprites no longer move around.
         # Should probably be checking if things need moving and then acting on that.
         # print(delta_time)
-        self.init_dudes()
-    
+        pass
+        
+        
     def on_draw(self):
         self.camera.use()
 
@@ -858,13 +890,20 @@ class CombatGridSection(arcade.Section):
         encounter_room = event.get("new_encounter", None)
         if encounter_room:
             self.encounter_room = encounter_room
-            self.init_dudes()
+            self.update_dudes(event)
         self.combat_started = True
+
+    def update_dudes(self, _: dict) -> None:
+        self._update_dudes()
         
-    def init_dudes(self):
+    def _update_dudes(self):
         if self.encounter_room is None:
             return
-        self.dudes_sprite_list = arcade.SpriteList()
+        if not self.dudes_sprite_list:
+            self.dudes_sprite_list = arcade.SpriteList()
+        else:
+            self.dudes_sprite_list.clear()
+        
         for dude in self.encounter_room.occupants:
             self.dudes_sprite_list.append(self.dude_at(
                 *dude.locatable.location, 
