@@ -7,7 +7,7 @@ from src.gui.views import TitleView, WindowData
 def start_adventure_league():
     """Startup"""
     window = arcade.Window(
-        800, 600, "Adventure League!", resizable=True, fullscreen=False
+        WindowData.width, WindowData.height, "Adventure League!", resizable=True, fullscreen=False
     )
     
     window.set_icon(WindowData.window_icon)

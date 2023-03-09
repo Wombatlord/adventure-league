@@ -803,6 +803,7 @@ class CombatGridSection(arcade.Section):
         self.dudes_sprite_list = arcade.SpriteList()
         self.combat_started = False
         self.camera = arcade.Camera()
+        # self.camera.set_viewport((0, bottom, width, height))
         self._subscribe_to_events()
 
     def _subscribe_to_events(self):
@@ -836,7 +837,7 @@ class CombatGridSection(arcade.Section):
         return Vec2(
             sx*(-x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.7),
             sy*(x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (1 / 3),
-        ) + Vec2(WindowData.width/2, 3*WindowData.height/5)
+        ) + Vec2(self.width/2, 7*self.height/6)
 
     def wall_tile_at(self, x:int, y:int, orientation: Node) -> arcade.Sprite:
         if orientation == Node(1,0):
@@ -870,8 +871,6 @@ class CombatGridSection(arcade.Section):
         return sprite
 
     def on_update(self, delta_time: float):
-        # If I comment this out, resizing works but obviously sprites no longer move around.
-        # Should probably be checking if things need moving and then acting on that.
         # print(delta_time)
         pass
         
@@ -883,9 +882,9 @@ class CombatGridSection(arcade.Section):
         self.dudes_sprite_list.draw()
         
     def on_resize(self, width: int, height: int):
-        self.camera.set_viewport((0, 0, width, height))
         super().on_resize(width, height)
-    
+        self.camera.set_viewport((0, 0,width, height))
+
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
         if encounter_room:
@@ -905,13 +904,14 @@ class CombatGridSection(arcade.Section):
             self.dudes_sprite_list.clear()
         
         for dude in self.encounter_room.occupants:
+            print(*dude.locatable.location)
             self.dudes_sprite_list.append(self.dude_at(
                 *dude.locatable.location, 
                 dude.locatable.orientation, 
                 dude.fighter.is_enemy,
                 dude.fighter.is_boss,
             ))
-
+            
 
 def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool) -> arcade.Sprite:
     match orientation:

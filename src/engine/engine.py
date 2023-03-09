@@ -149,7 +149,7 @@ class Engine:
             guild.claim_rewards(dungeon)
 
     def _handle_subscriptions(self, event: dict) -> None:
-        print(self.subscriptions)
+        # print(self.subscriptions)
         for topic in event.keys():
             subscribers = self.subscriptions.get(topic, {})    
             
