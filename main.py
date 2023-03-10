@@ -1,14 +1,15 @@
 import arcade
 
-from src.engine.init_engine import eng
+import src.engine.init_engine as _
 from src.gui.views import TitleView, WindowData
 
 
 def start_adventure_league():
     """Startup"""
     window = arcade.Window(
-        800, 600, "Adventure League!", resizable=True, fullscreen=False
+        WindowData.width, WindowData.height, "Adventure League!", resizable=True, fullscreen=False
     )
+    
     window.set_icon(WindowData.window_icon)
     window.set_minimum_size(800, 600)
     title_view = TitleView(window=window)

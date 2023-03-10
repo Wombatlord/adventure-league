@@ -4,10 +4,16 @@ from random import choice
 from typing import TYPE_CHECKING
 
 from src.utils.pathing.grid_utils import Node, Space
+from enum import Enum
 
 if TYPE_CHECKING:
     from src.entities.entity import Entity
 
+class Orientation(Enum):
+    NORTH = Node(0, 1)
+    EAST = Node(1, 0)
+    SOUTH = Node(0, -1)
+    WEST = Node(-1, 0)
 
 class Locatable:
     def __init__(
@@ -17,6 +23,7 @@ class Locatable:
         self.location = location
         self.space = space
         self.speed = speed
+        self.orientation = choice([*Orientation])
 
     def approach_target(self, target: Locatable) -> dict | None:
         msg_fragment = {
@@ -40,6 +47,7 @@ class Locatable:
                     "start": self.location,
                     "end": self.location,
                     "in_motion": False,
+                    "orientation": self.orientation,
                 }
             }
 
@@ -57,16 +65,19 @@ class Locatable:
         if len(path) <= self.speed:
             # If speed would go beyond the end of the path, move to the end of the path.
             self.location = path[-1]
+            self.orientation = self.location - path[-2]
             return
 
         # Otherwise, move as far as along the path as speed allows.
         self.location = path[self.speed]
+        self.orientation = self.location - path[self.speed-1]
 
         return {
             "move": {
                 "start": start,
                 "end": self.location,
                 "in_motion": self.location != destination,
+                "orientation": self.orientation,
             },
         }
 

@@ -13,7 +13,7 @@ from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
 from src.gui.sections import (CommandBarSection, InfoPaneSection,
                               MissionsSection, RecruitmentPaneSection,
-                              RosterAndTeamPaneSection)
+                              RosterAndTeamPaneSection, CombatGridSection)
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
 
@@ -124,6 +124,7 @@ class GuildView(arcade.View):
         # Add sections to section manager.
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
+        
 
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
@@ -446,8 +447,7 @@ class MissionsView(arcade.View):
         self.selection = Cycle(
             3, 2
         )  # 3 missions on screen, default selected (2) is the top visually.
-        self.combat_screen = CombatScreen()
-
+        
         self.mission_section = MissionsSection(
             left=0,
             bottom=242,
@@ -497,12 +497,11 @@ class MissionsView(arcade.View):
         self.add_section(self.mission_section)
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
-
+    
     def on_show_view(self) -> None:
         self.mission_section.manager.enable()
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-
         # Prepare text for display in InfoPaneSection.
         if len(eng.game_state.team.members) > 0:
             self.instruction.text = "Press Enter to Embark on a Mission!"
@@ -527,40 +526,21 @@ class MissionsView(arcade.View):
         """
         self.command_bar_section.manager.disable()
         self.info_pane_section.manager.disable()
-
+        self.mission_section.manager.disable()
+        
     def on_draw(self) -> None:
         self.clear()
-
-        if self.state == ViewStates.COMBAT:
-            if eng.awaiting_input:
-                self.combat_screen.draw_turn_prompt()
-
-            if eng.mission_in_progress == False:
-                self.combat_screen.draw_turn_prompt()
-
-            self.combat_screen.draw_message()
-            self.combat_screen.draw_stats()
-
-    def on_update(self, delta_time: float) -> None:
-        if self.state == ViewStates.COMBAT:
-            hook = lambda: None
-            if not eng.awaiting_input:
-                hook = eng.next_combat_action
-
-            self.combat_screen.on_update(delta_time=delta_time, hook=hook)
-
+    
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
-
         WindowData.width = width
         WindowData.height = height
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.G:
-                if eng.mission_in_progress is False:
-                    guild_view = GuildView()
-                    self.window.show_view(guild_view)
+                guild_view = GuildView()
+                self.window.show_view(guild_view)
 
             case arcade.key.DOWN:
                 self.selection.decr()
@@ -569,20 +549,41 @@ class MissionsView(arcade.View):
                 self.selection.incr()
 
             case arcade.key.RETURN:
-                if len(eng.game_state.guild.team.members) > 0:
-                    eng.selected_mission = self.mission_section.mission_selection.pos
-                    eng.init_dungeon()
+                eng.selected_mission = self.mission_section.mission_selection.pos
+                eng.init_dungeon()
+                if not eng.game_state.dungeon.cleared:
+                    if len(eng.game_state.guild.team.members) > 0:
+                        battle = BattleView()
+                        self.window.show_view(battle)
 
-                    if not eng.game_state.dungeon.cleared:
-                        self.command_bar_section.enabled = False
-                        self.info_pane_section.enabled = False
-                        self.mission_section.enabled = False
 
-                        eng.init_combat()
-                        self.combat_screen = CombatScreen()
-
-                        self.state = ViewStates.COMBAT
-                        eng.await_input()
+class BattleView(arcade.View):
+    def __init__(self, window: Window = None):
+        super().__init__(window)
+        self.combat_grid_section = CombatGridSection(
+            left=0,
+            bottom=WindowData.height / 2,
+            width=WindowData.width,
+            height=WindowData.height /2,
+            prevent_dispatch_view={False},
+        )
+        
+        self.add_section(self.combat_grid_section)
+        
+    def on_show_view(self):
+        eng.init_combat()
+        eng.await_input()
+    
+    def on_draw(self):
+        self.clear()
+    
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
+        match symbol:
+            case arcade.key.G:
+                if eng.mission_in_progress is False:
+                    eng.subscriptions = {}
+                    guild_view = GuildView()
+                    self.window.show_view(guild_view)
 
             case arcade.key.NUM_0 | arcade.key.KEY_0:
                 if eng.awaiting_input:
@@ -600,3 +601,8 @@ class MissionsView(arcade.View):
                 if eng.awaiting_input:
                     eng.next_combat_action()
                     eng.awaiting_input = False
+    
+    def on_resize(self, width: int, height: int) -> None:
+        super().on_resize(width, height)
+        WindowData.width = width
+        WindowData.height = height

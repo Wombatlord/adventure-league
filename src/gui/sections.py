@@ -7,16 +7,24 @@ from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
 from src.gui.buttons import CommandBarMixin
-from src.gui.gui_components import (box_containing_horizontal_label_pair,
-                                    create_colored_UILabel_header,
-                                    entity_labels_names_only,
-                                    entity_labels_with_cost,
-                                    horizontal_box_pair, single_box,
-                                    vertical_box_pair, vstack_of_three_boxes)
+from src.gui.gui_components import (
+    box_containing_horizontal_label_pair,
+    create_colored_UILabel_header,
+    entity_labels_names_only,
+    entity_labels_with_cost,
+    horizontal_box_pair,
+    single_box,
+    vertical_box_pair,
+    vstack_of_three_boxes,
+)
+from src.gui.combat_screen import CombatScreen
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
+from pyglet.math import Vec2
+
+from src.utils.pathing.grid_utils import Node
 
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
@@ -756,3 +764,204 @@ class MissionsSection(arcade.Section):
                 self.mission_selection.incr()
                 self.scroll_mission_selection()
                 print(self.missions[self.mission_selection.pos].description)
+
+
+
+class CombatGridSection(arcade.Section):
+    TILE_BASE_DIMS = (256, 512)
+    SET_ENCOUNTER_HANDLER_ID = "set_encounter"
+
+    def __init__(
+        self,
+        left: int,
+        bottom: int,
+        width: int,
+        height: int,
+        **kwargs,
+    ):
+        super().__init__(left, bottom, width, height, **kwargs)
+        print("FRESH")
+        self.encounter_room = None
+        self._original_dims = width, height
+        
+        if WindowData.width >= 800 and WindowData.width <= 1080:
+            if WindowData.height >= 600 and WindowData.height <= 720:
+                self.SCALE_FACTOR = 0.2
+        
+        if WindowData.width <= 1920 and WindowData.width >= 1080:
+            if WindowData.height >= 720 and WindowData.height <= 1080:
+                self.SCALE_FACTOR = 0.25
+        
+        self.tile_sprite_list = arcade.SpriteList()
+
+        for x in range(9, -1, -1):
+            for y in range(9, -1, -1):
+                self.tile_sprite_list.append(self.floor_tile_at(x, y))
+                wall_sprite = None
+                if y == 9 and x < 9:
+                    wall_sprite = self.wall_tile_at(x, y, Node(0,1)) # top right wall
+                if x == 9 and y < 9:
+                    wall_sprite = self.wall_tile_at(x, y, Node(1,0))
+                if x == 9 and y == 9:
+                    wall_sprite = self.wall_tile_at(x, y, Node(1,1))
+                if wall_sprite:
+                    self.tile_sprite_list.append(wall_sprite)
+
+        self.dudes_sprite_list = arcade.SpriteList()
+        self.combat_screen = CombatScreen()
+        self._camera = arcade.Camera()
+        self.other_camera = arcade.Camera()
+
+        self._subscribe_to_events()
+
+    def _subscribe_to_events(self):
+        eng.subscribe(
+            topic="new_encounter", 
+            handler_id="CombatGrid.set_encounter", 
+            handler=self.set_encounter
+        )
+        
+        eng.subscribe(
+            topic="move", 
+            handler_id="CombatGrid.update_dudes", 
+            handler=self.update_dudes
+        )
+        
+        eng.subscribe(
+            topic="message",
+            handler_id="CombatGrid.update_dudes",
+            handler=self.update_dudes
+        )
+        
+        eng.subscribe(
+            topic="cleanup",
+            handler_id="CombatGrid.clear_occupants",
+            handler=self.clear_occupants
+        )
+
+    
+    def clear_occupants(self, event):
+        encounter = event["cleanup"]
+        for occupant in encounter.occupants:
+            if occupant.fighter.is_enemy == False:
+                encounter.remove(occupant)
+        
+    def scaling(self) -> Vec2:
+        return Vec2(
+            self.width/self._original_dims[0],
+            self.height/self._original_dims[1],
+        )
+        
+    def grid_offset(self, x: int, y: int) -> Vec2:
+        grid_scale = 0.75
+        sx, sy = self.scaling()
+        return Vec2(
+            sx*(-x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.7),
+            sy*(x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (1 / 3),
+        ) + Vec2(self.width/2, 8*self.height/7)
+
+    def wall_tile_at(self, x:int, y:int, orientation: Node) -> arcade.Sprite:
+        if orientation == Node(1,0):
+            sprite_orientation = "_E"
+        elif orientation == Node(1,1):
+            sprite_orientation = "Corner_S"
+        else:
+            sprite_orientation = "_S"
+        
+        sprite = arcade.Sprite(f"assets/sprites/kenny_dungeon_pack/Isometric/stoneWall{sprite_orientation}.png", self.SCALE_FACTOR)
+        return self.sprite_at(sprite, x, y)
+
+    
+    def floor_tile_at(self, x: int, y: int) -> arcade.Sprite:
+        tile = arcade.Sprite(
+            "assets/sprites/kenny_dungeon_pack/Isometric/stone_E.png", self.SCALE_FACTOR
+        )
+        
+        return self.sprite_at(tile, x, y)
+
+    def dude_at(self, x: int, y: int, orientation: Node, is_gob: bool, is_boss: bool) -> arcade.Sprite:
+        scale = self.SCALE_FACTOR
+        if is_boss:
+            scale=scale*1.5
+        dude = dude_sprite_factory(orientation, scale, is_gob)
+        return self.sprite_at(dude, x, y)
+
+    def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
+        offset = self.grid_offset(x, y)
+        sprite.center_x, sprite.center_y = offset
+        return sprite
+
+    def on_update(self, delta_time: float):
+        hook = lambda: None
+        if not eng.awaiting_input:
+            hook = eng.next_combat_action
+
+        self.combat_screen.on_update(delta_time=delta_time, hook=hook)
+        
+        
+    def on_draw(self):
+        self._camera.use()
+
+        self.tile_sprite_list.draw()
+        self.dudes_sprite_list.draw()
+        
+        self.other_camera.use()
+        
+        if eng.awaiting_input:
+            self.combat_screen.draw_turn_prompt()
+
+        if eng.mission_in_progress == False:
+            self.combat_screen.draw_turn_prompt()
+
+        self.combat_screen.draw_message()
+        self.combat_screen.draw_stats()
+        
+    def on_resize(self, width: int, height: int):
+        super().on_resize(width, height)
+        self._camera.set_viewport((0, 0,width, height))
+        self.other_camera.resize(viewport_width=width, viewport_height=height)
+
+
+    def set_encounter(self, event: dict) -> None:
+        encounter_room = event.get("new_encounter", None)
+        print(f"calling set_encounter: {encounter_room.occupants=}")
+        if encounter_room:
+            self.encounter_room = encounter_room
+            self.update_dudes(event)
+
+    def update_dudes(self, _: dict) -> None:
+        self._update_dudes()
+        
+    def _update_dudes(self):
+        if self.encounter_room is None:
+            return
+        if not self.dudes_sprite_list:
+            self.dudes_sprite_list = arcade.SpriteList()
+        else:
+            self.dudes_sprite_list.clear()
+        for dude in self.encounter_room.occupants:
+            self.dudes_sprite_list.append(self.dude_at(
+                *dude.locatable.location, 
+                dude.locatable.orientation, 
+                dude.fighter.is_enemy,
+                dude.fighter.is_boss,
+            ))
+            
+
+def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool) -> arcade.Sprite:
+    match orientation:
+        case Node(0, 1):
+            sprite_index = 0
+        case Node(1, 0):
+            sprite_index = 6
+        case Node(0, -1):
+            sprite_index = 4
+        case Node(-1, 0):
+            sprite_index = 2
+        case _:
+            sprite_index = 0
+        
+    return arcade.Sprite(
+        f"assets/sprites/kenny_dungeon_pack/Characters/{'Gobs' if is_gob else 'Male'}/Male_{sprite_index}_Idle0{'_Gob' if is_gob else ''}.png",
+        scale,
+    )
