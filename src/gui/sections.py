@@ -17,6 +17,7 @@ from src.gui.gui_components import (
     vertical_box_pair,
     vstack_of_three_boxes,
 )
+from src.gui.combat_screen import CombatScreen
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
@@ -768,9 +769,6 @@ class MissionsSection(arcade.Section):
 
 class CombatGridSection(arcade.Section):
     TILE_BASE_DIMS = (256, 512)
-    Y_OFFSET = 75
-    SCALE_FACTOR = 0.2
-
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
 
     def __init__(
@@ -782,9 +780,18 @@ class CombatGridSection(arcade.Section):
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)
+        print("FRESH")
         self.encounter_room = None
         self._original_dims = width, height
-
+        
+        if WindowData.width >= 800 and WindowData.width <= 1080:
+            if WindowData.height >= 600 and WindowData.height <= 720:
+                self.SCALE_FACTOR = 0.2
+        
+        if WindowData.width <= 1920 and WindowData.width >= 1080:
+            if WindowData.height >= 720 and WindowData.height <= 1080:
+                self.SCALE_FACTOR = 0.25
+        
         self.tile_sprite_list = arcade.SpriteList()
 
         for x in range(9, -1, -1):
@@ -801,9 +808,10 @@ class CombatGridSection(arcade.Section):
                     self.tile_sprite_list.append(wall_sprite)
 
         self.dudes_sprite_list = arcade.SpriteList()
-        self.combat_started = False
-        self.camera = arcade.Camera()
-        # self.camera.set_viewport((0, bottom, width, height))
+        self.combat_screen = CombatScreen()
+        self._camera = arcade.Camera()
+        self.other_camera = arcade.Camera()
+
         self._subscribe_to_events()
 
     def _subscribe_to_events(self):
@@ -824,7 +832,20 @@ class CombatGridSection(arcade.Section):
             handler_id="CombatGrid.update_dudes",
             handler=self.update_dudes
         )
+        
+        eng.subscribe(
+            topic="cleanup",
+            handler_id="CombatGrid.clear_occupants",
+            handler=self.clear_occupants
+        )
 
+    
+    def clear_occupants(self, event):
+        encounter = event["cleanup"]
+        for occupant in encounter.occupants:
+            if occupant.fighter.is_enemy == False:
+                encounter.remove(occupant)
+        
     def scaling(self) -> Vec2:
         return Vec2(
             self.width/self._original_dims[0],
@@ -837,7 +858,7 @@ class CombatGridSection(arcade.Section):
         return Vec2(
             sx*(-x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.7),
             sy*(x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (1 / 3),
-        ) + Vec2(self.width/2, 7*self.height/6)
+        ) + Vec2(self.width/2, 8*self.height/7)
 
     def wall_tile_at(self, x:int, y:int, orientation: Node) -> arcade.Sprite:
         if orientation == Node(1,0):
@@ -871,26 +892,42 @@ class CombatGridSection(arcade.Section):
         return sprite
 
     def on_update(self, delta_time: float):
-        # print(delta_time)
-        pass
+        hook = lambda: None
+        if not eng.awaiting_input:
+            hook = eng.next_combat_action
+
+        self.combat_screen.on_update(delta_time=delta_time, hook=hook)
         
         
     def on_draw(self):
-        self.camera.use()
+        self._camera.use()
 
         self.tile_sprite_list.draw()
         self.dudes_sprite_list.draw()
         
+        self.other_camera.use()
+        
+        if eng.awaiting_input:
+            self.combat_screen.draw_turn_prompt()
+
+        if eng.mission_in_progress == False:
+            self.combat_screen.draw_turn_prompt()
+
+        self.combat_screen.draw_message()
+        self.combat_screen.draw_stats()
+        
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.camera.set_viewport((0, 0,width, height))
+        self._camera.set_viewport((0, 0,width, height))
+        self.other_camera.resize(viewport_width=width, viewport_height=height)
+
 
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
+        print(f"calling set_encounter: {encounter_room.occupants=}")
         if encounter_room:
             self.encounter_room = encounter_room
             self.update_dudes(event)
-        self.combat_started = True
 
     def update_dudes(self, _: dict) -> None:
         self._update_dudes()
@@ -902,9 +939,7 @@ class CombatGridSection(arcade.Section):
             self.dudes_sprite_list = arcade.SpriteList()
         else:
             self.dudes_sprite_list.clear()
-        
         for dude in self.encounter_room.occupants:
-            print(*dude.locatable.location)
             self.dudes_sprite_list.append(self.dude_at(
                 *dude.locatable.location, 
                 dude.locatable.orientation, 
