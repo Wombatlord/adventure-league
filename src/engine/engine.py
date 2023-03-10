@@ -325,7 +325,7 @@ class Engine:
         return results
 
     @staticmethod
-    def team_defeated(team) -> bool:
+    def team_defeated(team) -> list[Action]:
         results = []
 
         results.append({"message": f"{team.name} defeated!"})
