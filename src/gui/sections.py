@@ -791,7 +791,7 @@ class CombatGridSection(arcade.Section):
         if WindowData.width <= 1920 and WindowData.width >= 1080:
             if WindowData.height >= 720 and WindowData.height <= 1080:
                 self.SCALE_FACTOR = 0.25
-        
+                
         self.tile_sprite_list = arcade.SpriteList()
 
         for x in range(9, -1, -1):
@@ -856,36 +856,51 @@ class CombatGridSection(arcade.Section):
         grid_scale = 0.75
         sx, sy = self.scaling()
         return Vec2(
-            sx*(-x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.7),
-            sy*(x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (1 / 3),
-        ) + Vec2(self.width/2, 8*self.height/7)
+            sx*(-y + x) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.85),
+            sy*(x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.36),
+        ) + Vec2(self.width/2, 20*self.height/21)
 
     def wall_tile_at(self, x:int, y:int, orientation: Node) -> arcade.Sprite:
+        sprite = arcade.Sprite(scale=5)
+        fence = self.sprite_at(sprite, x, y)
         if orientation == Node(1,0):
             sprite_orientation = "_E"
+            sprite.texture = WindowData.tiles[98]
+            fence.center_y += 35
+            fence.center_x += 10
+            
         elif orientation == Node(1,1):
             sprite_orientation = "Corner_S"
+            sprite.texture = WindowData.fighters[128]
+            sprite.center_y += 25
         else:
             sprite_orientation = "_S"
-        
-        sprite = arcade.Sprite(f"assets/sprites/kenny_dungeon_pack/Isometric/stoneWall{sprite_orientation}.png", self.SCALE_FACTOR)
-        return self.sprite_at(sprite, x, y)
-
+            sprite.texture = WindowData.tiles[109]
+            fence.center_y += 35
+            fence.center_x -= 10
+        # sprite = arcade.Sprite(f"assets/sprites/kenny_dungeon_pack/Isometric/stoneWall{sprite_orientation}.png", self.SCALE_FACTOR)
+        return fence
     
     def floor_tile_at(self, x: int, y: int) -> arcade.Sprite:
-        tile = arcade.Sprite(
-            "assets/sprites/kenny_dungeon_pack/Isometric/stone_E.png", self.SCALE_FACTOR
-        )
+        # tile = arcade.Sprite(
+        #     "assets/sprites/kenny_dungeon_pack/Isometric/stone_E.png", self.SCALE_FACTOR
+        # )
+        
+        tile = arcade.Sprite(scale=5)
+        tile.texture = WindowData.tiles[100]
         
         return self.sprite_at(tile, x, y)
 
     def dude_at(self, x: int, y: int, orientation: Node, is_gob: bool, is_boss: bool) -> arcade.Sprite:
-        scale = self.SCALE_FACTOR
+        scale = 4
         if is_boss:
             scale=scale*1.5
-        dude = dude_sprite_factory(orientation, scale, is_gob)
-        return self.sprite_at(dude, x, y)
-
+        dude = dude_sprite_factory(orientation, scale, is_gob, is_boss)
+        sprite = self.sprite_at(dude, x, y)
+        sprite.center_y += 20
+        
+        return sprite
+    
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
         offset = self.grid_offset(x, y)
         sprite.center_x, sprite.center_y = offset
@@ -902,8 +917,8 @@ class CombatGridSection(arcade.Section):
     def on_draw(self):
         self._camera.use()
 
-        self.tile_sprite_list.draw()
-        self.dudes_sprite_list.draw()
+        self.tile_sprite_list.draw(pixelated=True)
+        self.dudes_sprite_list.draw(pixelated=True)
         
         self.other_camera.use()
         
@@ -941,14 +956,15 @@ class CombatGridSection(arcade.Section):
             self.dudes_sprite_list.clear()
         for dude in self.encounter_room.occupants:
             self.dudes_sprite_list.append(self.dude_at(
-                *dude.locatable.location, 
-                dude.locatable.orientation, 
-                dude.fighter.is_enemy,
-                dude.fighter.is_boss,
+                x=dude.locatable.location.x,
+                y=dude.locatable.location.y, 
+                orientation=dude.locatable.orientation, 
+                is_gob=dude.fighter.is_enemy,
+                is_boss=dude.fighter.is_boss,
             ))
             
 
-def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool) -> arcade.Sprite:
+def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool, is_boss: bool) -> arcade.Sprite:
     match orientation:
         case Node(0, 1):
             sprite_index = 0
@@ -961,7 +977,18 @@ def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool) -> arcade
         case _:
             sprite_index = 0
         
-    return arcade.Sprite(
-        f"assets/sprites/kenny_dungeon_pack/Characters/{'Gobs' if is_gob else 'Male'}/Male_{sprite_index}_Idle0{'_Gob' if is_gob else ''}.png",
-        scale,
-    )
+    # return arcade.Sprite(
+    #     f"assets/sprites/kenny_dungeon_pack/Characters/{'Gobs' if is_gob else 'Male'}/Male_{sprite_index}_Idle0{'_Gob' if is_gob else ''}.png",
+    #     scale,
+    # )
+    sprite = arcade.Sprite(scale=scale)
+    if is_gob:
+        sprite.texture = WindowData.fighters[33]    
+        
+        if is_boss:
+            sprite.texture = WindowData.fighters[80]
+        
+    else:
+        sprite.texture = WindowData.fighters[0]
+    
+    return sprite
