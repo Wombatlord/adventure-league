@@ -29,8 +29,6 @@ Round = Generator[None, None, Turn]  # <- These are internal to the combat syste
 Encounter = Generator[None, None, Round]
 Quest = Generator[None, None, Encounter]
 
-projections = {"entity_data": [health]}
-
 
 Handler = Callable[[dict], None]
 
