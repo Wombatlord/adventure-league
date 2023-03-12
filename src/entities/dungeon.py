@@ -27,11 +27,13 @@ class Room:
             self.enemies.append(entity)
         entity.on_death_hooks.append(self.remove)
         entity.on_death_hooks.append(Entity.flush_locatable)
+        entity.fighter.on_retreat_hooks.append(self.remove)
+        entity.fighter.on_retreat_hooks.append(Entity.flush_locatable)
 
     def include_party(self, party: list[Entity]) -> None:
         for member in party:
             self.add_entity(member)
-        
+
     def mob_spawns_points(self) -> Generator[Node, None, None]:
         left_wall = {Node(x=0, y=y) for y in self.space.y_range}
         while True:

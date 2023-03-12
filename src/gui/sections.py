@@ -4,26 +4,21 @@ from arcade.gui.widgets import UIWidget
 from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
 from arcade.gui.widgets.text import UILabel
+from pyglet.math import Vec2
 
 from src.engine.init_engine import eng
 from src.gui.buttons import CommandBarMixin
-from src.gui.gui_components import (
-    box_containing_horizontal_label_pair,
-    create_colored_UILabel_header,
-    entity_labels_names_only,
-    entity_labels_with_cost,
-    horizontal_box_pair,
-    single_box,
-    vertical_box_pair,
-    vstack_of_three_boxes,
-)
 from src.gui.combat_screen import CombatScreen
+from src.gui.gui_components import (box_containing_horizontal_label_pair,
+                                    create_colored_UILabel_header,
+                                    entity_labels_names_only,
+                                    entity_labels_with_cost,
+                                    horizontal_box_pair, single_box,
+                                    vertical_box_pair, vstack_of_three_boxes)
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
-from pyglet.math import Vec2
-
 from src.utils.pathing.grid_utils import Node
 
 
@@ -766,7 +761,6 @@ class MissionsSection(arcade.Section):
                 print(self.missions[self.mission_selection.pos].description)
 
 
-
 class CombatGridSection(arcade.Section):
     TILE_BASE_DIMS = (256, 512)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
@@ -783,15 +777,15 @@ class CombatGridSection(arcade.Section):
         print("FRESH")
         self.encounter_room = None
         self._original_dims = width, height
-        
+
         if WindowData.width >= 800 and WindowData.width <= 1080:
             if WindowData.height >= 600 and WindowData.height <= 720:
                 self.SCALE_FACTOR = 0.2
-        
+
         if WindowData.width <= 1920 and WindowData.width >= 1080:
             if WindowData.height >= 720 and WindowData.height <= 1080:
                 self.SCALE_FACTOR = 0.25
-        
+
         self.tile_sprite_list = arcade.SpriteList()
 
         for x in range(9, -1, -1):
@@ -799,11 +793,11 @@ class CombatGridSection(arcade.Section):
                 self.tile_sprite_list.append(self.floor_tile_at(x, y))
                 wall_sprite = None
                 if y == 9 and x < 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(0,1)) # top right wall
+                    wall_sprite = self.wall_tile_at(x, y, Node(0, 1))  # top right wall
                 if x == 9 and y < 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(1,0))
+                    wall_sprite = self.wall_tile_at(x, y, Node(1, 0))
                 if x == 9 and y == 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(1,1))
+                    wall_sprite = self.wall_tile_at(x, y, Node(1, 1))
                 if wall_sprite:
                     self.tile_sprite_list.append(wall_sprite)
 
@@ -815,74 +809,87 @@ class CombatGridSection(arcade.Section):
         self._subscribe_to_events()
 
     def _subscribe_to_events(self):
-        eng.subscribe(
-            topic="new_encounter", 
-            handler_id="CombatGrid.set_encounter", 
-            handler=self.set_encounter
-        )
-        
-        eng.subscribe(
-            topic="move", 
-            handler_id="CombatGrid.update_dudes", 
-            handler=self.update_dudes
-        )
-        
-        eng.subscribe(
-            topic="message",
-            handler_id="CombatGrid.update_dudes",
-            handler=self.update_dudes
-        )
-        
-        eng.subscribe(
-            topic="cleanup",
-            handler_id="CombatGrid.clear_occupants",
-            handler=self.clear_occupants
+        eng.combat_dispatcher.volatile_subscribe(
+            topic="new_encounter",
+            handler_id="CombatGrid.set_encounter",
+            handler=self.set_encounter,
         )
 
-    
+        eng.combat_dispatcher.volatile_subscribe(
+            topic="move",
+            handler_id="CombatGrid.update_dudes",
+            handler=self.update_dudes,
+        )
+
+        eng.combat_dispatcher.volatile_subscribe(
+            topic="message",
+            handler_id="CombatGrid.update_dudes",
+            handler=self.update_dudes,
+        )
+
+        eng.combat_dispatcher.volatile_subscribe(
+            topic="cleanup",
+            handler_id="CombatGrid.clear_occupants",
+            handler=self.clear_occupants,
+        )
+
     def clear_occupants(self, event):
         encounter = event["cleanup"]
         for occupant in encounter.occupants:
             if occupant.fighter.is_enemy == False:
                 encounter.remove(occupant)
-        
+
     def scaling(self) -> Vec2:
         return Vec2(
-            self.width/self._original_dims[0],
-            self.height/self._original_dims[1],
+            self.width / self._original_dims[0],
+            self.height / self._original_dims[1],
         )
-        
+
     def grid_offset(self, x: int, y: int) -> Vec2:
         grid_scale = 0.75
         sx, sy = self.scaling()
         return Vec2(
-            sx*(-x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (0.7),
-            sy*(x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (1 / 3),
-        ) + Vec2(self.width/2, 8*self.height/7)
+            sx
+            * (-x + y)
+            * grid_scale
+            * self.TILE_BASE_DIMS[0]
+            * self.SCALE_FACTOR
+            * (0.7),
+            sy
+            * (x + y)
+            * grid_scale
+            * self.TILE_BASE_DIMS[0]
+            * self.SCALE_FACTOR
+            * (1 / 3),
+        ) + Vec2(self.width / 2, 8 * self.height / 7)
 
-    def wall_tile_at(self, x:int, y:int, orientation: Node) -> arcade.Sprite:
-        if orientation == Node(1,0):
+    def wall_tile_at(self, x: int, y: int, orientation: Node) -> arcade.Sprite:
+        if orientation == Node(1, 0):
             sprite_orientation = "_E"
-        elif orientation == Node(1,1):
+        elif orientation == Node(1, 1):
             sprite_orientation = "Corner_S"
         else:
             sprite_orientation = "_S"
-        
-        sprite = arcade.Sprite(f"assets/sprites/kenny_dungeon_pack/Isometric/stoneWall{sprite_orientation}.png", self.SCALE_FACTOR)
+
+        sprite = arcade.Sprite(
+            f"assets/sprites/kenny_dungeon_pack/Isometric/stoneWall{sprite_orientation}.png",
+            self.SCALE_FACTOR,
+        )
         return self.sprite_at(sprite, x, y)
 
-    
     def floor_tile_at(self, x: int, y: int) -> arcade.Sprite:
         tile = arcade.Sprite(
             "assets/sprites/kenny_dungeon_pack/Isometric/stone_E.png", self.SCALE_FACTOR
         )
-        
+
         return self.sprite_at(tile, x, y)
 
-    def dude_at(self, x: int, y: int, orientation: Node, is_gob: bool, is_boss: bool) -> arcade.Sprite:
+    def dude_at(
+        self, x: int, y: int, orientation: Node, is_gob: bool, is_boss: bool
+    ) -> arcade.Sprite:
         scale = self.SCALE_FACTOR
         if is_boss:
-            scale=scale*1.5
+            scale = scale * 1.5
         dude = dude_sprite_factory(orientation, scale, is_gob)
         return self.sprite_at(dude, x, y)
 
@@ -897,16 +904,15 @@ class CombatGridSection(arcade.Section):
             hook = eng.next_combat_action
 
         self.combat_screen.on_update(delta_time=delta_time, hook=hook)
-        
-        
+
     def on_draw(self):
         self._camera.use()
 
         self.tile_sprite_list.draw()
         self.dudes_sprite_list.draw()
-        
+
         self.other_camera.use()
-        
+
         if eng.awaiting_input:
             self.combat_screen.draw_turn_prompt()
 
@@ -915,12 +921,11 @@ class CombatGridSection(arcade.Section):
 
         self.combat_screen.draw_message()
         self.combat_screen.draw_stats()
-        
+
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self._camera.set_viewport((0, 0,width, height))
+        self._camera.set_viewport((0, 0, width, height))
         self.other_camera.resize(viewport_width=width, viewport_height=height)
-
 
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
@@ -931,7 +936,7 @@ class CombatGridSection(arcade.Section):
 
     def update_dudes(self, _: dict) -> None:
         self._update_dudes()
-        
+
     def _update_dudes(self):
         if self.encounter_room is None:
             return
@@ -940,13 +945,15 @@ class CombatGridSection(arcade.Section):
         else:
             self.dudes_sprite_list.clear()
         for dude in self.encounter_room.occupants:
-            self.dudes_sprite_list.append(self.dude_at(
-                *dude.locatable.location, 
-                dude.locatable.orientation, 
-                dude.fighter.is_enemy,
-                dude.fighter.is_boss,
-            ))
-            
+            self.dudes_sprite_list.append(
+                self.dude_at(
+                    *dude.locatable.location,
+                    dude.locatable.orientation,
+                    dude.fighter.is_enemy,
+                    dude.fighter.is_boss,
+                )
+            )
+
 
 def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool) -> arcade.Sprite:
     match orientation:
@@ -960,7 +967,7 @@ def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool) -> arcade
             sprite_index = 2
         case _:
             sprite_index = 0
-        
+
     return arcade.Sprite(
         f"assets/sprites/kenny_dungeon_pack/Characters/{'Gobs' if is_gob else 'Male'}/Male_{sprite_index}_Idle0{'_Gob' if is_gob else ''}.png",
         scale,

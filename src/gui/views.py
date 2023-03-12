@@ -11,9 +11,9 @@ from src.gui.buttons import get_new_missions_button, nav_button
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
-from src.gui.sections import (CommandBarSection, InfoPaneSection,
-                              MissionsSection, RecruitmentPaneSection,
-                              RosterAndTeamPaneSection, CombatGridSection)
+from src.gui.sections import (CombatGridSection, CommandBarSection,
+                              InfoPaneSection, MissionsSection,
+                              RecruitmentPaneSection, RosterAndTeamPaneSection)
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
 
@@ -124,7 +124,6 @@ class GuildView(arcade.View):
         # Add sections to section manager.
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
-        
 
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
@@ -447,7 +446,7 @@ class MissionsView(arcade.View):
         self.selection = Cycle(
             3, 2
         )  # 3 missions on screen, default selected (2) is the top visually.
-        
+
         self.mission_section = MissionsSection(
             left=0,
             bottom=242,
@@ -497,7 +496,7 @@ class MissionsView(arcade.View):
         self.add_section(self.mission_section)
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
-    
+
     def on_show_view(self) -> None:
         self.mission_section.manager.enable()
         self.info_pane_section.manager.enable()
@@ -527,10 +526,10 @@ class MissionsView(arcade.View):
         self.command_bar_section.manager.disable()
         self.info_pane_section.manager.disable()
         self.mission_section.manager.disable()
-        
+
     def on_draw(self) -> None:
         self.clear()
-    
+
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
         WindowData.width = width
@@ -553,8 +552,7 @@ class MissionsView(arcade.View):
                 eng.init_dungeon()
                 if not eng.game_state.dungeon.cleared:
                     if len(eng.game_state.guild.team.members) > 0:
-                        battle = BattleView()
-                        self.window.show_view(battle)
+                        self.window.show_view(BattleView())
 
 
 class BattleView(arcade.View):
@@ -564,24 +562,24 @@ class BattleView(arcade.View):
             left=0,
             bottom=WindowData.height / 2,
             width=WindowData.width,
-            height=WindowData.height /2,
+            height=WindowData.height / 2,
             prevent_dispatch_view={False},
         )
-        
+
         self.add_section(self.combat_grid_section)
-        
-    def on_show_view(self):
         eng.init_combat()
+
+    def on_show_view(self):
         eng.await_input()
-    
+
     def on_draw(self):
         self.clear()
-    
+
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.G:
                 if eng.mission_in_progress is False:
-                    eng.subscriptions = {}
+                    eng.flush_subscriptions()
                     guild_view = GuildView()
                     self.window.show_view(guild_view)
 
@@ -601,7 +599,7 @@ class BattleView(arcade.View):
                 if eng.awaiting_input:
                     eng.next_combat_action()
                     eng.awaiting_input = False
-    
+
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
         WindowData.width = width

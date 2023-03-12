@@ -21,7 +21,7 @@ class Fighter:
         xp_reward: int = 0,
         current_xp: int = 0,
         speed: int = 0,
-        is_boss: bool = False
+        is_boss: bool = False,
     ) -> None:
         self.owner: Optional[Entity] = None
         self.max_hp = hp
@@ -32,6 +32,7 @@ class Fighter:
         self.xp_reward = xp_reward
         self.current_xp = current_xp
         self.retreating = False
+        self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
         self.target = None
@@ -61,7 +62,7 @@ class Fighter:
     def request_target(self) -> Action:
         return {
             "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target!",
-            "await target": self,
+            "await_input": self,
         }
 
     def choose_target(self, targets) -> int:
@@ -179,6 +180,11 @@ class Fighter:
             result.update(**{"message": f"{my_name} fails to hit {target_name}!"})
 
             if self.is_enemy != True:
-                self.retreating = True
+                self.commence_retreat()
 
         return result
+
+    def commence_retreat(self):
+        self.retreating = True
+        for hook in self.on_retreat_hooks:
+            hook(self)
