@@ -102,8 +102,5 @@ def consume(action: dict[str, Any]) -> None:
             _health_projection.pop(name)
 
 
-def get_subscription() -> set[str]:
-    """
-    registers this module as a consumer of events with the returned keys present
-    """
-    return {_KEY}
+def flush_handler(event):
+    flush()

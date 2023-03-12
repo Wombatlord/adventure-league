@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from random import randint
-from typing import Any, Generator, NamedTuple, Optional, Callable
 import weakref
+from random import randint
+from typing import Any, Callable, Generator, NamedTuple, Optional
 
 from src.config.constants import guild_names
 from src.engine.describer import Describer
+from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
+from src.engine.game_state import AwardSpoilsHandler, GameState
 from src.entities.dungeon import Dungeon
 from src.entities.entity import Entity
 from src.entities.fighter import Fighter
 from src.entities.fighter_factory import EntityPool
 from src.entities.guild import Guild, Team
-from src.engine.game_state import GameState
 from src.entities.mission_board import MissionBoard
 from src.projection import health
 from src.systems.combat import CombatRound
@@ -27,14 +28,6 @@ Turn = Generator[None, None, Action]  # <-
 Round = Generator[None, None, Turn]  # <- These are internal to the combat system
 Encounter = Generator[None, None, Round]
 Quest = Generator[None, None, Encounter]
-
-projections = {"entity_data": [health]}
-
-
-def flush_all() -> None:
-    for subscribers in projections.values():
-        for subscriber in subscribers:
-            subscriber.flush()
 
 
 Handler = Callable[[dict], None]
@@ -57,26 +50,29 @@ class Engine:
         self.mission_in_progress: bool = False
         self.current_room = None
         self.subscriptions: dict[str, dict[str, Handler]] = {}
-        self._handler_registry = set()
+        self.combat_dispatcher = VolatileDispatcher(self)
+        self.projection_dispatcher = StaticDispatcher(self)
+        self.projection_dispatcher.static_subscribe(
+            topic="entity_data",
+            handler_id="health_projection",
+            handler=health.consume,
+        )
+        self.projection_dispatcher.static_subscribe(
+            topic="flush",
+            handler_id="health_projection",
+            handler=health.flush_handler,
+        )
 
     def subscribe(self, topic: str, handler_id: str, handler: Handler):
-        # check the subscription is a new one
-        subs = {}
-        if topic in self.subscriptions and handler_id in (
-            subs := self.subscriptions[topic]
-        ):
-            ref = self.subscriptions[topic][handler_id]
-            # ignore sub if the topic is already subscribed by that handler
-            if ref() is not None:
-                return
-
-        # IMPORTANT: we use a weakref to make sure we don't retain subscriptions
-        # from components that would otherwise be garbage collected.
-        handler_ref = weakref.WeakMethod(handler)
-        self.subscriptions[topic] = {**subs, handler_id: handler_ref}
+        self.combat_dispatcher.subscribe(topic, handler_id, handler)
 
     def setup(self) -> None:
         self.game_state = GameState()
+        self.projection_dispatcher.static_subscribe(
+            topic="team triumphant",
+            handler_id="game_state",
+            handler=AwardSpoilsHandler(self.game_state).handle,
+        )
         # create a pool of potential recruits
         pool = EntityPool(15)
         pool.fill_pool()
@@ -89,7 +85,17 @@ class Engine:
         mission_board = MissionBoard(size=3)
         mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
         self.game_state.set_mission_board(mission_board)
-        flush_all()
+        self.flush_all()
+
+    def flush_all(self):
+        self.flush_subscriptions()
+        self.flush_projections()
+
+    def flush_subscriptions(self):
+        self.combat_dispatcher.flush_subs()
+
+    def flush_projections(self):
+        self.projection_dispatcher.publish({"flush": None})
 
     def recruit_entity_to_guild(self, selection_id) -> None:
         guild = self.game_state.get_guild()
@@ -107,63 +113,27 @@ class Engine:
             self.process_one(event)
 
     def process_one(self, event: Action) -> None:
+        if "cleanup" in event:
+            self.flush_all()
+            return
+
+        if "delay" in event:
+            # Purely an instruction to the engine
+            self._handle_delay_action(event)
+            del event["delay"]
+
+        if "await_input" in event:
+            self.await_input()
+            del event["await_input"]
+
         if "message" in event:
             self.messages.append(event["message"])
 
-        if "await target" in event:
-            fighter = event["await target"]
-            self.await_input()
+        self.projection_dispatcher.publish(event)
+        self.combat_dispatcher.publish(event)
 
-        to_project = {*event.keys()} & {*projections.keys()}
-        for key in to_project:
-            for projection in projections[key]:
-                projection.consume(action=event)
-
-        self._handle_subscriptions(event)
-
-        if "delay" in event:
-            delay = event["delay"]
-            self.increase_update_clock_by_delay(delay)
-
-        if "dying" in event:
-            entity: Entity = event["dying"]
-
-        if "retreat" in event:
-            fighter: Fighter = event["retreat"]
-
-            if fighter.owner.is_dead == False:
-                self.game_state.guild.team.move_fighter_to_roster(fighter.owner)
-
-        if "team triumphant" in event:
-            guild: Guild = event["team triumphant"][0]
-            dungeon: Dungeon = event["team triumphant"][1]
-            dungeon.cleared = True
-            guild.claim_rewards(dungeon)
-
-    def _handle_subscriptions(self, event: dict) -> None:
-        # print(self.subscriptions)
-        for topic in event.keys():
-            subscribers = self.subscriptions.get(topic, {})
-
-            living_subs = {}
-            for subscriber_id, subscriber_ref in subscribers.items():
-                # Dereference the weakref, none if garbage collected
-                subscriber = subscriber_ref()
-
-                # since the subscriber is only a weakref, it might be stale, we handle that below
-                if subscriber is not None:
-                    # This is the case where the instance that owns the handler has strong refs
-                    # still kicking about, so we can keep the ref/id pair in the remaining subs for the
-                    # topic.
-                    living_subs[subscriber_id] = subscriber_ref
-                    subscriber(event)
-            print(living_subs)
-            # Actually replace the subscribers with the ones that remain after collection of garbage
-            self.subscriptions[topic] = living_subs
-
-    def _check_action_queue(self) -> None:
-        for item in self.action_queue:
-            print(f"item: {item}")
+    def _handle_delay_action(self, event):
+        self.increase_update_clock_by_delay(event.get("delay", 0))
 
     def reset_update_clock(self):
         self.update_clock = self.default_clock_value
@@ -213,7 +183,6 @@ class Engine:
         self.messages = []
         self.message_alphas = []
         self.alpha_max = 255
-        flush_all()
         self.combat = self._generate_combat_actions()
 
     def initial_health_values(self, team, enemies) -> list[Action]:
@@ -306,7 +275,7 @@ class Engine:
 
         for action in self.end_of_combat(win=win):
             yield action
-        
+
         yield {"cleanup": encounter}
 
     @staticmethod
@@ -321,7 +290,7 @@ class Engine:
         )
 
         results.append({"message": message})
-        results.append({"team triumphant": (guild, dungeon)})
+        results.append({"team triumphant": {"dungeon": dungeon}})
         return results
 
     @staticmethod

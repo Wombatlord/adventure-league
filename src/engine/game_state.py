@@ -1,11 +1,11 @@
-from typing import Optional
 from random import randint
+from typing import Optional
 
-from src.entities.guild import Guild, Team
-from src.entities.fighter_factory import EntityPool
-from src.entities.dungeon import Dungeon
-from src.entities.mission_board import MissionBoard
 from src.config.constants import guild_names
+from src.entities.dungeon import Dungeon
+from src.entities.fighter_factory import EntityPool
+from src.entities.guild import Guild, Team
+from src.entities.mission_board import MissionBoard
 
 
 class GameState:
@@ -54,3 +54,18 @@ class GameState:
 
     def set_mission_board(self, board):
         self.mission_board = board
+
+
+class AwardSpoilsHandler:
+    def __init__(self, state: GameState):
+        self.state = state
+
+    def handle(self, event):
+        """
+        code etc
+        """
+        dungeon = event.get("team triumphant", {}).get("dungeon")
+        if dungeon is None:
+            return
+        dungeon.cleared = True
+        self.state.guild.claim_rewards(dungeon)
