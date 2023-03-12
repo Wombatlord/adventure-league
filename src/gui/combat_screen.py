@@ -44,7 +44,7 @@ class CombatScreen:
         return gen_heights(
             desc=False,
             row_height=40,
-            y=0.3 * WindowData.height,
+            y=0.25 * WindowData.height,
             spacing=2,
             max_height=WindowData.height / 2,
         )

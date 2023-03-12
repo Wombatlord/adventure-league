@@ -863,7 +863,7 @@ class CombatGridSection(arcade.Section):
         return Vec2(
             sx*(-y + x) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (13),
             sy*(x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (5),
-        ) + Vec2(self.width/2, 20*self.height/21)
+        ) + Vec2(self.width/2, 7*self.height/8)
 
     def wall_tile_at(self, x:int, y:int, orientation: Node) -> arcade.Sprite:
         sprites = []
