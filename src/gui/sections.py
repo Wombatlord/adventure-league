@@ -840,6 +840,12 @@ class CombatGridSection(arcade.Section):
             handler_id="CombatGrid.clear_occupants",
             handler=self.clear_occupants,
         )
+        
+        eng.combat_dispatcher.volatile_subscribe(
+            topic="attack",
+            handler_id="CombatGrid.swap_textures_for_attack",
+            handler=self.swap_textures_for_attack
+        )
 
     def clear_occupants(self, event):
         encounter = event["cleanup"]
@@ -960,8 +966,8 @@ class CombatGridSection(arcade.Section):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self._camera.set_viewport((0, 0, width, height))
-        self.other_camera.resize(viewport_width=width, viewport_height=height)
+        self._camera.set_viewport((0, 0, width, height)) # Stretch the sprites with the window resize
+        self.other_camera.resize(viewport_width=width, viewport_height=height) # Resize the camera displaying the combat text
 
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
@@ -974,10 +980,15 @@ class CombatGridSection(arcade.Section):
             self.update_dudes(event)
 
     def prepare_dude_sprites(self):
+        """
+        Constructs the sprite list with the appropriate sprites when starting a dungeon.
+        Clears the sprite when entering a new room and reconstructs with new room member sprites.
+        """
         if not self.dudes_sprite_list:
             self.dudes_sprite_list = arcade.SpriteList()
         else:
             self.dudes_sprite_list.clear()
+            
         for dude in self.encounter_room.occupants:
             if dude.fighter.is_boss:
                 dude.entity_sprite.sprite.scale = dude.entity_sprite.sprite.scale * 1.5
@@ -996,6 +1007,11 @@ class CombatGridSection(arcade.Section):
         self._update_dudes()
 
     def _update_dudes(self):
+        """
+        Check if any sprites associated to a dead entity are still in the list, if so remove them.
+        Iterate over the occupants of the current room and update the positional information of their sprites as necessary.
+        Sort the sprite list such that sprites higher in screen space are drawn first and then overlapped by lower sprites.
+        """
         if self.encounter_room is None:
             return
 
@@ -1011,7 +1027,14 @@ class CombatGridSection(arcade.Section):
 
         self.dudes_sprite_list.sort(key=lambda y: y.position[1], reverse=True)
 
+    def swap_textures_for_attack(self, event):
+        dude = event["attack"]
+        dude.entity_sprite.swap_to_attack_textures()
+    
     def clear_dead_sprites(self):
+        """
+        If a sprite is associated to a dead entity, remove the sprite from the sprite list.
+        """
         for dude in self.dudes_sprite_list:
             if dude.owner.owner.is_dead:
                 self.dudes_sprite_list.pop(self.dudes_sprite_list.index(dude))

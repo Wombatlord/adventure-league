@@ -164,7 +164,7 @@ class Fighter:
         target_name = target.name.name_and_title
 
         succesful_hit: int = self.power - target.fighter.defence
-
+        result.update(**{"attack": self.owner})
         if succesful_hit > 0:
             actual_damage = int(
                 2 * self.power**2 / (self.power + target.fighter.defence)

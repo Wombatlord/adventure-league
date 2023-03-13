@@ -46,14 +46,23 @@ def get_fighter_factory(stats: StatBlock) -> Factory:
         match (fighter.is_enemy, fighter.is_boss):
             case (False, False):
                 idle_textures = choice([(0,1),(8,9)])
+                if idle_textures == (0,1):
+                    attack_textures = (2,3)
+                elif idle_textures == (8,9):
+                    attack_textures = (10,11)
+            
             case (True, False):
-                idle_textures = choice([(33,34)])
+                idle_textures = choice([(32,33)])
+                attack_textures = choice([(34,35)])
+            
             case (True, True):
                 idle_textures = choice([(80,81)])
+                attack_textures = choice([(82,83)])
         
         idle_one, idle_two = WindowData.fighters[idle_textures[0]], WindowData.fighters[idle_textures[1]]
-        
-        return Entity(sprite=EntitySprite(idle_textures=(idle_one, idle_two)), name=entity_name, cost=randint(1, 5), fighter=fighter)
+        atk_one, atk_two = WindowData.fighters[attack_textures[0]], WindowData.fighters[attack_textures[1]]
+
+        return Entity(sprite=EntitySprite(idle_textures=(idle_one, idle_two), attack_textures=(atk_one, atk_two)),name=entity_name, cost=randint(1, 5), fighter=fighter)
 
     return _create_random_fighter
 
