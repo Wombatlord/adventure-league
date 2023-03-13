@@ -17,22 +17,19 @@ class BaseSprite(Sprite):
         self.owner = None
 
     def update_animation(self, delta_time: float = 1 / 60) -> None:
-        # match self.animation_cycle:
-        #     case 0:
-        #         self.texture = self.textures[self.tex_idx]
-        #         self.tex_idx = (self.tex_idx + 1) % len(self.textures)
-        #         self.animation_cycle = 1
-        
-        #     case 1:
-        #         self.texture = self.textures[self.tex_idx]
-        #         self.tex_idx = (self.tex_idx + 1) % len(self.textures)
-        #         self.animation_cycle = 0
         self.animation_cycle -= delta_time
-        
         if self.animation_cycle <= 0:
-            self.texture = self.textures[self.tex_idx]
-            self.tex_idx = (self.tex_idx + 1) % len(self.textures)
-            self.animation_cycle = 0.05
+            match self.tex_idx:
+                case 0:
+                    self.texture = self.textures[self.tex_idx]
+                    self.tex_idx = (self.tex_idx + 1) % len(self.textures)
+                    self.animation_cycle = 0.05
+            
+                case 1:
+                    self.texture = self.textures[self.tex_idx]
+                    self.tex_idx = (self.tex_idx + 1) % len(self.textures)
+                    self.animation_cycle = 0.05
+
 
 class EntitySprite:
     def __init__(
