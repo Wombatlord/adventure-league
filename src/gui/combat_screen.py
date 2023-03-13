@@ -21,14 +21,14 @@ class CombatScreen:
         self.alpha_max = 255
         self.alphas = []
 
-    def on_update(self, delta_time, hook: Hook):
-        eng.update_clock -= delta_time
-        call_hook = True
+    # def on_update(self, delta_time, hook: Hook):
+    #     eng.update_clock -= delta_time
+    #     call_hook = True
 
-        if eng.update_clock < 0:
-            eng.reset_update_clock()
-            if call_hook:
-                call_hook = hook()
+    #     if eng.update_clock < 0:
+    #         eng.reset_update_clock()
+    #         if call_hook:
+    #             call_hook = hook()
 
     def draw_stats(self):
         heights = self.msg_height()

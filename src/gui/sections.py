@@ -775,6 +775,7 @@ class CombatGridSection(arcade.Section):
     ):
         super().__init__(left, bottom, width, height, **kwargs)
         print("FRESH")
+        self.clock = 0
         self.encounter_room = None
         self._original_dims = width, height
 
@@ -798,19 +799,19 @@ class CombatGridSection(arcade.Section):
                     wall_sprite = self.wall_tile_at(x, y, Node(1, 0))
                 if x == 9 and y == 9:
                     wall_sprites = self.wall_tile_at(x, y, Node(1, 1))
-                    print(wall_sprites)
                 if wall_sprite:
                     self.tile_sprite_list.append(*wall_sprite)
                 if wall_sprites:
                     for wall in wall_sprites:
-                        if wall not in self.tile_sprite_list:
-                            self.tile_sprite_list.append(wall)
+                        self.tile_sprite_list.append(wall)
+                    # Ensure we don't try to reappend the sprites.
+                    wall_sprites = None
         
-        self.dudes_sprite_list = arcade.SpriteList()
+        self.dudes_sprite_list = arcade.SpriteList()        
         self.combat_screen = CombatScreen()
         self._camera = arcade.Camera()
         self.other_camera = arcade.Camera()
-
+        self.anim_clock = 0.5
         self._subscribe_to_events()
 
     def _subscribe_to_events(self):
@@ -854,46 +855,57 @@ class CombatGridSection(arcade.Section):
         grid_scale = 0.75
         sx, sy = self.scaling()
         return Vec2(
-            sx*(-y + x) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (13),
-            sy*(x + y) * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (5),
+            (x - y) * (sx * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (13)),
+            (x + y) * (sy * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (5)),
         ) + Vec2(self.width/2, 7*self.height/8)
 
-    def wall_tile_at(self, x:int, y:int, orientation: Node) -> arcade.Sprite:
-        sprites = []
-        sprite = arcade.Sprite(scale=5)
-        fence = self.sprite_at(sprite, x, y)
+    def grid_loc(self, v: Vec2) -> Node:
+        v2 = v - Vec2(self.width/2, 7*self.height/8)
+        sx, sy = self.scaling()
+        grid_scale = 0.75
+        v3 = Vec2( # (x-y, x+y)
+            v2.x / (sx * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (13)),
+            v2.y / (sy * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (5))
+        )
+
+        node_x = (v3.x + v3.y)/2
+        node_y = (-v3.x + v3.y)/2
+        return Node(
+            x=round(node_x),
+            y=round(node_y),
+        )
+
+    def wall_tile_at(self, x:int, y:int, orientation: Node) -> tuple[arcade.Sprite, ...]:
+
+        wall = self.sprite_at(arcade.Sprite(scale=5), x, y)
         if orientation == Node(1,0):
-            sprite_orientation = "_E"
-            fence.center_y += 45
-            fence.center_x += 40
-            sprites.append(fence)
+            # Right / East Walls
+            wall.center_y += 45
+            wall.center_x += 40
+            sprites = (wall,)
             
         elif orientation == Node(1,1):
-            l = self.sprite_at(arcade.Sprite(scale=5), x, y)
-            r = self.sprite_at(arcade.Sprite(scale=5), x, y)
-            t = self.sprite_at(arcade.Sprite(scale=5), x, y)
-            sprite_orientation = "Corner_S"
-            l.center_y += 45
-            l.center_x -= 40
-            r.center_y += 45
-            r.center_x += 40
-            t.center_y += 100
-            sprites.append(l)
-            sprites.append(r)
-            sprites.append(t)
-            print(sprites)
-               
+            # Three wall sprites for the corner
+            left = self.sprite_at(arcade.Sprite(scale=5), x, y)
+            right = self.sprite_at(arcade.Sprite(scale=5), x, y)
+            top = self.sprite_at(arcade.Sprite(scale=5), x, y)
+            left.center_y += 45
+            left.center_x -= 40
+            right.center_y += 45
+            right.center_x += 40
+            top.center_y += 100
+            sprites = (left, right, top)
+        
         else:
-            sprite_orientation = "_S"
-            fence.center_y += 45
-            fence.center_x -= 40
-            sprites.append(fence)
+            # Left / West Walls
+            wall.center_y += 45
+            wall.center_x -= 40
+            sprites = (wall,)
         
         for s in sprites:
             s.texture = WindowData.tiles[89]
-        # sprite = arcade.Sprite(f"assets/sprites/kenny_dungeon_pack/Isometric/stoneWall{sprite_orientation}.png", self.SCALE_FACTOR)
-        print(sprites)
-        return (sprites)
+
+        return sprites
     
     def floor_tile_at(self, x: int, y: int) -> arcade.Sprite:
         # tile = arcade.Sprite(
@@ -905,15 +917,15 @@ class CombatGridSection(arcade.Section):
         
         return self.sprite_at(tile, x, y)
 
-    def dude_at(self, x: int, y: int, orientation: Node, is_gob: bool, is_boss: bool) -> arcade.Sprite:
-        scale = 4
-        if is_boss:
-            scale=scale*1.5
-        dude = dude_sprite_factory(orientation, scale, is_gob, is_boss)
-        sprite = self.sprite_at(dude, x, y)
-        sprite.center_y += 20
+    # def dude_at(self, x: int, y: int, orientation: Node, is_gob: bool, is_boss: bool) -> arcade.Sprite:
+    #     scale = 4
+    #     if is_boss:
+    #         scale=scale*1.5
+    #     dude = dude_sprite_factory(orientation, scale, is_gob, is_boss)
+    #     sprite = self.sprite_at(dude, x, y)
+    #     sprite.center_y += 20
         
-        return sprite
+    #     return sprite
     
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
         offset = self.grid_offset(x, y)
@@ -921,11 +933,23 @@ class CombatGridSection(arcade.Section):
         return sprite
 
     def on_update(self, delta_time: float):
+        self.anim_clock -= delta_time
+        eng.update_clock -= delta_time
+        
+        call_hook = True
         hook = lambda: None
         if not eng.awaiting_input:
             hook = eng.next_combat_action
+        
+        if eng.update_clock < 0:
+            self.dudes_sprite_list.update_animation(delta_time=delta_time)    
+            
+            eng.reset_update_clock()
+            if call_hook:
+                call_hook = hook()
+                
 
-        self.combat_screen.on_update(delta_time=delta_time, hook=hook)
+        #self.combat_screen.on_update(delta_time=delta_time, hook=hook)
 
     def on_draw(self):
         self._camera.use()
@@ -954,7 +978,26 @@ class CombatGridSection(arcade.Section):
         print(f"calling set_encounter: {encounter_room.occupants=}")
         if encounter_room:
             self.encounter_room = encounter_room
+            
+            self.prepare_dude_sprites()
+            
             self.update_dudes(event)
+
+    def prepare_dude_sprites(self):
+        if not self.dudes_sprite_list:
+            self.dudes_sprite_list = arcade.SpriteList()
+        else:
+            self.dudes_sprite_list.clear()
+        for dude in self.encounter_room.occupants:
+            if dude.fighter.is_boss:
+                dude.entity_sprite.sprite.scale = dude.entity_sprite.sprite.scale * 1.5
+            
+            offset = self.grid_offset(dude.locatable.location.x, dude.locatable.location.y)
+            dude.entity_sprite.sprite.center_x = offset[0]
+            dude.entity_sprite.sprite.center_y = offset[1]
+            dude.entity_sprite.sprite.center_y += 15
+            dude.entity_sprite.orient(dude.locatable.orientation)
+            self.dudes_sprite_list.append(dude.entity_sprite.sprite)
 
     def update_dudes(self, _: dict) -> None:
         self._update_dudes()
@@ -962,46 +1005,59 @@ class CombatGridSection(arcade.Section):
     def _update_dudes(self):
         if self.encounter_room is None:
             return
-        if not self.dudes_sprite_list:
-            self.dudes_sprite_list = arcade.SpriteList()
-        else:
-            self.dudes_sprite_list.clear()
+        # if not self.dudes_sprite_list:
+        #     self.dudes_sprite_list = arcade.SpriteList()
+        # else:
+        #     self.dudes_sprite_list.clear()
+        for dude in self.dudes_sprite_list:
+            if dude.owner.owner.is_dead:
+                self.dudes_sprite_list.pop(self.dudes_sprite_list.index(dude))
+                
+        
         for dude in self.encounter_room.occupants:
-            self.dudes_sprite_list.append(self.dude_at(
-                x=dude.locatable.location.x,
-                y=dude.locatable.location.y, 
-                orientation=dude.locatable.orientation, 
-                is_gob=dude.fighter.is_enemy,
-                is_boss=dude.fighter.is_boss,
-            ))
-        
+            # self.dudes_sprite_list.append(self.dude_at(
+            #     x=dude.locatable.location.x,
+            #     y=dude.locatable.location.y, 
+            #     orientation=dude.locatable.orientation, 
+            #     is_gob=dude.fighter.is_enemy,
+            #     is_boss=dude.fighter.is_boss,
+            # ))
+            
+            offset = self.grid_offset(dude.locatable.location.x, dude.locatable.location.y)
+            dude.entity_sprite.sprite.center_x = offset[0]
+            dude.entity_sprite.sprite.center_y = offset[1]
+            dude.entity_sprite.sprite.center_y += 15
+            dude.entity_sprite.orient(dude.locatable.orientation)
+            # self.dudes_sprite_list.append(dude.entity_sprite.sprite)
+            
         self.dudes_sprite_list.sort(key=lambda y: y.position[1], reverse=True)
-
-def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool, is_boss: bool) -> arcade.Sprite:
-    match orientation:
-        case Node(0, 1):
-            sprite_index = 0
-        case Node(1, 0):
-            sprite_index = 6
-        case Node(0, -1):
-            sprite_index = 4
-        case Node(-1, 0):
-            sprite_index = 2
-        case _:
-            sprite_index = 0
-        
-    # return arcade.Sprite(
-    #     f"assets/sprites/kenny_dungeon_pack/Characters/{'Gobs' if is_gob else 'Male'}/Male_{sprite_index}_Idle0{'_Gob' if is_gob else ''}.png",
-    #     scale,
-    # )
-    sprite = arcade.Sprite(scale=scale)
-    if is_gob:
-        sprite.texture = WindowData.fighters[33]    
-        
-        if is_boss:
-            sprite.texture = WindowData.fighters[80]
-        
-    else:
-        sprite.texture = WindowData.fighters[0]
     
-    return sprite
+    
+# def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool, is_boss: bool) -> arcade.Sprite:
+    
+#     sprite = arcade.Sprite(scale=scale)
+#     if is_gob:
+#         sprite.texture = WindowData.fighters[33]    
+        
+#         if is_boss:
+#             sprite.texture = WindowData.fighters[80]
+        
+#     else:
+#         sprite.texture = WindowData.fighters[0]
+    
+#     match orientation:
+#         case Node(0, 1):
+#             sprite.texture = sprite.texture.flip_left_to_right()
+#         case Node(1, 0):
+#             # sprite.texture = sprite.texture.flip_left_to_right()
+#             pass
+#         case Node(0, -1):
+#             # sprite.texture = sprite.texture.flip_left_to_right()
+#             pass
+#         case Node(-1, 0):
+#             sprite.texture = sprite.texture.flip_left_to_right()
+#         case _:
+#             sprite_index = 0
+    
+    
+#     return sprite

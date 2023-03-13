@@ -27,8 +27,8 @@ class Room:
             self.enemies.append(entity)
         entity.on_death_hooks.append(self.remove)
         entity.on_death_hooks.append(Entity.flush_locatable)
-        entity.fighter.on_retreat_hooks.append(self.remove)
-        entity.fighter.on_retreat_hooks.append(Entity.flush_locatable)
+        entity.fighter.on_retreat_hooks.append(lambda f: self.remove(f.owner))
+        entity.fighter.on_retreat_hooks.append(lambda f: Entity.flush_locatable(f.owner))
 
     def include_party(self, party: list[Entity]) -> None:
         for member in party:

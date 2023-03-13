@@ -1,10 +1,12 @@
 from copy import deepcopy
-from random import randint
+from random import randint, choice
 from typing import Callable, NamedTuple
 
 from src.config.constants import merc_names
+from src.gui.window_data import WindowData
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
+from src.entities.sprites import EntitySprite
 
 Factory = Callable[[str], Entity]
 
@@ -23,9 +25,9 @@ class StatBlock(NamedTuple):
 
 
 _mercenary = StatBlock(
-    hp=(25, 25), defence=(1, 3), power=(3, 5), speed=1, is_enemy=False
+    hp=(25, 25), defence=(1, 3), power=(3, 5), speed=1, is_enemy=False, is_boss=False
 )
-_monster = StatBlock(hp=(10, 10), defence=(1, 3), power=(1, 3), speed=1, is_enemy=True)
+_monster = StatBlock(hp=(10, 10), defence=(1, 3), power=(1, 3), speed=1, is_enemy=True, is_boss=False)
 _boss = StatBlock(hp=(30, 30), defence=(2, 4), power=(2, 4), speed=1, is_enemy=True, is_boss = True)
 
 
@@ -40,7 +42,18 @@ def get_fighter_factory(stats: StatBlock) -> Factory:
             is_boss=stats.is_boss,
         )
         entity_name = Name(title=title, first_name=name, last_name=last_name)
-        return Entity(name=entity_name, cost=randint(1, 5), fighter=fighter)
+        
+        match (fighter.is_enemy, fighter.is_boss):
+            case (False, False):
+                idle_textures = choice([(0,1),(8,9)])
+            case (True, False):
+                idle_textures = choice([(33,34)])
+            case (True, True):
+                idle_textures = choice([(80,81)])
+        
+        idle_one, idle_two = WindowData.fighters[idle_textures[0]], WindowData.fighters[idle_textures[1]]
+        
+        return Entity(sprite=EntitySprite(idle_textures=(idle_one, idle_two)), name=entity_name, cost=randint(1, 5), fighter=fighter)
 
     return _create_random_fighter
 
