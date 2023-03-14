@@ -3,6 +3,7 @@ from typing import Optional
 
 from src.config.constants import guild_names
 from src.entities.dungeon import Dungeon
+from src.entities.entity import Entity
 from src.entities.fighter_factory import EntityPool
 from src.entities.guild import Guild, Team
 from src.entities.mission_board import MissionBoard
@@ -54,6 +55,9 @@ class GameState:
 
     def set_mission_board(self, board):
         self.mission_board = board
+
+    def entities(self) -> list[Entity]:
+        return self.entity_pool.pool + self.guild.roster
 
 
 class AwardSpoilsHandler:

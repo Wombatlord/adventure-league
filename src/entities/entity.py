@@ -91,3 +91,7 @@ class Entity:
     def die(self):
         for hook in self.on_death_hooks:
             hook(self)
+
+    def clear_hooks(self):
+        self.on_death_hooks = []
+        self.fighter.clear_hooks()

@@ -59,10 +59,18 @@ class Fighter:
         self.xp_reward = dict.get("xp_reward")
         self.current_xp = dict.get("current_xp")
 
-    def request_target(self) -> Action:
+    def request_target(self, targets: list[Fighter]) -> Action:
         return {
             "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target!",
             "await_input": self,
+            "target_selection": {
+                "paths": [
+                    self.owner.locatable.path_to_target(t.owner.locatable)
+                    for t in targets
+                ],
+                "targets": targets,
+                "confirmation_callback": None,
+            },
         }
 
     def choose_target(self, targets) -> int:
@@ -188,3 +196,6 @@ class Fighter:
         self.retreating = True
         for hook in self.on_retreat_hooks:
             hook(self)
+
+    def clear_hooks(self):
+        self.on_retreat_hooks = []

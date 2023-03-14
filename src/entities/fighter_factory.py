@@ -25,8 +25,12 @@ class StatBlock(NamedTuple):
 _mercenary = StatBlock(
     hp=(25, 25), defence=(1, 3), power=(3, 5), speed=1, is_enemy=False
 )
-_monster = StatBlock(hp=(10, 10), defence=(1, 3), power=(1, 3), speed=1, is_enemy=True)
-_boss = StatBlock(hp=(30, 30), defence=(2, 4), power=(2, 4), speed=1, is_enemy=True, is_boss = True)
+_monster = StatBlock(
+    hp=(10, 10), defence=(10, 13), power=(1, 3), speed=1, is_enemy=True
+)
+_boss = StatBlock(
+    hp=(30, 30), defence=(2, 4), power=(2, 4), speed=1, is_enemy=True, is_boss=True
+)
 
 
 def get_fighter_factory(stats: StatBlock) -> Factory:

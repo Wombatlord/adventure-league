@@ -8,7 +8,6 @@ from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
 from src.gui.buttons import get_new_missions_button, nav_button
-from src.gui.combat_screen import CombatScreen
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
 from src.gui.sections import (CombatGridSection, CommandBarSection,
@@ -16,6 +15,8 @@ from src.gui.sections import (CombatGridSection, CommandBarSection,
                               RecruitmentPaneSection, RosterAndTeamPaneSection)
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
+from src.utils.input_capture import Selection
+from src.utils.pathing.grid_utils import Node
 
 
 class TitleView(arcade.View):
@@ -566,14 +567,26 @@ class BattleView(arcade.View):
             prevent_dispatch_view={False},
         )
 
+        self.target_selection: Selection[tuple[Node, ...]] | None = None
+
         self.add_section(self.combat_grid_section)
         eng.init_combat()
 
     def on_show_view(self):
         eng.await_input()
+        eng.combat_dispatcher.volatile_subscribe(
+            "target_selection", "BattleView.set_input_request", self.set_input_request
+        )
 
     def on_draw(self):
         self.clear()
+
+    def set_input_request(self, event):
+        print("set input request")
+        selection = event["target_selection"]
+        self.target_selection = Selection(selection["paths"])
+        self.target_selection.set_confirmation(selection["confirmation_callback"])
+        self.combat_grid_section.show_path(self.target_selection.current)
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
@@ -583,22 +596,30 @@ class BattleView(arcade.View):
                     guild_view = GuildView()
                     self.window.show_view(guild_view)
 
-            case arcade.key.NUM_0 | arcade.key.KEY_0:
-                if eng.awaiting_input:
-                    eng.set_target(0)
-
-            case arcade.key.NUM_1 | arcade.key.KEY_1:
-                if eng.awaiting_input:
-                    eng.set_target(1)
-
-            case arcade.key.NUM_2 | arcade.key.KEY_2:
-                if eng.awaiting_input:
-                    eng.set_target(2)
-
-            case arcade.key.SPACE:
-                if eng.awaiting_input:
+        if not self.target_selection:
+            match symbol:
+                case arcade.key.SPACE:
                     eng.next_combat_action()
                     eng.awaiting_input = False
+
+            return
+
+        match symbol:
+            case arcade.key.UP:
+                self.target_selection.prev()
+                self.combat_grid_section.show_path(self.target_selection.current)
+                print(self.target_selection)
+
+            case arcade.key.DOWN:
+                self.target_selection.next()
+                self.combat_grid_section.show_path(self.target_selection.current)
+                print(self.target_selection)
+
+            case arcade.key.SPACE:
+                ok = self.target_selection.confirm()
+                if ok:
+                    self.combat_grid_section.hide_path()
+                    self.target_selection = None
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)

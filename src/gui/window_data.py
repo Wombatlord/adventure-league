@@ -15,8 +15,9 @@ def _cross_platform_name(name: str) -> str:
 
 @dataclass
 class WindowData:
-    width = 1080
-    height = 720
+    width = 1600
+    height = 1200
+    scale = (width / 800, height / 600)
     title_background = arcade.load_texture("./assets/background_glacial_mountains.png")
     mission_background = arcade.load_texture("./assets/mb.png")
     window_icon = pyglet.image.load("./assets/icon.png")

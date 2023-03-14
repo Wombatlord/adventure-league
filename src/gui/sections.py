@@ -22,6 +22,10 @@ from src.gui.window_data import WindowData
 from src.utils.pathing.grid_utils import Node
 
 
+def do_nothing():
+    return None
+
+
 class CommandBarSection(arcade.Section, CommandBarMixin):
     manager: UIManager
     anchor: UIAnchorLayout
@@ -764,6 +768,7 @@ class MissionsSection(arcade.Section):
 class CombatGridSection(arcade.Section):
     TILE_BASE_DIMS = (256, 512)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
+    SCALE_FACTOR = 0.2
 
     def __init__(
         self,
@@ -778,13 +783,11 @@ class CombatGridSection(arcade.Section):
         self.encounter_room = None
         self._original_dims = width, height
 
-        if WindowData.width >= 800 and WindowData.width <= 1080:
-            if WindowData.height >= 600 and WindowData.height <= 720:
-                self.SCALE_FACTOR = 0.2
+        if 800 <= WindowData.width <= 1080 and 600 <= WindowData.height <= 720:
+            self.SCALE_FACTOR = 0.2
 
-        if WindowData.width <= 1920 and WindowData.width >= 1080:
-            if WindowData.height >= 720 and WindowData.height <= 1080:
-                self.SCALE_FACTOR = 0.25
+        if 1920 >= WindowData.width >= 1080 >= WindowData.height >= 720:
+            self.SCALE_FACTOR = 0.25
 
         self.tile_sprite_list = arcade.SpriteList()
 
@@ -803,10 +806,22 @@ class CombatGridSection(arcade.Section):
 
         self.dudes_sprite_list = arcade.SpriteList()
         self.combat_screen = CombatScreen()
-        self._camera = arcade.Camera()
+        self.grid_camera = arcade.Camera()
         self.other_camera = arcade.Camera()
-
         self._subscribe_to_events()
+        self.selected_path_sprites = self.init_path()
+
+    @classmethod
+    def init_path(cls) -> arcade.SpriteList:
+        selected_path_sprites = arcade.SpriteList()
+        for _ in range(20):
+            sprite = arcade.Sprite(
+                "assets/sprites/kenny_dungeon_pack/Isometric/tableRoundItemsChairs_W.png",
+                scale=cls.SCALE_FACTOR * WindowData.scale[1],
+            )
+            selected_path_sprites.append(sprite)
+
+        return selected_path_sprites
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -854,12 +869,14 @@ class CombatGridSection(arcade.Section):
             * grid_scale
             * self.TILE_BASE_DIMS[0]
             * self.SCALE_FACTOR
+            * WindowData.scale[1]
             * (0.7),
             sy
             * (x + y)
             * grid_scale
             * self.TILE_BASE_DIMS[0]
             * self.SCALE_FACTOR
+            * WindowData.scale[1]
             * (1 / 3),
         ) + Vec2(self.width / 2, 8 * self.height / 7)
 
@@ -873,13 +890,14 @@ class CombatGridSection(arcade.Section):
 
         sprite = arcade.Sprite(
             f"assets/sprites/kenny_dungeon_pack/Isometric/stoneWall{sprite_orientation}.png",
-            self.SCALE_FACTOR,
+            self.SCALE_FACTOR * WindowData.scale[1],
         )
         return self.sprite_at(sprite, x, y)
 
     def floor_tile_at(self, x: int, y: int) -> arcade.Sprite:
         tile = arcade.Sprite(
-            "assets/sprites/kenny_dungeon_pack/Isometric/stone_E.png", self.SCALE_FACTOR
+            "assets/sprites/kenny_dungeon_pack/Isometric/stone_E.png",
+            self.SCALE_FACTOR * WindowData.scale[1],
         )
 
         return self.sprite_at(tile, x, y)
@@ -890,7 +908,7 @@ class CombatGridSection(arcade.Section):
         scale = self.SCALE_FACTOR
         if is_boss:
             scale = scale * 1.5
-        dude = dude_sprite_factory(orientation, scale, is_gob)
+        dude = dude_sprite_factory(orientation, scale * WindowData.scale[1], is_gob)
         return self.sprite_at(dude, x, y)
 
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
@@ -899,17 +917,19 @@ class CombatGridSection(arcade.Section):
         return sprite
 
     def on_update(self, delta_time: float):
-        hook = lambda: None
         if not eng.awaiting_input:
             hook = eng.next_combat_action
+        else:
+            hook = do_nothing
 
         self.combat_screen.on_update(delta_time=delta_time, hook=hook)
 
     def on_draw(self):
-        self._camera.use()
+        self.grid_camera.use()
 
         self.tile_sprite_list.draw()
         self.dudes_sprite_list.draw()
+        self.selected_path_sprites.draw()
 
         self.other_camera.use()
 
@@ -924,7 +944,7 @@ class CombatGridSection(arcade.Section):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self._camera.set_viewport((0, 0, width, height))
+        self.grid_camera.set_viewport((0, 0, width, height))
         self.other_camera.resize(viewport_width=width, viewport_height=height)
 
     def set_encounter(self, event: dict) -> None:
@@ -953,6 +973,23 @@ class CombatGridSection(arcade.Section):
                     dude.fighter.is_boss,
                 )
             )
+
+    def show_path(self, current: tuple[Node]):
+        for i, sprite in enumerate(self.selected_path_sprites):
+            if i >= len(current):
+                sprite.visible = False
+                continue
+
+            node = current[i]
+            position = self.grid_offset(*node)
+            sprite.visible = True
+            sprite.center_x, sprite.center_y = position.x, position.y
+
+        print(current)
+
+    def hide_path(self):
+        for sprite in self.selected_path_sprites:
+            sprite.visible = False
 
 
 def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool) -> arcade.Sprite:

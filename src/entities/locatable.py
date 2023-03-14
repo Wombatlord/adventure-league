@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+from enum import Enum
 from random import choice
 from typing import TYPE_CHECKING
 
 from src.utils.pathing.grid_utils import Node, Space
-from enum import Enum
 
 if TYPE_CHECKING:
     from src.entities.entity import Entity
+
 
 class Orientation(Enum):
     NORTH = Node(0, 1)
     EAST = Node(1, 0)
     SOUTH = Node(0, -1)
     WEST = Node(-1, 0)
+
 
 class Locatable:
     def __init__(
@@ -24,6 +26,9 @@ class Locatable:
         self.space = space
         self.speed = speed
         self.orientation = choice([*Orientation])
+
+    def path_to_target(self, target) -> tuple[Node]:
+        return self.space.get_path(self.location, target.location)
 
     def approach_target(self, target: Locatable) -> dict | None:
         msg_fragment = {
@@ -36,7 +41,7 @@ class Locatable:
                 **msg_fragment,
             }
 
-        path_to_target = self.space.get_path(self.location, target.location)
+        path_to_target = self.path_to_target(target)
         target_adjancencies = set(target.locatable.adjacent_locations())
 
         first_place = path_to_target[0]
@@ -70,7 +75,7 @@ class Locatable:
 
         # Otherwise, move as far as along the path as speed allows.
         self.location = path[self.speed]
-        self.orientation = self.location - path[self.speed-1]
+        self.orientation = self.location - path[self.speed - 1]
 
         return {
             "move": {

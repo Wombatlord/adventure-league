@@ -90,6 +90,8 @@ class Engine:
     def flush_all(self):
         self.flush_subscriptions()
         self.flush_projections()
+        for entity in self.game_state.entities():
+            entity.clear_hooks()
 
     def flush_subscriptions(self):
         self.combat_dispatcher.flush_subs()
@@ -112,6 +114,14 @@ class Engine:
 
             self.process_one(event)
 
+    def _set_target(self, target: int) -> bool:
+        try:
+            self.set_target(target)
+            return True
+        except Exception as e:
+            print(f"SOURCE: {__file__}; ERROR: Failed to select target with error: {e}")
+            return False
+
     def process_one(self, event: Action) -> None:
         if "cleanup" in event:
             self.flush_all()
@@ -125,6 +135,7 @@ class Engine:
         if "await_input" in event:
             self.await_input()
             del event["await_input"]
+            event["target_selection"]["confirmation_callback"] = self._set_target
 
         if "message" in event:
             self.messages.append(event["message"])
@@ -159,6 +170,8 @@ class Engine:
 
     def set_target(self, target_choice) -> None:
         self.chosen_target = target_choice
+        self.next_combat_action()
+        self.awaiting_input = False
 
     def end_of_combat(self, win: bool = True) -> list[Action]:
         guild = self.game_state.get_guild()

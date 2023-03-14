@@ -27,8 +27,10 @@ class Room:
             self.enemies.append(entity)
         entity.on_death_hooks.append(self.remove)
         entity.on_death_hooks.append(Entity.flush_locatable)
-        entity.fighter.on_retreat_hooks.append(self.remove)
-        entity.fighter.on_retreat_hooks.append(Entity.flush_locatable)
+        entity.fighter.on_retreat_hooks.append(lambda f: self.remove(f.owner))
+        entity.fighter.on_retreat_hooks.append(
+            lambda f: Entity.flush_locatable(f.owner)
+        )
 
     def include_party(self, party: list[Entity]) -> None:
         for member in party:
@@ -42,6 +44,12 @@ class Room:
             )
 
     def remove(self, entity: Entity):
+        if hasattr(entity, "owner"):
+            entity = entity.owner
+        elif not isinstance(entity, Entity):
+            raise TypeError(
+                f"Can only remove Entities and owned components from the room, got {entity}",
+            )
         if entity.fighter.is_enemy:
             self.enemies.pop(self.enemies.index(entity))
         self.occupants.pop(self.occupants.index(entity))
