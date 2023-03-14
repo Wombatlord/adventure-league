@@ -5,6 +5,7 @@ from arcade import Window
 from arcade.gui.events import UIEvent
 from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
+from pyglet.math import Vec2
 
 from src.engine.init_engine import eng
 from src.gui.buttons import get_new_missions_button, nav_button
@@ -599,6 +600,10 @@ class BattleView(arcade.View):
                 if eng.awaiting_input:
                     eng.next_combat_action()
                     eng.awaiting_input = False
+    
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        print(f"{self.combat_grid_section.grid_loc(Vec2(x,y))=}")
+
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)

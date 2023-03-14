@@ -107,7 +107,11 @@ class Team:
         self.members.append(entity)
 
     def move_fighter_to_roster(self, entity):
-        self.owner.roster.append(self.members.pop(self.members.index(entity)))
+        try:
+            self.owner.roster.append(self.members.pop(self.members.index(entity)))
+        
+        except ValueError:
+            pass
 
     def remove_dead_member(self, entity):
         if entity in self.members:
