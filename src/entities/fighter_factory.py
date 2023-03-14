@@ -2,7 +2,8 @@ from copy import deepcopy
 from random import randint, choice
 from typing import Callable, NamedTuple
 
-from src.config.constants import merc_names
+from src.config.constants import merc_names, enemy_types
+from src.config.texture_enums import *
 from src.gui.window_data import WindowData
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
@@ -43,21 +44,37 @@ def get_fighter_factory(stats: StatBlock) -> Factory:
         )
         entity_name = Name(title=title, first_name=name, last_name=last_name)
         
+        """
+        Set up textures for the fighter.
+        As we have the name already, use that to determine particular enemy textures for hostile fighters.
+        """
         match (fighter.is_enemy, fighter.is_boss):
             case (False, False):
-                idle_textures = choice([(0,1),(8,9)])
-                if idle_textures == (0,1):
-                    attack_textures = (2,3)
-                elif idle_textures == (8,9):
-                    attack_textures = (10,11)
-            
+                merc = choice([MercenaryOneTextures, MercenaryTwoTextures, MercenaryThreeTextures, MercenaryFourTextures])
+                idle_textures, attack_textures = mercenary_textures(merc)
+                
             case (True, False):
-                idle_textures = choice([(32,33)])
-                attack_textures = choice([(34,35)])
+                if entity_name.name_and_title == enemy_types[0]:
+                    enemy = choice([GoblinOneTextures, GoblinTwoTextures, GoblinThreeTextures, GoblinFourTextures])
+                    idle_textures, attack_textures = goblin_textures(enemy)
+                
+                if entity_name.name_and_title == enemy_types[1]:
+                    enemy = SlimeTexture
+                    idle_textures, attack_textures = slime_textures(enemy)
             
             case (True, True):
-                idle_textures = choice([(80,81)])
-                attack_textures = choice([(82,83)])
+                boss_type = randint(1, 3)
+                if boss_type == 1:
+                    boss = ImpTextures
+                    idle_textures, attack_textures = boss_textures(boss)
+
+                if boss_type == 2:
+                    boss = ShadowTextures
+                    idle_textures, attack_textures = boss_textures(boss)
+                
+                if boss_type == 3:
+                    boss = LichTextures
+                    idle_textures, attack_textures = boss_textures(boss)
         
         idle_one, idle_two = WindowData.fighters[idle_textures[0]], WindowData.fighters[idle_textures[1]]
         atk_one, atk_two = WindowData.fighters[attack_textures[0]], WindowData.fighters[attack_textures[1]]
@@ -66,7 +83,66 @@ def get_fighter_factory(stats: StatBlock) -> Factory:
 
     return _create_random_fighter
 
+def mercenary_textures(merc) -> tuple[tuple[int, int], tuple[int,int]]:
+    if merc == MercenaryOneTextures:
+        idle_textures = MercenaryOneTextures.idle_pair.value
+        attack_textures = MercenaryOneTextures.attack_pair.value
+            
+    if merc == MercenaryTwoTextures:
+        idle_textures = MercenaryTwoTextures.idle_pair.value
+        attack_textures = MercenaryTwoTextures.attack_pair.value
 
+    if merc == MercenaryThreeTextures:
+        idle_textures = MercenaryThreeTextures.idle_pair.value
+        attack_textures = MercenaryThreeTextures.attack_pair.value
+            
+    if merc == MercenaryFourTextures:
+        idle_textures = MercenaryFourTextures.idle_pair.value
+        attack_textures = MercenaryFourTextures.attack_pair.value
+    
+    return (idle_textures, attack_textures)
+
+def goblin_textures(enemy) -> tuple[tuple[int, int], tuple[int,int]]:
+    if enemy == GoblinOneTextures:
+        idle_textures = GoblinOneTextures.idle_pair.value
+        attack_textures = GoblinOneTextures.attack_pair.value
+            
+    if enemy == GoblinTwoTextures:
+        idle_textures = GoblinTwoTextures.idle_pair.value
+        attack_textures = GoblinTwoTextures.attack_pair.value
+
+    if enemy == GoblinThreeTextures:
+        idle_textures = GoblinThreeTextures.idle_pair.value
+        attack_textures = GoblinThreeTextures.attack_pair.value
+            
+    if enemy == GoblinFourTextures:
+        idle_textures = GoblinFourTextures.idle_pair.value
+        attack_textures = GoblinFourTextures.attack_pair.value
+    
+    return (idle_textures, attack_textures)
+
+def slime_textures(enemy) -> tuple[tuple[int, int], tuple[int, int]]:
+    if enemy == SlimeTexture:
+        idle_textures = SlimeTexture.idle_pair.value
+        attack_textures = SlimeTexture.attack_pair.value
+    
+    return (idle_textures, attack_textures)
+
+def boss_textures(boss) -> tuple[tuple[int,int], tuple[int,int]]:
+    if boss == ImpTextures:
+        idle_textures = ImpTextures.idle_pair.value
+        attack_textures = ImpTextures.attack_pair.value
+    
+    if boss == ShadowTextures:
+        idle_textures = ShadowTextures.idle_pair.value
+        attack_textures = ShadowTextures.attack_pair.value
+    
+    if boss == LichTextures:
+        idle_textures = LichTextures.idle_pair.value
+        attack_textures = LichTextures.attack_pair.value    
+    
+    return (idle_textures, attack_textures)
+    
 create_random_fighter = _mercenary.factory
 create_random_monster = _monster.factory
 create_random_boss = _boss.factory
