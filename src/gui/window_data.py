@@ -38,5 +38,14 @@ class WindowData:
         margin=1,
     )
     
+    indicators = arcade.load_spritesheet(
+        "./assets/sprites/TRPGIsometricAssetPack_MapIndicators.png",
+        sprite_height=8,
+        sprite_width=16,
+        columns=2,
+        count=6,
+        margin=0,
+    )
+    
     window_icon = pyglet.image.load("./assets/icon.png")
     font = _cross_platform_name("Alagard")
