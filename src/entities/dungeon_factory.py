@@ -44,7 +44,7 @@ def create_random_enemy_room(enemy_amount) -> Room:
     room = Room()
 
     for enemy in range(enemy_amount):
-        room.add_entity(create_random_monster(f"{choice(enemy_types)}", None))
+        room.add_entity(create_random_monster(f"{choice(enemy_types)} {enemy}", None))
 
     return room
 
