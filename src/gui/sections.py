@@ -778,7 +778,6 @@ class CombatGridSection(arcade.Section):
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)
-        print("FRESH")
         self.encounter_room = None
         self._original_dims = width, height
 
@@ -830,12 +829,6 @@ class CombatGridSection(arcade.Section):
         )
 
         eng.combat_dispatcher.volatile_subscribe(
-            topic="message",
-            handler_id="CombatGrid.update_dudes",
-            handler=self.update_dudes,
-        )
-
-        eng.combat_dispatcher.volatile_subscribe(
             topic="cleanup",
             handler_id="CombatGrid.clear_occupants",
             handler=self.clear_occupants,
@@ -844,9 +837,15 @@ class CombatGridSection(arcade.Section):
         eng.combat_dispatcher.volatile_subscribe(
             topic="attack",
             handler_id="CombatGrid.swap_textures_for_attack",
-            handler=self.swap_textures_for_attack
+            handler=self.idle_or_attack
         )
 
+        eng.combat_dispatcher.volatile_subscribe(
+            topic="dead",
+            handler_id="CombatGrid.clear_dead_sprites",
+            handler=self.clear_dead_sprites
+        )
+        
     def clear_occupants(self, event):
         encounter = event["cleanup"]
         for occupant in encounter.occupants:
@@ -938,9 +937,9 @@ class CombatGridSection(arcade.Section):
         if not eng.awaiting_input:
             hook = eng.next_combat_action
 
+        self.dudes_sprite_list.update_animation(delta_time=delta_time)
+        
         if eng.update_clock < 0:
-            self.dudes_sprite_list.update_animation(delta_time=delta_time)
-
             eng.reset_update_clock()
             if call_hook:
                 call_hook = hook()
@@ -971,7 +970,6 @@ class CombatGridSection(arcade.Section):
 
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
-        print(f"calling set_encounter: {encounter_room.occupants=}")
         if encounter_room:
             self.encounter_room = encounter_room
 
@@ -1015,7 +1013,7 @@ class CombatGridSection(arcade.Section):
         if self.encounter_room is None:
             return
 
-        self.clear_dead_sprites()
+        # self.clear_dead_sprites()
         for dude in self.encounter_room.occupants:
             offset = self.grid_offset(
                 dude.locatable.location.x, dude.locatable.location.y
@@ -1027,14 +1025,13 @@ class CombatGridSection(arcade.Section):
 
         self.dudes_sprite_list.sort(key=lambda y: y.position[1], reverse=True)
 
-    def swap_textures_for_attack(self, event):
+    def idle_or_attack(self, event):
         dude = event["attack"]
-        dude.entity_sprite.swap_to_attack_textures()
+        dude.entity_sprite.swap_idle_and_attack_textures()
     
-    def clear_dead_sprites(self):
+    def clear_dead_sprites(self, event):
         """
         If a sprite is associated to a dead entity, remove the sprite from the sprite list.
         """
-        for dude in self.dudes_sprite_list:
-            if dude.owner.owner.is_dead:
-                self.dudes_sprite_list.pop(self.dudes_sprite_list.index(dude))
+        dead_dude = event["dead"]
+        self.dudes_sprite_list.pop(self.dudes_sprite_list.index(dead_dude.owner.entity_sprite.sprite))

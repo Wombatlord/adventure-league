@@ -37,6 +37,7 @@ class Fighter:
         self.is_boss = is_boss
         self.target = None
         self.speed = speed
+        self._in_combat = False
 
     def get_dict(self) -> dict:
         result = {
@@ -70,6 +71,14 @@ class Fighter:
 
         return randint(0, possible)
 
+    @property
+    def in_combat(self):
+        return self._in_combat
+
+    @in_combat.setter
+    def set_in_combat(self, state: bool):
+        self._in_combat = state
+    
     @property
     def location(self) -> Node | None:
         if self.is_locatable:
@@ -141,13 +150,8 @@ class Fighter:
         if self.hp <= 0:
             self.hp = 0
             self.owner.is_dead = True
-
-            # results.append(
-            #     {"dying": self.owner}
-            # )
-
-            # print("DYING ACTION RETURN")
-            # print(f"{results=} {self.owner.name=}")
+            
+            result.update(**{"dead": self})
 
         return result
 
@@ -165,6 +169,13 @@ class Fighter:
 
         succesful_hit: int = self.power - target.fighter.defence
         result.update(**{"attack": self.owner})
+        
+        if not self.in_combat:
+            self.set_in_combat = True
+        
+        if not target.fighter.in_combat:
+            target.fighter.set_in_combat = True
+
         if succesful_hit > 0:
             actual_damage = int(
                 2 * self.power**2 / (self.power + target.fighter.defence)
@@ -174,8 +185,12 @@ class Fighter:
                 **{"message": f"{my_name} hits {target_name} for {actual_damage}\n"}
             )
 
+            if target.fighter.hp - actual_damage <= 0:
+                # If the attack will kill, we will no longer be "in combat" until the next attack.
+                self.set_in_combat = False
+            
             result.update(**target.fighter.take_damage(actual_damage))
-
+            
         else:
             result.update(**{"message": f"{my_name} fails to hit {target_name}!"})
 
