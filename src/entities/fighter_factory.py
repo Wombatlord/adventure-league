@@ -3,7 +3,7 @@ from random import randint, choice
 from typing import Callable, NamedTuple
 
 from src.config.constants import merc_names, enemy_types
-from src.config.texture_enums import *
+from src.gui.entity_texture_enums import *
 from src.gui.window_data import WindowData
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
