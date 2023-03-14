@@ -185,3 +185,14 @@ dungeon_descriptors = {
         "Chasm",
     ],
 }
+
+enemy_types = [
+    "Goblin",
+    "Slime",
+]
+
+boss_types = [
+    "Imp",
+    "Lich",
+    "Shadow",
+]

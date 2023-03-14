@@ -25,7 +25,7 @@ class Locatable:
         self.location = location
         self.space = space
         self.speed = speed
-        self.orientation = choice([*Orientation])
+        self.orientation = choice([o.value for o in Orientation])
 
     def path_to_target(self, target) -> tuple[Node]:
         return self.space.get_path(self.location, target.location)
@@ -71,11 +71,10 @@ class Locatable:
             # If speed would go beyond the end of the path, move to the end of the path.
             self.location = path[-1]
             self.orientation = self.location - path[-2]
-            return
-
-        # Otherwise, move as far as along the path as speed allows.
-        self.location = path[self.speed]
-        self.orientation = self.location - path[self.speed - 1]
+        else:
+            # Otherwise, move as far as along the path as speed allows.
+            self.location = path[self.speed]
+            self.orientation = self.location - path[self.speed - 1]
 
         return {
             "move": {

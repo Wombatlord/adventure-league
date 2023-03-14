@@ -21,15 +21,6 @@ class CombatScreen:
         self.alpha_max = 255
         self.alphas = []
 
-    def on_update(self, delta_time, hook: Hook):
-        eng.update_clock -= delta_time
-        call_hook = True
-
-        if eng.update_clock < 0:
-            eng.reset_update_clock()
-            if call_hook:
-                call_hook = hook()
-
     def draw_stats(self):
         heights = self.msg_height()
         proj: health.HealthProjection = health.current()
@@ -44,7 +35,7 @@ class CombatScreen:
         return gen_heights(
             desc=False,
             row_height=40,
-            y=0.3 * WindowData.height,
+            y=0.25 * WindowData.height,
             spacing=2,
             max_height=WindowData.height / 2,
         )

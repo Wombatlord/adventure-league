@@ -9,21 +9,22 @@ from pyglet.math import Vec2
 from src.engine.init_engine import eng
 from src.gui.buttons import CommandBarMixin
 from src.gui.combat_screen import CombatScreen
-from src.gui.gui_components import (box_containing_horizontal_label_pair,
-                                    create_colored_UILabel_header,
-                                    entity_labels_names_only,
-                                    entity_labels_with_cost,
-                                    horizontal_box_pair, single_box,
-                                    vertical_box_pair, vstack_of_three_boxes)
+from src.gui.gui_components import (
+    box_containing_horizontal_label_pair,
+    create_colored_UILabel_header,
+    entity_labels_names_only,
+    entity_labels_with_cost,
+    horizontal_box_pair,
+    single_box,
+    vertical_box_pair,
+    vstack_of_three_boxes,
+)
 from src.gui.gui_utils import Cycle, ScrollWindow
+from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
 from src.utils.pathing.grid_utils import Node
-
-
-def do_nothing():
-    return None
 
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
@@ -179,6 +180,10 @@ def _clear_highlight_selection(
     for entity_label in entity_labels:
         entity_label.label.color = arcade.color.WHITE
         entity_label.label.text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}: {scroll_window.items[entity_labels.index(entity_label)].cost} gp"
+
+
+def do_nothing():
+    pass
 
 
 class RecruitmentPaneSection(arcade.Section):
@@ -766,7 +771,7 @@ class MissionsSection(arcade.Section):
 
 
 class CombatGridSection(arcade.Section):
-    TILE_BASE_DIMS = (256, 512)
+    TILE_BASE_DIMS = (17, 16)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
     SCALE_FACTOR = 0.2
 
@@ -779,30 +784,36 @@ class CombatGridSection(arcade.Section):
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)
-        print("FRESH")
         self.encounter_room = None
         self._original_dims = width, height
 
-        if 800 <= WindowData.width <= 1080 and 600 <= WindowData.height <= 720:
-            self.SCALE_FACTOR = 0.2
-
-        if 1920 >= WindowData.width >= 1080 >= WindowData.height >= 720:
-            self.SCALE_FACTOR = 0.25
+        # if 800 <= WindowData.width <= 1080 and 600 <= WindowData.height <= 720:
+        #     self.SCALE_FACTOR = 0.2
+        #
+        # if 1920 >= WindowData.width >= 1080 >= WindowData.height >= 720:
+        #     self.SCALE_FACTOR = 0.25
 
         self.tile_sprite_list = arcade.SpriteList()
-
+        scale = 1
         for x in range(9, -1, -1):
             for y in range(9, -1, -1):
-                self.tile_sprite_list.append(self.floor_tile_at(x, y))
+                self.tile_sprite_list.append(self.floor_tile_at(x, y, scale))
                 wall_sprite = None
                 if y == 9 and x < 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(0, 1))  # top right wall
+                    wall_sprite = self.wall_tile_at(
+                        x, y, Node(0, 1), scale
+                    )  # top right wall
                 if x == 9 and y < 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(1, 0))
+                    wall_sprite = self.wall_tile_at(x, y, Node(1, 0), scale)
                 if x == 9 and y == 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(1, 1))
+                    wall_sprites = self.wall_tile_at(x, y, Node(1, 1), scale)
                 if wall_sprite:
-                    self.tile_sprite_list.append(wall_sprite)
+                    self.tile_sprite_list.append(*wall_sprite)
+                if wall_sprites:
+                    for wall in wall_sprites:
+                        self.tile_sprite_list.append(wall)
+                    # Ensure we don't try to reappend the sprites.
+                    wall_sprites = None
 
         self.dudes_sprite_list = arcade.SpriteList()
         self.combat_screen = CombatScreen()
@@ -814,12 +825,17 @@ class CombatGridSection(arcade.Section):
     @classmethod
     def init_path(cls) -> arcade.SpriteList:
         selected_path_sprites = arcade.SpriteList()
-        for _ in range(20):
-            sprite = arcade.Sprite(
-                "assets/sprites/kenny_dungeon_pack/Isometric/tableRoundItemsChairs_W.png",
-                scale=cls.SCALE_FACTOR * WindowData.scale[1],
-            )
+        selected_path_sprites.append(
+            arcade.Sprite(WindowData.indicators[SelectionCursor.GREEN.value])
+        )
+        for _ in range(1, 19):
+            sprite_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
+            sprite = arcade.Sprite(sprite_tex, scale=WindowData.scale[1])
             selected_path_sprites.append(sprite)
+
+        selected_path_sprites.append(
+            arcade.Sprite(WindowData.indicators[SelectionCursor.RED.value])
+        )
 
         return selected_path_sprites
 
@@ -837,15 +853,21 @@ class CombatGridSection(arcade.Section):
         )
 
         eng.combat_dispatcher.volatile_subscribe(
-            topic="message",
-            handler_id="CombatGrid.update_dudes",
-            handler=self.update_dudes,
-        )
-
-        eng.combat_dispatcher.volatile_subscribe(
             topic="cleanup",
             handler_id="CombatGrid.clear_occupants",
             handler=self.clear_occupants,
+        )
+
+        eng.combat_dispatcher.volatile_subscribe(
+            topic="attack",
+            handler_id="CombatGrid.swap_textures_for_attack",
+            handler=self.idle_or_attack,
+        )
+
+        eng.combat_dispatcher.volatile_subscribe(
+            topic="dead",
+            handler_id="CombatGrid.clear_dead_sprites",
+            handler=self.clear_dead_sprites,
         )
 
     def clear_occupants(self, event):
@@ -862,54 +884,69 @@ class CombatGridSection(arcade.Section):
 
     def grid_offset(self, x: int, y: int) -> Vec2:
         grid_scale = 0.75
-        sx, sy = self.scaling()
+        sx, sy = WindowData.scale
+        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
         return Vec2(
-            sx
-            * (-x + y)
-            * grid_scale
-            * self.TILE_BASE_DIMS[0]
-            * self.SCALE_FACTOR
-            * WindowData.scale[1]
-            * (0.7),
-            sy
-            * (x + y)
-            * grid_scale
-            * self.TILE_BASE_DIMS[0]
-            * self.SCALE_FACTOR
-            * WindowData.scale[1]
-            * (1 / 3),
-        ) + Vec2(self.width / 2, 8 * self.height / 7)
+            (x - y) * sx * 13,
+            (x + y) * sy * 5,
+        ) * constant_scale + Vec2(self.width / 2, 7 * self.height / 8)
 
-    def wall_tile_at(self, x: int, y: int, orientation: Node) -> arcade.Sprite:
+    def grid_loc(self, v: Vec2) -> Node:
+        v2 = v - Vec2(self.width / 2, 7 * self.height / 8)
+        sx, sy = self.scaling()
+        grid_scale = 0.75
+        v3 = Vec2(  # (x-y, x+y)
+            v2.x
+            / (sx * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (13)),
+            v2.y / (sy * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (5)),
+        )
+
+        node_x = (v3.x + v3.y) / 2
+        node_y = (-v3.x + v3.y) / 2
+        return Node(
+            x=round(node_x),
+            y=round(node_y),
+        )
+
+    def wall_tile_at(
+        self, x: int, y: int, orientation: Node, scale_factor=1
+    ) -> tuple[arcade.Sprite, ...]:
+        scale = 5 * scale_factor
+        wall = self.sprite_at(arcade.Sprite(scale=scale), x, y)
         if orientation == Node(1, 0):
-            sprite_orientation = "_E"
+            # Right / East Walls
+            wall.center_y += 45
+            wall.center_x += 40
+            sprites = (wall,)
+
         elif orientation == Node(1, 1):
-            sprite_orientation = "Corner_S"
+            # Three wall sprites for the corner
+            left = self.sprite_at(arcade.Sprite(scale=scale), x, y)
+            right = self.sprite_at(arcade.Sprite(scale=scale), x, y)
+            top = self.sprite_at(arcade.Sprite(scale=scale), x, y)
+            left.center_y += 45
+            left.center_x -= 40
+            right.center_y += 45
+            right.center_x += 40
+            top.center_y += 100
+            sprites = (left, right, top)
+
         else:
-            sprite_orientation = "_S"
+            # Left / West Walls
+            wall.center_y += 45
+            wall.center_x -= 40
+            sprites = (wall,)
 
-        sprite = arcade.Sprite(
-            f"assets/sprites/kenny_dungeon_pack/Isometric/stoneWall{sprite_orientation}.png",
-            self.SCALE_FACTOR * WindowData.scale[1],
-        )
-        return self.sprite_at(sprite, x, y)
+        for s in sprites:
+            s.texture = WindowData.tiles[89]
 
-    def floor_tile_at(self, x: int, y: int) -> arcade.Sprite:
-        tile = arcade.Sprite(
-            "assets/sprites/kenny_dungeon_pack/Isometric/stone_E.png",
-            self.SCALE_FACTOR * WindowData.scale[1],
-        )
+        return sprites
+
+    def floor_tile_at(self, x: int, y: int, scale=1) -> arcade.Sprite:
+        tile = arcade.Sprite(scale=5 * scale)
+        tile.texture = WindowData.tiles[100]
 
         return self.sprite_at(tile, x, y)
-
-    def dude_at(
-        self, x: int, y: int, orientation: Node, is_gob: bool, is_boss: bool
-    ) -> arcade.Sprite:
-        scale = self.SCALE_FACTOR
-        if is_boss:
-            scale = scale * 1.5
-        dude = dude_sprite_factory(orientation, scale * WindowData.scale[1], is_gob)
-        return self.sprite_at(dude, x, y)
 
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
         offset = self.grid_offset(x, y)
@@ -917,19 +954,27 @@ class CombatGridSection(arcade.Section):
         return sprite
 
     def on_update(self, delta_time: float):
+        eng.update_clock -= delta_time
+
+        call_hook = True
         if not eng.awaiting_input:
             hook = eng.next_combat_action
         else:
             hook = do_nothing
 
-        self.combat_screen.on_update(delta_time=delta_time, hook=hook)
+        self.dudes_sprite_list.update_animation(delta_time=delta_time)
+
+        if eng.update_clock < 0:
+            eng.reset_update_clock()
+            if call_hook:
+                call_hook = hook()
 
     def on_draw(self):
         self.grid_camera.use()
 
-        self.tile_sprite_list.draw()
-        self.dudes_sprite_list.draw()
-        self.selected_path_sprites.draw()
+        self.tile_sprite_list.draw(pixelated=True)
+        self.dudes_sprite_list.draw(pixelated=True)
+        self.selected_path_sprites.draw(pixelated=True)
 
         self.other_camera.use()
 
@@ -944,46 +989,87 @@ class CombatGridSection(arcade.Section):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.grid_camera.set_viewport((0, 0, width, height))
-        self.other_camera.resize(viewport_width=width, viewport_height=height)
+        self.grid_camera.set_viewport(
+            (0, 0, width, height)
+        )  # Stretch the sprites with the window resize
+        self.other_camera.resize(
+            viewport_width=width, viewport_height=height
+        )  # Resize the camera displaying the combat text
 
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
-        print(f"calling set_encounter: {encounter_room.occupants=}")
         if encounter_room:
             self.encounter_room = encounter_room
+
+            self.prepare_dude_sprites()
+
             self.update_dudes(event)
+
+    def prepare_dude_sprites(self):
+        """
+        Constructs the sprite list with the appropriate sprites when starting a dungeon.
+        Clears the sprite when entering a new room and reconstructs with new room member sprites.
+        """
+        if not self.dudes_sprite_list:
+            self.dudes_sprite_list = arcade.SpriteList()
+        else:
+            self.dudes_sprite_list.clear()
+
+        for dude in self.encounter_room.occupants:
+            if dude.fighter.is_boss:
+                dude.entity_sprite.sprite.scale = dude.entity_sprite.sprite.scale * 1.5
+
+            dude.entity_sprite.sprite = self.sprite_at(
+                dude.entity_sprite.sprite,
+                dude.entity_sprite.sprite.center_x,
+                dude.entity_sprite.sprite.center_y,
+            )
+
+            dude.entity_sprite.sprite.center_y += 15
+            dude.entity_sprite.orient(dude.locatable.orientation)
+            self.dudes_sprite_list.append(dude.entity_sprite.sprite)
 
     def update_dudes(self, _: dict) -> None:
         self._update_dudes()
 
     def _update_dudes(self):
+        """
+        Check if any sprites associated to a dead entity are still in the list, if so remove them.
+        Iterate over the occupants of the current room and update the positional information of their sprites as necessary.
+        Sort the sprite list such that sprites higher in screen space are drawn first and then overlapped by lower sprites.
+        """
         if self.encounter_room is None:
             return
-        if not self.dudes_sprite_list:
-            self.dudes_sprite_list = arcade.SpriteList()
-        else:
-            self.dudes_sprite_list.clear()
+
+        # self.clear_dead_sprites()
         for dude in self.encounter_room.occupants:
-            self.dudes_sprite_list.append(
-                self.dude_at(
-                    *dude.locatable.location,
-                    dude.locatable.orientation,
-                    dude.fighter.is_enemy,
-                    dude.fighter.is_boss,
-                )
+            offset = self.grid_offset(
+                dude.locatable.location.x, dude.locatable.location.y
             )
+            dude.entity_sprite.sprite.center_x = offset.x
+            dude.entity_sprite.sprite.center_y = offset.y
+            dude.entity_sprite.sprite.center_y += 15
+            dude.entity_sprite.orient(dude.locatable.orientation)
+        self.dudes_sprite_list.sort(key=lambda y: y.position[1], reverse=True)
 
     def show_path(self, current: tuple[Node]):
-        for i, sprite in enumerate(self.selected_path_sprites):
-            if i >= len(current):
-                sprite.visible = False
-                continue
+        head = (0,)
+        body = tuple(range(1, len(current) - 1))
+        tail = (19,)
+        rest = range(len(current) - 1, 19)
 
-            node = current[i]
-            position = self.grid_offset(*node)
-            sprite.visible = True
-            sprite.center_x, sprite.center_y = position.x, position.y
+        visible = [*head, *body, *tail]
+        invisible = rest
+
+        for i, sprite in enumerate(self.selected_path_sprites):
+            if i in visible:
+                node_idx = i if i in head + body else -1
+                node = current[node_idx]
+                position = self.grid_offset(*node)
+                sprite.visible = True
+                sprite.center_x, sprite.center_y = position.x, position.y
+            elif i in invisible:
+                sprite.visible = False
 
         print(current)
 
@@ -991,21 +1077,15 @@ class CombatGridSection(arcade.Section):
         for sprite in self.selected_path_sprites:
             sprite.visible = False
 
+    def idle_or_attack(self, event):
+        dude = event["attack"]
+        dude.entity_sprite.swap_idle_and_attack_textures()
 
-def dude_sprite_factory(orientation: Node, scale: float, is_gob: bool) -> arcade.Sprite:
-    match orientation:
-        case Node(0, 1):
-            sprite_index = 0
-        case Node(1, 0):
-            sprite_index = 6
-        case Node(0, -1):
-            sprite_index = 4
-        case Node(-1, 0):
-            sprite_index = 2
-        case _:
-            sprite_index = 0
-
-    return arcade.Sprite(
-        f"assets/sprites/kenny_dungeon_pack/Characters/{'Gobs' if is_gob else 'Male'}/Male_{sprite_index}_Idle0{'_Gob' if is_gob else ''}.png",
-        scale,
-    )
+    def clear_dead_sprites(self, event):
+        """
+        If a sprite is associated to a dead entity, remove the sprite from the sprite list.
+        """
+        dead_dude = event["dead"]
+        self.dudes_sprite_list.pop(
+            self.dudes_sprite_list.index(dead_dude.owner.entity_sprite.sprite)
+        )

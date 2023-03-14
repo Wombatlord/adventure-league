@@ -1,9 +1,13 @@
-from random import randint
+from random import choice, randint
 
-from src.config.constants import boss_names, boss_titles, dungeon_descriptors
+from src.config.constants import (
+    boss_names,
+    boss_titles,
+    dungeon_descriptors,
+    enemy_types,
+)
 from src.entities.dungeon import Dungeon, Room
-from src.entities.fighter_factory import (create_random_boss,
-                                          create_random_monster)
+from src.entities.fighter_factory import create_random_boss, create_random_monster
 
 
 def describe_dungeon() -> str:
@@ -19,7 +23,7 @@ def describe_dungeon() -> str:
 def create_random_dungeon(enemy_amount) -> Dungeon:
     enemies = []
     for i in range(enemy_amount):
-        enemies.append(create_random_monster(f"goblin {i}", None))
+        enemies.append(create_random_monster(f"{choice(enemies)} {i}", None))
 
     return Dungeon(
         0,
@@ -40,7 +44,7 @@ def create_random_enemy_room(enemy_amount) -> Room:
     room = Room()
 
     for enemy in range(enemy_amount):
-        room.add_entity(create_random_monster(f"goblin {enemy}", None))
+        room.add_entity(create_random_monster(f"{choice(enemy_types)}", None))
 
     return room
 
