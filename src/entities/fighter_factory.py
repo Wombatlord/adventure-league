@@ -48,17 +48,18 @@ def get_fighter_factory(stats: StatBlock) -> Factory:
         Set up textures for the fighter.
         As we have the name already, use that to determine particular enemy textures for hostile fighters.
         """
+        print(entity_name.name_and_title)
         match (fighter.is_enemy, fighter.is_boss):
             case (False, False):
                 merc = choice([MercenaryOneTextures, MercenaryTwoTextures, MercenaryThreeTextures, MercenaryFourTextures])
                 idle_textures, attack_textures = mercenary_textures(merc)
                 
             case (True, False):
-                if entity_name.name_and_title == enemy_types[0]:
+                if "Goblin" in  entity_name.name_and_title:
                     enemy = choice([GoblinOneTextures, GoblinTwoTextures, GoblinThreeTextures, GoblinFourTextures])
                     idle_textures, attack_textures = goblin_textures(enemy)
                 
-                if entity_name.name_and_title == enemy_types[1]:
+                if "Slime" in entity_name.name_and_title:
                     enemy = SlimeTexture
                     idle_textures, attack_textures = slime_textures(enemy)
             
