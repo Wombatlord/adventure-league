@@ -944,8 +944,6 @@ class CombatGridSection(arcade.Section):
             if call_hook:
                 call_hook = hook()
 
-        # self.combat_screen.on_update(delta_time=delta_time, hook=hook)
-
     def on_draw(self):
         self._camera.use()
 

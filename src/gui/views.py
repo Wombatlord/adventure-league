@@ -573,7 +573,6 @@ class BattleView(arcade.View):
     def on_show_view(self):
         eng.await_input()
 
-
     def on_draw(self):
         self.clear()
 
