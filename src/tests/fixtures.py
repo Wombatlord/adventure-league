@@ -9,7 +9,7 @@ class Fighters:
             "speed": 1,
             "is_boss": boss,
         }
-    
+
     @staticmethod
     def baby(enemy=False, boss=False):
         return {

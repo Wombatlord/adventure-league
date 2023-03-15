@@ -224,7 +224,7 @@ class Engine:
             yield from self.initial_health_values(
                 self.game_state.team.members, encounter.enemies
             )
-                
+
             while encounter.enemies and self.game_state.guild.team.members:
                 # Beginning of encounter actions/state changes go here
                 combat_round = CombatRound(

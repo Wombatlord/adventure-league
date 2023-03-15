@@ -28,10 +28,10 @@ class StatBlock(NamedTuple):
         return {
             "hp": randint(*stats.hp),
             "defence": randint(*stats.defence),
-            "power":randint(*stats.power),
-            "is_enemy":stats.is_enemy,
-            "speed":stats.speed,
-            "is_boss":stats.is_boss,
+            "power": randint(*stats.power),
+            "is_enemy": stats.is_enemy,
+            "speed": stats.speed,
+            "is_boss": stats.is_boss,
         }
 
 

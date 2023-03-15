@@ -70,10 +70,12 @@ class Fighter:
                 ],
                 "targets": targets,
                 "on_confirm": lambda idx: self.provide_target(targets[idx]),
-                "default": targets.index(self.current_target()) if self.current_target() else 0,
+                "default": targets.index(self.current_target())
+                if self.current_target()
+                else 0,
             },
         }
-    
+
     def current_target(self) -> Fighter | None:
         self._cleanse_targets()
         return self._target
@@ -88,7 +90,7 @@ class Fighter:
         self._target = target
         self._cleanse_targets()
         return True
-    
+
     def _cleanse_targets(self):
         if self._prev_target and self._prev_target.incapacitated:
             self._prev_target = None
@@ -116,7 +118,6 @@ class Fighter:
     def is_locatable(self):
         return self.owner.locatable is not None
 
-   
     def choose_nearest_target(self, targets: list[Fighter]) -> int:
         if len(targets) < 1:
             raise ValueError("Supply at least one potential target")
@@ -183,12 +184,12 @@ class Fighter:
 
         return result
 
-    def attack(self, target: Entity|None = None) -> Action:
+    def attack(self, target: Entity | None = None) -> Action:
         if target is not None:
             self.provide_target(target)
 
         target = self.current_target().owner
-        
+
         result = {}
         if self.owner.is_dead:
             raise ValueError(f"{self.owner.name=}: I'm dead jim.")

@@ -26,9 +26,7 @@ class CombatRound:
     turn_complete: bool = False
     fighter_turns_taken: list[bool] = []
 
-    def __init__(
-        self, teamA: list[Entity], teamB: list[Entity]
-    ) -> None:
+    def __init__(self, teamA: list[Entity], teamB: list[Entity]) -> None:
         self.teams = (
             [member.fighter for member in teamA],
             [member.fighter for member in teamB],
@@ -126,7 +124,6 @@ class CombatRound:
         target = combatant.current_target()
         yield from self.advance(combatant, target)
 
-
     def advance(self, combatant, target):
         # Move toward the target as far as speed allows
         move_result = combatant.locatable.approach_target(target)
@@ -136,7 +133,7 @@ class CombatRound:
         if move_result.get("move", {})["in_motion"] is False:
             # yield back the actions from the attack/damage taken immediately
             yield combatant.attack()
-        
+
         combatant._prev_target = target
         combatant.provide_target(None)
 

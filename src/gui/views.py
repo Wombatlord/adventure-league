@@ -589,7 +589,7 @@ class BattleView(arcade.View):
 
     def set_input_request(self, event):
         eng.await_input()
-        
+
         selection = event["target_selection"]
 
         # this is called when the user confirms the selection
@@ -599,14 +599,14 @@ class BattleView(arcade.View):
             return selection["on_confirm"](cursor)
 
         self.target_selection = Selection(
-            selection["paths"], 
+            selection["paths"],
             default=selection["default"],
         ).set_confirmation(on_confirm)
 
         # This is called every time the selection changes
         def on_change():
             self.combat_grid_section.show_path(self.target_selection.current)
-        
+
         self.target_selection.set_on_change_selection(on_change)
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:

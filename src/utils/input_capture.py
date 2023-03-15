@@ -1,4 +1,4 @@
-from typing import Callable, Generic, TypeVar, Self
+from typing import Callable, Generic, Self, TypeVar
 
 _SelectionType = TypeVar("_SelectionType", bound=object)
 
@@ -11,7 +11,7 @@ class Selection(Generic[_SelectionType]):
     def __init__(self, options: tuple[_SelectionType, ...], default=None):
         self.options = options
         self._on_change = lambda: None
-        
+
         if default not in range(len(options)):
             self._cursor = 0
         else:
@@ -23,7 +23,9 @@ class Selection(Generic[_SelectionType]):
         self._callback = callback
         return self
 
-    def set_on_change_selection(self, on_change: Callable[[], None], call_now=True) -> Self:
+    def set_on_change_selection(
+        self, on_change: Callable[[], None], call_now=True
+    ) -> Self:
         self._on_change = on_change
         if call_now:
             on_change()
