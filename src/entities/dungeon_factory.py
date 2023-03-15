@@ -1,9 +1,13 @@
-from random import randint, choice
+from random import choice, randint
 
-from src.config.constants import boss_names, boss_titles, dungeon_descriptors, enemy_types
+from src.config.constants import (
+    boss_names,
+    boss_titles,
+    dungeon_descriptors,
+    enemy_types,
+)
 from src.entities.dungeon import Dungeon, Room
-from src.entities.fighter_factory import (create_random_boss,
-                                          create_random_monster)
+from src.entities.fighter_factory import create_random_boss, create_random_monster
 
 
 def describe_dungeon() -> str:

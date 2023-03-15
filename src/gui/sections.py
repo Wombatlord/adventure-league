@@ -20,6 +20,7 @@ from src.gui.gui_components import (
     vstack_of_three_boxes,
 )
 from src.gui.gui_utils import Cycle, ScrollWindow
+from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
@@ -179,6 +180,10 @@ def _clear_highlight_selection(
     for entity_label in entity_labels:
         entity_label.label.color = arcade.color.WHITE
         entity_label.label.text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}: {scroll_window.items[entity_labels.index(entity_label)].cost} gp"
+
+
+def do_nothing():
+    pass
 
 
 class RecruitmentPaneSection(arcade.Section):
@@ -768,6 +773,7 @@ class MissionsSection(arcade.Section):
 class CombatGridSection(arcade.Section):
     TILE_BASE_DIMS = (17, 16)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
+    SCALE_FACTOR = 0.2
 
     def __init__(
         self,
@@ -781,26 +787,26 @@ class CombatGridSection(arcade.Section):
         self.encounter_room = None
         self._original_dims = width, height
 
-        if WindowData.width >= 800 and WindowData.width <= 1080:
-            if WindowData.height >= 600 and WindowData.height <= 720:
-                self.SCALE_FACTOR = 0.2
-
-        if WindowData.width <= 1920 and WindowData.width >= 1080:
-            if WindowData.height >= 720 and WindowData.height <= 1080:
-                self.SCALE_FACTOR = 0.25
+        # if 800 <= WindowData.width <= 1080 and 600 <= WindowData.height <= 720:
+        #     self.SCALE_FACTOR = 0.2
+        #
+        # if 1920 >= WindowData.width >= 1080 >= WindowData.height >= 720:
+        #     self.SCALE_FACTOR = 0.25
 
         self.tile_sprite_list = arcade.SpriteList()
-
+        scale = 1
         for x in range(9, -1, -1):
             for y in range(9, -1, -1):
-                self.tile_sprite_list.append(self.floor_tile_at(x, y))
+                self.tile_sprite_list.append(self.floor_tile_at(x, y, scale))
                 wall_sprite = None
                 if y == 9 and x < 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(0, 1))  # top right wall
+                    wall_sprite = self.wall_tile_at(
+                        x, y, Node(0, 1), scale
+                    )  # top right wall
                 if x == 9 and y < 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(1, 0))
+                    wall_sprite = self.wall_tile_at(x, y, Node(1, 0), scale)
                 if x == 9 and y == 9:
-                    wall_sprites = self.wall_tile_at(x, y, Node(1, 1))
+                    wall_sprites = self.wall_tile_at(x, y, Node(1, 1), scale)
                 if wall_sprite:
                     self.tile_sprite_list.append(*wall_sprite)
                 if wall_sprites:
@@ -811,9 +817,27 @@ class CombatGridSection(arcade.Section):
 
         self.dudes_sprite_list = arcade.SpriteList()
         self.combat_screen = CombatScreen()
-        self._camera = arcade.Camera()
+        self.grid_camera = arcade.Camera()
         self.other_camera = arcade.Camera()
         self._subscribe_to_events()
+        self.selected_path_sprites = self.init_path()
+
+    @classmethod
+    def init_path(cls) -> arcade.SpriteList:
+        selected_path_sprites = arcade.SpriteList()
+        selected_path_sprites.append(
+            arcade.Sprite(WindowData.indicators[SelectionCursor.GREEN.value])
+        )
+        for _ in range(1, 19):
+            sprite_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
+            sprite = arcade.Sprite(sprite_tex, scale=WindowData.scale[1])
+            selected_path_sprites.append(sprite)
+
+        selected_path_sprites.append(
+            arcade.Sprite(WindowData.indicators[SelectionCursor.RED.value])
+        )
+
+        return selected_path_sprites
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -833,19 +857,19 @@ class CombatGridSection(arcade.Section):
             handler_id="CombatGrid.clear_occupants",
             handler=self.clear_occupants,
         )
-        
+
         eng.combat_dispatcher.volatile_subscribe(
             topic="attack",
             handler_id="CombatGrid.swap_textures_for_attack",
-            handler=self.idle_or_attack
+            handler=self.idle_or_attack,
         )
 
         eng.combat_dispatcher.volatile_subscribe(
             topic="dead",
             handler_id="CombatGrid.clear_dead_sprites",
-            handler=self.clear_dead_sprites
+            handler=self.clear_dead_sprites,
         )
-        
+
     def clear_occupants(self, event):
         encounter = event["cleanup"]
         for occupant in encounter.occupants:
@@ -860,13 +884,12 @@ class CombatGridSection(arcade.Section):
 
     def grid_offset(self, x: int, y: int) -> Vec2:
         grid_scale = 0.75
-        sx, sy = self.scaling()
+        sx, sy = WindowData.scale
+        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
         return Vec2(
-            (x - y)
-            * (sx * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (13)),
-            (x + y)
-            * (sy * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (5)),
-        ) + Vec2(self.width / 2, 7 * self.height / 8)
+            (x - y) * sx * 13,
+            (x + y) * sy * 5,
+        ) * constant_scale + Vec2(self.width / 2, 7 * self.height / 8)
 
     def grid_loc(self, v: Vec2) -> Node:
         v2 = v - Vec2(self.width / 2, 7 * self.height / 8)
@@ -886,9 +909,10 @@ class CombatGridSection(arcade.Section):
         )
 
     def wall_tile_at(
-        self, x: int, y: int, orientation: Node
+        self, x: int, y: int, orientation: Node, scale_factor=1
     ) -> tuple[arcade.Sprite, ...]:
-        wall = self.sprite_at(arcade.Sprite(scale=5), x, y)
+        scale = 5 * scale_factor
+        wall = self.sprite_at(arcade.Sprite(scale=scale), x, y)
         if orientation == Node(1, 0):
             # Right / East Walls
             wall.center_y += 45
@@ -897,9 +921,9 @@ class CombatGridSection(arcade.Section):
 
         elif orientation == Node(1, 1):
             # Three wall sprites for the corner
-            left = self.sprite_at(arcade.Sprite(scale=5), x, y)
-            right = self.sprite_at(arcade.Sprite(scale=5), x, y)
-            top = self.sprite_at(arcade.Sprite(scale=5), x, y)
+            left = self.sprite_at(arcade.Sprite(scale=scale), x, y)
+            right = self.sprite_at(arcade.Sprite(scale=scale), x, y)
+            top = self.sprite_at(arcade.Sprite(scale=scale), x, y)
             left.center_y += 45
             left.center_x -= 40
             right.center_y += 45
@@ -918,8 +942,8 @@ class CombatGridSection(arcade.Section):
 
         return sprites
 
-    def floor_tile_at(self, x: int, y: int) -> arcade.Sprite:
-        tile = arcade.Sprite(scale=5)
+    def floor_tile_at(self, x: int, y: int, scale=1) -> arcade.Sprite:
+        tile = arcade.Sprite(scale=5 * scale)
         tile.texture = WindowData.tiles[100]
 
         return self.sprite_at(tile, x, y)
@@ -933,22 +957,25 @@ class CombatGridSection(arcade.Section):
         eng.update_clock -= delta_time
 
         call_hook = True
-        hook = lambda: None
         if not eng.awaiting_input:
             hook = eng.next_combat_action
+        else:
+            hook = do_nothing
 
         self.dudes_sprite_list.update_animation(delta_time=delta_time)
-        
+
         if eng.update_clock < 0:
+            print(f"{self.__class__}.on_update: TICK")
             eng.reset_update_clock()
             if call_hook:
                 call_hook = hook()
 
     def on_draw(self):
-        self._camera.use()
+        self.grid_camera.use()
 
         self.tile_sprite_list.draw(pixelated=True)
         self.dudes_sprite_list.draw(pixelated=True)
+        self.selected_path_sprites.draw(pixelated=True)
 
         self.other_camera.use()
 
@@ -963,8 +990,12 @@ class CombatGridSection(arcade.Section):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self._camera.set_viewport((0, 0, width, height)) # Stretch the sprites with the window resize
-        self.other_camera.resize(viewport_width=width, viewport_height=height) # Resize the camera displaying the combat text
+        self.grid_camera.set_viewport(
+            (0, 0, width, height)
+        )  # Stretch the sprites with the window resize
+        self.other_camera.resize(
+            viewport_width=width, viewport_height=height
+        )  # Resize the camera displaying the combat text
 
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
@@ -984,7 +1015,7 @@ class CombatGridSection(arcade.Section):
             self.dudes_sprite_list = arcade.SpriteList()
         else:
             self.dudes_sprite_list.clear()
-            
+
         for dude in self.encounter_room.occupants:
             if dude.fighter.is_boss:
                 dude.entity_sprite.sprite.scale = dude.entity_sprite.sprite.scale * 1.5
@@ -1020,16 +1051,42 @@ class CombatGridSection(arcade.Section):
             dude.entity_sprite.sprite.center_y = offset.y
             dude.entity_sprite.sprite.center_y += 15
             dude.entity_sprite.orient(dude.locatable.orientation)
-
         self.dudes_sprite_list.sort(key=lambda y: y.position[1], reverse=True)
+
+    def show_path(self, current: tuple[Node]):
+        head = (0,)
+        body = tuple(range(1, len(current) - 1))
+        tail = (19,)
+        rest = range(len(current) - 1, 19)
+
+        visible = [*head, *body, *tail]
+        invisible = rest
+
+        for i, sprite in enumerate(self.selected_path_sprites):
+            if i in visible:
+                node_idx = i if i in head + body else -1
+                node = current[node_idx]
+                position = self.grid_offset(*node)
+                sprite.visible = True
+                sprite.center_x, sprite.center_y = position.x, position.y
+            elif i in invisible:
+                sprite.visible = False
+
+        print(current)
+
+    def hide_path(self):
+        for sprite in self.selected_path_sprites:
+            sprite.visible = False
 
     def idle_or_attack(self, event):
         dude = event["attack"]
         dude.entity_sprite.swap_idle_and_attack_textures()
-    
+
     def clear_dead_sprites(self, event):
         """
         If a sprite is associated to a dead entity, remove the sprite from the sprite list.
         """
         dead_dude = event["dead"]
-        self.dudes_sprite_list.pop(self.dudes_sprite_list.index(dead_dude.owner.entity_sprite.sprite))
+        self.dudes_sprite_list.pop(
+            self.dudes_sprite_list.index(dead_dude.owner.entity_sprite.sprite)
+        )

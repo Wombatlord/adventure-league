@@ -101,17 +101,23 @@ class Team:
         entity.on_death_hooks = []
 
         entity.on_death_hooks.append(self.remove_dead_member)
-        entity.fighter.on_retreat_hooks.append(self.move_fighter_to_roster)
+        entity.fighter.on_retreat_hooks.append(
+            lambda f: self.move_fighter_to_roster(f.owner)
+        )
 
         entity.fighter.retreating = False
         self.members.append(entity)
 
-    def move_fighter_to_roster(self, entity):
-        try:
-            self.owner.roster.append(self.members.pop(self.members.index(entity)))
-        
-        except ValueError:
-            pass
+    def move_fighter_to_roster(self, entity: Entity):
+        if hasattr(entity, "owner"):
+            entity = entity.owner
+        elif not isinstance(entity, Entity):
+            raise TypeError(
+                f"Can only move Entities and the owners of passed components from the team to the roster, got {entity}",
+            )
+        index = self.members.index(entity)
+        member = self.members.pop(index)
+        self.owner.roster.append(member)
 
     def remove_dead_member(self, entity):
         if entity in self.members:

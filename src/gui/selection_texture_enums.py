@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class SelectionCursor(Enum):
     GREEN = 0
     YELLOW = 1

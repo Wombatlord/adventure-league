@@ -117,7 +117,7 @@ class Node(NamedTuple):
         return self.x == other.x and self.y == other.y
 
     def __sub__(self, other: Node) -> Node:
-        return Node(self.x-other.x, self.y-other.y)
+        return Node(self.x - other.x, self.y - other.y)
 
     def __add__(self, other: Node) -> Node:
         return Node(self.x + other.x, self.y + other.y)

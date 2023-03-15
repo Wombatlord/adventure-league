@@ -5,10 +5,6 @@ if TYPE_CHECKING:
     from src.engine.engine import Engine, Handler
 
 from src import config
-from src.entities.dungeon import Dungeon
-from src.entities.entity import Entity
-from src.entities.fighter import Fighter
-from src.entities.guild import Guild
 
 
 class Dispatcher:
@@ -45,6 +41,8 @@ class Dispatcher:
         self.subscriptions[topic] = {**subs, handler_id: handler_ref}
 
     def publish(self, event: dict[str, Any]) -> None:
+        if config.DEBUG:
+            print(f"{self=} dispatching {event}")
         self._handle_subscriptions(event)
 
     def _handle_subscriptions(self, event: dict[str, Any]) -> None:

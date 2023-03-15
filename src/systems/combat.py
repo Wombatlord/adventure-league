@@ -1,6 +1,6 @@
 from enum import Enum
 from random import shuffle
-from typing import Any, Callable, Generator
+from typing import Any, Callable, Generator, NamedTuple
 
 from src.entities.entity import Entity
 from src.entities.fighter import Fighter
@@ -13,6 +13,11 @@ class CombatHooks(Enum):
     INPUT_PROMPT = 0
 
 
+class Teams(NamedTuple):
+    current: int
+    opposing: int
+
+
 class CombatRound:
     teams: tuple[list[Fighter], list[Fighter]]
 
@@ -21,17 +26,20 @@ class CombatRound:
     turn_complete: bool = False
     fighter_turns_taken: list[bool] = []
 
-    def __init__(
-        self, teamA: list[Entity], teamB: list[Entity], prompt_hook: Hook | None = None
-    ) -> None:
+    def __init__(self, teamA: list[Entity], teamB: list[Entity]) -> None:
         self.teams = (
             [member.fighter for member in teamA],
             [member.fighter for member in teamB],
         )
         self.initiative_roll_actions = self._roll_initiative()
-        self.hooks = {}
-        if prompt_hook:
-            self.hooks = {CombatHooks.INPUT_PROMPT: prompt_hook}
+        for i, entity in enumerate(teamA):
+            entity.fighter.on_retreat_hooks.append(
+                lambda e: len(self.teams[0]) > i and self.teams[0].pop(i)
+            )
+        for i, entity in enumerate(teamB):
+            entity.fighter.on_retreat_hooks.append(
+                lambda e: len(self.teams[0]) > i and self.teams[1].pop(i)
+            )
 
     def _roll_initiative(self) -> list:
         actions = []
@@ -62,18 +70,33 @@ class CombatRound:
 
         return actions
 
-    def _team_id(self, combatant) -> tuple[int, int]:
+    def teams_of(self, combatant) -> Teams:
         team = 0
         if combatant in self.teams[1]:
             team = 1
         # return team, opposing_team
-        return team, (team + 1) % 2
+        return Teams(current=team, opposing=(team + 1) % 2)
 
-    def single_fighter_turn(self) -> Generator[None, None, Action]:
+    def in_play(self, fighter: Fighter, opposing_team: int) -> bool:
+        return (
+            self.teams_of(fighter).current == opposing_team
+            and not fighter.owner.is_dead
+            and not fighter.retreating
+        )
+
+    def get_enemies(self, opposing_team) -> list[Fighter]:
+        return list(
+            filter(
+                lambda f: self.in_play(f, opposing_team),
+                self.teams[0] + self.teams[1],
+            )
+        )
+
+    def do_turn(self) -> Generator[None, None, Action]:
         """
         This will play out a turn if the current fighter at the start of the round order is an enemy.
         If the fighter is a player character, it will instead emit a request_target action from the fighter,
-        initiating a transition into the player_fighter_turn() through the engines _generate_combat_actions() func.
+        initiating a transition into the player_turn() through the engines _generate_combat_actions() func.
         """
         if len(self._round_order) == 0:
             # Stop the iteration when the round is over
@@ -81,110 +104,51 @@ class CombatRound:
                 f"The turn order was empty, {self.teams[0]=}, {self.teams[1]=}"
             )
 
-        combatant = self._round_order.pop(0)
+        combatant = self.current_combatant()
+        opposing_team = self.teams_of(combatant).opposing
+        enemies = self.get_enemies(opposing_team)
 
-        _, opposing_team = self._team_id(combatant)
+        if combatant.incapacitated:
+            raise Exception(f"Incapacitated combatant {combatant.get_dict()}: oops!")
 
-        enemies = []
-
-        for team in self.teams:
-            for fighter in team:
-                if (
-                    self._team_id(fighter)[0] == opposing_team
-                    and fighter.owner.is_dead is False
-                ):
-                    enemies.append(fighter)
-
-        if combatant.incapacitated == False:
+        # If the combatant cannot acquire a target for whatever reason, this
+        # will hold up combat forever!
+        while not combatant.current_target():
             if combatant.is_enemy:
-                # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
-                target_index = combatant.choose_nearest_target(enemies)
+                yield combatant.choose_nearest_target(enemies)
+            else:
+                yield combatant.request_target(enemies)
 
-                target = enemies[target_index]
+        # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
+        combatant = self.current_combatant(pop=True)
+        target = combatant.current_target()
+        yield from self.advance(combatant, target)
 
-                # Move toward the target as far as speed allows
-                move_result = combatant.locatable.approach_target(target)
-                yield move_result
+    def advance(self, combatant, target):
+        # Move toward the target as far as speed allows
+        move_result = combatant.locatable.approach_target(target)
+        yield move_result
 
-                # if we got to the destination and can attack, then attack
-                if move_result.get("move", {})["in_motion"] is False:
-                    # yield back the actions from the attack/damage taken immediately
-                    yield combatant.attack(target.owner)
+        # if we got to the destination and can attack, then attack
+        if move_result.get("move", {})["in_motion"] is False:
+            # yield back the actions from the attack/damage taken immediately
+            yield combatant.attack()
 
-                if a := self._check_for_death(target):
-                    yield a
+        combatant._prev_target = target
+        combatant.provide_target(None)
 
-                if a := self._check_for_retreat(combatant):
-                    yield a
+        if a := self._check_for_death(target):
+            yield a
 
-            if not combatant.is_enemy:
-                # If the fighter is a player character, emit a target request action which will cause
-                # the engine to await_input() and instead invoke player_fighter_turn() from eng._generate_combat_actions()
-                yield combatant.request_target()
-
-                # Insert the fighter back at the beginning of the turn order to be handled by player_fighter_turn()
-                self._round_order.insert(0, combatant)
-
-    def player_fighter_turn(self, target: int | None) -> Generator[None, None, Action]:
-        """
-        While eng.awaiting_input is True, this function will be repeatedly called in eng._generate_combat_actions()
-        The target is passed in from that scope as eng.chosen_target, which is updated via the on_keypress hook of the MissionsView.
-        While the target being passed is None, this function will continue to emit request_target actions which keeps the engine awaiting input.
-        When a valid target is passed in, the turn will resolve the attack actions and yield them.
-        eng.await_input is reset to False when the user presses space to advance after target selection, ending the calls to this function
-        and continuing with eng._generate_combat_actions().
-        """
-
-        if len(self._round_order) == 0:
-            # Stop the iteration when the round is over
-            raise StopIteration(
-                f"The turn order was empty, {self.teams[0]=}, {self.teams[1]=}"
-            )
-
-        combatant = self._round_order.pop(0)
-
-        _, opposing_team = self._team_id(combatant)
-
-        enemies = []
-
-        for team in self.teams:
-            for fighter in team:
-                if (
-                    self._team_id(fighter)[0] == opposing_team
-                    and fighter.owner.is_dead is False
-                ):
-                    enemies.append(fighter)
-
-        if combatant.incapacitated == False:
-            if target is None or target > len(enemies) - 1:
-                # If we don't have a valid target from the calling scope, keep the fighter at the start of the turn order
-                # and emit another request for a target.
-                self._round_order.insert(0, combatant)
-                yield combatant.request_target()
-
-            if target is not None and target <= len(enemies) - 1:
-                # If the target is valid, then resolve the attack and yield the resulting actions for display when the user advances.
-                target_index = target
-                _target = enemies[target_index]
-
-                # Move toward the target as far as speed allows
-                move_result = combatant.locatable.approach_target(_target)
-                yield move_result
-                # if we got to the destination and can attack, then attack
-                if move_result.get("move", {})["in_motion"] is False:
-                    # yield back the actions from the attack/damage taken immediately
-                    yield combatant.attack(_target.owner)
-
-                if a := self._check_for_death(_target):
-                    yield a
-
-                if a := self._check_for_retreat(combatant):
-                    yield a
+        if a := self._check_for_retreat(combatant):
+            yield a
 
     def _check_for_death(self, target) -> Action:
         name = target.owner.name.name_and_title
         if target.owner.is_dead:
             target.owner.die()
+            if target in self._round_order:
+                self._round_order = [c for c in self._round_order if c is not target]
             return {"dying": target.owner, "message": f"{name} is dead!"}
 
         return {}
@@ -192,6 +156,9 @@ class CombatRound:
     def _check_for_retreat(self, fighter: Fighter) -> list[dict[str, str]]:
         result = {}
         if fighter.retreating == True:
+            if fighter in self._round_order:
+                self._round_order = [c for c in self._round_order if c is not fighter]
+
             result.update(**fighter.owner.annotate_event({}))
             result.update(
                 {
@@ -226,3 +193,11 @@ class CombatRound:
 
     def is_complete(self) -> bool:
         return not self.is_complete()
+
+    def current_combatant(self, pop=False) -> Fighter | None:
+        if self._round_order:
+            if pop:
+                return self._round_order.pop(0)
+            return self._round_order[0]
+
+        return None

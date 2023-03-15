@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Callable, Generator, NamedTuple
+
 from src.engine.describer import Describer
 from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
 from src.engine.game_state import AwardSpoilsHandler, GameState
@@ -82,6 +83,8 @@ class Engine:
     def flush_all(self):
         self.flush_subscriptions()
         self.flush_projections()
+        for entity in self.game_state.entities():
+            entity.clear_hooks()
 
     def flush_subscriptions(self):
         self.combat_dispatcher.flush_subs()
@@ -104,6 +107,14 @@ class Engine:
 
             self.process_one(event)
 
+    def _set_target(self, target: int) -> bool:
+        try:
+            self.set_target(target)
+            return True
+        except Exception as e:
+            print(f"SOURCE: {__file__}; ERROR: Failed to select target with error: {e}")
+            return False
+
     def process_one(self, event: Action) -> None:
         if "cleanup" in event:
             self.flush_all()
@@ -113,10 +124,6 @@ class Engine:
             # Purely an instruction to the engine
             self._handle_delay_action(event)
             del event["delay"]
-
-        if "await_input" in event:
-            self.await_input()
-            del event["await_input"]
 
         if "message" in event:
             self.messages.append(event["message"])
@@ -149,8 +156,13 @@ class Engine:
     def await_input(self) -> None:
         self.awaiting_input = True
 
+    def input_received(self) -> None:
+        self.awaiting_input = False
+
     def set_target(self, target_choice) -> None:
         self.chosen_target = target_choice
+        self.next_combat_action()
+        self.awaiting_input = False
 
     def end_of_combat(self, win: bool = True) -> list[Action]:
         guild = self.game_state.get_guild()
@@ -193,6 +205,7 @@ class Engine:
         This is the source ==Action==> consumer connection
         """
         try:
+            print(f"{self.__class__}.next_combat_action: trying next(self.combat)")
             action = next(self.combat)
             self.process_one(action)
             return True
@@ -208,51 +221,23 @@ class Engine:
             encounter.include_party(self.game_state.team.members)
             yield {"new_encounter": encounter}
 
-            healths = self.initial_health_values(
+            yield from self.initial_health_values(
                 self.game_state.team.members, encounter.enemies
             )
-
-            for h in healths:
-                yield h
 
             while encounter.enemies and self.game_state.guild.team.members:
                 # Beginning of encounter actions/state changes go here
                 combat_round = CombatRound(
                     self.game_state.guild.team.members,
                     encounter.enemies,
-                    self.await_input,
                 )
 
                 # example of per-round actions
-                for action in combat_round.initiative_roll_actions:
-                    yield action
+                yield from combat_round.initiative_roll_actions
 
                 # then we begin iterating turns
                 while combat_round.continues():
-                    if self.awaiting_input == False:
-                        # The following will attempt to yield attack actions for the fighter at the beginning of the combat_round._turn_order.
-                        # If that fighter is a player merc, it will skip attacking and instead cause self.awaiting_input to be true
-                        # via the combatants request_target() method.
-                        actions = combat_round.single_fighter_turn()
-
-                    while self.awaiting_input == True:
-                        # We sit in this loop until eng.chosen_target is updated by user input
-                        # Once the user inputs a valid target and causes the next iteration,
-                        # attack actions will be yielded and awaiting_input will become false.
-                        actions = combat_round.player_fighter_turn(self.chosen_target)
-
-                        # Yield one of the following depending on if the user has selected a target
-                        # Reset the target after a loop ending run of player_fighter_turn
-                        if self.chosen_target is None:
-                            yield {
-                                "message": "Use the numpad to choose a target before advancing!"
-                            }
-                        else:
-                            self.chosen_target = None
-                            yield {}
-
-                    for action in actions:
-                        yield action
+                    yield from combat_round.do_turn()
 
             if len(self.game_state.guild.team.members) == 0:
                 break
@@ -265,8 +250,7 @@ class Engine:
         else:
             win = False
 
-        for action in self.end_of_combat(win=win):
-            yield action
+        yield from self.end_of_combat(win=win)
 
         yield {"cleanup": encounter}
 

@@ -1,6 +1,7 @@
+from enum import Enum
+
 from arcade.sprite import Sprite
 from arcade.texture import Texture
-from enum import Enum
 
 from src.entities.locatable import Node
 
@@ -19,14 +20,14 @@ class BaseSprite(Sprite):
 
     def update_animation(self, delta_time: float = 1 / 60) -> None:
         self.animation_cycle -= delta_time
-        
+
         if self.animation_cycle <= 0:
             match self.tex_idx:
                 case 0:
                     self.texture = self.textures[self.tex_idx]
                     self.tex_idx = (self.tex_idx + 1) % len(self.textures)
                     self.animation_cycle = 0.75
-            
+
                 case 1:
                     self.texture = self.textures[self.tex_idx]
                     self.tex_idx = (self.tex_idx + 1) % len(self.textures)
@@ -47,15 +48,14 @@ class EntitySprite:
         self.attack_textures = attack_textures
         self.all_textures = (
             [tex for tex in idle_textures],
-            [tex.flip_left_to_right() for tex in idle_textures],
+            [tex.flip_left_right() for tex in idle_textures],
             [tex for tex in attack_textures],
-            [tex.flip_left_to_right() for tex in attack_textures]
+            [tex.flip_left_right() for tex in attack_textures],
         )
 
         self.sprite.textures = self.all_textures[0]
         self.sprite.set_texture(0)
-        
-    
+
     def swap_idle_and_attack_textures(self):
         if self.owner.fighter.in_combat:
             self.sprite.textures = self.all_textures[2]
@@ -64,12 +64,18 @@ class EntitySprite:
         else:
             self.sprite.textures = self.all_textures[0]
             self.sprite.set_texture(0)
-            
+
     def orient(self, orientation: Node):
         if isinstance(orientation, Enum):
             orientation = orientation.value
 
-        assert isinstance(orientation, Node)
+        match orientation:
+            case (x, y) if isinstance(x, int) and isinstance(y, int):
+                orientation = Node(*orientation)
+
+        assert isinstance(
+            orientation, Node
+        ), f"expected type Node, got {type(orientation)=}"
         match orientation:
             case Node(0, 1) | Node(-1, 0):
                 if self.owner.fighter.in_combat:

@@ -10,7 +10,6 @@ class Room:
         self.enemies: list[Entity] = []
         self.occupants: list[Entity] = []
         self._cleared = False
-        self.on_entry_hooks = []
         self.space = Space(Node(x=0, y=0), Node(*size), exclusions=set())
         self.entry_door = Node(x=0, y=5)
 
@@ -28,7 +27,9 @@ class Room:
         entity.on_death_hooks.append(self.remove)
         entity.on_death_hooks.append(Entity.flush_locatable)
         entity.fighter.on_retreat_hooks.append(lambda f: self.remove(f.owner))
-        entity.fighter.on_retreat_hooks.append(lambda f: Entity.flush_locatable(f.owner))
+        entity.fighter.on_retreat_hooks.append(
+            lambda f: Entity.flush_locatable(f.owner)
+        )
 
     def include_party(self, party: list[Entity]) -> None:
         for member in party:
@@ -42,6 +43,12 @@ class Room:
             )
 
     def remove(self, entity: Entity):
+        if hasattr(entity, "owner"):
+            entity = entity.owner
+        elif not isinstance(entity, Entity):
+            raise TypeError(
+                f"Can only remove Entities and owned components from the room, got {entity}",
+            )
         if entity.fighter.is_enemy:
             self.enemies.pop(self.enemies.index(entity))
         self.occupants.pop(self.occupants.index(entity))

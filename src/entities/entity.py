@@ -27,7 +27,7 @@ class Name(NamedTuple):
 class Entity:
     def __init__(
         self,
-        sprite = None,
+        sprite=None,
         name: Name = None,
         cost: int = None,
         fighter=None,
@@ -46,7 +46,7 @@ class Entity:
         self.fighter = fighter
         if self.fighter:
             self.fighter.owner = self
-        
+
         self.entity_sprite: EntitySprite = sprite
         if self.entity_sprite:
             self.entity_sprite.owner = self
@@ -95,5 +95,10 @@ class Entity:
         }
 
     def die(self):
-        for hook in self.on_death_hooks:
+        hooks = self.on_death_hooks
+        while hooks and (hook := hooks.pop(0)):
             hook(self)
+
+    def clear_hooks(self):
+        self.on_death_hooks = []
+        self.fighter.clear_hooks()

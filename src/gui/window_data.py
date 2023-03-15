@@ -13,13 +13,13 @@ def _cross_platform_name(name: str) -> str:
     return name
 
 
-@dataclass
 class WindowData:
-    width = 1080
-    height = 720
+    width = 800
+    height = 600
+    scale = (width / 800, height / 600)
     title_background = arcade.load_texture("./assets/background_glacial_mountains.png")
     mission_background = arcade.load_texture("./assets/mb.png")
-    
+
     tiles = arcade.load_spritesheet(
         "./assets/sprites/Isometric_MedievalFantasy_Tiles.png",
         sprite_height=17,
@@ -28,7 +28,7 @@ class WindowData:
         count=111,
         margin=0,
     )
-    
+
     fighters = arcade.load_spritesheet(
         "./assets/sprites/IsometricTRPGAssetPack_OutlinedEntities.png",
         sprite_width=16,
@@ -37,7 +37,7 @@ class WindowData:
         count=130,
         margin=1,
     )
-    
+
     indicators = arcade.load_spritesheet(
         "./assets/sprites/TRPGIsometricAssetPack_MapIndicators.png",
         sprite_height=8,
@@ -46,6 +46,6 @@ class WindowData:
         count=6,
         margin=0,
     )
-    
+
     window_icon = pyglet.image.load("./assets/icon.png")
     font = _cross_platform_name("Alagard")
