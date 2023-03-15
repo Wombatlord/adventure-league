@@ -27,16 +27,13 @@ class CombatRound:
     fighter_turns_taken: list[bool] = []
 
     def __init__(
-        self, teamA: list[Entity], teamB: list[Entity], prompt_hook: Hook | None = None
+        self, teamA: list[Entity], teamB: list[Entity]
     ) -> None:
         self.teams = (
             [member.fighter for member in teamA],
             [member.fighter for member in teamB],
         )
         self.initiative_roll_actions = self._roll_initiative()
-        self.hooks = {}
-        if prompt_hook:
-            self.hooks = {CombatHooks.INPUT_PROMPT: prompt_hook}
         for i, entity in enumerate(teamA):
             entity.fighter.on_retreat_hooks.append(
                 lambda e: len(self.teams[0]) > i and self.teams[0].pop(i)
@@ -97,7 +94,7 @@ class CombatRound:
             )
         )
 
-    def ai_turn(self) -> Generator[None, None, Action]:
+    def do_turn(self) -> Generator[None, None, Action]:
         """
         This will play out a turn if the current fighter at the start of the round order is an enemy.
         If the fighter is a player character, it will instead emit a request_target action from the fighter,
@@ -116,54 +113,19 @@ class CombatRound:
         if combatant.incapacitated:
             raise Exception(f"Incapacitated combatant {combatant.get_dict()}: oops!")
 
-        if not combatant.is_enemy:
-            # If the fighter is a player character, emit a target request action which will cause
-            # the engine to await_input() and instead invoke player_turn() from
-            # eng._generate_combat_actions()
-            yield combatant.request_target(enemies)
-        else:
-            # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
-            target_index = combatant.choose_nearest_target(enemies)
-            target = enemies[target_index]
-            combatant = self.current_combatant(pop=True)
-            yield from self.advance(combatant, target)
+        # If the combatant cannot acquire a target for whatever reason, this
+        # will hold up combat forever!
+        while not combatant.current_target():
+            if combatant.is_enemy:
+                yield combatant.choose_nearest_target(enemies)
+            else:
+                yield combatant.request_target(enemies)
 
-    def player_turn(self, target: int | None) -> Generator[Action, None, None]:
-        """
-        While eng.awaiting_input is True, this function will be repeatedly called in eng._generate_combat_actions()
-        The target is passed in from that scope as eng.chosen_target, which is updated via the on_keypress hook of the MissionsView.
-        While the target being passed is None, this function will continue to emit request_target actions which keeps the engine awaiting input.
-        When a valid target is passed in, the turn will resolve the attack actions and yield them.
-        eng.await_input is reset to False when the user presses space to advance after target selection, ending the calls to this function
-        and continuing with eng._generate_combat_actions().
-        """
+        # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
+        combatant = self.current_combatant(pop=True)
+        target = combatant.current_target()
+        yield from self.advance(combatant, target)
 
-        if len(self._round_order) == 0:
-            # Stop the iteration when the round is over
-            raise StopIteration(
-                f"The turn order was empty, {self.teams[0]=}, {self.teams[1]=}"
-            )
-
-        combatant = self.current_combatant()
-        opposing_team = self.teams_of(combatant).opposing
-        enemies = self.get_enemies(opposing_team)
-
-        if combatant.incapacitated:
-            raise Exception(f"Incapacitated combatant {combatant.get_dict()}: oops!")
-
-        if target is None:
-            yield combatant.request_target(enemies)
-        elif target not in range(len(enemies)):
-            # If we don't have a valid target from the calling scope, keep the fighter at the start of the turn
-            # order and emit another request for a target.
-            yield combatant.request_target(enemies)
-        else:
-            # If the target is valid, then resolve the attack and yield the resulting actions for display when the
-            # user advances.
-            target_index = target
-            target = enemies[target_index]
-            combatant = self.current_combatant(pop=True)
-            yield from self.advance(combatant, target)
 
     def advance(self, combatant, target):
         # Move toward the target as far as speed allows
@@ -173,7 +135,10 @@ class CombatRound:
         # if we got to the destination and can attack, then attack
         if move_result.get("move", {})["in_motion"] is False:
             # yield back the actions from the attack/damage taken immediately
-            yield combatant.attack(target.owner)
+            yield combatant.attack()
+        
+        combatant._prev_target = target
+        combatant.provide_target(None)
 
         if a := self._check_for_death(target):
             yield a

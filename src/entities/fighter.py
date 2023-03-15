@@ -35,7 +35,8 @@ class Fighter:
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
-        self.target = None
+        self._target = None
+        self._prev_target = None
         self.speed = speed
         self._in_combat = False
 
@@ -60,7 +61,7 @@ class Fighter:
 
     def request_target(self, targets: list[Fighter]) -> Action:
         return {
-            "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target!",
+            "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target using the up and down keys.",
             "await_input": self,
             "target_selection": {
                 "paths": [
@@ -68,14 +69,31 @@ class Fighter:
                     for t in targets
                 ],
                 "targets": targets,
-                "confirmation_callback": None,
+                "on_confirm": lambda idx: self.provide_target(targets[idx]),
+                "default": targets.index(self.current_target()) if self.current_target() else 0,
             },
         }
+    
+    def current_target(self) -> Fighter | None:
+        self._cleanse_targets()
+        return self._target
 
-    def choose_target(self, targets) -> int:
-        possible = len(targets) - 1
+    def last_target(self) -> Fighter | None:
+        self._cleanse_targets()
+        return self._prev_target
 
-        return randint(0, possible)
+    def provide_target(self, target: Fighter) -> bool:
+        if self._target is not None:
+            self._prev_target = self._target
+        self._target = target
+        self._cleanse_targets()
+        return True
+    
+    def _cleanse_targets(self):
+        if self._prev_target and self._prev_target.incapacitated:
+            self._prev_target = None
+        if self._target and self._target.incapacitated:
+            self._target = None
 
     @property
     def in_combat(self):
@@ -98,6 +116,7 @@ class Fighter:
     def is_locatable(self):
         return self.owner.locatable is not None
 
+   
     def choose_nearest_target(self, targets: list[Fighter]) -> int:
         if len(targets) < 1:
             raise ValueError("Supply at least one potential target")
@@ -138,7 +157,9 @@ class Fighter:
                 f"The fighter {self.owner.name.name_and_title} could not traverse to any of the potential targets"
             )
 
-        return closest
+        self.provide_target(targets[closest])
+
+        return {"target_chosen": self.current_target()}
 
     @property
     def incapacitated(self) -> bool:
@@ -162,7 +183,12 @@ class Fighter:
 
         return result
 
-    def attack(self, target: Entity) -> Action:
+    def attack(self, target: Entity|None = None) -> Action:
+        if target is not None:
+            self.provide_target(target)
+
+        target = self.current_target().owner
+        
         result = {}
         if self.owner.is_dead:
             raise ValueError(f"{self.owner.name=}: I'm dead jim.")
@@ -203,6 +229,9 @@ class Fighter:
 
             if not self.is_enemy:
                 self.commence_retreat()
+
+        self._prev_target = target.fighter
+        self.provide_target(None)
 
         return result
 

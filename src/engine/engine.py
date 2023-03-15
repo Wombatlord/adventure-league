@@ -125,11 +125,6 @@ class Engine:
             self._handle_delay_action(event)
             del event["delay"]
 
-        if "await_input" in event:
-            self.await_input()
-            del event["await_input"]
-            event["target_selection"]["confirmation_callback"] = self._set_target
-
         if "message" in event:
             self.messages.append(event["message"])
 
@@ -160,6 +155,9 @@ class Engine:
 
     def await_input(self) -> None:
         self.awaiting_input = True
+
+    def input_received(self) -> None:
+        self.awaiting_input = False
 
     def set_target(self, target_choice) -> None:
         self.chosen_target = target_choice
@@ -223,48 +221,23 @@ class Engine:
             encounter.include_party(self.game_state.team.members)
             yield {"new_encounter": encounter}
 
-            healths = self.initial_health_values(
+            yield from self.initial_health_values(
                 self.game_state.team.members, encounter.enemies
             )
-
-            for h in healths:
-                yield h
-
+                
             while encounter.enemies and self.game_state.guild.team.members:
                 # Beginning of encounter actions/state changes go here
                 combat_round = CombatRound(
                     self.game_state.guild.team.members,
                     encounter.enemies,
-                    self.await_input,
                 )
 
                 # example of per-round actions
-                for action in combat_round.initiative_roll_actions:
-                    yield action
+                yield from combat_round.initiative_roll_actions
 
                 # then we begin iterating turns
                 while combat_round.continues():
-                    if not self.awaiting_input:
-                        # The following will attempt to yield attack actions for the fighter at the beginning of the combat_round._turn_order.
-                        # If that fighter is a player merc, it will skip attacking and instead cause self.awaiting_input to be true
-                        # via the combatants request_target() method.
-                        yield from combat_round.ai_turn()
-
-                    while self.awaiting_input:
-                        # We sit in this loop until eng.chosen_target is updated by user input
-                        # Once the user inputs a valid target and causes the next iteration,
-                        # attack actions will be yielded and awaiting_input will become false.
-
-                        # Yield one of the following depending on if the user has selected a target
-                        # Reset the target after a loop ending run of player_turn
-                        if self.chosen_target is None:
-                            yield {
-                                "message": "Use the numpad to choose a target before advancing!"
-                            }
-                        else:
-                            actions = combat_round.player_turn(self.chosen_target)
-                            self.chosen_target = None
-                            yield from actions
+                    yield from combat_round.do_turn()
 
             if len(self.game_state.guild.team.members) == 0:
                 break
@@ -277,8 +250,7 @@ class Engine:
         else:
             win = False
 
-        for action in self.end_of_combat(win=win):
-            yield action
+        yield from self.end_of_combat(win=win)
 
         yield {"cleanup": encounter}
 

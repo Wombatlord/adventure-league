@@ -588,10 +588,26 @@ class BattleView(arcade.View):
         self.clear()
 
     def set_input_request(self, event):
+        eng.await_input()
+        
         selection = event["target_selection"]
-        self.target_selection = Selection(selection["paths"])
-        self.target_selection.set_confirmation(selection["confirmation_callback"])
-        self.combat_grid_section.show_path(self.target_selection.current)
+
+        # this is called when the user confirms the selection
+        def on_confirm(cursor: int) -> bool:
+            self.combat_grid_section.hide_path()
+            eng.input_received()
+            return selection["on_confirm"](cursor)
+
+        self.target_selection = Selection(
+            selection["paths"], 
+            default=selection["default"],
+        ).set_confirmation(on_confirm)
+
+        # This is called every time the selection changes
+        def on_change():
+            self.combat_grid_section.show_path(self.target_selection.current)
+        
+        self.target_selection.set_on_change_selection(on_change)
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         print(f"{self.__class__}.on_key_press called with '{chr(symbol)}'")
@@ -615,12 +631,10 @@ class BattleView(arcade.View):
         match symbol:
             case arcade.key.UP:
                 self.target_selection.prev()
-                self.combat_grid_section.show_path(self.target_selection.current)
                 print(self.target_selection)
 
             case arcade.key.DOWN:
                 self.target_selection.next()
-                self.combat_grid_section.show_path(self.target_selection.current)
                 print(self.target_selection)
 
             case arcade.key.SPACE:

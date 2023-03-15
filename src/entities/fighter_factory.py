@@ -24,6 +24,16 @@ class StatBlock(NamedTuple):
     def factory(self) -> Factory:
         return get_fighter_factory(self)
 
+    def fighter_conf(stats) -> dict:
+        return {
+            "hp": randint(*stats.hp),
+            "defence": randint(*stats.defence),
+            "power":randint(*stats.power),
+            "is_enemy":stats.is_enemy,
+            "speed":stats.speed,
+            "is_boss":stats.is_boss,
+        }
+
 
 _mercenary = StatBlock(
     hp=(25, 25), defence=(1, 3), power=(3, 5), speed=1, is_enemy=False, is_boss=False
