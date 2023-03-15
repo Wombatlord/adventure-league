@@ -10,7 +10,6 @@ class Room:
         self.enemies: list[Entity] = []
         self.occupants: list[Entity] = []
         self._cleared = False
-        self.on_entry_hooks = []
         self.space = Space(Node(x=0, y=0), Node(*size), exclusions=set())
         self.entry_door = Node(x=0, y=5)
 

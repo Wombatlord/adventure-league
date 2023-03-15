@@ -41,7 +41,8 @@ class Dispatcher:
         self.subscriptions[topic] = {**subs, handler_id: handler_ref}
 
     def publish(self, event: dict[str, Any]) -> None:
-        print(f"{self=} dispatching {event}")
+        if config.DEBUG:
+            print(f"{self=} dispatching {event}")
         self._handle_subscriptions(event)
 
     def _handle_subscriptions(self, event: dict[str, Any]) -> None:

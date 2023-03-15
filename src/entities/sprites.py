@@ -48,9 +48,9 @@ class EntitySprite:
         self.attack_textures = attack_textures
         self.all_textures = (
             [tex for tex in idle_textures],
-            [tex.flip_left_to_right() for tex in idle_textures],
+            [tex.flip_left_right() for tex in idle_textures],
             [tex for tex in attack_textures],
-            [tex.flip_left_to_right() for tex in attack_textures],
+            [tex.flip_left_right() for tex in attack_textures],
         )
 
         self.sprite.textures = self.all_textures[0]

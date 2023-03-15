@@ -40,15 +40,13 @@ class Fighter:
         self._in_combat = False
 
     def get_dict(self) -> dict:
-        result = {
-            "max_hp": self.max_hp,
-            "hp": self.hp,
-            "defence": self.defence,
-            "power": self.power,
-            "level": self.level,
-            "xp_reward": self.xp_reward,
-            "current_xp": self.current_xp,
-        }
+        d = self.__dict__
+        result = {}
+        desired_items = {"retreating", "hp", "is_enemy"}
+
+        for k, v in d.items():
+            if k in desired_items:
+                result[k] = v
 
         return result
 
@@ -144,7 +142,8 @@ class Fighter:
 
     @property
     def incapacitated(self) -> bool:
-        return self.owner.is_dead or self.retreating
+        is_incapacitated = self.owner.is_dead or self.retreating
+        return is_incapacitated
 
     def initial_health(self) -> Action:
         result = {}
@@ -202,14 +201,15 @@ class Fighter:
         else:
             result.update(**{"message": f"{my_name} fails to hit {target_name}!"})
 
-            if self.is_enemy != True:
+            if not self.is_enemy:
                 self.commence_retreat()
 
         return result
 
     def commence_retreat(self):
         self.retreating = True
-        for hook in self.on_retreat_hooks:
+        hooks = self.on_retreat_hooks
+        while hooks and (hook := hooks.pop(0)):
             hook(self)
 
     def clear_hooks(self):

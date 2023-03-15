@@ -66,10 +66,17 @@ def get_fighter_factory(stats: StatBlock) -> Factory:
                 idle_textures, attack_textures = mercenary_textures(merc)
 
             case (True, False):
-                if "Goblin" in  entity_name.name_and_title:
-                    enemy = choice([GoblinOneTextures, GoblinTwoTextures, GoblinThreeTextures, GoblinFourTextures])
+                if "Goblin" in entity_name.name_and_title:
+                    enemy = choice(
+                        [
+                            GoblinOneTextures,
+                            GoblinTwoTextures,
+                            GoblinThreeTextures,
+                            GoblinFourTextures,
+                        ]
+                    )
                     idle_textures, attack_textures = goblin_textures(enemy)
-                
+
                 if "Slime" in entity_name.name_and_title:
                     enemy = SlimeTexture
                     idle_textures, attack_textures = slime_textures(enemy)

@@ -95,7 +95,8 @@ class Entity:
         }
 
     def die(self):
-        for hook in self.on_death_hooks:
+        hooks = self.on_death_hooks
+        while hooks and (hook := hooks.pop(0)):
             hook(self)
 
     def clear_hooks(self):

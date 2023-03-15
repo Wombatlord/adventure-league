@@ -588,13 +588,13 @@ class BattleView(arcade.View):
         self.clear()
 
     def set_input_request(self, event):
-        print("set input request")
         selection = event["target_selection"]
         self.target_selection = Selection(selection["paths"])
         self.target_selection.set_confirmation(selection["confirmation_callback"])
         self.combat_grid_section.show_path(self.target_selection.current)
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
+        print(f"{self.__class__}.on_key_press called with '{chr(symbol)}'")
         match symbol:
             case arcade.key.G:
                 if eng.mission_in_progress is False:
@@ -602,11 +602,14 @@ class BattleView(arcade.View):
                     guild_view = GuildView()
                     self.window.show_view(guild_view)
 
-        if not self.target_selection:
+        if not self.target_selection and eng.awaiting_input:
             match symbol:
                 case arcade.key.SPACE:
                     eng.next_combat_action()
                     eng.awaiting_input = False
+            return
+
+        if not self.target_selection:
             return
 
         match symbol:
@@ -621,6 +624,8 @@ class BattleView(arcade.View):
                 print(self.target_selection)
 
             case arcade.key.SPACE:
+                if not self.target_selection:
+                    return
                 ok = self.target_selection.confirm()
                 if ok:
                     self.combat_grid_section.hide_path()
