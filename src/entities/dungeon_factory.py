@@ -44,8 +44,6 @@ def create_random_enemy_room(enemy_amount) -> Room:
     room = Room()
 
     for enemy in range(enemy_amount):
-        # QUICK FIX TO ENSURE MONSTERS CAN HAVE DIFFERENT STATS
-        create_random_monster = _monster.factory
         room.add_entity(create_random_monster(f"{choice(enemy_types)} {enemy}", None))
 
     return room
@@ -53,9 +51,6 @@ def create_random_enemy_room(enemy_amount) -> Room:
 
 def create_random_boss_room() -> Room:
     room = Room()
-
-    # QUICK FIX TO ENSURE BOSSES CAN HAVE DIFFERENT STATS
-    create_random_boss = _boss.factory
     
     room.add_entity(
         create_random_boss(

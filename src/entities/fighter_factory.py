@@ -174,9 +174,6 @@ class EntityPool:
         for _ in range(self.size):
             # iteratively pop a random name from the deepcopy array and supply the name to the factory.
             name = name_choices.pop(randint(0, len(name_choices) - 1))
-            
-            # QUICK FIX FOR ALL MERCS RECEIVING THE SAME STATBLOCK
-            create_random_fighter = _mercenary.factory
             self.pool.append(create_random_fighter(name))
             
 
