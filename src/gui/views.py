@@ -593,10 +593,10 @@ class BattleView(arcade.View):
         selection = event["target_selection"]
 
         # this is called when the user confirms the selection
-        def on_confirm(cursor: int) -> bool:
+        def on_confirm(path_index: int) -> bool:
             self.combat_grid_section.hide_path()
             eng.input_received()
-            return selection["on_confirm"](cursor)
+            return selection["on_confirm"](path_index)
 
         self.target_selection = Selection(
             selection["paths"],

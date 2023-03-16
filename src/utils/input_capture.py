@@ -6,37 +6,64 @@ _SelectionType = TypeVar("_SelectionType", bound=object)
 class Selection(Generic[_SelectionType]):
     options: tuple[_SelectionType, ...]
     _cursor: int
-    _callback: Callable[[int], bool]
+
+    # send the selection to the model for handling by the callback implementor
+    _update_model: Callable[[int], bool]
+
+    # called to trigger the view update after next or prev call, since
+    # the current selection has changed
+    _update_view: Callable[[], None]
 
     def __init__(self, options: tuple[_SelectionType, ...], default=None):
         self.options = options
-        self._on_change = lambda: None
+        self._update_view = lambda: None
 
         if default not in range(len(options)):
             self._cursor = 0
         else:
             self._cursor = default
 
-        self._callback = lambda _: False
+        self._update_model = lambda _: False
 
     def set_confirmation(self, callback: Callable) -> Self:
-        self._callback = callback
+        """
+        Allows the calling scope to provide the callback which is invoked
+        on confirmation of the selection. The argument passed to the callback
+        is the selection cursor, this is an integer in range(0, len(options)).
+        Args:
+            callback: called on confirm. Dropped if it returns true, held otherwise
+
+        Returns: Self, i.e. a fluent interface
+
+        """
+        self._update_model = callback
         return self
 
     def set_on_change_selection(
         self, on_change: Callable[[], None], call_now=True
     ) -> Self:
-        self._on_change = on_change
+        """
+        Sets a callback to be invoked with no args each time the selection is changed
+        using the next and prev methods
+        Args:
+            on_change: the callback
+            call_now: whether to call it once on setting it
+
+        Returns: Self: i.e. a fluent interface
+
+        """
+        self._update_view = on_change
         if call_now:
             on_change()
+        return self
 
     def next(self):
         self._cursor = (self._cursor + 1) % len(self.options)
-        self._on_change()
+        self._update_view()
 
     def prev(self):
         self._cursor = (self._cursor - 1) % len(self.options)
-        self._on_change()
+        self._update_view()
 
     def select(self, index: int):
         self._cursor = index % len(self.options)
@@ -46,8 +73,12 @@ class Selection(Generic[_SelectionType]):
         return self.options[self._cursor]
 
     def confirm(self) -> bool:
-        if self._callback and self._callback(self._cursor):
-            self._callback = lambda _: False
+        """
+        Returns: bool, indicates if the callback was dropped by the selection. If
+        the callback returns True, it is replaced with the default trivial callback
+        """
+        if self._update_model and self._update_model(self._cursor):
+            self._update_model = lambda _: False
             return True
 
         return False

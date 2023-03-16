@@ -90,7 +90,7 @@ class Dungeon(Rewarder):
     def move_to_next_room(self):
         self.current_room = next(self.room_generator())
 
-    def room_generator(self) -> Generator[None, None, Room]:
+    def room_generator(self) -> Generator[Room, None, None]:
         for room in self.rooms:
             yield room
 
