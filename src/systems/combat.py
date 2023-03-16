@@ -171,8 +171,6 @@ class CombatRound:
             case (x, 0) if x != 0:
                 return 1
             case _:
-                if self.teams[1] and self.teams[1][0].incapacitated:
-                    breakpoint()
                 return None
 
     def continues(self) -> bool:
