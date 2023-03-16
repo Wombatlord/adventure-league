@@ -69,8 +69,8 @@ class Fighter:
                 ],
                 "targets": targets,
                 "on_confirm": lambda idx: self.provide_target(targets[idx]),
-                "default": targets.index(self.current_target())
-                if self.current_target()
+                "default": targets.index(self.last_target())
+                if self.last_target()
                 else 0,
             },
         }
@@ -95,7 +95,7 @@ class Fighter:
             self._prev_target = None
         if self._target and self._target.incapacitated:
             self._target = None
-
+    
     @property
     def in_combat(self):
         return self._in_combat
