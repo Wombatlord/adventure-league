@@ -7,6 +7,7 @@ from src.entities.entity import Entity
 from src.entities.fighter_factory import RecruitmentPool
 from src.entities.guild import Guild, Team
 from src.entities.mission_board import MissionBoard
+from src.systems.collision_avoidance import SpaceOccupancyHandler
 
 
 class GameState:
@@ -15,6 +16,10 @@ class GameState:
     entity_pool: Optional[RecruitmentPool] = None
     dungeon: Optional[Dungeon] = None
     mission_board: Optional[MissionBoard] = None
+    occupancy_handler: SpaceOccupancyHandler | None = None
+
+    def __init__(self, occupancy_handler: SpaceOccupancyHandler):
+        self.occupancy_handler = occupancy_handler
 
     def setup(self):
         self.set_guild(
