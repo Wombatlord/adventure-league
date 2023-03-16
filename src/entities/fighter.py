@@ -163,8 +163,6 @@ class Fighter:
 
     @property
     def incapacitated(self) -> bool:
-        if self.owner is None:
-            breakpoint()
         is_incapacitated = self.owner.is_dead or self.retreating
         return is_incapacitated
 
