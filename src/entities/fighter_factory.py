@@ -94,15 +94,6 @@ def select_textures(entity_name, fighter):
 
 
 def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factory:
-    conf = {
-        "hp": randint(*stats.hp),
-        "defence": randint(*stats.defence),
-        "power": randint(*stats.power),
-        "is_enemy": stats.is_enemy,
-        "speed": stats.speed,
-        "is_boss": stats.is_boss,
-    }
-
     def _from_conf(fighter_conf: dict, entity: Entity) -> Fighter:
         fighter = Fighter(**fighter_conf)
         fighter.owner = entity
@@ -131,6 +122,15 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
 
     def factory(name=None, title=None, last_name=None):
         entity = _create_entity(name, title, last_name)
+        conf = {
+            "hp": randint(*stats.hp),
+            "defence": randint(*stats.defence),
+            "power": randint(*stats.power),
+            "is_enemy": stats.is_enemy,
+            "speed": stats.speed,
+            "is_boss": stats.is_boss,
+        }
+
         entity.fighter = _from_conf(conf, entity)
         if attach_sprites:
             entity = _attach_sprites(entity)
@@ -175,6 +175,7 @@ class RecruitmentPool:
             # iteratively pop a random name from the deepcopy array and supply the name to the factory.
             name = name_choices.pop(randint(0, len(name_choices) - 1))
             self.pool.append(create_random_fighter(name))
+            
 
     def show_pool(self) -> None:
         # Sanity check function

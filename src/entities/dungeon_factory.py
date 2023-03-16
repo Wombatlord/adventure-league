@@ -7,7 +7,7 @@ from src.config.constants import (
     enemy_types,
 )
 from src.entities.dungeon import Dungeon, Room
-from src.entities.fighter_factory import create_random_boss, create_random_monster
+from src.entities.fighter_factory import create_random_boss, create_random_monster, _monster, _boss
 
 
 def describe_dungeon() -> str:
@@ -51,7 +51,7 @@ def create_random_enemy_room(enemy_amount) -> Room:
 
 def create_random_boss_room() -> Room:
     room = Room()
-
+    
     room.add_entity(
         create_random_boss(
             name=boss_names[randint(0, len(boss_names) - 1)],

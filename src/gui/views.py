@@ -408,7 +408,7 @@ class RosterView(arcade.View):
         if self.merc is None:
             self.entity_info.text = ""
         else:
-            self.entity_info.text = f"LVL: {self.merc.fighter.level}  |  HP: {self.merc.fighter.hp}  |  ATK: {self.merc.fighter.power}  |  DEF: {self.merc.fighter.defence}"
+            self.entity_info.text = f"{self.merc.name.name_and_title} | LVL: {self.merc.fighter.level}  |  HP: {self.merc.fighter.hp}  |  ATK: {self.merc.fighter.power}  |  DEF: {self.merc.fighter.defence}"
 
     def on_draw(self) -> None:
         self.clear()
