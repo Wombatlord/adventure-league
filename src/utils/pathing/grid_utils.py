@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 from random import randint
 from typing import Generator, Iterable, NamedTuple
 
@@ -44,6 +45,7 @@ class Space(AStar):
     def width(self) -> int:
         return self.maxima.x - self.minima.x
 
+    @lru_cache(maxsize=2)
     def get_path(self, start: Node, end: Node) -> tuple[Node, ...] | None:
         path = self.astar(start, end)
         if path is None:

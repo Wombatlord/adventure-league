@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from random import choice
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator, Sequence
 
 from src.utils.pathing.grid_utils import Node, Space
 
@@ -27,60 +27,69 @@ class Locatable:
         self.speed = speed
         self.orientation = choice([o.value for o in Orientation])
 
-    def path_to_target(self, target) -> tuple[Node]:
+    def path_to_target(self, target) -> tuple[Node, ...]:
         return self.space.get_path(self.location, target.location)
 
-    def approach_target(self, target: Locatable) -> dict | None:
-        msg_fragment = {
+    def _no_move(self):
+        return {
+            "move": {
+                "start": self.location,
+                "end": self.location,
+                "in_motion": False,
+                "orientation": self.orientation,
+            }
+        }
+
+    def approach_target(self, target: Locatable) -> Generator[dict]:
+        yield {
             "message": f"{self.owner.name.name_and_title} moved toward {target.owner.name.name_and_title} with bad intentions"
         }
         if self.location == target.location:
             # attacker and target are overlapping.
-            return {
-                **self.traverse_toward(choice(self.adjacent_locations())),
-                **msg_fragment,
-            }
+            yield self.traverse(choice(self.adjacent_locations())),
 
-        path_to_target = self.path_to_target(target)
         target_adjancencies = set(target.locatable.adjacent_locations())
 
-        first_place = path_to_target[0]
-        if first_place in target_adjancencies:
+        if self.location in target_adjancencies:
             # no traversal is necessary
-            return {
-                "move": {
-                    "start": self.location,
-                    "end": self.location,
-                    "in_motion": False,
-                    "orientation": self.orientation,
-                }
-            }
+            yield self._no_move()
+            return
 
-        for place in path_to_target:
+        # path ends in adjacent node to target
+        path_to_target = self.path_to_target(target)
+        dest_index = -1
+
+        for i, place in enumerate(path_to_target):
             if place in target_adjancencies:
-                return {
-                    **self.traverse_toward(place),
-                    **msg_fragment,
-                }
+                dest_index = i
+                break
 
-    def traverse_toward(self, destination: Node) -> dict:
-        start = Node(*self.location)
-        path = self.space.get_path(self.location, destination)
+        yield from self.traverse(path_to_target[: dest_index + 1])
 
-        if len(path) <= self.speed:
-            # If speed would go beyond the end of the path, move to the end of the path.
-            self.location = path[-1]
-            self.orientation = self.location - path[-2]
-        else:
-            # Otherwise, move as far as along the path as speed allows.
-            self.location = path[self.speed]
-            self.orientation = self.location - path[self.speed - 1]
+    def traverse(self, path: Sequence[Node, ...]) -> Generator[dict]:
+        if not path or len(path) == 1:
+            yield self._no_move()
+            return
 
+        if self.speed < len(path):
+            path = path[: self.speed + 1]
+
+        start, *intermediate, destination = path
+        to_traverse = [*intermediate, destination]
+
+        for i, place in enumerate(to_traverse):
+            prev = self.location
+            action = self._step_action(prev, place == destination)
+            self.location = place
+            self.orientation = self.location - to_traverse[i - 1]
+            yield action
+
+    def _step_action(self, prev: Node, in_motion: bool) -> dict:
         return {
             "move": {
-                "start": start,
+                "start": prev,
                 "end": self.location,
-                "in_motion": self.location != destination,
+                "in_motion": in_motion,
                 "orientation": self.orientation,
             },
         }

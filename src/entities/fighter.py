@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from random import randint
 from typing import Any, Optional
 
 from src.entities.entity import Entity
@@ -43,7 +42,7 @@ class Fighter:
     def get_dict(self) -> dict:
         d = self.__dict__
         result = {}
-        desired_items = {"retreating", "hp", "is_enemy"}
+        desired_items = {"retreating", "hp", "is_enemy", "defence", "power"}
 
         for k, v in d.items():
             if k in desired_items:
@@ -186,7 +185,7 @@ class Fighter:
 
     def attack(self, target: Entity | None = None) -> Action:
         if target is not None:
-            self.provide_target(target)
+            self.provide_target(target.fighter)
 
         target = self.current_target().owner
 

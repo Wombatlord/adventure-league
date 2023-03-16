@@ -47,11 +47,15 @@ class Entity:
         if self.fighter:
             self.fighter.owner = self
 
+        self.entity_sprite = None
+        self.set_entity_sprite(sprite)
+
+        self.locatable = None
+
+    def set_entity_sprite(self, sprite):
         self.entity_sprite: EntitySprite = sprite
         if self.entity_sprite:
             self.entity_sprite.owner = self
-
-        self.locatable = None
 
     def make_locatable(self, space: Space, spawn_point: Node):
         self.locatable = Locatable(

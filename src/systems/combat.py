@@ -26,22 +26,14 @@ class CombatRound:
     turn_complete: bool = False
     fighter_turns_taken: list[bool] = []
 
-    def __init__(self, teamA: list[Entity], teamB: list[Entity]) -> None:
+    def __init__(self, team_a: list[Entity], team_b: list[Entity]) -> None:
         self.teams = (
-            [member.fighter for member in teamA],
-            [member.fighter for member in teamB],
+            [member.fighter for member in team_a],
+            [member.fighter for member in team_b],
         )
         self.initiative_roll_actions = self._roll_initiative()
-        for i, entity in enumerate(teamA):
-            entity.fighter.on_retreat_hooks.append(
-                lambda e: len(self.teams[0]) > i and self.teams[0].pop(i)
-            )
-        for i, entity in enumerate(teamB):
-            entity.fighter.on_retreat_hooks.append(
-                lambda e: len(self.teams[0]) > i and self.teams[1].pop(i)
-            )
 
-    def _roll_initiative(self) -> list:
+    def _roll_initiative(self) -> list[Action]:
         actions = []
 
         combatants = [
@@ -92,7 +84,7 @@ class CombatRound:
             )
         )
 
-    def do_turn(self) -> Generator[None, None, Action]:
+    def do_turn(self) -> Generator[Action, None, None]:
         """
         This will play out a turn if the current fighter at the start of the round order is an enemy.
         If the fighter is a player character, it will instead emit a request_target action from the fighter,
@@ -126,38 +118,34 @@ class CombatRound:
 
     def advance(self, combatant, target):
         # Move toward the target as far as speed allows
-        move_result = combatant.locatable.approach_target(target)
-        yield move_result
 
-        # if we got to the destination and can attack, then attack
-        if move_result.get("move", {})["in_motion"] is False:
-            # yield back the actions from the attack/damage taken immediately
+        step = {}
+        for step in combatant.locatable.approach_target(target):
+            yield step
+
+        target_reached = step.get("move", {})["in_motion"] is False
+        if target_reached:
             yield combatant.attack()
 
         combatant._prev_target = target
         combatant.provide_target(None)
 
-        if a := self._check_for_death(target):
-            yield a
+        yield from self._check_for_death(target)
 
-        if a := self._check_for_retreat(combatant):
-            yield a
+        yield from self._check_for_retreat(combatant)
 
     def _check_for_death(self, target) -> Action:
         name = target.owner.name.name_and_title
         if target.owner.is_dead:
             target.owner.die()
-            if target in self._round_order:
-                self._round_order = [c for c in self._round_order if c is not target]
-            return {"dying": target.owner, "message": f"{name} is dead!"}
+            self._purge_fighter(target)
 
-        return {}
+            yield {"dying": target.owner, "message": f"{name} is dead!"}
 
-    def _check_for_retreat(self, fighter: Fighter) -> list[dict[str, str]]:
+    def _check_for_retreat(self, fighter: Fighter) -> Action:
         result = {}
-        if fighter.retreating == True:
-            if fighter in self._round_order:
-                self._round_order = [c for c in self._round_order if c is not fighter]
+        if fighter.retreating:
+            self._purge_fighter(fighter)
 
             result.update(**fighter.owner.annotate_event({}))
             result.update(
@@ -166,24 +154,24 @@ class CombatRound:
                     "message": f"{fighter.owner.name.name_and_title} is retreating!",
                 }
             )
-            return result
 
-        return {}
+            yield result
+
+    def _purge_fighter(self, fighter: Fighter) -> None:
+        team_id = 0 if fighter in self.teams[0] else 1
+        self.teams[team_id].remove(fighter)
+
+        if fighter in self._round_order:
+            self._round_order.remove(fighter)
 
     def victor(self) -> int | None:
-        victor = None
-        for team_idx in (0, 1):
-            enemies = [
-                cocombatant
-                for cocombatant in self.teams[(team_idx + 1) % 2]
-                if (cocombatant.incapacitated is False)
-            ]
-
-            if len(enemies) < 1:
-                victor = team_idx
-                break
-
-        return victor
+        match tuple(len(t) for t in self.teams):
+            case (0, x) if x != 0:
+                return 0
+            case (x, 0) if x != 0:
+                return 1
+            case _:
+                return None
 
     def continues(self) -> bool:
         if self.victor() is None and self._round_order:

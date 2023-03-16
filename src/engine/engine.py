@@ -212,11 +212,12 @@ class Engine:
         except StopIteration:
             return False
 
-    def _generate_combat_actions(self) -> Generator[None, None, Action]:
+    def _generate_combat_actions(self) -> Generator[Action, None, None]:
         quest = self.game_state.dungeon.room_generator()
 
         yield {"message": Describer.describe_entrance(self), "delay": 3}
 
+        combat_round = None
         for encounter in quest:
             encounter.include_party(self.game_state.team.members)
             yield {"new_encounter": encounter}
@@ -245,7 +246,7 @@ class Engine:
             if not self.game_state.dungeon.boss.is_dead:
                 yield {"message": Describer.describe_room_complete(self), "delay": 3}
 
-        if combat_round.victor() == 0:
+        if combat_round and combat_round.victor() == 0:
             win = True
         else:
             win = False
