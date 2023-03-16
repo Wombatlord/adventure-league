@@ -5,7 +5,7 @@ from typing import Any, Callable, Generator, NamedTuple
 from src.engine.describer import Describer
 from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
 from src.engine.game_state import AwardSpoilsHandler, GameState
-from src.entities.fighter_factory import EntityPool
+from src.entities.fighter_factory import RecruitmentPool
 from src.entities.mission_board import MissionBoard
 from src.projection import health
 from src.systems.combat import CombatRound
@@ -67,7 +67,7 @@ class Engine:
             handler=AwardSpoilsHandler(self.game_state).handle,
         )
         # create a pool of potential recruits
-        pool = EntityPool(15)
+        pool = RecruitmentPool(15)
         pool.fill_pool()
         self.game_state.set_entity_pool(pool)
         self.game_state.setup()

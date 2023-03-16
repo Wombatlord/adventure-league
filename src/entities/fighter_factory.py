@@ -149,7 +149,7 @@ create_random_monster = _monster.factory
 create_random_boss = _boss.factory
 
 
-class EntityPool:
+class RecruitmentPool:
     def __init__(self, size: int = None) -> None:
         self.size = size
         self.pool: list[Entity] = []

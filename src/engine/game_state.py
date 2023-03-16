@@ -4,7 +4,7 @@ from typing import Optional
 from src.config.constants import guild_names
 from src.entities.dungeon import Dungeon
 from src.entities.entity import Entity
-from src.entities.fighter_factory import EntityPool
+from src.entities.fighter_factory import RecruitmentPool
 from src.entities.guild import Guild, Team
 from src.entities.mission_board import MissionBoard
 
@@ -12,7 +12,7 @@ from src.entities.mission_board import MissionBoard
 class GameState:
     guild: Optional[Guild] = None
     team: Optional[Team] = None
-    entity_pool: Optional[EntityPool] = None
+    entity_pool: Optional[RecruitmentPool] = None
     dungeon: Optional[Dungeon] = None
     mission_board: Optional[MissionBoard] = None
 
