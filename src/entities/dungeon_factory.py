@@ -7,7 +7,7 @@ from src.config.constants import (
     enemy_types,
 )
 from src.entities.dungeon import Dungeon, Room
-from src.entities.fighter_factory import create_random_boss, create_random_monster, _monster, _boss
+from src.entities.fighter_factory import create_random_boss, create_random_monster
 
 
 def describe_dungeon() -> str:

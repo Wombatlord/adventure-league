@@ -99,7 +99,7 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         fighter.owner = entity
         return fighter
 
-    def _create_entity(first_name, last_name, title) -> Entity:
+    def _create_entity(first_name, title, last_name) -> Entity:
         return Entity(
             name=Name(title=title, first_name=first_name, last_name=last_name),
             cost=randint(1, 5),
