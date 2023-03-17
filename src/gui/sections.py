@@ -1051,7 +1051,7 @@ class CombatGridSection(arcade.Section):
             dude.entity_sprite.sprite.center_y = offset.y
             dude.entity_sprite.sprite.center_y += 15
             dude.entity_sprite.orient(dude.locatable.orientation)
-        self.dudes_sprite_list.sort(key=lambda y: y.position[1], reverse=True)
+        self.dudes_sprite_list.sort(key=lambda s: sum(s.position), reverse=True)
 
     def show_path(self, current: tuple[Node]):
         head = (0,)

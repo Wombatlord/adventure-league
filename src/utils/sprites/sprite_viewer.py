@@ -14,7 +14,7 @@ WILL CREATE ITS OWN WINDOW.
 
 
 entities = arcade.load_spritesheet(
-    "C:\\Users\\Owner\\Code\\PythonProjects\\adventure_league\\assets\\sprites\\IsometricTRPGAssetPack_OutlinedEntities.png",
+    "assets/sprites/IsometricTRPGAssetPack_OutlinedEntities.png",
     sprite_width=16,
     sprite_height=16,
     columns=4,
@@ -23,7 +23,7 @@ entities = arcade.load_spritesheet(
 )
 
 tiles = arcade.load_spritesheet(
-    "C:\\Users\\Owner\\Code\\PythonProjects\\adventure_league\\assets\\sprites\\Isometric_MedievalFantasy_Tiles.png",
+    "assets/sprites/Isometric_MedievalFantasy_Tiles.png",
     sprite_height=17,
     sprite_width=16,
     columns=11,
@@ -32,7 +32,7 @@ tiles = arcade.load_spritesheet(
 )
 
 indicators = arcade.load_spritesheet(
-    "C:\\Users\\Owner\\Code\\PythonProjects\\adventure_league\\assets\\sprites\\TRPGIsometricAssetPack_MapIndicators.png",
+    "assets/sprites/TRPGIsometricAssetPack_MapIndicators.png",
     sprite_height=8,
     sprite_width=16,
     columns=2,
@@ -323,10 +323,20 @@ class MyGame(arcade.Window):
                 self.swap_anchor_between_center_and_bottom(self.y_offset)
 
             case arcade.key.LEFT:
-                self.left_pressed = True
+                if modifiers & arcade.key.MOD_SHIFT:
+                    self.y_offset -= 5
+                    self.iterable_entity_sprite.bottom -= 5
+                    self.actual_anchor_offset_label.text = f"{self.iterable_entity_sprite.bottom - self.iterable_tile_sprite.center_y}"
+                else:
+                    self.left_pressed = True
 
             case arcade.key.RIGHT:
-                self.right_pressed = True
+                if modifiers & arcade.key.MOD_SHIFT:
+                    self.y_offset += 5
+                    self.iterable_entity_sprite.bottom += 5
+                    self.actual_anchor_offset_label.text = f"{self.iterable_entity_sprite.bottom - self.iterable_tile_sprite.center_y}"
+                else:
+                    self.right_pressed = True
 
             case arcade.key.D:
                 self.d_pressed = True
@@ -337,7 +347,7 @@ class MyGame(arcade.Window):
             case arcade.key.UP:
                 if modifiers & arcade.key.MOD_SHIFT:
                     self.y_offset += 1
-                    self.iterable_entity_sprite.bottom += self.y_offset
+                    self.iterable_entity_sprite.bottom += 1
                     self.actual_anchor_offset_label.text = f"{self.iterable_entity_sprite.bottom - self.iterable_tile_sprite.center_y}"
                 
                 else:
@@ -346,7 +356,7 @@ class MyGame(arcade.Window):
             case arcade.key.DOWN:
                 if modifiers & arcade.key.MOD_SHIFT:
                     self.y_offset -= 1
-                    self.iterable_entity_sprite.bottom -= self.y_offset
+                    self.iterable_entity_sprite.bottom -= 1
                     self.actual_anchor_offset_label.text = f"{self.iterable_entity_sprite.bottom - self.iterable_tile_sprite.center_y}"
                 
                 else:
@@ -357,6 +367,11 @@ class MyGame(arcade.Window):
 
             case arcade.key.S:
                 self.decrement_tile_sprite_index()
+
+        self.entity_center_mark_sprite.center_x, self.entity_center_mark_sprite.center_y = (
+            self.iterable_entity_sprite.center_x,
+            self.iterable_entity_sprite.center_y,
+        )
 
     def swap_anchor_between_center_and_bottom(self, y_offset):
         if (
@@ -478,7 +493,3 @@ def main():
     window = MyGame()
     window.setup()
     arcade.run()
-
-
-if __name__ == "__main__":
-    main()
