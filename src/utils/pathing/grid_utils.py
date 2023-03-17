@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from functools import lru_cache
 from random import randint
 from typing import Generator, Iterable, NamedTuple
@@ -46,15 +47,36 @@ class Space(AStar):
         return self.maxima.x - self.minima.x
 
     @lru_cache(maxsize=2)
-    def get_path(self, start: Node, end: Node) -> tuple[Node, ...] | None:
-        path = self.astar(start, end)
+    def get_path(self, start: Node, finish: Node) -> tuple[Node, ...] | None:
+        # we exclude all occupied nodes so any paths from occupied nodes (i.e. all combat pathfinding)
+        # will need to have the start/end node added back to the pathing space temporarily
+        deferred_restore = [
+            end if end not in self else False for end in (start, finish)
+        ]
+        for include in deferred_restore:
+            include and self._include(include)
+
+        path = self.astar(start, finish)
+
+        # after we've got the path, we make sure that if it wasn't in the space before we started
+        # then it won't be after we return
+        for exclude in deferred_restore:
+            exclude and self._exclude(exclude)
+
         if path is None:
             return
 
         return tuple(path)
 
+    def _include(self, node: Node) -> None:
+        self.exclusions -= {node}  # idempotent remove from set
+
+    def _exclude(self, node: Node) -> None:
+        self.exclusions |= {node}  # idempotent add to set
+
     def get_path_len(self, start: Node, end: Node) -> int | None:
-        path = self.astar(start, end)
+        path = self.get_path(start, end)
+
         if path is None:
             return
 
@@ -78,6 +100,38 @@ class Space(AStar):
             continue
 
         return node
+
+    def __len__(self):
+        """
+        The number of unoccupied nodes
+        """
+        return self.width * self.height - len(self.exclusions)
+
+    def choose_next_unoccupied(self, start_at: Node) -> Node | None:
+        """
+        Does a random walk from the passed node. Returns the first unoccupied
+        node encountered
+        Args:
+            start_at: The first node in the walk
+
+        Returns: the first unoccupied node encountered, will be the passed node if
+        it is unoccupied.
+
+        """
+        attempt = start_at
+
+        if attempt in self:
+            return attempt
+
+        tried = {attempt}  # will be empty if node not excluded
+
+        while (attempt := random.choice([*attempt.adjacent])) not in self:
+            tried.add(attempt)
+            # if we've tried every unique node
+            if len(tried) == len(self):
+                return
+
+        return attempt
 
     @property
     def y_range(self) -> Iterable[int]:

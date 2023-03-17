@@ -13,22 +13,40 @@ class Room:
         self.space = Space(Node(x=0, y=0), Node(*size), exclusions=set())
         self.entry_door = Node(x=0, y=5)
 
+    def update_pathing_obstacles(self):
+        """
+        Used to synchronise the traversable locations with updated entity locations
+        Returns:
+
+        """
+        exclusions = {occupant.locatable.location for occupant in self.occupants}
+        self.space.exclusions = exclusions
+
     def add_entity(self, entity: Entity):
         mob_spawns = self.mob_spawns_points()
         if entity.fighter.is_enemy:
             spawn_point = next(mob_spawns)
         else:
-            spawn_point = self.entry_door
+            spawn_point = self.space.choose_next_unoccupied(self.entry_door)
 
         entity.make_locatable(self.space, spawn_point=spawn_point)
-        self.occupants.append(entity)
+        self.occupants.append(entity)  # <- IMPORTANT:
+        self.update_pathing_obstacles()  # <- don't change the order of these two!
+
         if entity.fighter.is_enemy:
             self.enemies.append(entity)
-        entity.on_death_hooks.append(self.remove)
-        entity.on_death_hooks.append(Entity.flush_locatable)
-        entity.fighter.on_retreat_hooks.append(lambda f: self.remove(f.owner))
-        entity.fighter.on_retreat_hooks.append(
-            lambda f: Entity.flush_locatable(f.owner)
+
+        entity.on_death_hooks.extend(
+            [
+                self.remove,
+                Entity.flush_locatable,
+            ]
+        )
+        entity.fighter.on_retreat_hooks.extend(
+            [
+                lambda f: self.remove(f.owner),
+                lambda f: Entity.flush_locatable(f.owner),
+            ]
         )
 
     def include_party(self, party: list[Entity]) -> None:
@@ -36,10 +54,9 @@ class Room:
             self.add_entity(member)
 
     def mob_spawns_points(self) -> Generator[Node, None, None]:
-        left_wall = {Node(x=0, y=y) for y in self.space.y_range}
         while True:
             yield self.space.choose_random_node(
-                excluding=left_wall,
+                excluding=self.space.exclusions,
             )
 
     def remove(self, entity: Entity):

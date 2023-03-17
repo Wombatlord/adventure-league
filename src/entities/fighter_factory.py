@@ -175,7 +175,7 @@ class RecruitmentPool:
             # iteratively pop a random name from the deepcopy array and supply the name to the factory.
             name = name_choices.pop(randint(0, len(name_choices) - 1))
             self.pool.append(create_random_fighter(name))
-            
+
 
     def show_pool(self) -> None:
         # Sanity check function

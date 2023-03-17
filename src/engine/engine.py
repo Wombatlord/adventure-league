@@ -8,6 +8,7 @@ from src.engine.game_state import AwardSpoilsHandler, GameState
 from src.entities.fighter_factory import RecruitmentPool
 from src.entities.mission_board import MissionBoard
 from src.projection import health
+from src.systems.collision_avoidance import SpaceOccupancyHandler
 from src.systems.combat import CombatRound
 
 
@@ -60,7 +61,9 @@ class Engine:
         self.combat_dispatcher.subscribe(topic, handler_id, handler)
 
     def setup(self) -> None:
-        self.game_state = GameState()
+        self.game_state = GameState(
+            SpaceOccupancyHandler(self),
+        )
         self.projection_dispatcher.static_subscribe(
             topic="team triumphant",
             handler_id="game_state",

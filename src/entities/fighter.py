@@ -95,7 +95,7 @@ class Fighter:
             self._prev_target = None
         if self._target and self._target.incapacitated:
             self._target = None
-    
+
     @property
     def in_combat(self):
         return self._in_combat
