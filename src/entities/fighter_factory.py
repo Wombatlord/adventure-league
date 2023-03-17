@@ -176,7 +176,6 @@ class RecruitmentPool:
             name = name_choices.pop(randint(0, len(name_choices) - 1))
             self.pool.append(create_random_fighter(name))
 
-
     def show_pool(self) -> None:
         # Sanity check function
         print(self.pool)

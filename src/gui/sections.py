@@ -1,3 +1,5 @@
+import functools
+
 import arcade
 from arcade.gui import UIManager
 from arcade.gui.widgets import UIWidget
@@ -794,7 +796,7 @@ class CombatGridSection(arcade.Section):
         #     self.SCALE_FACTOR = 0.25
 
         self.tile_sprite_list = arcade.SpriteList()
-        scale = 1
+        scale = 5
         for x in range(9, -1, -1):
             for y in range(9, -1, -1):
                 self.tile_sprite_list.append(self.floor_tile_at(x, y, scale))
@@ -818,6 +820,7 @@ class CombatGridSection(arcade.Section):
         self.dudes_sprite_list = arcade.SpriteList()
         self.combat_screen = CombatScreen()
         self.grid_camera = arcade.Camera()
+        self.grid_camera.zoom = 1.1
         self.other_camera = arcade.Camera()
         self._subscribe_to_events()
         self.selected_path_sprites = self.init_path()
@@ -825,17 +828,18 @@ class CombatGridSection(arcade.Section):
     @classmethod
     def init_path(cls) -> arcade.SpriteList:
         selected_path_sprites = arcade.SpriteList()
-        selected_path_sprites.append(
-            arcade.Sprite(WindowData.indicators[SelectionCursor.GREEN.value])
-        )
+        start_sprite = arcade.Sprite(WindowData.indicators[SelectionCursor.GREEN.value])
+        start_sprite.visible = False
+        selected_path_sprites.append(start_sprite)
         for _ in range(1, 19):
             sprite_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
             sprite = arcade.Sprite(sprite_tex, scale=WindowData.scale[1])
             selected_path_sprites.append(sprite)
+            sprite.visible = False
 
-        selected_path_sprites.append(
-            arcade.Sprite(WindowData.indicators[SelectionCursor.RED.value])
-        )
+        end_sprite = arcade.Sprite(WindowData.indicators[SelectionCursor.RED.value])
+        selected_path_sprites.append(end_sprite)
+        end_sprite.visible = False
 
         return selected_path_sprites
 
@@ -883,7 +887,10 @@ class CombatGridSection(arcade.Section):
         )
 
     def grid_offset(self, x: int, y: int) -> Vec2:
-        grid_scale = 0.75
+        """
+        Transforms from world (grid) space coordinates to screen space coordinates
+        """
+        grid_scale = 1
         sx, sy = WindowData.scale
         constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
         return Vec2(
@@ -892,13 +899,19 @@ class CombatGridSection(arcade.Section):
         ) * constant_scale + Vec2(self.width / 2, 7 * self.height / 8)
 
     def grid_loc(self, v: Vec2) -> Node:
+        """
+        Transforms from screen space coordinates to world (grid) space coords
+        """
         v2 = v - Vec2(self.width / 2, 7 * self.height / 8)
         sx, sy = self.scaling()
-        grid_scale = 0.75
-        v3 = Vec2(  # (x-y, x+y)
-            v2.x
-            / (sx * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (13)),
-            v2.y / (sy * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (5)),
+        grid_scale = 1
+        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
+        v3 = (
+            Vec2(  # (x-y, x+y)
+                v2.x / (sx * 13),
+                v2.y / (sy * 5),
+            )
+            / constant_scale
         )
 
         node_x = (v3.x + v3.y) / 2
@@ -909,9 +922,8 @@ class CombatGridSection(arcade.Section):
         )
 
     def wall_tile_at(
-        self, x: int, y: int, orientation: Node, scale_factor=1
+        self, x: int, y: int, orientation: Node, scale=1
     ) -> tuple[arcade.Sprite, ...]:
-        scale = 5 * scale_factor
         wall = self.sprite_at(arcade.Sprite(scale=scale), x, y)
         if orientation == Node(1, 0):
             # Right / East Walls
@@ -943,7 +955,7 @@ class CombatGridSection(arcade.Section):
         return sprites
 
     def floor_tile_at(self, x: int, y: int, scale=1) -> arcade.Sprite:
-        tile = arcade.Sprite(scale=5 * scale)
+        tile = arcade.Sprite(scale=scale)
         tile.texture = WindowData.tiles[100]
 
         return self.sprite_at(tile, x, y)
@@ -956,7 +968,6 @@ class CombatGridSection(arcade.Section):
     def on_update(self, delta_time: float):
         eng.update_clock -= delta_time
 
-        call_hook = True
         if not eng.awaiting_input:
             hook = eng.next_combat_action
         else:
@@ -967,8 +978,7 @@ class CombatGridSection(arcade.Section):
         if eng.update_clock < 0:
             print(f"{self.__class__}.on_update: TICK")
             eng.reset_update_clock()
-            if call_hook:
-                call_hook = hook()
+            hook()
 
     def on_draw(self):
         self.grid_camera.use()
@@ -1090,3 +1100,95 @@ class CombatGridSection(arcade.Section):
         self.dudes_sprite_list.pop(
             self.dudes_sprite_list.index(dead_dude.owner.entity_sprite.sprite)
         )
+
+
+class CameraController:
+    _camera: arcade.Camera
+    _pan_speed: float
+    _zoom_increment: float
+    _pressed_keys: set[int]
+    _v_pan: set[int] = {
+        arcade.key.W,
+        arcade.key.S,
+    }
+    _h_pan: set[int] = {
+        arcade.key.D,
+        arcade.key.A,
+    }
+    _zoom: set[int] = {
+        arcade.key.Q,
+        arcade.key.E,
+    }
+
+    def __init__(self, camera: arcade.Camera, pan_speed=1.0, zoom_increment=0.01):
+        self._camera = camera
+        self._pan_speed = pan_speed
+        self._zoom_increment = zoom_increment
+        self._pressed_keys = set()
+
+    @property
+    def listened_keys(self) -> set[int]:
+        return self._v_pan | self._h_pan | self._zoom
+
+    def on_key_press(self, key: int) -> int | None:
+        include = {key} & self.listened_keys
+        self._pressed_keys |= include
+        if not include:
+            return key
+
+    def on_key_release(self, key) -> int | None:
+        include = {key} & self.listened_keys
+        self._pressed_keys -= include
+        if not include:
+            return key
+
+    @property
+    def zoom_factor(self) -> float:
+        z = 1
+        match [*(self._zoom & self._pressed_keys)]:
+            case [arcade.key.Q]:
+                z += self._zoom_increment
+            case [arcade.key.E]:
+                z -= self._zoom_increment
+            case _:
+                pass
+
+        return z
+
+    @property
+    def pan_vec(self) -> Vec2:
+        l, r, b, t = self._camera.projection
+        w, h = r - l, t - b
+
+        u, v = Vec2(w / 2, 0), Vec2(0, h / 2)
+        match [*(self._pressed_keys & self._h_pan)]:
+            # Right
+            case [arcade.key.D]:
+                x = 1
+            # Left
+            case [arcade.key.A]:
+                x = -1
+            # Both pressed or neither
+            case _:
+                x = 0
+
+        match [*(self._pressed_keys & self._v_pan)]:
+            # Up
+            case [arcade.key.W]:
+                y = 1
+            # Down
+            case [arcade.key.H]:
+                y = -1
+            # Both pressed or neither
+            case _:
+                y = 0
+
+        return (u * x + v * y).normalize()
+
+    def on_update(self):
+        self._camera.center(self.pan_vec, speed=self._pan_speed)
+        self._camera.zoom *= self.zoom_factor
+        self._camera.update()
+
+    def __repr__(self):
+        return "\n".join([f"{self._camera.position=}", f"{self._camera.zoom=}"])
