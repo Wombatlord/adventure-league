@@ -25,6 +25,7 @@ from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
 from src.utils.pathing.grid_utils import Node
+from src.utils.sprites.positioning import grid_offset, sprite_at, wall_tile_at, floor_tile_at
 
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
@@ -797,16 +798,16 @@ class CombatGridSection(arcade.Section):
         scale = 1
         for x in range(9, -1, -1):
             for y in range(9, -1, -1):
-                self.tile_sprite_list.append(self.floor_tile_at(x, y, scale))
+                self.tile_sprite_list.append(floor_tile_at(x, y, WindowData.scale, self.TILE_BASE_DIMS, self.SCALE_FACTOR, self.width, self.height, WindowData.tiles[100], scale))
                 wall_sprite = None
                 if y == 9 and x < 9:
-                    wall_sprite = self.wall_tile_at(
-                        x, y, Node(0, 1), scale
+                    wall_sprite = wall_tile_at(
+                        x, y, Node(0, 1), width=self.width, height=self.height, scale_factor=self.SCALE_FACTOR
                     )  # top right wall
                 if x == 9 and y < 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(1, 0), scale)
+                    wall_sprite = wall_tile_at(x, y, Node(1, 0), width=self.width, height=self.height, scale_factor=self.SCALE_FACTOR)
                 if x == 9 and y == 9:
-                    wall_sprites = self.wall_tile_at(x, y, Node(1, 1), scale)
+                    wall_sprites = wall_tile_at(x, y, Node(1, 1), width=self.width, height=self.height, scale_factor=self.SCALE_FACTOR)
                 if wall_sprite:
                     self.tile_sprite_list.append(*wall_sprite)
                 if wall_sprites:
@@ -882,15 +883,6 @@ class CombatGridSection(arcade.Section):
             self.height / self._original_dims[1],
         )
 
-    def grid_offset(self, x: int, y: int) -> Vec2:
-        grid_scale = 0.75
-        sx, sy = WindowData.scale
-        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
-        return Vec2(
-            (x - y) * sx * 13,
-            (x + y) * sy * 5,
-        ) * constant_scale + Vec2(self.width / 2, 7 * self.height / 8)
-
     def grid_loc(self, v: Vec2) -> Node:
         v2 = v - Vec2(self.width / 2, 7 * self.height / 8)
         sx, sy = self.scaling()
@@ -949,7 +941,15 @@ class CombatGridSection(arcade.Section):
         return self.sprite_at(tile, x, y)
 
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
-        offset = self.grid_offset(x, y)
+        offset = grid_offset(
+            x,
+            y,
+            WindowData.scale,
+            self.TILE_BASE_DIMS,
+            self.SCALE_FACTOR,
+            self.width,
+            self.height,
+        )
         sprite.center_x, sprite.center_y = offset
         return sprite
 
@@ -1044,8 +1044,14 @@ class CombatGridSection(arcade.Section):
 
         # self.clear_dead_sprites()
         for dude in self.encounter_room.occupants:
-            offset = self.grid_offset(
-                dude.locatable.location.x, dude.locatable.location.y
+            offset = grid_offset(
+                dude.locatable.location.x,
+                dude.locatable.location.y,
+                WindowData.scale,
+                self.TILE_BASE_DIMS,
+                self.SCALE_FACTOR,
+                self.width,
+                self.height,
             )
             dude.entity_sprite.sprite.center_x = offset.x
             dude.entity_sprite.sprite.center_y = offset.y
@@ -1066,7 +1072,14 @@ class CombatGridSection(arcade.Section):
             if i in visible:
                 node_idx = i if i in head + body else -1
                 node = current[node_idx]
-                position = self.grid_offset(*node)
+                position = grid_offset(
+                    *node,
+                    window_scale=WindowData.scale,
+                    tile_base_dims=self.TILE_BASE_DIMS,
+                    scale_factor=self.SCALE_FACTOR,
+                    width=self.width,
+                    height=self.height,
+                )
                 sprite.visible = True
                 sprite.center_x, sprite.center_y = position.x, position.y
             elif i in invisible:
