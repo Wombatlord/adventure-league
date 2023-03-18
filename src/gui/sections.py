@@ -820,24 +820,25 @@ class CombatGridSection(arcade.Section):
         self.dudes_sprite_list = arcade.SpriteList()
         self.combat_screen = CombatScreen()
         self.grid_camera = arcade.Camera()
-        self.grid_camera.zoom = 1.1
+        self.grid_camera.zoom = 1.0
         self.other_camera = arcade.Camera()
         self._subscribe_to_events()
-        self.selected_path_sprites = self.init_path()
+        self.selected_path_sprites = self.init_path(scale)
+        self.cam_controls = CameraController(self.grid_camera)
 
     @classmethod
-    def init_path(cls) -> arcade.SpriteList:
+    def init_path(cls, scale=1) -> arcade.SpriteList:
         selected_path_sprites = arcade.SpriteList()
-        start_sprite = arcade.Sprite(WindowData.indicators[SelectionCursor.GREEN.value])
+        start_sprite = arcade.Sprite(WindowData.indicators[SelectionCursor.GREEN.value], scale)
         start_sprite.visible = False
         selected_path_sprites.append(start_sprite)
         for _ in range(1, 19):
             sprite_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
-            sprite = arcade.Sprite(sprite_tex, scale=WindowData.scale[1])
+            sprite = arcade.Sprite(sprite_tex, scale=scale*WindowData.scale[1])
             selected_path_sprites.append(sprite)
             sprite.visible = False
 
-        end_sprite = arcade.Sprite(WindowData.indicators[SelectionCursor.RED.value])
+        end_sprite = arcade.Sprite(WindowData.indicators[SelectionCursor.RED.value], scale)
         selected_path_sprites.append(end_sprite)
         end_sprite.visible = False
 
@@ -892,10 +893,11 @@ class CombatGridSection(arcade.Section):
         """
         grid_scale = 1
         sx, sy = WindowData.scale
-        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
+        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
+        aspect = (2.35, 1.1)
         return Vec2(
-            (x - y) * sx * 13,
-            (x + y) * sy * 5,
+            (x - y) * sx * aspect[0],
+            (x + y) * sy * aspect[1],
         ) * constant_scale + Vec2(self.width / 2, 7 * self.height / 8)
 
     def grid_loc(self, v: Vec2) -> Node:
@@ -966,6 +968,7 @@ class CombatGridSection(arcade.Section):
         return sprite
 
     def on_update(self, delta_time: float):
+        self.cam_controls.on_update()
         eng.update_clock -= delta_time
 
         if not eng.awaiting_input:
@@ -984,10 +987,11 @@ class CombatGridSection(arcade.Section):
         self.grid_camera.use()
 
         self.tile_sprite_list.draw(pixelated=True)
-        self.dudes_sprite_list.draw(pixelated=True)
         self.selected_path_sprites.draw(pixelated=True)
+        self.dudes_sprite_list.draw(pixelated=True)
 
         self.other_camera.use()
+        arcade.Text(repr(self.cam_controls), 10, WindowData.height - 20).draw()
 
         if eng.awaiting_input:
             self.combat_screen.draw_turn_prompt()
@@ -1120,7 +1124,7 @@ class CameraController:
         arcade.key.E,
     }
 
-    def __init__(self, camera: arcade.Camera, pan_speed=1.0, zoom_increment=0.01):
+    def __init__(self, camera: arcade.Camera, pan_speed=2.0, zoom_increment=0.002):
         self._camera = camera
         self._pan_speed = pan_speed
         self._zoom_increment = zoom_increment
@@ -1177,7 +1181,7 @@ class CameraController:
             case [arcade.key.W]:
                 y = 1
             # Down
-            case [arcade.key.H]:
+            case [arcade.key.S]:
                 y = -1
             # Both pressed or neither
             case _:
@@ -1186,7 +1190,10 @@ class CameraController:
         return (u * x + v * y).normalize()
 
     def on_update(self):
-        self._camera.center(self.pan_vec, speed=self._pan_speed)
+        l, r, b, t = self._camera.projection
+        w, h = r - l, t - b
+        center = self._camera.position + Vec2(1, 0)*w/2 + Vec2(0, 1)*h/2
+        self._camera.center(center + self.pan_vec*self._pan_speed, speed=1)
         self._camera.zoom *= self.zoom_factor
         self._camera.update()
 

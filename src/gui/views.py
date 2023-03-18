@@ -609,8 +609,15 @@ class BattleView(arcade.View):
 
         self.target_selection.set_on_change_selection(on_change)
 
+    def on_key_release(self, _symbol: int, _modifiers: int):
+        if not self.combat_grid_section.cam_controls.on_key_release(_symbol):
+            return
+
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         print(f"{self.__class__}.on_key_press called with '{chr(symbol)}'")
+        if not self.combat_grid_section.cam_controls.on_key_press(symbol):
+            return
+
         match symbol:
             case arcade.key.G:
                 if eng.mission_in_progress is False:
