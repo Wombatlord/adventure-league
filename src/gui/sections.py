@@ -1050,12 +1050,10 @@ class CombatGridSection(arcade.Section):
 
         # self.clear_dead_sprites()
         for dude in self.encounter_room.occupants:
-            offset = grid_offset(
+            offset = eng.grid_offset(
                 dude.locatable.location.x,
                 dude.locatable.location.y,
-                WindowData.scale,
-                self.TILE_BASE_DIMS,
-                self.SCALE_FACTOR,
+                self.constant_scale,
                 self.width,
                 self.height,
             )
