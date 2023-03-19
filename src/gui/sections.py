@@ -787,27 +787,23 @@ class CombatGridSection(arcade.Section):
         super().__init__(left, bottom, width, height, **kwargs)
         self.encounter_room = None
         self._original_dims = width, height
-
-        # if 800 <= WindowData.width <= 1080 and 600 <= WindowData.height <= 720:
-        #     self.SCALE_FACTOR = 0.2
-        #
-        # if 1920 >= WindowData.width >= 1080 >= WindowData.height >= 720:
-        #     self.SCALE_FACTOR = 0.25
+        self.grid_scale = 0.75
+        self.constant_scale = self.grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
 
         self.tile_sprite_list = arcade.SpriteList()
-        scale = 1
+        
         for x in range(9, -1, -1):
             for y in range(9, -1, -1):
-                self.tile_sprite_list.append(floor_tile_at(x, y, WindowData.scale, self.TILE_BASE_DIMS, self.SCALE_FACTOR, self.width, self.height, WindowData.tiles[100], scale))
+                self.tile_sprite_list.append(self.floor_tile_at(x, y))
                 wall_sprite = None
                 if y == 9 and x < 9:
-                    wall_sprite = wall_tile_at(
-                        x, y, Node(0, 1), width=self.width, height=self.height, scale_factor=self.SCALE_FACTOR
+                    wall_sprite = self.wall_tile_at(
+                        x, y, Node(0, 1)
                     )  # top right wall
                 if x == 9 and y < 9:
-                    wall_sprite = wall_tile_at(x, y, Node(1, 0), width=self.width, height=self.height, scale_factor=self.SCALE_FACTOR)
+                    wall_sprite = self.wall_tile_at(x, y, Node(1, 0))
                 if x == 9 and y == 9:
-                    wall_sprites = wall_tile_at(x, y, Node(1, 1), width=self.width, height=self.height, scale_factor=self.SCALE_FACTOR)
+                    wall_sprites = self.wall_tile_at(x, y, Node(1, 1))
                 if wall_sprite:
                     self.tile_sprite_list.append(*wall_sprite)
                 if wall_sprites:
@@ -883,6 +879,18 @@ class CombatGridSection(arcade.Section):
             self.height / self._original_dims[1],
         )
 
+    # Refactored to engine, kept here for reference for now.
+    # Remove before merge if kept factored out.
+    #
+    # def grid_offset(self, x: int, y: int) -> Vec2:
+    #     grid_scale = 0.75
+    #     sx, sy = WindowData.scale
+    #     constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
+    #     return Vec2(
+    #         (x - y) * sx * 13,
+    #         (x + y) * sy * 5,
+    #     ) * constant_scale + Vec2(self.width / 2, 7 * self.height / 8)
+    
     def grid_loc(self, v: Vec2) -> Node:
         v2 = v - Vec2(self.width / 2, 7 * self.height / 8)
         sx, sy = self.scaling()
@@ -941,14 +949,12 @@ class CombatGridSection(arcade.Section):
         return self.sprite_at(tile, x, y)
 
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
-        offset = grid_offset(
+        offset = eng.grid_offset(
             x,
             y,
-            WindowData.scale,
-            self.TILE_BASE_DIMS,
-            self.SCALE_FACTOR,
+            self.constant_scale,
             self.width,
-            self.height,
+            self.height
         )
         sprite.center_x, sprite.center_y = offset
         return sprite
