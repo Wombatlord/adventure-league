@@ -799,16 +799,16 @@ class CombatGridSection(arcade.Section):
         scale = 5
         for x in range(9, -1, -1):
             for y in range(9, -1, -1):
-                self.tile_sprite_list.append(self.floor_tile_at(x, y))
+                self.tile_sprite_list.append(self.floor_tile_at(x, y, scale=scale))
                 wall_sprite = None
                 if y == 9 and x < 9:
                     wall_sprite = self.wall_tile_at(
-                        x, y, Node(0, 1)
+                        x, y, Node(0, 1), scale=scale
                     )  # top right wall
                 if x == 9 and y < 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(1, 0))
+                    wall_sprite = self.wall_tile_at(x, y, Node(1, 0), scale=scale)
                 if x == 9 and y == 9:
-                    wall_sprites = self.wall_tile_at(x, y, Node(1, 1))
+                    wall_sprites = self.wall_tile_at(x, y, Node(1, 1), scale=scale)
                 if wall_sprite:
                     self.tile_sprite_list.append(*wall_sprite)
                 if wall_sprites:
@@ -966,12 +966,9 @@ class CombatGridSection(arcade.Section):
         return self.sprite_at(tile, x, y)
 
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
-        offset = eng.grid_offset(
+        offset = self.grid_offset(
             x,
             y,
-            self.constant_scale,
-            self.width,
-            self.height
         )
         sprite.center_x, sprite.center_y = offset
         return sprite
@@ -1074,12 +1071,9 @@ class CombatGridSection(arcade.Section):
 
         # self.clear_dead_sprites()
         for dude in self.encounter_room.occupants:
-            offset = eng.grid_offset(
+            offset = self.grid_offset(
                 dude.locatable.location.x,
                 dude.locatable.location.y,
-                self.constant_scale,
-                self.width,
-                self.height,
             )
             dude.entity_sprite.sprite.center_x = offset.x
             dude.entity_sprite.sprite.center_y = offset.y
@@ -1100,13 +1094,8 @@ class CombatGridSection(arcade.Section):
             if i in visible:
                 node_idx = i if i in head + body else -1
                 node = current[node_idx]
-                position = grid_offset(
+                position = self.grid_offset(
                     *node,
-                    window_scale=WindowData.scale,
-                    tile_base_dims=self.TILE_BASE_DIMS,
-                    scale_factor=self.SCALE_FACTOR,
-                    width=self.width,
-                    height=self.height,
                 )
                 sprite.visible = True
                 sprite.center_x, sprite.center_y = position.x, position.y
