@@ -207,9 +207,7 @@ class Engine:
         return result
     
     def grid_offset(self, x: int, y: int, constant_scale, w, h) -> Vec2:
-        # grid_scale = 0.75
         sx, sy = WindowData.scale
-        # constant = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
         return Vec2(
             (x - y) * sx * 13,
             (x + y) * sy * 5,
