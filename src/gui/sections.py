@@ -1,3 +1,5 @@
+import functools
+
 import arcade
 from arcade.gui import UIManager
 from arcade.gui.widgets import UIWidget
@@ -6,6 +8,7 @@ from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
 from arcade.gui.widgets.text import UILabel
 from pyglet.math import Vec2
 
+from src import config
 from src.engine.init_engine import eng
 from src.gui.buttons import CommandBarMixin
 from src.gui.combat_screen import CombatScreen
@@ -24,6 +27,7 @@ from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
+from src.utils.camera_controls import CameraController
 from src.utils.pathing.grid_utils import Node
 
 
@@ -774,6 +778,7 @@ class CombatGridSection(arcade.Section):
     TILE_BASE_DIMS = (17, 16)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
     SCALE_FACTOR = 0.2
+    GRID_ASPECT = (2.35, 1.1)
 
     def __init__(
         self,
@@ -794,7 +799,7 @@ class CombatGridSection(arcade.Section):
         #     self.SCALE_FACTOR = 0.25
 
         self.tile_sprite_list = arcade.SpriteList()
-        scale = 1
+        scale = 5
         for x in range(9, -1, -1):
             for y in range(9, -1, -1):
                 self.tile_sprite_list.append(self.floor_tile_at(x, y, scale))
@@ -818,24 +823,31 @@ class CombatGridSection(arcade.Section):
         self.dudes_sprite_list = arcade.SpriteList()
         self.combat_screen = CombatScreen()
         self.grid_camera = arcade.Camera()
+        self.grid_camera.zoom = 1.0
         self.other_camera = arcade.Camera()
         self._subscribe_to_events()
-        self.selected_path_sprites = self.init_path()
+        self.selected_path_sprites = self.init_path(scale)
+        self.cam_controls = CameraController(self.grid_camera)
 
     @classmethod
-    def init_path(cls) -> arcade.SpriteList:
+    def init_path(cls, scale=1) -> arcade.SpriteList:
         selected_path_sprites = arcade.SpriteList()
-        selected_path_sprites.append(
-            arcade.Sprite(WindowData.indicators[SelectionCursor.GREEN.value])
+        start_sprite = arcade.Sprite(
+            WindowData.indicators[SelectionCursor.GREEN.value], scale
         )
+        start_sprite.visible = False
+        selected_path_sprites.append(start_sprite)
         for _ in range(1, 19):
             sprite_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
-            sprite = arcade.Sprite(sprite_tex, scale=WindowData.scale[1])
+            sprite = arcade.Sprite(sprite_tex, scale=scale * WindowData.scale[1])
             selected_path_sprites.append(sprite)
+            sprite.visible = False
 
-        selected_path_sprites.append(
-            arcade.Sprite(WindowData.indicators[SelectionCursor.RED.value])
+        end_sprite = arcade.Sprite(
+            WindowData.indicators[SelectionCursor.RED.value], scale
         )
+        selected_path_sprites.append(end_sprite)
+        end_sprite.visible = False
 
         return selected_path_sprites
 
@@ -883,22 +895,31 @@ class CombatGridSection(arcade.Section):
         )
 
     def grid_offset(self, x: int, y: int) -> Vec2:
-        grid_scale = 0.75
+        """
+        Transforms from world (grid) space coordinates to screen space coordinates
+        """
+        grid_scale = 1
         sx, sy = WindowData.scale
-        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
+        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
         return Vec2(
-            (x - y) * sx * 13,
-            (x + y) * sy * 5,
+            (x - y) * sx * self.GRID_ASPECT[0],
+            (x + y) * sy * self.GRID_ASPECT[1],
         ) * constant_scale + Vec2(self.width / 2, 7 * self.height / 8)
 
     def grid_loc(self, v: Vec2) -> Node:
+        """
+        Transforms from screen space coordinates to world (grid) space coords
+        """
         v2 = v - Vec2(self.width / 2, 7 * self.height / 8)
         sx, sy = self.scaling()
-        grid_scale = 0.75
-        v3 = Vec2(  # (x-y, x+y)
-            v2.x
-            / (sx * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (13)),
-            v2.y / (sy * grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * (5)),
+        grid_scale = 1
+        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
+        v3 = (
+            Vec2(  # (x-y, x+y)
+                v2.x / (sx * self.GRID_ASPECT[0]),
+                v2.y / (sy * self.GRID_ASPECT[1]),
+            )
+            / constant_scale
         )
 
         node_x = (v3.x + v3.y) / 2
@@ -909,9 +930,8 @@ class CombatGridSection(arcade.Section):
         )
 
     def wall_tile_at(
-        self, x: int, y: int, orientation: Node, scale_factor=1
+        self, x: int, y: int, orientation: Node, scale=1
     ) -> tuple[arcade.Sprite, ...]:
-        scale = 5 * scale_factor
         wall = self.sprite_at(arcade.Sprite(scale=scale), x, y)
         if orientation == Node(1, 0):
             # Right / East Walls
@@ -943,7 +963,7 @@ class CombatGridSection(arcade.Section):
         return sprites
 
     def floor_tile_at(self, x: int, y: int, scale=1) -> arcade.Sprite:
-        tile = arcade.Sprite(scale=5 * scale)
+        tile = arcade.Sprite(scale=scale)
         tile.texture = WindowData.tiles[100]
 
         return self.sprite_at(tile, x, y)
@@ -954,9 +974,9 @@ class CombatGridSection(arcade.Section):
         return sprite
 
     def on_update(self, delta_time: float):
+        self.cam_controls.on_update()
         eng.update_clock -= delta_time
 
-        call_hook = True
         if not eng.awaiting_input:
             hook = eng.next_combat_action
         else:
@@ -967,17 +987,24 @@ class CombatGridSection(arcade.Section):
         if eng.update_clock < 0:
             print(f"{self.__class__}.on_update: TICK")
             eng.reset_update_clock()
-            if call_hook:
-                call_hook = hook()
+            hook()
 
     def on_draw(self):
         self.grid_camera.use()
 
         self.tile_sprite_list.draw(pixelated=True)
-        self.dudes_sprite_list.draw(pixelated=True)
         self.selected_path_sprites.draw(pixelated=True)
+        self.dudes_sprite_list.draw(pixelated=True)
 
         self.other_camera.use()
+        if config.DEBUG:
+            arcade.Text(
+                repr(self.cam_controls),
+                10,
+                WindowData.height - 20,
+                multiline=True,
+                width=self.width,
+            ).draw()
 
         if eng.awaiting_input:
             self.combat_screen.draw_turn_prompt()
