@@ -7,6 +7,8 @@ from typing import Generator, Iterable, NamedTuple
 
 from astar import AStar
 
+_ROOT_TWO = 2**0.5
+
 
 class Space(AStar):
     minima: Node
@@ -33,7 +35,7 @@ class Space(AStar):
                 yield candidate
 
     def distance_between(self, n1: Node, n2: Node) -> int:
-        return 1
+        return 1 if sum(abs(delta) for delta in (n1 - n2)) == 1 else 1.5
 
     def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int:
         return 1
@@ -163,11 +165,17 @@ class Node(NamedTuple):
         return Node(x=self.x, y=self.y - 1)
 
     @property
-    def adjacent(self) -> Generator[Node, None, None]:
+    def adjacent(self, include_diag=True) -> Generator[Node, None, None]:
         yield self.north
         yield self.east
         yield self.south
         yield self.west
+        if not include_diag:
+            return
+        yield self.north.east
+        yield self.north.west
+        yield self.south.east
+        yield self.south.west
 
     def __eq__(self, other: Node) -> bool:
         return self.x == other.x and self.y == other.y

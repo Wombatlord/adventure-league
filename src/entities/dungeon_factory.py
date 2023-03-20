@@ -51,7 +51,7 @@ def create_random_enemy_room(enemy_amount) -> Room:
 
 def create_random_boss_room() -> Room:
     room = Room()
-    
+
     room.add_entity(
         create_random_boss(
             name=boss_names[randint(0, len(boss_names) - 1)],
