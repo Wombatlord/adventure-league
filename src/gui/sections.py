@@ -29,7 +29,12 @@ from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
 from src.utils.camera_controls import CameraController
 from src.utils.pathing.grid_utils import Node
-from src.utils.sprites.positioning import grid_offset, sprite_at, wall_tile_at, floor_tile_at
+from src.utils.sprites.positioning import (
+    floor_tile_at,
+    grid_offset,
+    sprite_at,
+    wall_tile_at,
+)
 
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
@@ -793,7 +798,9 @@ class CombatGridSection(arcade.Section):
         self.encounter_room = None
         self._original_dims = width, height
         self.grid_scale = 1
-        self.constant_scale = self.grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
+        self.constant_scale = (
+            self.grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
+        )
 
         self.tile_sprite_list = arcade.SpriteList()
         scale = 5
@@ -967,12 +974,7 @@ class CombatGridSection(arcade.Section):
 
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
         offset = eng.grid_offset(
-            x,
-            y,
-            self.constant_scale,
-            self.GRID_ASPECT,
-            self.width,
-            self.height
+            x, y, self.constant_scale, self.GRID_ASPECT, self.width, self.height
         )
         sprite.center_x, sprite.center_y = offset
         return sprite
@@ -1080,7 +1082,7 @@ class CombatGridSection(arcade.Section):
                 self.constant_scale,
                 self.GRID_ASPECT,
                 self.width,
-                self.height
+                self.height,
             )
             dude.entity_sprite.sprite.center_x = offset.x
             dude.entity_sprite.sprite.center_y = offset.y
@@ -1107,7 +1109,7 @@ class CombatGridSection(arcade.Section):
                     constant_scale=self.constant_scale,
                     grid_aspect=self.GRID_ASPECT,
                     w=self.width,
-                    h=self.height
+                    h=self.height,
                 )
                 sprite.visible = True
                 sprite.center_x, sprite.center_y = position.x, position.y

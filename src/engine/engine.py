@@ -9,10 +9,10 @@ from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
 from src.engine.game_state import AwardSpoilsHandler, GameState
 from src.entities.fighter_factory import RecruitmentPool
 from src.entities.mission_board import MissionBoard
+from src.gui.window_data import WindowData
 from src.projection import health
 from src.systems.collision_avoidance import SpaceOccupancyHandler
 from src.systems.combat import CombatRound
-from src.gui.window_data import WindowData
 
 
 class MessagesWithAlphas(NamedTuple):
@@ -205,7 +205,7 @@ class Engine:
             result.append(combatant.annotate_event({}))
 
         return result
-    
+
     def grid_offset(self, x: int, y: int, constant_scale, grid_aspect, w, h) -> Vec2:
         sx, sy = WindowData.scale
         return Vec2(
