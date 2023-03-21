@@ -775,10 +775,10 @@ class MissionsSection(arcade.Section):
 
 
 class CombatGridSection(arcade.Section):
-    TILE_BASE_DIMS = (17, 16)
+    TILE_BASE_DIMS = (16, 17)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
     SCALE_FACTOR = 0.2
-    GRID_ASPECT = (2.35, 1.1)
+    GRID_ASPECT = (2, 1)
 
     def __init__(
         self,
@@ -793,7 +793,7 @@ class CombatGridSection(arcade.Section):
         self._original_dims = width, height
         self.grid_scale = 1
         self.constant_scale = (
-            self.grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
+            self.grid_scale * self.TILE_BASE_DIMS[0]
         )
 
         self.tile_sprite_list = arcade.SpriteList()
@@ -892,30 +892,17 @@ class CombatGridSection(arcade.Section):
             self.height / self._original_dims[1],
         )
 
-    def grid_offset(self, x: int, y: int) -> Vec2:
-        """
-        Transforms from world (grid) space coordinates to screen space coordinates
-        """
-        grid_scale = 1
-        sx, sy = WindowData.scale
-        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
-        return Vec2(
-            (x - y) * sx * self.GRID_ASPECT[0],
-            (x + y) * sy * self.GRID_ASPECT[1],
-        ) * constant_scale + Vec2(self.width / 2, 7 * self.height / 8)
-
     def grid_loc(self, v: Vec2) -> Node:
         """
         Transforms from screen space coordinates to world (grid) space coords
         """
         v2 = v - Vec2(self.width / 2, 7 * self.height / 8)
-        sx, sy = self.scaling()
         grid_scale = 1
         constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
         v3 = (
             Vec2(  # (x-y, x+y)
-                v2.x / (sx * self.GRID_ASPECT[0]),
-                v2.y / (sy * self.GRID_ASPECT[1]),
+                v2.x / (self.GRID_ASPECT[0]),
+                v2.y / (self.GRID_ASPECT[1]),
             )
             / constant_scale
         )
@@ -949,12 +936,6 @@ class CombatGridSection(arcade.Section):
             top.center_y += 100
             sprites = (left, right, top)
 
-        else:
-            # Left / West Walls
-            wall.center_y += 45
-            wall.center_x -= 40
-            sprites = (wall,)
-
         for s in sprites:
             s.texture = WindowData.tiles[89]
 
@@ -970,7 +951,7 @@ class CombatGridSection(arcade.Section):
         offset = eng.grid_offset(
             x, y, self.constant_scale, self.GRID_ASPECT, self.width, self.height
         )
-        sprite.center_x, sprite.center_y = offset
+        sprite.position = offset
         return sprite
 
     def on_update(self, delta_time: float):
@@ -993,6 +974,7 @@ class CombatGridSection(arcade.Section):
         self.grid_camera.use()
 
         self.tile_sprite_list.draw(pixelated=True)
+        self.tile_sprite_list[90].draw_hit_box(arcade.color.WHITE)
         self.selected_path_sprites.draw(pixelated=True)
         self.dudes_sprite_list.draw(pixelated=True)
 
