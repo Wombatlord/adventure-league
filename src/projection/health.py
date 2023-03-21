@@ -4,6 +4,7 @@ from typing import Any
 
 import arcade
 
+from src.entities.entity import Species
 from src.gui.window_data import WindowData
 
 _KEY = "entity_data"
@@ -26,7 +27,6 @@ class HealthProjection:
     def draw(self) -> None:
         merc_heights = [*self.heights]
         enemy_heights = [*self.heights]
-
         for name, health in _health_projection.items():
             try:
                 if name in self.names:
@@ -82,24 +82,35 @@ def consume(action: dict[str, Any]) -> None:
     This will be invoked by the action queue
     """
     entity = action.get(_KEY, {})
+    health = entity.get("health")
     retreat = entity.get("retreat")
     name = entity.get("name")
+    species = entity.get("species", "human")
     if name is None:
         return
 
-    health = entity.get("health")
+    formatted_name = ""
+    if species == Species.HUMAN:
+        formatted_name = name
+    else:
+        formatted_name = f"{species.capitalize()}: {name}"
+
+    _update_projection(health, formatted_name, retreat)
+
+
+def _update_projection(health: int, formatted_name: str, retreat: bool):
     if health is None:
         return
 
     # The actual projection logic
     if retreat == False:
-        _health_projection[name] = f"{health}" if health > 0 else "dead"
+        _health_projection[formatted_name] = f"{health}" if health > 0 else "dead"
 
     if retreat or health <= 0:
         # Ensure we don't try to clear the projection twice if the entity
         # is killed during its retreat.
-        if name in _health_projection:
-            _health_projection.pop(name)
+        if formatted_name in _health_projection:
+            _health_projection.pop(formatted_name)
 
 
 def flush_handler(event):

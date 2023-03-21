@@ -24,6 +24,12 @@ class Name(NamedTuple):
         return self.title is not None
 
 
+class Species:
+    GOBLIN = "goblin"
+    SLIME = "slime"
+    HUMAN = "human"
+
+
 class Entity:
     def __init__(
         self,
@@ -34,6 +40,7 @@ class Entity:
         inventory=None,
         item=None,
         is_dead: bool = False,
+        species: str = Species.HUMAN,
     ) -> None:
         self.name = name
         self.cost = cost
@@ -41,7 +48,7 @@ class Entity:
         self.item = item
         self.is_dead = is_dead
         self.on_death_hooks = []
-
+        self.species = species
         # Entities with a fighter component can engage in combat.
         self.fighter = fighter
         if self.fighter:
@@ -94,6 +101,7 @@ class Entity:
                     "health": self.fighter.hp if self.fighter else None,
                     "name": self.name.name_and_title,
                     "retreat": self.fighter.retreating,
+                    "species": self.species,
                 }
             },
         }

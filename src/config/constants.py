@@ -187,14 +187,8 @@ dungeon_descriptors = {
 }
 
 enemy_types = [
-    "Goblin",
-    "Goblin",
-    "Goblin",
-    "Goblin",
     "Slime",
-    "Slime",
-    "Slime",
-    "Slime",
+    "Goblin",
 ]
 
 boss_types = [

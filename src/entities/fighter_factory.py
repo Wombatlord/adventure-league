@@ -1,13 +1,14 @@
 from copy import deepcopy
 from random import choice, randint
-from typing import Callable, NamedTuple
+from typing import Callable, Literal, NamedTuple
 
 from src.config.constants import merc_names
-from src.entities.entity import Entity, Name
+from src.entities.entity import Entity, Name, Species
 from src.entities.fighter import Fighter
 from src.entities.sprites import EntitySprite
 from src.gui.entity_texture_enums import *
 from src.gui.window_data import WindowData
+from src.utils.proc_gen import syllables
 
 MERC_TEXTURES = [
     MercenaryOneTextures,
@@ -31,6 +32,12 @@ GOBLIN_TEXTURES = [
     GoblinFourTextures,
 ]
 
+
+NAME_GENS = {
+    Species.GOBLIN: lambda: f"{syllables.maybe_punctuated_name(max_syls=2)} {syllables.maybe_punctuated_name(max_syls=2)}",
+    Species.SLIME: lambda: f"{syllables.simple_word(max_syls=2)}",
+}
+
 Factory = Callable[[str], Entity]
 
 
@@ -41,6 +48,7 @@ class StatBlock(NamedTuple):
     is_enemy: bool
     speed: int
     is_boss: bool = False
+    species: str = "human"
 
     @property
     def factory(self) -> Factory:
@@ -54,6 +62,7 @@ class StatBlock(NamedTuple):
             "is_enemy": self.is_enemy,
             "speed": self.speed,
             "is_boss": self.is_boss,
+            "species": self.species,
         }
 
 
@@ -61,14 +70,29 @@ _mercenary = StatBlock(
     hp=(25, 25), defence=(1, 3), power=(3, 5), speed=3, is_enemy=False, is_boss=False
 )
 _monster = StatBlock(
-    hp=(10, 10), defence=(1, 3), power=(1, 3), speed=1, is_enemy=True, is_boss=False
+    species=Species.SLIME,
+    hp=(8, 8),
+    defence=(1, 3),
+    power=(1, 3),
+    speed=1,
+    is_enemy=True,
+    is_boss=False,
+)
+_goblin = StatBlock(
+    species=Species.GOBLIN,
+    hp=(10, 14),
+    defence=(1, 3),
+    power=(2, 4),
+    speed=2,
+    is_enemy=True,
+    is_boss=False,
 )
 _boss = StatBlock(
     hp=(30, 30), defence=(2, 4), power=(2, 4), speed=1, is_enemy=True, is_boss=True
 )
 
 
-def select_textures(entity_name, fighter):
+def select_textures(species: str, fighter: Fighter):
     """
     Set up textures for the fighter.
     As we have the name already, use that to determine particular enemy textures for hostile fighters.
@@ -76,9 +100,9 @@ def select_textures(entity_name, fighter):
     texture_opts = MERC_TEXTURES
     match (fighter.is_enemy, fighter.is_boss):
         case (True, False):
-            if "Goblin" in entity_name.name_and_title:
+            if species == Species.GOBLIN:
                 texture_opts = GOBLIN_TEXTURES
-            elif "Slime" in entity_name.name_and_title:
+            elif species == Species.SLIME:
                 texture_opts = SLIME_TEXTURES
 
         case (True, True):
@@ -103,6 +127,7 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         return Entity(
             name=Name(title=title, first_name=first_name, last_name=last_name),
             cost=randint(1, 5),
+            species=stats.species,
         )
 
     def _attach_sprites(entity: Entity) -> Entity:
@@ -110,7 +135,7 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
             breakpoint()
 
         atk_one, atk_two, idle_one, idle_two = select_textures(
-            entity.name, entity.fighter
+            entity.species, entity.fighter
         )
         entity.set_entity_sprite(
             EntitySprite(
@@ -121,6 +146,8 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         return entity
 
     def factory(name=None, title=None, last_name=None):
+        default_name_gen = lambda: f"{stats.species}: '{syllables.simple_word()}'"
+        name = name or NAME_GENS.get(stats.species, default_name_gen)()
         entity = _create_entity(name, title, last_name)
         conf = {
             "hp": randint(*stats.hp),
@@ -146,6 +173,7 @@ def unpack_tex(tex_enum) -> tuple[tuple[int, int], tuple[int, int]]:
 
 create_random_fighter = _mercenary.factory
 create_random_monster = _monster.factory
+create_random_goblin = _goblin.factory
 create_random_boss = _boss.factory
 
 
