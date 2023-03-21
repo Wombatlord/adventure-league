@@ -29,12 +29,6 @@ from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
 from src.utils.camera_controls import CameraController
 from src.utils.pathing.grid_utils import Node
-from src.utils.sprites.positioning import (
-    floor_tile_at,
-    grid_offset,
-    sprite_at,
-    wall_tile_at,
-)
 
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
