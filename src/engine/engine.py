@@ -206,11 +206,11 @@ class Engine:
 
         return result
     
-    def grid_offset(self, x: int, y: int, constant_scale, w, h) -> Vec2:
+    def grid_offset(self, x: int, y: int, constant_scale, grid_aspect, w, h) -> Vec2:
         sx, sy = WindowData.scale
         return Vec2(
-            (x - y) * sx * 13,
-            (x + y) * sy * 5,
+            (x - y) * sx * grid_aspect[0],
+            (x + y) * sy * grid_aspect[1],
         ) * constant_scale + Vec2(w / 2, 7 * h / 8)
 
     def next_combat_action(self) -> bool:

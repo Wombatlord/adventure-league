@@ -792,8 +792,8 @@ class CombatGridSection(arcade.Section):
         super().__init__(left, bottom, width, height, **kwargs)
         self.encounter_room = None
         self._original_dims = width, height
-        self.grid_scale = 0.75
-        self.constant_scale = self.grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR
+        self.grid_scale = 1
+        self.constant_scale = self.grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
 
         self.tile_sprite_list = arcade.SpriteList()
         scale = 5
@@ -966,9 +966,13 @@ class CombatGridSection(arcade.Section):
         return self.sprite_at(tile, x, y)
 
     def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
-        offset = self.grid_offset(
+        offset = eng.grid_offset(
             x,
             y,
+            self.constant_scale,
+            self.GRID_ASPECT,
+            self.width,
+            self.height
         )
         sprite.center_x, sprite.center_y = offset
         return sprite
@@ -1046,7 +1050,6 @@ class CombatGridSection(arcade.Section):
         for dude in self.encounter_room.occupants:
             if dude.fighter.is_boss:
                 dude.entity_sprite.sprite.scale = dude.entity_sprite.sprite.scale * 1.5
-
             dude.entity_sprite.sprite = self.sprite_at(
                 dude.entity_sprite.sprite,
                 dude.entity_sprite.sprite.center_x,
@@ -1071,9 +1074,13 @@ class CombatGridSection(arcade.Section):
 
         # self.clear_dead_sprites()
         for dude in self.encounter_room.occupants:
-            offset = self.grid_offset(
+            offset = eng.grid_offset(
                 dude.locatable.location.x,
                 dude.locatable.location.y,
+                self.constant_scale,
+                self.GRID_ASPECT,
+                self.width,
+                self.height
             )
             dude.entity_sprite.sprite.center_x = offset.x
             dude.entity_sprite.sprite.center_y = offset.y
@@ -1094,8 +1101,13 @@ class CombatGridSection(arcade.Section):
             if i in visible:
                 node_idx = i if i in head + body else -1
                 node = current[node_idx]
-                position = self.grid_offset(
-                    *node,
+                position = eng.grid_offset(
+                    x=node.x,
+                    y=node.y,
+                    constant_scale=self.constant_scale,
+                    grid_aspect=self.GRID_ASPECT,
+                    w=self.width,
+                    h=self.height
                 )
                 sprite.visible = True
                 sprite.center_x, sprite.center_y = position.x, position.y
