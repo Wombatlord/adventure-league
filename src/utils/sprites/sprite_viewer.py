@@ -1,9 +1,8 @@
 import arcade
-
 from arcade.texture import Texture
 
-from src.utils.pathing.grid_utils import Node, Space
 from src.engine.init_engine import eng
+from src.utils.pathing.grid_utils import Node, Space
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 650
@@ -89,13 +88,12 @@ class MyGame(arcade.Window):
             self.grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
         )
 
-        space = Space(Node(0, 0), Node(1, 1), exclusions=set())
+        self.space = Space(Node(0, 0), Node(1, 1), exclusions=set())
 
         self.iterable_entity_sprite = EntitySprite(entities, 0, self.get_size(), 6)
         self.iterable_tile_sprite = TileSprite(tiles, 0, self.get_size(), 6)
         self.entity_center_mark_sprite = EntitySprite(indicators, 0, self.get_size(), 1)
         self.tile_center_mark_sprite = EntitySprite(indicators, 0, self.get_size(), 1)
-        self.y_offset = 0
         self.sprite_list = arcade.SpriteList()
 
         self.left_pressed = False
@@ -136,7 +134,7 @@ class MyGame(arcade.Window):
 
         self.anchor_label = arcade.Text(
             text=f"Anchor",
-            start_x=self.iterable_entity_sprite.center_x - 175,
+            start_x=self.iterable_entity_sprite.center_x - 200,
             start_y=self.iterable_entity_sprite.center_y,
             align="left",
             anchor_x="center",
@@ -144,57 +142,57 @@ class MyGame(arcade.Window):
 
         self.actual_anchor_label = arcade.Text(
             text=f"",
-            start_x=self.iterable_entity_sprite.center_x - 175,
+            start_x=self.iterable_entity_sprite.center_x - 200,
             start_y=self.iterable_entity_sprite.center_y - 25,
             align="left",
             anchor_x="center",
         )
 
         self.anchor_offset_label = arcade.Text(
-            text=f"Anchor Offset",
-            start_x=self.iterable_entity_sprite.center_x - 175,
+            text=f"Anchored Sprites",
+            start_x=self.iterable_entity_sprite.center_x - 200,
             start_y=self.iterable_entity_sprite.center_y - 50,
             align="left",
             anchor_x="center",
         )
 
-        self.actual_anchor_offset_label = arcade.Text(
-            text="",
-            start_x=self.iterable_entity_sprite.center_x - 175,
+        self.sprite_anchors_label = arcade.Text(
+            text="EntitySprite anchored to Node(1,1) Tile Sprite",
+            start_x=self.iterable_entity_sprite.center_x - 200,
             start_y=self.iterable_entity_sprite.center_y - 75,
             align="left",
             anchor_x="center",
         )
 
         self.entity_idx_label_header = arcade.Text(
-            text=f"Index:",
-            start_x=self.iterable_entity_sprite.center_x + 50,
+            text=f"Entity Sprite Index:",
+            start_x=self.iterable_entity_sprite.center_x + 150,
             start_y=self.iterable_entity_sprite.center_y,
         )
 
         self.entity_idx_label = arcade.Text(
             text=f"{self.iterable_entity_sprite.tex_idx}",
-            start_x=self.iterable_entity_sprite.center_x + 50,
+            start_x=self.iterable_entity_sprite.center_x + 150,
             start_y=self.iterable_entity_sprite.center_y - 15,
         )
 
         self.tile_idx_label_header = arcade.Text(
-            text=f"Index:",
-            start_x=self.iterable_tile_sprite.center_x + 50,
-            start_y=self.iterable_tile_sprite.center_y - 80,
+            text=f"Tile Sprite Index:",
+            start_x=self.iterable_entity_sprite.center_x + 150,
+            start_y=self.iterable_entity_sprite.center_y - 80,
         )
 
         self.tile_idx_label = arcade.Text(
-            text=f"{self.iterable_tile_sprite.tex_idx}",
-            start_x=self.iterable_tile_sprite.center_x + 50,
-            start_y=self.iterable_tile_sprite.center_y - 95,
+            text=f"{self.iterable_entity_sprite.tex_idx}",
+            start_x=self.iterable_entity_sprite.center_x + 150,
+            start_y=self.iterable_entity_sprite.center_y - 95,
         )
 
     def setup(self):
         w, h = self.get_size()
 
-        for x in range(1, -1, -1):
-            for y in range(1, -1, -1):
+        for x in range(self.space.maxima.x, -1, -1):
+            for y in range(self.space.maxima.y, -1, -1):
                 offset = eng.grid_offset(
                     x, y, self.constant_scale, self.GRID_ASPECT, w, h / 2
                 )
@@ -203,7 +201,15 @@ class MyGame(arcade.Window):
                 iterable_tile_sprite.center_y = offset.y
                 self.sprite_list.append(iterable_tile_sprite)
 
-        self.iterable_tile_sprite.center_x, self.iterable_tile_sprite.center_y = (
+        self.iterable_entity_sprite.center_x, self.iterable_entity_sprite.center_y = (
+            self.sprite_list[0].center_x,
+            self.sprite_list[0].center_y,
+        )
+
+        (
+            self.entity_center_mark_sprite.center_x,
+            self.entity_center_mark_sprite.center_y,
+        ) = (
             self.sprite_list[0].center_x,
             self.sprite_list[0].center_y,
         )
@@ -211,8 +217,8 @@ class MyGame(arcade.Window):
         # self.actual_anchor_offset_label.text = f"{self.iterable_entity_sprite.bottom - self.iterable_tile_sprite.center_y}"
 
         self.tile_center_mark_sprite.center_x, self.tile_center_mark_sprite.center_y = (
-            self.iterable_tile_sprite.center_x,
-            self.iterable_tile_sprite.center_y,
+            self.sprite_list[0].center_x,
+            self.sprite_list[0].center_y,
         )
 
         # self.sprite_list.append(self.iterable_tile_sprite)
@@ -229,7 +235,7 @@ class MyGame(arcade.Window):
         self.anchor_label.draw()
         self.actual_anchor_label.draw()
         self.anchor_offset_label.draw()
-        self.actual_anchor_offset_label.draw()
+        self.sprite_anchors_label.draw()
         self.sprite_list.draw(pixelated=True)
         self.entity_idx_label_header.draw()
         self.entity_idx_label.draw()
@@ -251,14 +257,14 @@ class MyGame(arcade.Window):
             else:
                 self.entity_idx_label.text = self.iterable_entity_sprite.tex_idx
 
-        if self.iterable_tile_sprite.tex_idx != self.tile_idx_label.text:
-            if self.iterable_tile_sprite.tex_idx < 0:
+        if self.sprite_list[0].tex_idx != self.tile_idx_label.text:
+            if self.sprite_list[0].tex_idx < 0:
                 self.tile_idx_label.text = (
-                    len(self.iterable_tile_sprite.textures)
-                ) + self.iterable_tile_sprite.tex_idx
+                    len(self.sprite_list[0].textures)
+                ) + self.sprite_list[0].tex_idx
 
             else:
-                self.tile_idx_label.text = self.iterable_tile_sprite.tex_idx
+                self.tile_idx_label.text = self.sprite_list[0].tex_idx
 
     def constant_iterate_entity_sprites(self, sprite):
         match (self.right_pressed, self.left_pressed):
@@ -282,7 +288,7 @@ class MyGame(arcade.Window):
                 self.show_hide_center_markers()
 
             case arcade.key.ENTER:
-                self.swap_anchor_between_center_and_bottom(self.y_offset)
+                self.swap_anchor_between_center_and_bottom()
 
             case arcade.key.LEFT:
                 self.left_pressed = True
@@ -297,22 +303,10 @@ class MyGame(arcade.Window):
                 self.a_pressed = True
 
             case arcade.key.UP:
-                if modifiers & arcade.key.MOD_SHIFT:
-                    self.y_offset += 1
-                    self.iterable_entity_sprite.bottom += self.y_offset
-                    self.actual_anchor_offset_label.text = f"{self.iterable_entity_sprite.bottom - self.iterable_tile_sprite.center_y}"
-
-                else:
-                    self.incr_sprite_tex_index(self.iterable_entity_sprite)
+                self.incr_sprite_tex_index(self.iterable_entity_sprite)
 
             case arcade.key.DOWN:
-                if modifiers & arcade.key.MOD_SHIFT:
-                    self.y_offset -= 1
-                    self.iterable_entity_sprite.bottom -= self.y_offset
-                    self.actual_anchor_offset_label.text = f"{self.iterable_entity_sprite.bottom - self.iterable_tile_sprite.center_y}"
-
-                else:
-                    self.decr_sprite_tex_index(self.iterable_entity_sprite)
+                self.decr_sprite_tex_index(self.iterable_entity_sprite)
 
             case arcade.key.W:
                 self.incr_sprite_tex_index(self.sprite_list[:4])
@@ -320,26 +314,21 @@ class MyGame(arcade.Window):
             case arcade.key.S:
                 self.decr_sprite_tex_index(self.sprite_list[:4])
 
-    def swap_anchor_between_center_and_bottom(self, y_offset):
+    def swap_anchor_between_center_and_bottom(self):
         if self.iterable_entity_sprite.center_y != self.sprite_list[0].center_y:
             self.actual_anchor_label.text = f"Centers Overlapping"
             self.iterable_entity_sprite.center_y = self.sprite_list[0].center_y
             self.entity_center_mark_sprite.center_y = (
                 self.tile_center_mark_sprite.center_y
             )
-            self.actual_anchor_offset_label.text = (
-                f"{self.iterable_entity_sprite.center_y - self.sprite_list[0].center_y}"
-            )
+
         else:
             self.actual_anchor_label.text = f"Tile.center_y = EntitySprite.bottom"
-            self.iterable_entity_sprite.bottom = (
-                self.iterable_tile_sprite.center_y + y_offset
-            )
+            self.iterable_entity_sprite.bottom = self.iterable_tile_sprite.center_y
             self.entity_center_mark_sprite.center_y = (
                 self.iterable_entity_sprite.center_y
             )
             self.tile_center_mark_sprite.center_y = self.iterable_tile_sprite.center_y
-            self.actual_anchor_offset_label.text = f"{self.iterable_entity_sprite.bottom - self.iterable_tile_sprite.center_y}"
 
     def show_hide_center_markers(self):
         if self.entity_center_mark_sprite.alpha > 0:
@@ -380,7 +369,7 @@ class MyGame(arcade.Window):
                 else:
                     s.tex_idx += 1
                     s.texture = s.textures[s.tex_idx]
-        
+
         else:
             if sprite.tex_idx == len(sprite.textures) - 1:
                 sprite.tex_idx = 0
@@ -403,6 +392,7 @@ class MyGame(arcade.Window):
 
             case arcade.key.A:
                 self.a_pressed = False
+
 
 def main():
     window = MyGame()
