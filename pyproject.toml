@@ -1,5 +1,3 @@
 [tool.black]
-extend-exclude='''
-/(
-  | src/utils/isometry/transforms.py
-)/'''
+# this tells black not to touch files matching the pattern below
+extend-exclude = '''\.*transforms.py$'''
