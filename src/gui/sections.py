@@ -920,7 +920,7 @@ class CombatGridSection(arcade.Section):
         if orientation in (Node(1, 0), Node(0, 1)):
             # Right / East Walls
             wall.center_y += 45
-            wall.center_x += 40 * (1 if orientation == Node(1, 0) else -1)
+            wall.center_x += 40 * (orientation.x - orientation.y)
             sprites = (wall,)
 
         elif orientation == Node(1, 1):
