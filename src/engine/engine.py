@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Callable, Generator, NamedTuple
 
+from pyglet.math import Vec2
+
 from src.engine.describer import Describer
 from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
 from src.engine.game_state import AwardSpoilsHandler, GameState
 from src.entities.fighter_factory import RecruitmentPool
 from src.entities.mission_board import MissionBoard
+from src.gui.window_data import WindowData
 from src.projection import health
 from src.systems.collision_avoidance import SpaceOccupancyHandler
 from src.systems.combat import CombatRound
@@ -202,6 +205,12 @@ class Engine:
             result.append(combatant.annotate_event({}))
 
         return result
+
+    def grid_offset(self, x: int, y: int, constant_scale, grid_aspect, w, h) -> Vec2:
+        return Vec2(
+            (x - y) * grid_aspect[0],
+            (x + y) * grid_aspect[1],
+        ) * constant_scale + Vec2(w / 2, 7 * h / 8)
 
     def next_combat_action(self) -> bool:
         """

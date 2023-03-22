@@ -2,6 +2,9 @@ from dataclasses import dataclass
 
 import arcade
 import pyglet
+from arcade.hitbox import BoundingHitBoxAlgorithm
+
+from src.utils.sprites.spritesheet import load_spritesheet
 
 pyglet.font.add_file("./assets/alagard.ttf")
 
@@ -20,13 +23,14 @@ class WindowData:
     title_background = arcade.load_texture("./assets/background_glacial_mountains.png")
     mission_background = arcade.load_texture("./assets/mb.png")
 
-    tiles = arcade.load_spritesheet(
+    tiles = load_spritesheet(
         "./assets/sprites/Isometric_MedievalFantasy_Tiles.png",
         sprite_height=17,
         sprite_width=16,
         columns=11,
         count=111,
-        margin=0,
+        top_left_offset=(0, 0),
+        hit_box_algorithm=BoundingHitBoxAlgorithm(),
     )
 
     fighters = arcade.load_spritesheet(

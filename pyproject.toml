@@ -1,0 +1,3 @@
+[tool.black]
+# this tells black not to touch files matching the pattern below
+extend-exclude = '''\.*transforms.py$'''
