@@ -1,8 +1,9 @@
+from pathlib import Path
+
 import PIL.Image
 from arcade import Texture
-from arcade.resources import resolve_resource_path
 from arcade.hitbox import HitBoxAlgorithm
-from pathlib import Path
+from arcade.resources import resolve_resource_path
 
 
 def load_spritesheet(

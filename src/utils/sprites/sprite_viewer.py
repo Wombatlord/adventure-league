@@ -1,6 +1,7 @@
 import arcade
 from arcade.texture import Texture
 from pyglet.math import Vec2
+
 from src.engine.init_engine import eng
 from src.utils.pathing.grid_utils import Node, Space
 
@@ -84,13 +85,11 @@ class MyGame(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 
         # self.grid_scale = 1
-        self.constant_scale = (
-            self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
-        )
+        self.constant_scale = self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
 
         self.space = Space(Node(0, 0), Node(1, 1))
-        self.space.exclusions.add(Node(1,0))
-        self.space.exclusions.add(Node(0,1))
+        self.space.exclusions.add(Node(1, 0))
+        self.space.exclusions.add(Node(0, 1))
 
         self.iterable_entity_sprite = EntitySprite(entities, 0, self.get_size(), 6)
         self.iterable_tile_sprite = TileSprite(tiles, 0, self.get_size(), 6)
@@ -207,11 +206,12 @@ class MyGame(arcade.Window):
         # Prepare a sprite for any Exclusion in the Space
         for ex in self.space.exclusions:
             ex_sprite = TileSprite(tiles, 43, self.get_size(), 5)
-            offset = eng.grid_offset(ex.x + 1,ex.y + 1, self.constant_scale, self.GRID_ASPECT, w,h/2)
+            offset = eng.grid_offset(
+                ex.x + 1, ex.y + 1, self.constant_scale, self.GRID_ASPECT, w, h / 2
+            )
             ex_sprite.center_x, ex_sprite.center_y = offset.x, offset.y
             self.sprite_list.append(ex_sprite)
-            
-        
+
         # Set the EntitySprite positioning
         self.iterable_entity_sprite.center_x, self.iterable_entity_sprite.center_y = (
             self.sprite_list[0].center_x,

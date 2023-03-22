@@ -792,9 +792,7 @@ class CombatGridSection(arcade.Section):
         self.encounter_room = None
         self._original_dims = width, height
         self.grid_scale = 1
-        self.constant_scale = (
-            self.grid_scale * self.TILE_BASE_DIMS[0]
-        )
+        self.constant_scale = self.grid_scale * self.TILE_BASE_DIMS[0]
 
         self.tile_sprite_list = arcade.SpriteList()
         scale = 5
@@ -918,10 +916,11 @@ class CombatGridSection(arcade.Section):
         self, x: int, y: int, orientation: Node, scale=1
     ) -> tuple[arcade.Sprite, ...]:
         wall = self.sprite_at(arcade.Sprite(scale=scale), x, y)
-        if orientation == Node(1, 0):
+        sprites = ()
+        if orientation in (Node(1, 0), Node(0, 1)):
             # Right / East Walls
             wall.center_y += 45
-            wall.center_x += 40
+            wall.center_x += 40 * (1 if orientation == Node(1, 0) else -1)
             sprites = (wall,)
 
         elif orientation == Node(1, 1):
@@ -974,7 +973,6 @@ class CombatGridSection(arcade.Section):
         self.grid_camera.use()
 
         self.tile_sprite_list.draw(pixelated=True)
-        self.tile_sprite_list[90].draw_hit_box(arcade.color.WHITE)
         self.selected_path_sprites.draw(pixelated=True)
         self.dudes_sprite_list.draw(pixelated=True)
 

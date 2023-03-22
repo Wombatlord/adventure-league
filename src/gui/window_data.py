@@ -30,7 +30,7 @@ class WindowData:
         columns=11,
         count=111,
         top_left_offset=(0, 0),
-        hit_box_algorithm=BoundingHitBoxAlgorithm()
+        hit_box_algorithm=BoundingHitBoxAlgorithm(),
     )
 
     fighters = arcade.load_spritesheet(

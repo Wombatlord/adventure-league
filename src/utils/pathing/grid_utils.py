@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from functools import lru_cache
 from random import randint
-from typing import Generator, Iterable, NamedTuple, Callable
+from typing import Callable, Generator, Iterable, NamedTuple
 
 from astar import AStar
 
@@ -187,26 +187,31 @@ class Node(NamedTuple):
             lambda n: n.west,
         )
         traversals_ud = (
-            lambda n: n.up,
-            no_move,
-            lambda n: n.down,
-        ) if three_d else (
-            no_move,
+            (
+                lambda n: n.up,
+                no_move,
+                lambda n: n.down,
+            )
+            if three_d
+            else (no_move,)
         )  # just stay in the plane if not 3d
 
         if not include_diag:
             # just move one node in + and - in each direction (east-west, north-south, up-down if relevant)
             yield from (
-                move(self) for move in traversals_ud + traversals_ns + traversals_ew if move != no_move
+                move(self)
+                for move in traversals_ud + traversals_ns + traversals_ew
+                if move != no_move
             )
         else:
             # create the full set of 3x3 above and below plus the in-plane movements
             yield from (
                 ns_move(ew_move(ud_move(self)))
-                for ns_move in traversals_ns   # north and south traversals
-                for ew_move in traversals_ew   # east and west traversals
-                for ud_move in traversals_ud   # this includes above and below if three_d
-                if (ns_move, ew_move, ud_move) != (no_move, no_move, no_move)   # exclude self from adjacent
+                for ns_move in traversals_ns  # north and south traversals
+                for ew_move in traversals_ew  # east and west traversals
+                for ud_move in traversals_ud  # this includes above and below if three_d
+                if (ns_move, ew_move, ud_move)
+                != (no_move, no_move, no_move)  # exclude self from adjacent
             )
 
     def __eq__(self, other: Node) -> bool:

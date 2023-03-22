@@ -25,7 +25,7 @@ class Locatable:
         self.location = location
         self.space = space
         self.speed = speed
-        self.orientation = choice([o.value for o in Orientation])
+        self.orientation = Node(*choice([o.value for o in Orientation]))
 
     def path_to_target(self, target) -> tuple[Node, ...]:
         return self.space.get_path(self.location, target.location)

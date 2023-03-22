@@ -25,6 +25,7 @@ def start_adventure_league():
 
 if len(sys.argv) > 1 and sys.argv[1] == "S":
     from src.utils.sprites import sprite_viewer
+
     sprite_viewer.main()
 else:
     start_adventure_league()
