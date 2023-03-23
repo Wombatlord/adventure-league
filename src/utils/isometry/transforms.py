@@ -57,9 +57,9 @@ class Transform:
 
                                 # the determinant so that it preserves volumes
 
-        self._world_to_screen = (   # The order of operations (bottom to top) T3(T2(T1(v))
-            scale_transform @       # 3. apply absolute scaling
-            isometry                # 1. map to a flat isometric grid where the "tiles"
+        self._world_to_screen = (   # The order of operations (bottom to top) T2(T1(v))
+            scale_transform @       # 2. apply absolute scaling
+            isometry                # 1. map to an isometric grid projection
         )
 
         # pyglet Mat3 type can't be inverted to get the screen -> world matrix so we need to embed it in a
