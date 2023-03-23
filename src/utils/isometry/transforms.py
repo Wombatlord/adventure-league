@@ -64,18 +64,7 @@ class Transform:
 
         # pyglet Mat3 type can't be inverted to get the screen -> world matrix so we need to embed it in a
         # Mat4 to make use of their implementation of Mat4.__invert__
-        embedded = self._world_to_screen
-        invertible_w2s = _embed_mat3_in_mat4(embedded)
-
-        # this is the actual inversion
-        inverted = ~invertible_w2s
-
-        # here we pull the top-left 3x3 grid out of the inverted 4x4 matrix
-        self._screen_to_world = Mat3([
-            *inverted[0:3],     # first three of the first row
-            *inverted[4:7],     # first three of the second row
-            *inverted[8:11],    # first three of the third row
-        ])
+        self._screen_to_world = invert_mat3(self._world_to_screen)
 
     def to_screen(self, node: Node) -> Vec2:
         # Make sure the input has enough axes and is compatible with matmul (@)
@@ -100,6 +89,27 @@ def _embed_mat3_in_mat4(embedded: Mat3) -> Mat4:
         *embedded[6:9], 0.0,
         0.0, 0.0, 0.0,  1.0,
     ])
+
+
+def _extract_mat3_from_mat4(m4: Mat4) -> Mat3:
+    return Mat3([
+        *m4[0:3],  # first three of the first row
+        *m4[4:7],  # first three of the second row
+        *m4[8:11],  # first three of the third row
+    ])
+
+
+def invert_mat3(m3: Mat3) -> Mat3:
+    """
+    Takes a Mat3 type and returns its inverse as a mat3 if possible
+    Args:
+        m3: the matrix to invert
+
+    Returns: the inverted matrix
+
+    """
+    m4 = _embed_mat3_in_mat4(m3)
+    return _extract_mat3_from_mat4(~m4)
 
 
 def mat3_determinant(m3: Mat3) -> float:
