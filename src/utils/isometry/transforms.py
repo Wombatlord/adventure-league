@@ -13,7 +13,7 @@ class Transform:
         """
         Here's a pic to show how to measure block dimensions from a cube sprite:
 
-        
+
                                       block_dimensions[0]
                               <------------------------------------>
                                            ___------___               ^
@@ -47,11 +47,12 @@ class Transform:
         # grid is the half block translation vector
         grid = Vec3(*block_dimensions) / 2
 
-        # This matrix takes care of the rotation of the grid to the diamond layout
+        # This matrix takes care of the entire isometric transform including any aspect ratio changes
         isometry = Mat3([
-            -grid.x, +grid.y,           0.0,    # row 1 expresses the fact that screen x = world y - world x
-            +grid.x, +grid.y,           0.0,    # row 2 expresses the fact that screen y = world x + world y + 2 * world z
-             0.0,    +grid.z+grid.y,    1.0,    # row 3 expresses the fact that we don't care about screen z
+            # c1     c2                 c3       <-column labels
+            -grid.x, +grid.y,           0.0,    # c1 expresses the fact that screen x = world y - world x
+            +grid.x, +grid.y,           0.0,    # c2 expresses the fact that screen y = world x + world y + 2*world z
+             0.0,    +grid.z+grid.y,    1.0,    # c3 expresses the fact that we don't care about screen z
         ])
 
                                 # the determinant so that it preserves volumes
@@ -83,7 +84,7 @@ class Transform:
         # apply our transform
         screen_xyz = (self._world_to_screen @ world_xyz)
 
-        #
+        # here we grab the x and y parts to locate the grid point on the screen
         screen_xy_projection = screen_xyz[:2]
         return Vec2(*screen_xy_projection)
 
