@@ -2,7 +2,7 @@ from typing import Generator, Optional
 
 from src.entities.entity import Entity
 from src.entities.loot import Loot, Rewarder
-from src.utils.pathing.grid_utils import Node, Space
+from src.world.pathing.grid_utils import Node, Space
 
 
 class Room:

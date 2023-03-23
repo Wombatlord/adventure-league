@@ -2,7 +2,7 @@ import unittest
 
 from parameterized import parameterized
 
-from src.utils.pathing.grid_utils import Node, Space
+from src.world.pathing.grid_utils import Node, Space
 
 
 def gated_wall(gap: int, v_pos: int, wall_len: int) -> set[Node]:

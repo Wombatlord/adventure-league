@@ -1,8 +1,6 @@
-import operator
+from pyglet.math import Mat3, Mat4, Vec2, Vec3
 
-from pyglet.math import Mat3, Vec2, Vec3, Mat4
-
-from src.utils.pathing.grid_utils import Node
+from src.world.pathing.grid_utils import Node
 
 
 class Transform:
@@ -52,7 +50,7 @@ class Transform:
             # c1     c2                 c3       <-column labels
             -grid.x, +grid.y,           0.0,    # c1 expresses the fact that screen x = world y - world x
             +grid.x, +grid.y,           0.0,    # c2 expresses the fact that screen y = world x + world y + 2*world z
-             0.0,    +grid.z+grid.y,    1.0,    # c3 expresses the fact that we don't care about screen z
+             0.0,    +2*grid.z,         1.0,    # c3 expresses the fact that we don't care about screen z
         ])
 
                                 # the determinant so that it preserves volumes
@@ -146,3 +144,7 @@ def norm(m3: Mat3) -> Mat3:
 
     scale_preserving_transform = uniform_scaling @ m3
     return scale_preserving_transform
+
+
+def draw_priority(n: Node) -> float:
+    return -(n.x + n.y - 2*n.z)

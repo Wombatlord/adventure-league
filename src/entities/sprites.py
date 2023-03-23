@@ -35,6 +35,8 @@ class BaseSprite(Sprite):
 
 
 class EntitySprite:
+    sprite: BaseSprite
+
     def __init__(
         self,
         idle_textures: tuple[Texture, ...] = None,

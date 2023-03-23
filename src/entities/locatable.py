@@ -4,7 +4,7 @@ from enum import Enum
 from random import choice
 from typing import TYPE_CHECKING, Generator, Sequence
 
-from src.utils.pathing.grid_utils import Node, Space
+from src.world.pathing.grid_utils import Node, Space
 
 if TYPE_CHECKING:
     from src.entities.entity import Entity

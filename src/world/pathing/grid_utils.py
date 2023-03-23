@@ -48,6 +48,10 @@ class Space(AStar):
     def width(self) -> int:
         return self.maxima.x - self.minima.x
 
+    @property
+    def dimensions(self) -> tuple[int, int]:
+        return (self.width, self.height)
+
     @lru_cache(maxsize=2)
     def get_path(self, start: Node, finish: Node) -> tuple[Node, ...] | None:
         # we exclude all occupied nodes so any paths from occupied nodes (i.e. all combat pathfinding)
