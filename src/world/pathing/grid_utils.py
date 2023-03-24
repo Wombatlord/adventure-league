@@ -24,10 +24,12 @@ class Space(AStar):
         self.exclusions = exclusions
 
     def __contains__(self, item: Node) -> bool:
-        x_within = self.minima.x <= item.x < self.maxima.x
-        y_within = self.minima.y <= item.y < self.maxima.y
+        return self.in_bounds(item) and item not in self.exclusions
 
-        return x_within and y_within and item not in self.exclusions
+    def in_bounds(self, node: Node) -> bool:
+        x_within = self.minima.x <= node.x < self.maxima.x
+        y_within = self.minima.y <= node.y < self.maxima.y
+        return x_within and y_within
 
     def neighbors(self, node: Node) -> Generator[Node, None, None]:
         for candidate in node.adjacent:
@@ -131,7 +133,11 @@ class Space(AStar):
 
         tried = {attempt}  # will be empty if node not excluded
 
-        while (attempt := random.choice([*attempt.adjacent])) not in self:
+        while (
+            attempt := random.choice(
+                [adj for adj in attempt.adjacent if self.in_bounds(adj)]
+            )
+        ) not in self:
             tried.add(attempt)
             # if we've tried every unique node
             if len(tried) == len(self):

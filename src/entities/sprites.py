@@ -1,12 +1,70 @@
 from enum import Enum
+from typing import Self
 
+from arcade import BasicSprite
 from arcade.sprite import Sprite
 from arcade.texture import Texture
+from arcade.types import Point
+from pyglet.math import Vec2
 
 from src.entities.locatable import Node
 
 
-class BaseSprite(Sprite):
+class OffsetSprite(Sprite):
+    px_offset: Point = (0, 0)
+
+    def offset_anchor(self, px_offset: Point) -> Self:
+        self.px_offset = px_offset
+        return self
+
+    @BasicSprite.position.getter
+    def position(self) -> Point:
+        base_pos = self._position
+        return (
+            base_pos[0] + self.px_offset[0] * self.scale,
+            base_pos[1] + self.px_offset[1] * self.scale,
+        )
+
+    @position.setter
+    def position(self, new_pos: Point) -> None:
+        BasicSprite.position.fset(
+            self,
+            (
+                new_pos[0] - self.px_offset[0],
+                new_pos[1] - self.px_offset[1],
+            ),
+        )
+
+    @BasicSprite.center_x.getter
+    def center_x(self) -> float:
+        return self._position[0] + self.px_offset[0] * self.scale
+
+    @center_x.setter
+    def center_x(self, x: float) -> None:
+        BasicSprite.position.fset(
+            self,
+            (
+                x - self.px_offset[0] * self.scale,
+                self._position[1],
+            ),
+        )
+
+    @BasicSprite.center_y.getter
+    def center_y(self) -> float:
+        return self._position[1] + self.px_offset[1] * self.scale
+
+    @center_y.setter
+    def center_y(self, y: float) -> None:
+        BasicSprite.position.fset(
+            self,
+            (
+                self._position[0],
+                y - self.px_offset[1] * self.scale,
+            ),
+        )
+
+
+class BaseSprite(OffsetSprite, Sprite):
     def __init__(
         self,
         scale: float = 4,
@@ -57,6 +115,10 @@ class EntitySprite:
 
         self.sprite.textures = self.all_textures[0]
         self.sprite.set_texture(0)
+
+    def offset_anchor(self, offset_px: Point) -> Self:
+        self.sprite.offset_anchor(offset_px)
+        return self
 
     def swap_idle_and_attack_textures(self):
         if self.owner.fighter.in_combat:
