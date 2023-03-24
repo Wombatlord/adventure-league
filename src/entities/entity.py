@@ -2,7 +2,7 @@ from typing import Any, NamedTuple, Optional
 
 from src.entities.locatable import Locatable
 from src.entities.sprites import EntitySprite
-from src.utils.pathing.grid_utils import Node, Space
+from src.world.pathing.grid_utils import Node, Space
 
 
 class Name(NamedTuple):

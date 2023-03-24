@@ -1,5 +1,3 @@
-import functools
-
 import arcade
 from arcade.gui import UIManager
 from arcade.gui.widgets import UIWidget
@@ -10,6 +8,7 @@ from pyglet.math import Vec2
 
 from src import config
 from src.engine.init_engine import eng
+from src.entities.dungeon import Room
 from src.gui.buttons import CommandBarMixin
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_components import (
@@ -19,7 +18,6 @@ from src.gui.gui_components import (
     entity_labels_with_cost,
     horizontal_box_pair,
     single_box,
-    vertical_box_pair,
     vstack_of_three_boxes,
 )
 from src.gui.gui_utils import Cycle, ScrollWindow
@@ -28,7 +26,9 @@ from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
 from src.utils.camera_controls import CameraController
-from src.utils.pathing.grid_utils import Node
+from src.world.isometry.transforms import Transform
+from src.world.level.room import basic_room
+from src.world.pathing.grid_utils import Node
 
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
@@ -777,8 +777,10 @@ class MissionsSection(arcade.Section):
 class CombatGridSection(arcade.Section):
     TILE_BASE_DIMS = (16, 17)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
-    SCALE_FACTOR = 0.2
-    GRID_ASPECT = (2, 1)
+    SPRITE_SCALE = 5
+
+    level: tuple[Node] | None
+    encounter_room: Room | None
 
     def __init__(
         self,
@@ -791,56 +793,40 @@ class CombatGridSection(arcade.Section):
         super().__init__(left, bottom, width, height, **kwargs)
         self.encounter_room = None
         self._original_dims = width, height
-        self.grid_scale = 1
-        self.constant_scale = self.grid_scale * self.TILE_BASE_DIMS[0]
 
         self.tile_sprite_list = arcade.SpriteList()
-        scale = 5
-        for x in range(9, -1, -1):
-            for y in range(9, -1, -1):
-                self.tile_sprite_list.append(self.floor_tile_at(x, y, scale=scale))
-                wall_sprite = None
-                if y == 9 and x < 9:
-                    wall_sprite = self.wall_tile_at(
-                        x, y, Node(0, 1), scale=scale
-                    )  # top right wall
-                if x == 9 and y < 9:
-                    wall_sprite = self.wall_tile_at(x, y, Node(1, 0), scale=scale)
-                if x == 9 and y == 9:
-                    wall_sprites = self.wall_tile_at(x, y, Node(1, 1), scale=scale)
-                if wall_sprite:
-                    self.tile_sprite_list.append(*wall_sprite)
-                if wall_sprites:
-                    for wall in wall_sprites:
-                        self.tile_sprite_list.append(wall)
-                    # Ensure we don't try to reappend the sprites.
-                    wall_sprites = None
-
         self.dudes_sprite_list = arcade.SpriteList()
         self.combat_screen = CombatScreen()
         self.grid_camera = arcade.Camera()
         self.grid_camera.zoom = 1.0
         self.other_camera = arcade.Camera()
         self._subscribe_to_events()
-        self.selected_path_sprites = self.init_path(scale)
+        self.selected_path_sprites = self.init_path()
         self.cam_controls = CameraController(self.grid_camera)
+        self.transform = Transform(
+            block_dimensions=(16, 8, 8), absolute_scale=self.SPRITE_SCALE
+        )
+        self.level = None
+
+    def to_screen(self, node: Node) -> Vec2:
+        return self.transform.to_screen(node) + Vec2(self.width, self.height) / 2
 
     @classmethod
-    def init_path(cls, scale=1) -> arcade.SpriteList:
+    def init_path(cls) -> arcade.SpriteList:
         selected_path_sprites = arcade.SpriteList()
         start_sprite = arcade.Sprite(
-            WindowData.indicators[SelectionCursor.GREEN.value], scale
+            WindowData.indicators[SelectionCursor.GREEN.value], cls.SPRITE_SCALE
         )
         start_sprite.visible = False
         selected_path_sprites.append(start_sprite)
         for _ in range(1, 19):
             sprite_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
-            sprite = arcade.Sprite(sprite_tex, scale=scale * WindowData.scale[1])
+            sprite = arcade.Sprite(sprite_tex, scale=cls.SPRITE_SCALE)
             selected_path_sprites.append(sprite)
             sprite.visible = False
 
         end_sprite = arcade.Sprite(
-            WindowData.indicators[SelectionCursor.RED.value], scale
+            WindowData.indicators[SelectionCursor.RED.value], cls.SPRITE_SCALE
         )
         selected_path_sprites.append(end_sprite)
         end_sprite.visible = False
@@ -881,77 +867,8 @@ class CombatGridSection(arcade.Section):
     def clear_occupants(self, event):
         encounter = event["cleanup"]
         for occupant in encounter.occupants:
-            if occupant.fighter.is_enemy == False:
+            if not occupant.fighter.is_enemy:
                 encounter.remove(occupant)
-
-    def scaling(self) -> Vec2:
-        return Vec2(
-            self.width / self._original_dims[0],
-            self.height / self._original_dims[1],
-        )
-
-    def grid_loc(self, v: Vec2) -> Node:
-        """
-        Transforms from screen space coordinates to world (grid) space coords
-        """
-        v2 = v - Vec2(self.width / 2, 7 * self.height / 8)
-        grid_scale = 1
-        constant_scale = grid_scale * self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
-        v3 = (
-            Vec2(  # (x-y, x+y)
-                v2.x / (self.GRID_ASPECT[0]),
-                v2.y / (self.GRID_ASPECT[1]),
-            )
-            / constant_scale
-        )
-
-        node_x = (v3.x + v3.y) / 2
-        node_y = (-v3.x + v3.y) / 2
-        return Node(
-            x=round(node_x),
-            y=round(node_y),
-        )
-
-    def wall_tile_at(
-        self, x: int, y: int, orientation: Node, scale=1
-    ) -> tuple[arcade.Sprite, ...]:
-        wall = self.sprite_at(arcade.Sprite(scale=scale), x, y)
-        sprites = ()
-        if orientation in (Node(1, 0), Node(0, 1)):
-            # Right / East Walls
-            wall.center_y += 45
-            wall.center_x += 40 * (orientation.x - orientation.y)
-            sprites = (wall,)
-
-        elif orientation == Node(1, 1):
-            # Three wall sprites for the corner
-            left = self.sprite_at(arcade.Sprite(scale=scale), x, y)
-            right = self.sprite_at(arcade.Sprite(scale=scale), x, y)
-            top = self.sprite_at(arcade.Sprite(scale=scale), x, y)
-            left.center_y += 45
-            left.center_x -= 40
-            right.center_y += 45
-            right.center_x += 40
-            top.center_y += 100
-            sprites = (left, right, top)
-
-        for s in sprites:
-            s.texture = WindowData.tiles[89]
-
-        return sprites
-
-    def floor_tile_at(self, x: int, y: int, scale=1) -> arcade.Sprite:
-        tile = arcade.Sprite(scale=scale)
-        tile.texture = WindowData.tiles[100]
-
-        return self.sprite_at(tile, x, y)
-
-    def sprite_at(self, sprite: arcade.Sprite, x: int, y: int) -> arcade.Sprite:
-        offset = eng.grid_offset(
-            x, y, self.constant_scale, self.GRID_ASPECT, self.width, self.height
-        )
-        sprite.position = offset
-        return sprite
 
     def on_update(self, delta_time: float):
         self.cam_controls.on_update()
@@ -989,7 +906,7 @@ class CombatGridSection(arcade.Section):
         if eng.awaiting_input:
             self.combat_screen.draw_turn_prompt()
 
-        if eng.mission_in_progress == False:
+        if not eng.mission_in_progress:
             self.combat_screen.draw_turn_prompt()
 
         self.combat_screen.draw_message()
@@ -1008,10 +925,18 @@ class CombatGridSection(arcade.Section):
         encounter_room = event.get("new_encounter", None)
         if encounter_room:
             self.encounter_room = encounter_room
+            self.level = basic_room(dimensions=self.encounter_room.space.dimensions)
+            self.level_to_sprite_list()
 
             self.prepare_dude_sprites()
-
             self.update_dudes(event)
+
+    def level_to_sprite_list(self):
+        self.tile_sprite_list.clear()
+        for node in self.level:
+            sprite = arcade.Sprite(WindowData.tiles[89], scale=self.SPRITE_SCALE)
+            sprite.position = self.to_screen(node)
+            self.tile_sprite_list.append(sprite)
 
     def prepare_dude_sprites(self):
         """
@@ -1026,13 +951,8 @@ class CombatGridSection(arcade.Section):
         for dude in self.encounter_room.occupants:
             if dude.fighter.is_boss:
                 dude.entity_sprite.sprite.scale = dude.entity_sprite.sprite.scale * 1.5
-            dude.entity_sprite.sprite = self.sprite_at(
-                dude.entity_sprite.sprite,
-                dude.entity_sprite.sprite.center_x,
-                dude.entity_sprite.sprite.center_y,
-            )
+            dude.entity_sprite.sprite.position = self.to_screen(dude.locatable.location)
 
-            dude.entity_sprite.sprite.center_y += 15
             dude.entity_sprite.orient(dude.locatable.orientation)
             self.dudes_sprite_list.append(dude.entity_sprite.sprite)
 
@@ -1050,17 +970,7 @@ class CombatGridSection(arcade.Section):
 
         # self.clear_dead_sprites()
         for dude in self.encounter_room.occupants:
-            offset = eng.grid_offset(
-                dude.locatable.location.x,
-                dude.locatable.location.y,
-                self.constant_scale,
-                self.GRID_ASPECT,
-                self.width,
-                self.height,
-            )
-            dude.entity_sprite.sprite.center_x = offset.x
-            dude.entity_sprite.sprite.center_y = offset.y
-            dude.entity_sprite.sprite.center_y += 15
+            dude.entity_sprite.sprite.position = self.to_screen(dude.locatable.location)
             dude.entity_sprite.orient(dude.locatable.orientation)
         self.dudes_sprite_list.sort(key=lambda s: sum(s.position), reverse=True)
 
@@ -1077,20 +987,11 @@ class CombatGridSection(arcade.Section):
             if i in visible:
                 node_idx = i if i in head + body else -1
                 node = current[node_idx]
-                position = eng.grid_offset(
-                    x=node.x,
-                    y=node.y,
-                    constant_scale=self.constant_scale,
-                    grid_aspect=self.GRID_ASPECT,
-                    w=self.width,
-                    h=self.height,
-                )
+                position = self.to_screen(node) - Vec2(0, 4) * self.SPRITE_SCALE
                 sprite.visible = True
                 sprite.center_x, sprite.center_y = position.x, position.y
             elif i in invisible:
                 sprite.visible = False
-
-        print(current)
 
     def hide_path(self):
         for sprite in self.selected_path_sprites:

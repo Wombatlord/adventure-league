@@ -1,9 +1,8 @@
 import arcade
 from arcade.texture import Texture
-from pyglet.math import Vec2
 
 from src.engine.init_engine import eng
-from src.utils.pathing.grid_utils import Node, Space
+from src.world.pathing.grid_utils import Node, Space
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 650
