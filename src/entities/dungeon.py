@@ -11,7 +11,7 @@ class Room:
         self.occupants: list[Entity] = []
         self._cleared = False
         self.space = Space(Node(x=0, y=0), Node(*size), exclusions=set())
-        self.entry_door = Node(x=0, y=5)
+        self.entry_door = Node(x=0, y=5) if size[1] > 5 else Node(0, 0)
 
     def update_pathing_obstacles(self):
         """
