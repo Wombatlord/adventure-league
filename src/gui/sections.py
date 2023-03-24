@@ -951,8 +951,6 @@ class CombatGridSection(arcade.Section):
         for dude in self.encounter_room.occupants:
             if dude.fighter.is_boss:
                 dude.entity_sprite.sprite.scale = dude.entity_sprite.sprite.scale * 1.5
-            if dude.locatable.location is None:
-                breakpoint()
             dude.entity_sprite.sprite.position = self.to_screen(dude.locatable.location)
 
             dude.entity_sprite.orient(dude.locatable.orientation)
