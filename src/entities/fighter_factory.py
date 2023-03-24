@@ -131,9 +131,6 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         )
 
     def _attach_sprites(entity: Entity) -> Entity:
-        if entity.fighter is None:
-            breakpoint()
-
         atk_one, atk_two, idle_one, idle_two = select_textures(
             entity.species, entity.fighter
         )
