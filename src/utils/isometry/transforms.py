@@ -1,6 +1,6 @@
 import operator
 
-from pyglet.math import Mat3, Vec2, Vec3, Mat4
+from pyglet.math import Mat3, Mat4, Vec2, Vec3
 
 from src.utils.pathing.grid_utils import Node
 
