@@ -5,24 +5,18 @@ from arcade import Window
 from arcade.gui.events import UIEvent
 from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
-from pyglet.math import Vec2
 
 from src.engine.init_engine import eng
 from src.gui.buttons import get_new_missions_button, nav_button
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
-from src.gui.sections import (
-    CombatGridSection,
-    CommandBarSection,
-    InfoPaneSection,
-    MissionsSection,
-    RecruitmentPaneSection,
-    RosterAndTeamPaneSection,
-)
+from src.gui.sections import (CombatGridSection, CommandBarSection,
+                              InfoPaneSection, MissionsSection,
+                              RecruitmentPaneSection, RosterAndTeamPaneSection)
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
 from src.utils.input_capture import Selection
-from src.utils.pathing.grid_utils import Node
+from src.world.pathing.grid_utils import Node
 
 
 class TitleView(arcade.View):
@@ -656,6 +650,3 @@ class BattleView(arcade.View):
         super().on_resize(width, height)
         WindowData.width = width
         WindowData.height = height
-
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        print(f"{self.combat_grid_section.grid_loc(Vec2(x,y))=}")

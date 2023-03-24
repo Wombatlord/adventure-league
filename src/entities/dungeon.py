@@ -2,7 +2,7 @@ from typing import Generator, Optional
 
 from src.entities.entity import Entity
 from src.entities.loot import Loot, Rewarder
-from src.utils.pathing.grid_utils import Node, Space
+from src.world.pathing.grid_utils import Node, Space
 
 
 class Room:
@@ -11,7 +11,7 @@ class Room:
         self.occupants: list[Entity] = []
         self._cleared = False
         self.space = Space(Node(x=0, y=0), Node(*size), exclusions=set())
-        self.entry_door = Node(x=0, y=5)
+        self.entry_door = Node(x=0, y=5) if size[1] > 5 else Node(0, 0)
 
     def update_pathing_obstacles(self):
         """

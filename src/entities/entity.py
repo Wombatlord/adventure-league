@@ -2,7 +2,7 @@ from typing import Any, NamedTuple, Optional
 
 from src.entities.locatable import Locatable
 from src.entities.sprites import EntitySprite
-from src.utils.pathing.grid_utils import Node, Space
+from src.world.pathing.grid_utils import Node, Space
 
 
 class Name(NamedTuple):
@@ -31,6 +31,8 @@ class Species:
 
 
 class Entity:
+    entity_sprite: EntitySprite | None
+
     def __init__(
         self,
         sprite=None,
@@ -59,8 +61,8 @@ class Entity:
 
         self.locatable = None
 
-    def set_entity_sprite(self, sprite):
-        self.entity_sprite: EntitySprite = sprite
+    def set_entity_sprite(self, sprite: EntitySprite):
+        self.entity_sprite = sprite
         if self.entity_sprite:
             self.entity_sprite.owner = self
 
