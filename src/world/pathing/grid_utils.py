@@ -132,7 +132,7 @@ class Space(AStar):
             return attempt
 
         tried = {attempt}  # will be empty if node not excluded
-
+        breakpoint()
         while (
             attempt := random.choice(
                 [adj for adj in attempt.adjacent if self.in_bounds(adj)]

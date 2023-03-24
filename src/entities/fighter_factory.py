@@ -33,10 +33,17 @@ GOBLIN_TEXTURES = [
 ]
 
 
-NAME_GENS = {
-    Species.GOBLIN: lambda: f"{syllables.maybe_punctuated_name(max_syls=2)} {syllables.maybe_punctuated_name(max_syls=2)}",
+NAME_GENS: dict[str, Callable[[], str]] = {
+    Species.GOBLIN: lambda: (
+        f"{syllables.maybe_punctuated_name(max_syls=2)} {syllables.maybe_punctuated_name(max_syls=2)}"
+    ),
     Species.SLIME: lambda: f"{syllables.simple_word(max_syls=2)}",
 }
+
+
+def gen_name(species: str) -> str:
+    return NAME_GENS.get(species, lambda: f"{species}: '{syllables.simple_word()}'")()
+
 
 Factory = Callable[[str], Entity]
 
@@ -62,7 +69,6 @@ class StatBlock(NamedTuple):
             "is_enemy": self.is_enemy,
             "speed": self.speed,
             "is_boss": self.is_boss,
-            "species": self.species,
         }
 
 
@@ -143,17 +149,9 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         return entity
 
     def factory(name=None, title=None, last_name=None):
-        default_name_gen = lambda: f"{stats.species}: '{syllables.simple_word()}'"
-        name = name or NAME_GENS.get(stats.species, default_name_gen)()
+        name = name or gen_name(stats.species)
         entity = _create_entity(name, title, last_name)
-        conf = {
-            "hp": randint(*stats.hp),
-            "defence": randint(*stats.defence),
-            "power": randint(*stats.power),
-            "is_enemy": stats.is_enemy,
-            "speed": stats.speed,
-            "is_boss": stats.is_boss,
-        }
+        conf = stats.fighter_conf()
 
         entity.fighter = _from_conf(conf, entity)
         if attach_sprites:

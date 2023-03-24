@@ -12,15 +12,12 @@ from src.entities.dungeon import Room
 from src.entities.sprites import OffsetSprite
 from src.gui.buttons import CommandBarMixin
 from src.gui.combat_screen import CombatScreen
-from src.gui.gui_components import (
-    box_containing_horizontal_label_pair,
-    create_colored_UILabel_header,
-    entity_labels_names_only,
-    entity_labels_with_cost,
-    horizontal_box_pair,
-    single_box,
-    vstack_of_three_boxes,
-)
+from src.gui.gui_components import (box_containing_horizontal_label_pair,
+                                    create_colored_UILabel_header,
+                                    entity_labels_names_only,
+                                    entity_labels_with_cost,
+                                    horizontal_box_pair, single_box,
+                                    vstack_of_three_boxes)
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
@@ -817,20 +814,20 @@ class CombatGridSection(arcade.Section):
         selected_path_sprites = arcade.SpriteList()
         start_sprite = OffsetSprite(
             WindowData.indicators[SelectionCursor.GREEN.value], cls.SPRITE_SCALE
-        ).offset_anchor((0, 5.5))
+        ).offset_anchor((0, 4.5))
         start_sprite.visible = False
         selected_path_sprites.append(start_sprite)
         for _ in range(1, 19):
             sprite_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
             sprite = OffsetSprite(sprite_tex, scale=cls.SPRITE_SCALE).offset_anchor(
-                (0, 5)
+                (0, 3.5)
             )
             selected_path_sprites.append(sprite)
             sprite.visible = False
 
         end_sprite = OffsetSprite(
             WindowData.indicators[SelectionCursor.RED.value], cls.SPRITE_SCALE
-        ).offset_anchor((0, 5.5))
+        ).offset_anchor((0, 4.5))
         selected_path_sprites.append(end_sprite)
         end_sprite.visible = False
 
