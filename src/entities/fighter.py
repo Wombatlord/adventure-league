@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from src.entities.entity import Entity
 from src.world.pathing.grid_utils import Node
+from src.entities.inventory import Consumable, Throwable
 
 Action = dict[str, Any]
 
@@ -235,6 +236,14 @@ class Fighter:
 
         return result
 
+    def consume_item(self, item: Consumable):
+        if item in self.owner.inventory:
+            return item.consume(self.owner.inventory)
+    
+    def throw_item(self, item: Throwable):
+        if item in self.owner.inventory:
+            return item.throw(self.owner.inventory)
+    
     def commence_retreat(self):
         self.retreating = True
         hooks = self.on_retreat_hooks

@@ -77,9 +77,10 @@ class HealingPotionTest(unittest.TestCase):
 
         # Action
         merc.inventory.add_item_to_inventory(potion_1)
-        event = merc.inventory.items[0].consume(merc.inventory)
+        event = merc.fighter.consume_item(merc.inventory.items[0])
 
         # Assert
+        assert potion_1 not in merc.inventory
         assert (
             merc.fighter.hp == merc.fighter.max_hp
         ), f"expected {merc.fighter.hp=} {merc.fighter.max_hp=}"

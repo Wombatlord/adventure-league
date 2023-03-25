@@ -4,6 +4,7 @@ from typing import Any, Callable, Generator, NamedTuple
 
 from src.entities.entity import Entity
 from src.entities.fighter import Fighter
+from src.entities.items import HealingPotion
 
 Action = dict[str, Any]
 Hook = Callable[[], None]
@@ -109,6 +110,10 @@ class CombatRound:
             if combatant.is_enemy:
                 yield combatant.choose_nearest_target(enemies)
             else:
+                if isinstance(combatant.owner.inventory.items[0], HealingPotion) and combatant.hp < combatant.max_hp:
+
+                    yield combatant.consume_item(combatant.owner.inventory.items[0])
+
                 yield combatant.request_target(enemies)
 
         # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
