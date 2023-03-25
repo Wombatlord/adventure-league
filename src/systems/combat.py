@@ -166,9 +166,9 @@ class CombatRound:
 
     def victor(self) -> int | None:
         match tuple(len(t) for t in self.teams):
-            case (0, x) if x != 0:
-                return 0
             case (x, 0) if x != 0:
+                return 0
+            case (0, x) if x != 0:
                 return 1
             case _:
                 return None

@@ -3,24 +3,25 @@ import unittest
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
 from src.entities.inventory import Inventory
-from src.entities.potion import HealingPotion
+from src.entities.items import HealingPotion
 from src.tests.fixtures import FighterFixtures
 
 
-class InventoryTest(unittest.TestCase):
+class HealingPotionTest(unittest.TestCase):
     @classmethod
     def get_entity_with_inventory(cls, inventory_capacity) -> Entity:
         merc = Entity(
             name=Name(first_name="strong", last_name="very", title="the tactical"),
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
-            inventory=Inventory(capacity=inventory_capacity),
         )
+        merc.inventory = Inventory(owner=merc, capacity=inventory_capacity)
 
         return merc
 
     @classmethod
     def get_potion(cls) -> HealingPotion:
-        potion = HealingPotion()
+        potion_entity = Entity()
+        potion = HealingPotion(owner=potion_entity)
         return potion
 
     def test_entity_has_an_inventory(self):
@@ -67,7 +68,7 @@ class InventoryTest(unittest.TestCase):
         assert potion_1 not in merc.inventory.items
         assert merc.inventory.items[0] is None
 
-    def test_item_in_inventory_is_usable_by_entity_with_inventory(self):
+    def test_potion_in_inventory_is_drinkable_by_owning_entity_with_inventory(self):
         # Arrange
         merc = self.get_entity_with_inventory(inventory_capacity=1)
         merc.fighter.hp -= 5
@@ -76,26 +77,23 @@ class InventoryTest(unittest.TestCase):
 
         # Action
         merc.inventory.add_item_to_inventory(potion_1)
-        event = merc.inventory.items[0].drink(owner=merc, target=merc)
-        print(event)
+        event = merc.inventory.items[0].consume(merc.inventory)
+
         # Assert
-        assert merc.fighter.hp == merc.fighter.max_hp
-        assert event == {
-            "message": f"{potion_1.name} used by {merc}",
-            "potion_used": {
-                "effect": {
-                    "heal": potion_1.heal_amount,
-                    "target": merc,
+        assert (
+            merc.fighter.hp == merc.fighter.max_hp
+        ), f"expected {merc.fighter.hp=} {merc.fighter.max_hp=}"
+        expected = merc.annotate_event(
+            {
+                "message": f"{potion_1.get_name()} used by {merc.inventory.owner.name}",
+                "item_consumed": {
+                    "consumable": potion_1,
+                    "effect": {
+                        "name": potion_1.get_consume_effect_name(),
+                        "target": potion_1.owner,
+                        "details": {"heal_amount": 5},
+                    },
                 },
-                "used_by": {
-                    "item": potion_1,
-                    "owner": merc,
-                },
-            },
-            "entity_data": {
-                "health": merc.fighter.hp if merc.fighter else None,
-                "name": merc.name.name_and_title,
-                "retreat": merc.fighter.retreating,
-                "species": merc.species,
-            },
-        }
+            }
+        )
+        assert event == expected, f"{event=}\n\n{expected=}"

@@ -12,12 +12,15 @@ from src.entities.dungeon import Room
 from src.entities.sprites import OffsetSprite
 from src.gui.buttons import CommandBarMixin
 from src.gui.combat_screen import CombatScreen
-from src.gui.gui_components import (box_containing_horizontal_label_pair,
-                                    create_colored_UILabel_header,
-                                    entity_labels_names_only,
-                                    entity_labels_with_cost,
-                                    horizontal_box_pair, single_box,
-                                    vstack_of_three_boxes)
+from src.gui.gui_components import (
+    box_containing_horizontal_label_pair,
+    create_colored_UILabel_header,
+    entity_labels_names_only,
+    entity_labels_with_cost,
+    horizontal_box_pair,
+    single_box,
+    vstack_of_three_boxes,
+)
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
