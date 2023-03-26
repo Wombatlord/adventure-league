@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 class HealingPotion(Exhaustable, Consumable, Throwable):
     effect_name = "heal"
-    name = "healing_potion"
+    name = "healing potion"
     consume_effect_name = effect_name
     hit_effect_name = effect_name
     apply_consume_effect = apply_heal_consumption_effect

@@ -80,11 +80,17 @@ class Fighter:
 
     def request_instruction(self, targets: list[Fighter]) -> Action:
         if self.get_has_used_item():
-            self.set_has_used_item(False)
+            
             return self.consume_item()
 
-        if self.owner.inventory.items[0] is not None and self.hp < self.max_hp:
-            return {
+        elif self.owner.inventory.items[0] is not None and self.hp < self.max_hp:
+            self.request_item_use()
+
+        else:
+            self.request_target(targets)
+
+    def request_item_use(self):
+        return {
                 "message": f"Use an item from {self.owner.name.name_and_title}'s inventory?",
                 "await_input": self,
                 "item_selection": {
@@ -95,24 +101,7 @@ class Fighter:
                     "default_item": self.owner.inventory.items[0],
                 },
             }
-
-        else:
-            return {
-                "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target using the up and down keys.",
-                "await_input": self,
-                "target_selection": {
-                    "paths": [
-                        self.owner.locatable.path_to_target(t.owner.locatable)
-                        for t in targets
-                    ],
-                    "targets": targets,
-                    "on_confirm": lambda idx: self.provide_target(targets[idx]),
-                    "default": targets.index(self.last_target())
-                    if self.last_target()
-                    else 0,
-                },
-            }
-
+    
     def provide_item(self, item):
         self._current_item = item
         self.set_has_used_item(True)
@@ -287,6 +276,7 @@ class Fighter:
     def consume_item(self):
         item: Consumable = self._current_item
         if item in self.owner.inventory:
+            self.set_has_used_item(False)
             return item.consume(self.owner.inventory)
 
     def throw_item(self, item: Throwable):

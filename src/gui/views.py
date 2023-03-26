@@ -592,19 +592,13 @@ class CombatInputMode(BaseInputMode):
                 if ok:
                     self.view.combat_grid_section.hide_path()
                     self.view.target_selection = None
+                    self.view.item_menu_mode_allowed = True
 
 
 class MenuInputMode(BaseInputMode):
     name = "menu"
-
+    
     def on_key_press(self, symbol: int, modifiers: int):
-        if not self.view.item_selection and eng.awaiting_input:
-            match symbol:
-                case arcade.key.SPACE:
-                    eng.next_combat_action()
-                    eng.awaiting_input = False
-            return
-
         if not self.view.item_selection:
             return
 
@@ -615,6 +609,8 @@ class MenuInputMode(BaseInputMode):
                 ok = self.view.item_selection.confirm()
                 if ok:
                     self.view.item_selection = None
+                    self.view.item_menu_mode_allowed = False
+                self.view.next_mode()
 
 
 class BattleView(arcade.View):
@@ -632,6 +628,7 @@ class BattleView(arcade.View):
 
         self.target_selection: Selection[tuple[Node, ...]] | None = None
         self.item_selection: Selection[list[InventoryItem]] | None = None
+        self.item_menu_mode_allowed = True        
         self.input_mode = None
         self.bind_input_modes()
 
@@ -689,9 +686,7 @@ class BattleView(arcade.View):
 
         def on_confirm(item_idx):
             eng.input_received()
-            a = selection["on_confirm"](item_idx)
-            print(f"{a=}")
-            return a
+            return selection["on_confirm"](item_idx)
 
         self.item_selection = Selection(
             selection["inventory_contents"], default=selection["default_item"]
@@ -715,44 +710,9 @@ class BattleView(arcade.View):
 
         if symbol == arcade.key.TAB:
             self.next_mode()
-            return
 
         self.input_mode.on_key_press(symbol, modifiers)
 
-        # if not self.target_selection and eng.awaiting_input:
-        #     match symbol:
-        #         case arcade.key.SPACE:
-        #             eng.next_combat_action()
-        #             eng.awaiting_input = False
-        #     return
-
-        # if not self.target_selection:
-        #     return
-
-        # match symbol:
-        #     case arcade.key.UP:
-        #         self.target_selection.prev()
-        #         print(self.target_selection)
-
-        #     case arcade.key.DOWN:
-        #         self.target_selection.next()
-        #         print(self.target_selection)
-
-        #     case arcade.key.P:
-        #         breakpoint()
-        #         if not self.item_selection:
-        #             return
-        #         ok = self.item_selection.confirm()
-        #         if ok:
-        #             self.item_selection = None
-
-        #     case arcade.key.SPACE:
-        #         if not self.target_selection:
-        #             return
-        #         ok = self.target_selection.confirm()
-        #         if ok:
-        #             self.combat_grid_section.hide_path()
-        #             self.target_selection = None
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
