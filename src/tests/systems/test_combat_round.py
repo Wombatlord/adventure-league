@@ -3,6 +3,7 @@ from unittest import TestCase
 from src.entities.dungeon import Room
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
+from src.entities.inventory import Inventory
 from src.systems.combat import CombatRound
 from src.tests.fixtures import FighterFixtures
 
@@ -14,7 +15,7 @@ class CombatRoundTest(TestCase):
             name=Name(first_name="strong", last_name="very", title="the tactical"),
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
-
+        merc.inventory = Inventory(owner=merc, capacity=1)
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),

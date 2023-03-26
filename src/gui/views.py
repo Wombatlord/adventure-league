@@ -21,7 +21,7 @@ from src.gui.sections import (
 )
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
-from src.utils.input_capture import Selection, BaseInputMode
+from src.utils.input_capture import BaseInputMode, Selection
 from src.world.pathing.grid_utils import Node
 
 
@@ -564,6 +564,7 @@ class MissionsView(arcade.View):
 
 class CombatInputMode(BaseInputMode):
     name = "combat"
+
     def on_key_press(self, symbol: int, modifiers: int):
         if not self.view.target_selection and eng.awaiting_input:
             match symbol:
@@ -583,7 +584,7 @@ class CombatInputMode(BaseInputMode):
             case arcade.key.DOWN:
                 self.view.target_selection.next()
                 print(self.view.target_selection)
-            
+
             case arcade.key.SPACE:
                 if not self.view.target_selection:
                     return
@@ -595,6 +596,7 @@ class CombatInputMode(BaseInputMode):
 
 class MenuInputMode(BaseInputMode):
     name = "menu"
+
     def on_key_press(self, symbol: int, modifiers: int):
         if not self.view.item_selection and eng.awaiting_input:
             match symbol:
@@ -605,7 +607,7 @@ class MenuInputMode(BaseInputMode):
 
         if not self.view.item_selection:
             return
-        
+
         match symbol:
             case arcade.key.P:
                 if not self.view.item_selection:
@@ -617,7 +619,7 @@ class MenuInputMode(BaseInputMode):
 
 class BattleView(arcade.View):
     input_mode: BaseInputMode
-    
+
     def __init__(self, window: Window = None):
         super().__init__(window)
         self.combat_grid_section = CombatGridSection(
@@ -632,28 +634,28 @@ class BattleView(arcade.View):
         self.item_selection: Selection[list[InventoryItem]] | None = None
         self.input_mode = None
         self.bind_input_modes()
-        
+
         self.add_section(self.combat_grid_section)
         eng.init_combat()
-
 
     def bind_input_modes(self):
         combat_mode = CombatInputMode(self)
         menu_mode = MenuInputMode(self).set_next_mode(combat_mode)
         self.input_mode = combat_mode.set_next_mode(menu_mode)
-    
+
     def next_mode(self):
         self.input_mode = self.input_mode.get_next_mode()
-    
+
     def on_show_view(self):
         eng.await_input()
         eng.combat_dispatcher.volatile_subscribe(
-            "item_selection", "BattleView set_use_item_input_request", self.set_use_item_input_request
+            "item_selection",
+            "BattleView set_use_item_input_request",
+            self.set_use_item_input_request,
         )
         eng.combat_dispatcher.volatile_subscribe(
             "target_selection", "BattleView.set_input_request", self.set_input_request
         )
-
 
     def on_draw(self):
         self.clear()
@@ -690,13 +692,11 @@ class BattleView(arcade.View):
             a = selection["on_confirm"](item_idx)
             print(f"{a=}")
             return a
-        
+
         self.item_selection = Selection(
-            selection["inventory_contents"],
-            default=selection["default_item"]
+            selection["inventory_contents"], default=selection["default_item"]
         ).set_confirmation(on_confirm)
 
-        
     def on_key_release(self, _symbol: int, _modifiers: int):
         if not self.combat_grid_section.cam_controls.on_key_release(_symbol):
             return
@@ -712,13 +712,13 @@ class BattleView(arcade.View):
                     eng.flush_subscriptions()
                     guild_view = GuildView()
                     self.window.show_view(guild_view)
-        
+
         if symbol == arcade.key.TAB:
             self.next_mode()
             return
 
         self.input_mode.on_key_press(symbol, modifiers)
-        
+
         # if not self.target_selection and eng.awaiting_input:
         #     match symbol:
         #         case arcade.key.SPACE:
@@ -745,7 +745,7 @@ class BattleView(arcade.View):
         #         ok = self.item_selection.confirm()
         #         if ok:
         #             self.item_selection = None
-            
+
         #     case arcade.key.SPACE:
         #         if not self.target_selection:
         #             return

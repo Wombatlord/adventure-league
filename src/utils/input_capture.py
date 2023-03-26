@@ -82,3 +82,29 @@ class Selection(Generic[_SelectionType]):
             return True
 
         return False
+
+
+class BaseInputMode:
+    next_mode: Self
+    mode: int
+    name: str = ""
+
+    def __init__(self, view, next_mode=None):
+        self.view = view
+        self.next_mode = next_mode or self
+
+    def get_name(self) -> str:
+        return self.name or "no name"
+
+    def set_next_mode(self, mode: Self) -> Self:
+        self.next_mode = mode
+        return self
+
+    def get_next_mode(self) -> Self:
+        return self.next_mode
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        pass
+
+    def on_key_release(self, symbol: int, modifiers: int):
+        pass

@@ -153,16 +153,16 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
     def factory(name=None, title=None, last_name=None):
         name = name or gen_name(stats.species)
         entity = _create_entity(name, title, last_name)
-        
+
         conf = stats.fighter_conf()
 
         entity.fighter = _from_conf(conf, entity)
-        
+
         entity.inventory = Inventory(owner=entity, capacity=1)
-        
+
         if not entity.fighter.is_enemy:
             entity.inventory.add_item_to_inventory(HealingPotion(owner=entity))
-        
+
         if attach_sprites:
             entity = _attach_sprites(entity)
 

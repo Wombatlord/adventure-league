@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from src.entities.entity import Entity
-from src.world.pathing.grid_utils import Node
 from src.entities.inventory import Consumable, Throwable
+from src.world.pathing.grid_utils import Node
 
 Action = dict[str, Any]
 
@@ -82,20 +82,20 @@ class Fighter:
         if self.get_has_used_item():
             self.set_has_used_item(False)
             return self.consume_item()
-        
+
         if self.owner.inventory.items[0] is not None and self.hp < self.max_hp:
-            
             return {
                 "message": f"Use an item from {self.owner.name.name_and_title}'s inventory?",
                 "await_input": self,
                 "item_selection": {
                     "inventory_contents": self.owner.inventory.items,
-                    "on_confirm": lambda item_idx: self.provide_item(self.owner.inventory.items[item_idx]),
-                    "default_item": self.owner.inventory.items[0]
-                }
+                    "on_confirm": lambda item_idx: self.provide_item(
+                        self.owner.inventory.items[item_idx]
+                    ),
+                    "default_item": self.owner.inventory.items[0],
+                },
             }
-        
-        
+
         else:
             return {
                 "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target using the up and down keys.",
@@ -117,7 +117,7 @@ class Fighter:
         self._current_item = item
         self.set_has_used_item(True)
         return True
-    
+
     def current_target(self) -> Fighter | None:
         self._cleanse_targets()
         return self._target
@@ -288,7 +288,7 @@ class Fighter:
         item: Consumable = self._current_item
         if item in self.owner.inventory:
             return item.consume(self.owner.inventory)
-        
+
     def throw_item(self, item: Throwable):
         if item in self.owner.inventory:
             return item.throw(self.owner.inventory)
