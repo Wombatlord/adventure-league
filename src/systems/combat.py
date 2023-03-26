@@ -110,11 +110,7 @@ class CombatRound:
             if combatant.is_enemy:
                 yield combatant.choose_nearest_target(enemies)
             else:
-                if isinstance(combatant.owner.inventory.items[0], HealingPotion) and combatant.hp < combatant.max_hp:
-
-                    yield combatant.consume_item(combatant.owner.inventory.items[0])
-
-                yield combatant.request_target(enemies)
+                yield combatant.request_instruction(enemies)
 
         # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
         combatant = self.current_combatant(pop=True)
