@@ -16,7 +16,7 @@ from src.gui.sections import (CombatGridSection, CommandBarSection,
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
 from src.utils.input_capture import Selection
-from src.world.pathing.grid_utils import Node
+from src.world.node import Node
 
 
 class TitleView(arcade.View):

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from src.entities.entity import Entity
-from src.world.pathing.grid_utils import Node
+from src.world.node import Node
 
 Action = dict[str, Any]
 

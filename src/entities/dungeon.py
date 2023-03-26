@@ -1,17 +1,24 @@
-from typing import Generator, Optional
+from typing import Generator, Optional, Self
 
 from src.entities.entity import Entity
 from src.entities.loot import Loot, Rewarder
-from src.world.pathing.grid_utils import Node, Space
+from src.world.level.room import basic_room
+from src.world.pathing.pathing_space import PathingSpace
+from src.world.node import Node
 
 
 class Room:
     def __init__(self, size: tuple[int, int] = (10, 10)) -> None:
+        self.layout = basic_room(size)
         self.enemies: list[Entity] = []
         self.occupants: list[Entity] = []
         self._cleared = False
-        self.space = Space(Node(x=0, y=0), Node(*size), exclusions=set())
+        self.space = PathingSpace.from_level_geometry(self.layout)
         self.entry_door = Node(x=0, y=5) if size[1] > 5 else Node(0, 0)
+
+    def set_layout(self, layout: tuple[Node, ...]) -> Self:
+        self.layout = layout
+        return self
 
     def update_pathing_obstacles(self):
         """
@@ -88,7 +95,7 @@ class Dungeon(Rewarder):
         max_enemies_per_room: int,
         rooms: list[Room],
         enemies: list[Entity],
-        boss: Entity,
+        boss: Entity | None,
         description: Optional[str] = "NO DESC",
         treasure: Optional[int] = 0,
         xp_reward: Optional[int] = 0,

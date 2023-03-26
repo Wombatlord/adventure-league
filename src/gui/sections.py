@@ -9,7 +9,7 @@ from pyglet.math import Vec2
 from src import config
 from src.engine.init_engine import eng
 from src.entities.dungeon import Room
-from src.entities.sprites import OffsetSprite
+from src.entities.sprites import OffsetSprite, BaseSprite
 from src.gui.buttons import CommandBarMixin
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_components import (box_containing_horizontal_label_pair,
@@ -24,9 +24,9 @@ from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
 from src.utils.camera_controls import CameraController
-from src.world.isometry.transforms import Transform
+from src.world.isometry.transforms import Transform, draw_priority
 from src.world.level.room import basic_room
-from src.world.pathing.grid_utils import Node
+from src.world.node import Node
 
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
@@ -777,7 +777,6 @@ class CombatGridSection(arcade.Section):
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
     SPRITE_SCALE = 5
 
-    level: tuple[Node] | None
     encounter_room: Room | None
 
     def __init__(
@@ -804,7 +803,6 @@ class CombatGridSection(arcade.Section):
         self.transform = Transform(
             block_dimensions=(16, 8, 8), absolute_scale=self.SPRITE_SCALE
         )
-        self.level = None
 
     def to_screen(self, node: Node) -> Vec2:
         return self.transform.to_screen(node) + Vec2(self.width, self.height) / 2
@@ -925,7 +923,6 @@ class CombatGridSection(arcade.Section):
         encounter_room = event.get("new_encounter", None)
         if encounter_room:
             self.encounter_room = encounter_room
-            self.level = basic_room(dimensions=self.encounter_room.space.dimensions)
             self.level_to_sprite_list()
 
             self.prepare_dude_sprites()
@@ -933,7 +930,7 @@ class CombatGridSection(arcade.Section):
 
     def level_to_sprite_list(self):
         self.tile_sprite_list.clear()
-        for node in self.level:
+        for node in self.encounter_room.layout:
             sprite = arcade.Sprite(WindowData.tiles[89], scale=self.SPRITE_SCALE)
             sprite.position = self.to_screen(node)
             self.tile_sprite_list.append(sprite)
@@ -962,13 +959,13 @@ class CombatGridSection(arcade.Section):
     def _update_dudes(self):
         """
         Check if any sprites associated to a dead entity are still in the list, if so remove them.
-        Iterate over the occupants of the current room and update the positional information of their sprites as necessary.
-        Sort the sprite list such that sprites higher in screen space are drawn first and then overlapped by lower sprites.
+        Iterate over the occupants of the current room and update the positional information of their sprites as
+        necessary. Sort the sprite list such that sprites higher in screen space are drawn first and then overlapped
+        by lower sprites.
         """
         if self.encounter_room is None:
             return
 
-        # self.clear_dead_sprites()
         for dude in self.encounter_room.occupants:
             dude.entity_sprite.sprite.position = self.to_screen(dude.locatable.location)
             dude.entity_sprite.orient(dude.locatable.orientation)

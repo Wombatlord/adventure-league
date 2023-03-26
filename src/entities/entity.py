@@ -2,7 +2,8 @@ from typing import Any, NamedTuple, Optional
 
 from src.entities.locatable import Locatable
 from src.entities.sprites import EntitySprite
-from src.world.pathing.grid_utils import Node, Space
+from src.world.pathing.pathing_space import PathingSpace
+from src.world.node import Node
 
 
 class Name(NamedTuple):
@@ -66,7 +67,7 @@ class Entity:
         if self.entity_sprite:
             self.entity_sprite.owner = self
 
-    def make_locatable(self, space: Space, spawn_point: Node):
+    def make_locatable(self, space: PathingSpace, spawn_point: Node):
         self.locatable = Locatable(
             owner=self,
             location=spawn_point,
