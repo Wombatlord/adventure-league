@@ -39,6 +39,8 @@ class Fighter:
         self._prev_target = None
         self.speed = speed
         self._in_combat = False
+        self._has_used_item = False
+        self._current_item = None
 
     def get_dict(self) -> dict:
         d = self.__dict__
@@ -76,6 +78,46 @@ class Fighter:
             },
         }
 
+    def request_instruction(self, targets: list[Fighter]) -> Action:
+        if self.get_has_used_item():
+            self.set_has_used_item(False)
+            return self.consume_item()
+        
+        if self.owner.inventory.items[0] is not None and self.hp < self.max_hp:
+            
+            return {
+                "message": f"Use an item from {self.owner.name.name_and_title}'s inventory?",
+                "await_input": self,
+                "item_selection": {
+                    "inventory_contents": self.owner.inventory.items,
+                    "on_confirm": lambda item_idx: self.provide_item(self.owner.inventory.items[item_idx]),
+                    "default_item": self.owner.inventory.items[0]
+                }
+            }
+        
+        
+        else:
+            return {
+                "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target using the up and down keys.",
+                "await_input": self,
+                "target_selection": {
+                    "paths": [
+                        self.owner.locatable.path_to_target(t.owner.locatable)
+                        for t in targets
+                    ],
+                    "targets": targets,
+                    "on_confirm": lambda idx: self.provide_target(targets[idx]),
+                    "default": targets.index(self.last_target())
+                    if self.last_target()
+                    else 0,
+                },
+            }
+
+    def provide_item(self, item):
+        self._current_item = item
+        self.set_has_used_item(True)
+        return True
+    
     def current_target(self) -> Fighter | None:
         self._cleanse_targets()
         return self._target
@@ -104,6 +146,12 @@ class Fighter:
     @in_combat.setter
     def set_in_combat(self, state: bool):
         self._in_combat = state
+
+    def get_has_used_item(self):
+        return self._has_used_item
+
+    def set_has_used_item(self, value: bool):
+        self._has_used_item = value
 
     @property
     def location(self) -> Node | None:
@@ -236,14 +284,15 @@ class Fighter:
 
         return result
 
-    def consume_item(self, item: Consumable):
+    def consume_item(self):
+        item: Consumable = self._current_item
         if item in self.owner.inventory:
             return item.consume(self.owner.inventory)
-    
+        
     def throw_item(self, item: Throwable):
         if item in self.owner.inventory:
             return item.throw(self.owner.inventory)
-    
+
     def commence_retreat(self):
         self.retreating = True
         hooks = self.on_retreat_hooks
