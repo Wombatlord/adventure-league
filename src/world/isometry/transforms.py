@@ -1,3 +1,5 @@
+from typing import Self
+
 from pyglet.math import Mat3, Mat4, Vec2, Vec3
 
 from src.world.node import Node
@@ -6,8 +8,19 @@ from src.world.node import Node
 class Transform:
     _world_to_screen: Mat3
     _screen_to_world: Mat3
+    _translation: Vec2
 
-    def __init__(self, block_dimensions: tuple[int, int, int] | Vec3, absolute_scale: float):
+    @classmethod
+    def trivial(cls) -> Self:
+        return cls()
+
+    def __init__(self, world_to_screen: Mat3 = Mat3(), translation: Vec2 = Vec2()):
+        self._translation = translation
+        self._world_to_screen = world_to_screen
+        self._screen_to_world = invert_mat3(world_to_screen)
+
+    @classmethod
+    def isometric(cls, block_dimensions: tuple[int, int, int] | Vec3, absolute_scale: float, translation: Vec2 = Vec2()):
         """
         Here's a pic to show how to measure block dimensions from a cube sprite:
 
@@ -36,6 +49,7 @@ class Transform:
             1. corner to corner vertical pixel width of the flat upper surface of the block
             2. side height (z-height) in pixels of the block
             absolute_scale: this is the scale you supply to the sprite instantiation.
+            translation: this is the shift to wherever the image should appear on screen.
         """
         # This matrix is just trivial transformation * some scale (call it s)
         # i.e. (x, y, z) -> (s * x, s * y, s * z) = s * (x, y, z)
@@ -55,14 +69,14 @@ class Transform:
 
                                 # the determinant so that it preserves volumes
 
-        self._world_to_screen = (   # The order of operations (bottom to top) T2(T1(v))
+        world_to_screen = (   # The order of operations (bottom to top) T2(T1(v))
             scale_transform @       # 2. apply absolute scaling
             isometry                # 1. map to an isometric grid projection
         )
 
         # pyglet Mat3 type can't be inverted to get the screen -> world matrix so we need to embed it in a
         # Mat4 to make use of their implementation of Mat4.__invert__
-        self._screen_to_world = invert_mat3(self._world_to_screen)
+        return cls(world_to_screen, translation=translation)
 
     def to_screen(self, node: Node) -> Vec2:
         # Make sure the input has enough axes and is compatible with matmul (@)
@@ -73,10 +87,10 @@ class Transform:
 
         # here we grab the x and y parts to locate the grid point on the screen
         screen_xy_projection = screen_xyz[:2]
-        return Vec2(*screen_xy_projection)
+        return Vec2(*screen_xy_projection) + self._translation
 
     def to_world(self, cam_coords: Vec2) -> Node:
-        embedded = Vec3(*cam_coords)
+        embedded = Vec3(*(cam_coords - self._translation))
         return Node(*(self._screen_to_world @ embedded))
 
 
