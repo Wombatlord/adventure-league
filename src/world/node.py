@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import NamedTuple, Generator
+from typing import Generator, NamedTuple
 
 
 class Node(NamedTuple):
@@ -36,7 +36,9 @@ class Node(NamedTuple):
     def adjacent(self) -> Generator[Node]:
         return self.get_adjacent()
 
-    def get_adjacent(self, include_diag=True, three_d=False) -> Generator[Node, None, None]:
+    def get_adjacent(
+        self, include_diag=True, three_d=False
+    ) -> Generator[Node, None, None]:
         no_move = lambda n: n
         traversals_ns = (
             lambda n: n.north,

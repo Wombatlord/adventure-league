@@ -31,10 +31,7 @@ def boss_room(dimensions: tuple[int, int], height: int = 0) -> tuple[Node, ...]:
         return room
 
     pillars = [
-        Node(x, y)
-        for x in range(1, dimensions[0], 2)
-        for y in (1, dimensions[0]-2)
+        Node(x, y) for x in range(1, dimensions[0], 2) for y in (1, dimensions[0] - 2)
     ]
 
     return tuple(sorted(pillars + list(room), key=draw_priority))
-

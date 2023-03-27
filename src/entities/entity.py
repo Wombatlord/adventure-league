@@ -3,8 +3,8 @@ from typing import Any, NamedTuple, Optional
 from src.entities.inventory import Inventory, InventoryItem
 from src.entities.locatable import Locatable
 from src.entities.sprites import EntitySprite
-from src.world.pathing.pathing_space import PathingSpace
 from src.world.node import Node
+from src.world.pathing.pathing_space import PathingSpace
 
 
 class Name(NamedTuple):

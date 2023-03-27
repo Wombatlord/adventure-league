@@ -40,7 +40,6 @@ class PathingSpace(AStar):
             for y in range(min_y, max_y)
         } - {*all_traversable}
 
-
         return PathingSpace(minima, maxima, exclusions)
 
     def __init__(self, minima: Node, maxima: Node, exclusions: set[Node] | None = None):

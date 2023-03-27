@@ -2,8 +2,8 @@ import arcade
 from arcade.texture import Texture
 
 from src.engine.init_engine import eng
-from src.world.pathing.pathing_space import PathingSpace
 from src.world.node import Node
+from src.world.pathing.pathing_space import PathingSpace
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 650

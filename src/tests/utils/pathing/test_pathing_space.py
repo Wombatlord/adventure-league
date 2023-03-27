@@ -2,8 +2,8 @@ import unittest
 
 from parameterized import parameterized
 
-from src.world.pathing.pathing_space import PathingSpace
 from src.world.node import Node
+from src.world.pathing.pathing_space import PathingSpace
 
 
 def gated_wall(gap: int, v_pos: int, wall_len: int) -> set[Node]:
@@ -91,21 +91,21 @@ class TestConstructFromLevelGeometry(unittest.TestCase):
     def get_trivial_level(self) -> tuple[Node]:
         return (Node(0, 0, -1),)
 
-    def get_geometry_with_blocked_nodes(self, blocked_nodes: set[Node], size: tuple[int, int]) -> tuple[Node, ...]:
-        return tuple([
-            Node(x, y, z=-1)
-            for x in range(0, size[0])
-            for y in range(0, size[1])
-        ] + list(blocked_nodes))
+    def get_geometry_with_blocked_nodes(
+        self, blocked_nodes: set[Node], size: tuple[int, int]
+    ) -> tuple[Node, ...]:
+        return tuple(
+            [Node(x, y, z=-1) for x in range(0, size[0]) for y in range(0, size[1])]
+            + list(blocked_nodes)
+        )
 
-    def get_geometry_with_holes_in_floor(self, hole_locations: set[Node], size: tuple[int, int]) -> tuple[Node, ...]:
+    def get_geometry_with_holes_in_floor(
+        self, hole_locations: set[Node], size: tuple[int, int]
+    ) -> tuple[Node, ...]:
         return tuple(
             (
-                {
-                    Node(x, y, z=-1)
-                    for x in range(0, size[0])
-                    for y in range(0, size[1])
-                } - hole_locations
+                {Node(x, y, z=-1) for x in range(0, size[0]) for y in range(0, size[1])}
+                - hole_locations
             )
         )
 
@@ -129,10 +129,12 @@ class TestConstructFromLevelGeometry(unittest.TestCase):
         space = PathingSpace.from_level_geometry(geom)
 
         # Assert
-        assert len(space.exclusions) == 3, f"unexpected number of exclusions, expected 3, got {len(space.exclusions)=}"
-        assert space.exclusions == blocked, (
-            f"blocked nodes {blocked=}, exclusions in the wrong place {space.exclusions-blocked}"
-        )
+        assert (
+            len(space.exclusions) == 3
+        ), f"unexpected number of exclusions, expected 3, got {len(space.exclusions)=}"
+        assert (
+            space.exclusions == blocked
+        ), f"blocked nodes {blocked=}, exclusions in the wrong place {space.exclusions-blocked}"
 
     def test_from_level_geometry_creates_exclusions_for_when_nodes_are_above_pits(self):
         # Arrange
@@ -143,7 +145,9 @@ class TestConstructFromLevelGeometry(unittest.TestCase):
         space = PathingSpace.from_level_geometry(geom)
 
         # Assert
-        assert len(space.exclusions) == 3, f"unexpected number of exclusions, expected 3, got {len(space.exclusions)=}"
+        assert (
+            len(space.exclusions) == 3
+        ), f"unexpected number of exclusions, expected 3, got {len(space.exclusions)=}"
 
         expected_exclusions = {n.above for n in pit_locations}
         assert space.exclusions == expected_exclusions, (

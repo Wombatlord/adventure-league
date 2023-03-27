@@ -9,7 +9,7 @@ from pyglet.math import Vec2
 from src import config
 from src.engine.init_engine import eng
 from src.entities.dungeon import Room
-from src.entities.sprites import OffsetSprite, BaseSprite
+from src.entities.sprites import BaseSprite, OffsetSprite
 from src.gui.buttons import CommandBarMixin
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_components import (

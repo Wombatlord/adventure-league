@@ -3,8 +3,8 @@ from typing import Generator, Optional, Self
 from src.entities.entity import Entity
 from src.entities.loot import Loot, Rewarder
 from src.world.level.room import basic_room
-from src.world.pathing.pathing_space import PathingSpace
 from src.world.node import Node
+from src.world.pathing.pathing_space import PathingSpace
 
 
 class Room:

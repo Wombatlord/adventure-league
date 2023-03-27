@@ -4,8 +4,8 @@ from enum import Enum
 from random import choice
 from typing import TYPE_CHECKING, Generator, Sequence
 
-from src.world.pathing.pathing_space import PathingSpace
 from src.world.node import Node
+from src.world.pathing.pathing_space import PathingSpace
 
 if TYPE_CHECKING:
     from src.entities.entity import Entity
