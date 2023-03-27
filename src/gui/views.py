@@ -566,16 +566,16 @@ class CombatInputMode(BaseInputMode):
     name = "combat"
 
     def on_key_press(self, symbol: int, modifiers: int):
-        if not self.view.target_selection and eng.awaiting_input:
-            match symbol:
-                case arcade.key.SPACE:
-                    eng.next_combat_action()
-                    eng.awaiting_input = False
-            return
+        # if not self.view.target_selection and eng.awaiting_input:
+        #     match symbol:
+        #         case arcade.key.SPACE:
+        #             eng.next_combat_action()
+        #             eng.awaiting_input = False
+        #     return
 
-        if not self.view.target_selection:
-            return
-
+        # if not self.view.target_selection:
+        #     return
+        
         match symbol:
             case arcade.key.UP:
                 self.view.target_selection.prev()
@@ -586,13 +586,7 @@ class CombatInputMode(BaseInputMode):
                 print(self.view.target_selection)
 
             case arcade.key.SPACE:
-                if not self.view.target_selection:
-                    return
-                ok = self.view.target_selection.confirm()
-                if ok:
-                    self.view.combat_grid_section.hide_path()
-                    self.view.target_selection = None
-                    self.view.item_menu_mode_allowed = True
+                self.view.buttons[0].on_click(UIEvent(self))
 
 
 class MenuInputMode(BaseInputMode):
