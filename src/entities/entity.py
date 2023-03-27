@@ -1,5 +1,6 @@
 from typing import Any, NamedTuple, Optional
 
+from src.entities.inventory import Inventory, InventoryItem
 from src.entities.locatable import Locatable
 from src.entities.sprites import EntitySprite
 from src.world.pathing.pathing_space import PathingSpace
@@ -41,7 +42,7 @@ class Entity:
         cost: int = None,
         fighter=None,
         inventory=None,
-        item=None,
+        item: InventoryItem | None = None,
         is_dead: bool = False,
         species: str = Species.HUMAN,
     ) -> None:

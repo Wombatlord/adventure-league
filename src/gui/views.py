@@ -7,16 +7,24 @@ from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
+from src.entities.inventory import InventoryItem
 from src.gui.buttons import get_new_missions_button, nav_button
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
-from src.gui.sections import (CombatGridSection, CommandBarSection,
-                              InfoPaneSection, MissionsSection,
-                              RecruitmentPaneSection, RosterAndTeamPaneSection)
+from src.gui.sections import (
+    CombatGridSection,
+    CommandBarSection,
+    InfoPaneSection,
+    MissionsSection,
+    RecruitmentPaneSection,
+    RosterAndTeamPaneSection,
+)
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
-from src.utils.input_capture import Selection
+
+from src.utils.input_capture import BaseInputMode, Selection
 from src.world.node import Node
+
 
 
 class TitleView(arcade.View):
@@ -556,7 +564,60 @@ class MissionsView(arcade.View):
                         self.window.show_view(BattleView())
 
 
+class CombatInputMode(BaseInputMode):
+    name = "combat"
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        if not self.view.target_selection and eng.awaiting_input:
+            match symbol:
+                case arcade.key.SPACE:
+                    eng.next_combat_action()
+                    eng.awaiting_input = False
+            return
+
+        if not self.view.target_selection:
+            return
+
+        match symbol:
+            case arcade.key.UP:
+                self.view.target_selection.prev()
+                print(self.view.target_selection)
+
+            case arcade.key.DOWN:
+                self.view.target_selection.next()
+                print(self.view.target_selection)
+
+            case arcade.key.SPACE:
+                if not self.view.target_selection:
+                    return
+                ok = self.view.target_selection.confirm()
+                if ok:
+                    self.view.combat_grid_section.hide_path()
+                    self.view.target_selection = None
+                    self.view.item_menu_mode_allowed = True
+
+
+class MenuInputMode(BaseInputMode):
+    name = "menu"
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        if not self.view.item_selection:
+            return
+
+        match symbol:
+            case arcade.key.P:
+                if not self.view.item_selection:
+                    return
+                ok = self.view.item_selection.confirm()
+                if ok:
+                    self.view.item_selection = None
+                    self.view.item_menu_mode_allowed = False
+                self.view.next_mode()
+
+
 class BattleView(arcade.View):
+    input_mode: BaseInputMode
+
     def __init__(self, window: Window = None):
         super().__init__(window)
         self.combat_grid_section = CombatGridSection(
@@ -568,12 +629,29 @@ class BattleView(arcade.View):
         )
 
         self.target_selection: Selection[tuple[Node, ...]] | None = None
+        self.item_selection: Selection[list[InventoryItem]] | None = None
+        self.item_menu_mode_allowed = True
+        self.input_mode = None
+        self.bind_input_modes()
 
         self.add_section(self.combat_grid_section)
         eng.init_combat()
 
+    def bind_input_modes(self):
+        combat_mode = CombatInputMode(self)
+        menu_mode = MenuInputMode(self).set_next_mode(combat_mode)
+        self.input_mode = combat_mode.set_next_mode(menu_mode)
+
+    def next_mode(self):
+        self.input_mode = self.input_mode.get_next_mode()
+
     def on_show_view(self):
         eng.await_input()
+        eng.combat_dispatcher.volatile_subscribe(
+            "item_selection",
+            "BattleView set_use_item_input_request",
+            self.set_use_item_input_request,
+        )
         eng.combat_dispatcher.volatile_subscribe(
             "target_selection", "BattleView.set_input_request", self.set_input_request
         )
@@ -603,6 +681,17 @@ class BattleView(arcade.View):
 
         self.target_selection.set_on_change_selection(on_change)
 
+    def set_use_item_input_request(self, event):
+        selection = event["item_selection"]
+
+        def on_confirm(item_idx):
+            eng.input_received()
+            return selection["on_confirm"](item_idx)
+
+        self.item_selection = Selection(
+            selection["inventory_contents"], default=selection["default_item"]
+        ).set_confirmation(on_confirm)
+
     def on_key_release(self, _symbol: int, _modifiers: int):
         if not self.combat_grid_section.cam_controls.on_key_release(_symbol):
             return
@@ -619,32 +708,10 @@ class BattleView(arcade.View):
                     guild_view = GuildView()
                     self.window.show_view(guild_view)
 
-        if not self.target_selection and eng.awaiting_input:
-            match symbol:
-                case arcade.key.SPACE:
-                    eng.next_combat_action()
-                    eng.awaiting_input = False
-            return
+        if symbol == arcade.key.TAB:
+            self.next_mode()
 
-        if not self.target_selection:
-            return
-
-        match symbol:
-            case arcade.key.UP:
-                self.target_selection.prev()
-                print(self.target_selection)
-
-            case arcade.key.DOWN:
-                self.target_selection.next()
-                print(self.target_selection)
-
-            case arcade.key.SPACE:
-                if not self.target_selection:
-                    return
-                ok = self.target_selection.confirm()
-                if ok:
-                    self.combat_grid_section.hide_path()
-                    self.target_selection = None
+        self.input_mode.on_key_press(symbol, modifiers)
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)

@@ -133,7 +133,7 @@ class Engine:
 
         if "message" in event:
             self.messages.append(event["message"])
-
+        print(f"{event=}")
         self.projection_dispatcher.publish(event)
         self.combat_dispatcher.publish(event)
 
@@ -217,7 +217,7 @@ class Engine:
         This is the source ==Action==> consumer connection
         """
         try:
-            print(f"{self.__class__}.next_combat_action: trying next(self.combat)")
+            # print(f"{self.__class__}.next_combat_action: trying next(self.combat)")
             action = next(self.combat)
             self.process_one(action)
             return True

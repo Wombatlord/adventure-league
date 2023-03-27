@@ -1,10 +1,12 @@
 from copy import deepcopy
 from random import choice, randint
-from typing import Callable, Literal, NamedTuple
+from typing import Callable, NamedTuple
 
 from src.config.constants import merc_names
 from src.entities.entity import Entity, Name, Species
 from src.entities.fighter import Fighter
+from src.entities.inventory import Inventory
+from src.entities.items import HealingPotion
 from src.entities.sprites import EntitySprite
 from src.gui.entity_texture_enums import *
 from src.gui.window_data import WindowData
@@ -125,9 +127,7 @@ def select_textures(species: str, fighter: Fighter):
 
 def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factory:
     def _from_conf(fighter_conf: dict, entity: Entity) -> Fighter:
-        fighter = Fighter(**fighter_conf)
-        fighter.owner = entity
-        return fighter
+        return Fighter(**fighter_conf).set_owner(owner=entity)
 
     def _create_entity(first_name, title, last_name) -> Entity:
         return Entity(
@@ -151,9 +151,16 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
     def factory(name=None, title=None, last_name=None):
         name = name or gen_name(stats.species)
         entity = _create_entity(name, title, last_name)
+
         conf = stats.fighter_conf()
 
         entity.fighter = _from_conf(conf, entity)
+
+        entity.inventory = Inventory(owner=entity, capacity=1)
+
+        if not entity.fighter.is_enemy:
+            entity.inventory.add_item_to_inventory(HealingPotion(owner=entity))
+
         if attach_sprites:
             entity = _attach_sprites(entity)
 

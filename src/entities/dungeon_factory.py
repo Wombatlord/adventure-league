@@ -1,10 +1,16 @@
 from random import choice, randint
 
-from src.config.constants import (boss_names, boss_titles, dungeon_descriptors,)
+from src.config.constants import (
+    boss_names,
+    boss_titles,
+    dungeon_descriptors
+)
 from src.entities.dungeon import Dungeon, Room
-from src.entities.fighter_factory import (create_random_boss,
-                                          create_random_goblin,
-                                          create_random_monster)
+from src.entities.fighter_factory import (
+    create_random_boss,
+    create_random_goblin,
+    create_random_monster,
+)
 from src.world.level.room import boss_room
 
 

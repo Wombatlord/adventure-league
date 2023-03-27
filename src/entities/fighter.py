@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+import functools
+from typing import Any, Generator, Optional, Self
 
 from src.entities.entity import Entity
+
+from src.entities.inventory import Consumable, Inventory, InventoryItem, Throwable
 from src.world.node import Node
+
 
 Action = dict[str, Any]
 
@@ -38,6 +42,13 @@ class Fighter:
         self._prev_target = None
         self.speed = speed
         self._in_combat = False
+        self._current_item = None
+
+    def set_owner(self, owner: Entity) -> Self:
+        self.owner = owner
+        if not self.owner.inventory:
+            self.owner.inventory = Inventory(owner=owner, capacity=1)
+        return self
 
     def get_dict(self) -> dict:
         d = self.__dict__
@@ -59,6 +70,11 @@ class Fighter:
         self.current_xp = dict.get("current_xp")
 
     def request_target(self, targets: list[Fighter]) -> Action:
+        def _on_confirm(idx) -> bool:
+            if not self._current_item:
+                self.provide_item(Consumable())
+            return self.provide_target(targets[idx])
+
         return {
             "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target using the up and down keys.",
             "await_input": self,
@@ -68,12 +84,33 @@ class Fighter:
                     for t in targets
                 ],
                 "targets": targets,
-                "on_confirm": lambda idx: self.provide_target(targets[idx]),
+                "on_confirm": _on_confirm,
                 "default": targets.index(self.last_target())
                 if self.last_target()
                 else 0,
             },
         }
+
+    def choose_item(self):
+        self._current_item = Consumable()
+        return {}
+
+    def request_item_use(self):
+        return {
+            "message": f"Use an item from {self.owner.name.name_and_title}'s inventory?",
+            "await_input": self,
+            "item_selection": {
+                "inventory_contents": self.owner.inventory.items,
+                "on_confirm": lambda item_idx: self.provide_item(
+                    self.owner.inventory.items[item_idx]
+                ),
+                "default_item": self.owner.inventory.items[0],
+            },
+        }
+
+    def provide_item(self, item: InventoryItem):
+        self._current_item = item
+        return True
 
     def current_target(self) -> Fighter | None:
         self._cleanse_targets()
@@ -234,6 +271,18 @@ class Fighter:
         self.provide_target(None)
 
         return result
+
+    def consume_item(self) -> Generator[Action, None, None]:
+        item: Consumable = self._current_item or Consumable()
+        self._current_item = None
+        yield item.consume(self.owner.inventory)
+
+    def chosen_consumable(self) -> Consumable:
+        return self._current_item or Consumable()
+
+    def throw_item(self, item: Throwable):
+        if item in self.owner.inventory:
+            return item.throw(self.owner.inventory)
 
     def commence_retreat(self):
         self.retreating = True

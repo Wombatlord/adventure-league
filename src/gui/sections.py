@@ -12,12 +12,15 @@ from src.entities.dungeon import Room
 from src.entities.sprites import OffsetSprite, BaseSprite
 from src.gui.buttons import CommandBarMixin
 from src.gui.combat_screen import CombatScreen
-from src.gui.gui_components import (box_containing_horizontal_label_pair,
-                                    create_colored_UILabel_header,
-                                    entity_labels_names_only,
-                                    entity_labels_with_cost,
-                                    horizontal_box_pair, single_box,
-                                    vstack_of_three_boxes)
+from src.gui.gui_components import (
+    box_containing_horizontal_label_pair,
+    create_colored_UILabel_header,
+    entity_labels_names_only,
+    entity_labels_with_cost,
+    horizontal_box_pair,
+    single_box,
+    vstack_of_three_boxes,
+)
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
@@ -880,7 +883,7 @@ class CombatGridSection(arcade.Section):
         self.dudes_sprite_list.update_animation(delta_time=delta_time)
 
         if eng.update_clock < 0:
-            print(f"{self.__class__}.on_update: TICK")
+            # print(f"{self.__class__}.on_update: TICK")
             eng.reset_update_clock()
             hook()
 
