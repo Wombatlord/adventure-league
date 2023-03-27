@@ -4,7 +4,8 @@ from enum import Enum
 from random import choice
 from typing import TYPE_CHECKING, Generator, Sequence
 
-from src.world.pathing.grid_utils import Node, Space
+from src.world.pathing.pathing_space import PathingSpace
+from src.world.node import Node
 
 if TYPE_CHECKING:
     from src.entities.entity import Entity
@@ -19,7 +20,7 @@ class Orientation(Enum):
 
 class Locatable:
     def __init__(
-        self, owner: "Entity", location: Node, speed: int, space: Space
+        self, owner: "Entity", location: Node, speed: int, space: PathingSpace
     ) -> None:
         self.owner = owner
         self.location = location

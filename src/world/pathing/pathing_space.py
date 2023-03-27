@@ -3,17 +3,45 @@ from __future__ import annotations
 import random
 from functools import lru_cache
 from random import randint
-from typing import Callable, Generator, Iterable, NamedTuple
+from typing import Generator, Iterable
 
 from astar import AStar
 
-_ROOT_TWO = 2**0.5
+from src.world.node import Node
 
 
-class Space(AStar):
+class PathingSpace(AStar):
     minima: Node
     maxima: Node
-    exclusions: set[Node]
+
+    @classmethod
+    def from_level_geometry(cls, geometry: tuple[Node], floor_level=0):
+        all_traversable = []
+        for n in geometry:
+            if n.z != floor_level - 1:
+                continue
+
+            if n.above in geometry:
+                continue
+
+            all_traversable.append(n.above)
+
+        min_x = min(n.x for n in all_traversable)
+        min_y = min(n.y for n in all_traversable)
+        minima = Node(min_x, min_y, floor_level)
+
+        max_x = max(n.x for n in all_traversable) + 1
+        max_y = max(n.y for n in all_traversable) + 1
+        maxima = Node(max_x, max_y, floor_level)
+
+        exclusions = {
+            Node(x, y, floor_level)
+            for x in range(min_x, max_x)
+            for y in range(min_y, max_y)
+        } - {*all_traversable}
+
+
+        return PathingSpace(minima, maxima, exclusions)
 
     def __init__(self, minima: Node, maxima: Node, exclusions: set[Node] | None = None):
         if exclusions is None:
@@ -21,10 +49,19 @@ class Space(AStar):
 
         self.minima = minima
         self.maxima = maxima
-        self.exclusions = exclusions
+        self.static_exclusions = exclusions
+        self.dynamic_exclusions = set()
 
     def __contains__(self, item: Node) -> bool:
         return self.in_bounds(item) and item not in self.exclusions
+
+    @property
+    def exclusions(self) -> set[Node]:
+        return self.dynamic_exclusions | self.static_exclusions
+
+    @exclusions.setter
+    def exclusions(self, exc_set: set[Node]):
+        self.dynamic_exclusions = exc_set
 
     def in_bounds(self, node: Node) -> bool:
         x_within = self.minima.x <= node.x < self.maxima.x
@@ -77,10 +114,10 @@ class Space(AStar):
         return tuple(path)
 
     def _include(self, node: Node) -> None:
-        self.exclusions -= {node}  # idempotent remove from set
+        self.dynamic_exclusions -= {node}  # idempotent remove from set
 
     def _exclude(self, node: Node) -> None:
-        self.exclusions |= {node}  # idempotent add to set
+        self.dynamic_exclusions |= {node}  # idempotent add to set
 
     def get_path_len(self, start: Node, end: Node) -> int | None:
         path = self.get_path(start, end)
@@ -94,7 +131,7 @@ class Space(AStar):
         # if there are extra exclusions create a temp space with those exclusions as well as the pre-existing exclusions
         tmp_space = self
         if excluding:
-            tmp_space = Space(
+            tmp_space = PathingSpace(
                 self.minima, self.maxima, exclusions=self.exclusions | set(excluding)
             )
 
@@ -153,87 +190,7 @@ class Space(AStar):
         return range(self.minima.x, self.maxima.x)
 
 
-class Node(NamedTuple):
-    x: int
-    y: int
-    z: int = 0
-
-    @property
-    def east(self) -> Node:
-        return Node(x=self.x + 1, y=self.y, z=self.z)
-
-    @property
-    def west(self) -> Node:
-        return Node(x=self.x - 1, y=self.y, z=self.z)
-
-    @property
-    def north(self) -> Node:
-        return Node(x=self.x, y=self.y + 1, z=self.z)
-
-    @property
-    def south(self) -> Node:
-        return Node(x=self.x, y=self.y - 1, z=self.z)
-
-    @property
-    def up(self) -> Node:
-        return Node(x=self.x, y=self.y, z=self.z + 1)
-
-    @property
-    def down(self) -> Node:
-        return Node(x=self.x, y=self.y, z=self.z - 1)
-
-    @property
-    def adjacent(self, include_diag=True, three_d=False) -> Generator[Node, None, None]:
-        no_move = lambda n: n
-        traversals_ns = (
-            lambda n: n.north,
-            no_move,
-            lambda n: n.south,
-        )
-        traversals_ew = (
-            lambda n: n.east,
-            no_move,
-            lambda n: n.west,
-        )
-        traversals_ud = (
-            (
-                lambda n: n.up,
-                no_move,
-                lambda n: n.down,
-            )
-            if three_d
-            else (no_move,)
-        )  # just stay in the plane if not 3d
-
-        if not include_diag:
-            # just move one node in + and - in each direction (east-west, north-south, up-down if relevant)
-            yield from (
-                move(self)
-                for move in traversals_ud + traversals_ns + traversals_ew
-                if move != no_move
-            )
-        else:
-            # create the full set of 3x3 above and below plus the in-plane movements
-            yield from (
-                ns_move(ew_move(ud_move(self)))
-                for ns_move in traversals_ns  # north and south traversals
-                for ew_move in traversals_ew  # east and west traversals
-                for ud_move in traversals_ud  # this includes above and below if three_d
-                if (ns_move, ew_move, ud_move)
-                != (no_move, no_move, no_move)  # exclude self from adjacent
-            )
-
-    def __eq__(self, other: Node) -> bool:
-        return self.x == other.x and self.y == other.y and self.z == other.z
-
-    def __sub__(self, other: Node) -> Node:
-        return Node(self.x - other.x, self.y - other.y, self.z - other.z)
-
-    def __add__(self, other: Node) -> Node:
-        return Node(self.x + other.x, self.y + other.y, self.z + other.z)
-
-
-def pretty_path(space: Space, start: Node, end: Node) -> str:
+def pretty_path(space: PathingSpace, start: Node, end: Node) -> str:
     row = [" "] * space.width
     empty = [[*row] for _ in range(space.height)]
 

@@ -2,7 +2,8 @@ import arcade
 from arcade.texture import Texture
 
 from src.engine.init_engine import eng
-from src.world.pathing.grid_utils import Node, Space
+from src.world.pathing.pathing_space import PathingSpace
+from src.world.node import Node
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 650
@@ -86,7 +87,7 @@ class MyGame(arcade.Window):
         # self.grid_scale = 1
         self.constant_scale = self.TILE_BASE_DIMS[0] * self.SCALE_FACTOR * 5
 
-        self.space = Space(Node(0, 0), Node(1, 1))
+        self.space = PathingSpace(Node(0, 0), Node(1, 1))
         self.space.exclusions.add(Node(1, 0))
         self.space.exclusions.add(Node(0, 1))
 

@@ -1,6 +1,6 @@
 from pyglet.math import Mat3, Mat4, Vec2, Vec3
 
-from src.world.pathing.grid_utils import Node
+from src.world.node import Node
 
 
 class Transform:

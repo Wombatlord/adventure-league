@@ -5,9 +5,8 @@ from arcade import BasicSprite
 from arcade.sprite import Sprite
 from arcade.texture import Texture
 from arcade.types import Point
-from pyglet.math import Vec2
 
-from src.entities.locatable import Node
+from src.world.node import Node
 
 
 class OffsetSprite(Sprite):

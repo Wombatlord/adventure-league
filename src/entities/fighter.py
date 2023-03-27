@@ -4,8 +4,10 @@ import functools
 from typing import Any, Generator, Optional, Self
 
 from src.entities.entity import Entity
+
 from src.entities.inventory import Consumable, Inventory, InventoryItem, Throwable
-from src.world.pathing.grid_utils import Node
+from src.world.node import Node
+
 
 Action = dict[str, Any]
 

@@ -2,7 +2,8 @@ import unittest
 
 from parameterized import parameterized
 
-from src.world.pathing.grid_utils import Node, Space
+from src.world.pathing.pathing_space import PathingSpace
+from src.world.node import Node
 
 
 def gated_wall(gap: int, v_pos: int, wall_len: int) -> set[Node]:
@@ -50,7 +51,7 @@ class TestPathing(unittest.TestCase):
 
         # construct the space in which to find paths with the wall passed
         # as the exclusions
-        space = Space(
+        space = PathingSpace(
             minima=Node(x=0, y=0),
             maxima=Node(x=10, y=10),
             exclusions=wall,
@@ -84,3 +85,68 @@ class TestPathing(unittest.TestCase):
         assert (
             end_at in path
         ), f"The path did not include intended destination {end_at=}. Full path: {path=}"
+
+
+class TestConstructFromLevelGeometry(unittest.TestCase):
+    def get_trivial_level(self) -> tuple[Node]:
+        return (Node(0, 0, -1),)
+
+    def get_geometry_with_blocked_nodes(self, blocked_nodes: set[Node], size: tuple[int, int]) -> tuple[Node, ...]:
+        return tuple([
+            Node(x, y, z=-1)
+            for x in range(0, size[0])
+            for y in range(0, size[1])
+        ] + list(blocked_nodes))
+
+    def get_geometry_with_holes_in_floor(self, hole_locations: set[Node], size: tuple[int, int]) -> tuple[Node, ...]:
+        return tuple(
+            (
+                {
+                    Node(x, y, z=-1)
+                    for x in range(0, size[0])
+                    for y in range(0, size[1])
+                } - hole_locations
+            )
+        )
+
+    def test_from_level_geometry_creates_single_node_from_trivial_level(self):
+        # Arrange
+        geom = self.get_trivial_level()
+
+        # Action
+        space = PathingSpace.from_level_geometry(geom)
+
+        # Assert
+        assert len(space) == 1
+        assert Node(0, 0, 0) in space
+
+    def test_from_level_geometry_creates_exclusions_for_blocked_nodes(self):
+        # Arrange
+        blocked = {Node(1, 1), Node(3, 2), Node(0, 4)}
+        geom = self.get_geometry_with_blocked_nodes(blocked, size=(5, 5))
+
+        # Action
+        space = PathingSpace.from_level_geometry(geom)
+
+        # Assert
+        assert len(space.exclusions) == 3, f"unexpected number of exclusions, expected 3, got {len(space.exclusions)=}"
+        assert space.exclusions == blocked, (
+            f"blocked nodes {blocked=}, exclusions in the wrong place {space.exclusions-blocked}"
+        )
+
+    def test_from_level_geometry_creates_exclusions_for_when_nodes_are_above_pits(self):
+        # Arrange
+        pit_locations = {Node(1, 1, z=-1), Node(3, 2, z=-1), Node(0, 4, z=-1)}
+        geom = self.get_geometry_with_holes_in_floor(pit_locations, size=(5, 5))
+
+        # Action
+        space = PathingSpace.from_level_geometry(geom)
+
+        # Assert
+        assert len(space.exclusions) == 3, f"unexpected number of exclusions, expected 3, got {len(space.exclusions)=}"
+
+        expected_exclusions = {n.above for n in pit_locations}
+        assert space.exclusions == expected_exclusions, (
+            f"excluded nodes {expected_exclusions=}, exclusions in the wrong place:"
+            f" {space.exclusions-expected_exclusions}"
+        )
