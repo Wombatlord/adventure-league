@@ -41,6 +41,7 @@ class Fighter:
         self.speed = speed
         self._in_combat = False
         self._current_item = None
+        self._forfeit_turn = False
 
     def set_owner(self, owner: Entity) -> Self:
         self.owner = owner
@@ -68,12 +69,30 @@ class Fighter:
         self.current_xp = dict.get("current_xp")
 
     def request_target(self, targets: list[Fighter]) -> Action:
+        paths = [
+            *filter(
+                lambda p: p is not None,
+                [
+                    self.owner.locatable.path_to_target(t.owner.locatable)
+                    for t in targets
+                ],
+            )
+        ]
+
+        if not paths:
+            self._forfeit_turn = True
+            yield {
+                "forfeit": self,
+                "message": f"{self.owner.name} is biding their time until a target is reachable",
+            }
+            return
+
         def _on_confirm(idx) -> bool:
             if not self._current_item:
                 self.provide_item(Consumable())
             return self.provide_target(targets[idx])
 
-        return {
+        yield {
             "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target using the up and down keys.",
             "await_input": self,
             "target_selection": {
@@ -88,6 +107,9 @@ class Fighter:
                 else 0,
             },
         }
+
+    def on_turn_start(self):
+        self._forfeit_turn = False
 
     def choose_item(self):
         self._current_item = Consumable()
@@ -118,7 +140,7 @@ class Fighter:
         self._cleanse_targets()
         return self._prev_target
 
-    def provide_target(self, target: Fighter) -> bool:
+    def provide_target(self, target: Fighter | None) -> bool:
         if self._target is not None:
             self._prev_target = self._target
         self._target = target
@@ -290,3 +312,6 @@ class Fighter:
 
     def clear_hooks(self):
         self.on_retreat_hooks = []
+
+    def turn_is_forfeit(self) -> bool:
+        return self._forfeit_turn

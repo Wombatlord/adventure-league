@@ -7,7 +7,7 @@ from src.entities.fighter_factory import (
     create_random_goblin,
     create_random_monster,
 )
-from src.world.level.room import boss_room
+from src.world.level.room import random_room
 
 
 def describe_dungeon() -> str:
@@ -41,7 +41,7 @@ def create_random_dungeon(enemy_amount) -> Dungeon:
 
 # Room testing with Room Class
 def create_random_enemy_room(enemy_amount) -> Room:
-    room = Room()
+    room = Room().set_layout(random_room((10, 10)))
 
     for enemy in range(enemy_amount):
         roll = randint(0, 3)
@@ -54,7 +54,7 @@ def create_random_enemy_room(enemy_amount) -> Room:
 
 
 def create_random_boss_room() -> Room:
-    room = Room().set_layout(boss_room((10, 10)))
+    room = Room().set_layout(random_room((10, 10)))
 
     room.add_entity(
         create_random_boss(
