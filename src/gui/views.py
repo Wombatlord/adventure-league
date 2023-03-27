@@ -597,7 +597,7 @@ class CombatInputMode(BaseInputMode):
 
 class MenuInputMode(BaseInputMode):
     name = "menu"
-    
+
     def on_key_press(self, symbol: int, modifiers: int):
         if not self.view.item_selection:
             return
@@ -628,7 +628,7 @@ class BattleView(arcade.View):
 
         self.target_selection: Selection[tuple[Node, ...]] | None = None
         self.item_selection: Selection[list[InventoryItem]] | None = None
-        self.item_menu_mode_allowed = True        
+        self.item_menu_mode_allowed = True
         self.input_mode = None
         self.bind_input_modes()
 
@@ -680,8 +680,6 @@ class BattleView(arcade.View):
         self.target_selection.set_on_change_selection(on_change)
 
     def set_use_item_input_request(self, event):
-        eng.await_input()
-
         selection = event["item_selection"]
 
         def on_confirm(item_idx):
@@ -712,7 +710,6 @@ class BattleView(arcade.View):
             self.next_mode()
 
         self.input_mode.on_key_press(symbol, modifiers)
-
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)

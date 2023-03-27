@@ -127,9 +127,7 @@ def select_textures(species: str, fighter: Fighter):
 
 def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factory:
     def _from_conf(fighter_conf: dict, entity: Entity) -> Fighter:
-        fighter = Fighter(**fighter_conf)
-        fighter.owner = entity
-        return fighter
+        return Fighter(**fighter_conf).set_owner(owner=entity)
 
     def _create_entity(first_name, title, last_name) -> Entity:
         return Entity(

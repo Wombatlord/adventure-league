@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+import functools
+from typing import Any, Generator, Optional, Self
 
 from src.entities.entity import Entity
-from src.entities.inventory import Consumable, Throwable
+from src.entities.inventory import Consumable, Inventory, InventoryItem, Throwable
 from src.world.pathing.grid_utils import Node
 
 Action = dict[str, Any]
@@ -39,8 +40,13 @@ class Fighter:
         self._prev_target = None
         self.speed = speed
         self._in_combat = False
-        self._has_used_item = False
         self._current_item = None
+
+    def set_owner(self, owner: Entity) -> Self:
+        self.owner = owner
+        if not self.owner.inventory:
+            self.owner.inventory = Inventory(owner=owner, capacity=1)
+        return self
 
     def get_dict(self) -> dict:
         d = self.__dict__
@@ -62,6 +68,11 @@ class Fighter:
         self.current_xp = dict.get("current_xp")
 
     def request_target(self, targets: list[Fighter]) -> Action:
+        def _on_confirm(idx) -> bool:
+            if not self._current_item:
+                self.provide_item(Consumable())
+            return self.provide_target(targets[idx])
+
         return {
             "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target using the up and down keys.",
             "await_input": self,
@@ -71,40 +82,32 @@ class Fighter:
                     for t in targets
                 ],
                 "targets": targets,
-                "on_confirm": lambda idx: self.provide_target(targets[idx]),
+                "on_confirm": _on_confirm,
                 "default": targets.index(self.last_target())
                 if self.last_target()
                 else 0,
             },
         }
 
-    def request_instruction(self, targets: list[Fighter]) -> Action:
-        if self.get_has_used_item():
-            
-            return self.consume_item()
-
-        elif self.owner.inventory.items[0] is not None and self.hp < self.max_hp:
-            self.request_item_use()
-
-        else:
-            self.request_target(targets)
+    def choose_item(self):
+        self._current_item = Consumable()
+        return {}
 
     def request_item_use(self):
         return {
-                "message": f"Use an item from {self.owner.name.name_and_title}'s inventory?",
-                "await_input": self,
-                "item_selection": {
-                    "inventory_contents": self.owner.inventory.items,
-                    "on_confirm": lambda item_idx: self.provide_item(
-                        self.owner.inventory.items[item_idx]
-                    ),
-                    "default_item": self.owner.inventory.items[0],
-                },
-            }
-    
-    def provide_item(self, item):
+            "message": f"Use an item from {self.owner.name.name_and_title}'s inventory?",
+            "await_input": self,
+            "item_selection": {
+                "inventory_contents": self.owner.inventory.items,
+                "on_confirm": lambda item_idx: self.provide_item(
+                    self.owner.inventory.items[item_idx]
+                ),
+                "default_item": self.owner.inventory.items[0],
+            },
+        }
+
+    def provide_item(self, item: InventoryItem):
         self._current_item = item
-        self.set_has_used_item(True)
         return True
 
     def current_target(self) -> Fighter | None:
@@ -135,12 +138,6 @@ class Fighter:
     @in_combat.setter
     def set_in_combat(self, state: bool):
         self._in_combat = state
-
-    def get_has_used_item(self):
-        return self._has_used_item
-
-    def set_has_used_item(self, value: bool):
-        self._has_used_item = value
 
     @property
     def location(self) -> Node | None:
@@ -273,11 +270,13 @@ class Fighter:
 
         return result
 
-    def consume_item(self):
-        item: Consumable = self._current_item
-        if item in self.owner.inventory:
-            self.set_has_used_item(False)
-            return item.consume(self.owner.inventory)
+    def consume_item(self) -> Generator[Action, None, None]:
+        item: Consumable = self._current_item or Consumable()
+        self._current_item = None
+        yield item.consume(self.owner.inventory)
+
+    def chosen_consumable(self) -> Consumable:
+        return self._current_item or Consumable()
 
     def throw_item(self, item: Throwable):
         if item in self.owner.inventory:

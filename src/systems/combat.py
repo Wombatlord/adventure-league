@@ -104,22 +104,42 @@ class CombatRound:
         if combatant.incapacitated:
             raise Exception(f"Incapacitated combatant {combatant.get_dict()}: oops!")
 
+        # This is where we wait for input on a player turn
+        yield from self.gather_turn_choices(combatant, enemies)
+
+        # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
+        combatant = self.current_combatant(pop=True)
+
+        yield from self.execute_turn_choices(combatant)
+
+    def gather_turn_choices(
+        self, combatant: Fighter, enemies: list[Fighter]
+    ) -> Generator[Action, None, None]:
+        # If no item is explicitly chosen, a trivial consumable with no effects/message is chosen
+        if combatant.is_enemy:
+            yield combatant.choose_item()
+        else:
+            yield combatant.request_item_use()
+
         # If the combatant cannot acquire a target for whatever reason, this
         # will hold up combat forever!
+        has_notified_item = False
         while not combatant.current_target():
             if combatant.is_enemy:
                 yield combatant.choose_nearest_target(enemies)
             else:
-                yield combatant.request_instruction(enemies)
+                if (
+                    item_name := combatant.chosen_consumable().name
+                ) and not has_notified_item:
+                    has_notified_item = True
+                    yield {"message": f"{combatant.owner.name} will use a {item_name}"}
 
-        # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
-        combatant = self.current_combatant(pop=True)
-        target = combatant.current_target()
-        yield from self.advance(combatant, target)
+                yield combatant.request_target(enemies)
 
-    def advance(self, combatant, target):
+    def execute_turn_choices(self, combatant: Fighter) -> Generator[Action, None, None]:
         # Move toward the target as far as speed allows
-
+        yield from combatant.consume_item()
+        target = combatant.current_target()
         step = {}
         for step in combatant.locatable.approach_target(target):
             yield step

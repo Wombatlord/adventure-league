@@ -87,24 +87,33 @@ class Consumable(InventoryItem):
 
     def consume(self, inventory: Inventory) -> Action:
         effect_data = {}
+        item_consumed = None
+
         if hasattr(self, "apply_consume_effect"):
             effect_data = self.get_consume_effect()(inventory)
+            item_consumed = {
+                "consumable": self,
+                "effect": {
+                    "name": self.get_consume_effect_name(),
+                    "target": self.owner,
+                    "details": effect_data,
+                },
+            }
         if issubclass(self.__class__, Exhaustable):
             self.exhaust()
 
-        return inventory.owner.annotate_event(
-            {
-                "message": f"{self.get_name()} used by {inventory.owner.name}",
-                "item_consumed": {
-                    "consumable": self,
-                    "effect": {
-                        "name": self.get_consume_effect_name(),
-                        "target": self.owner,
-                        "details": effect_data,
-                    },
-                },
-            }
-        )
+        event = {
+            "item_consumed": item_consumed,
+        }
+        if item_consumed:
+            event = inventory.owner.annotate_event(
+                {
+                    **event,
+                    "message": f"{self.get_name()} used by {inventory.owner.name}",
+                }
+            )
+
+        return event
 
 
 class Throwable(InventoryItem):
