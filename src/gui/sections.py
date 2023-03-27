@@ -904,11 +904,11 @@ class CombatGridSection(arcade.Section):
                 width=self.width,
             ).draw()
 
-        if eng.awaiting_input:
-            self.combat_screen.draw_turn_prompt()
+        # if eng.awaiting_input:
+        #     self.combat_screen.draw_turn_prompt()
 
-        if not eng.mission_in_progress:
-            self.combat_screen.draw_turn_prompt()
+        # if not eng.mission_in_progress:
+        #     self.combat_screen.draw_turn_prompt()
 
         self.combat_screen.draw_message()
         self.combat_screen.draw_stats()

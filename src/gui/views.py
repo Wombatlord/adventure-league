@@ -8,7 +8,7 @@ from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
 from src.entities.inventory import InventoryItem
-from src.gui.buttons import get_new_missions_button, nav_button
+from src.gui.buttons import end_turn_button, get_new_missions_button, nav_button
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
 from src.gui.sections import (
@@ -626,12 +626,26 @@ class BattleView(arcade.View):
             prevent_dispatch_view={False},
         )
 
+        # CommandBar config
+        self.buttons = [
+            end_turn_button(self),
+        ]
+        self.command_bar_section = CommandBarSection(
+            left=0,
+            bottom=0,
+            width=WindowData.width,
+            height=50,
+            buttons=self.buttons,
+            prevent_dispatch_view={False},
+        )
+
         self.target_selection: Selection[tuple[Node, ...]] | None = None
         self.item_selection: Selection[list[InventoryItem]] | None = None
         self.item_menu_mode_allowed = True
         self.input_mode = None
         self.bind_input_modes()
 
+        self.add_section(self.command_bar_section)
         self.add_section(self.combat_grid_section)
         eng.init_combat()
 
@@ -644,6 +658,7 @@ class BattleView(arcade.View):
         self.input_mode = self.input_mode.get_next_mode()
 
     def on_show_view(self):
+        self.command_bar_section.manager.enable()
         eng.await_input()
         eng.combat_dispatcher.volatile_subscribe(
             "item_selection",

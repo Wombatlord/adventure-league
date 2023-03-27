@@ -67,3 +67,29 @@ def get_new_missions_button() -> UIFlatButton:
     btn.on_click = get_new_missions_handler
 
     return btn
+
+
+def end_turn_handler(view) -> UIEventHandler:
+    def _handle(event: UIEvent):
+        if not view.target_selection and eng.awaiting_input:
+            eng.next_combat_action()
+            eng.awaiting_input = False
+            return
+
+        if not view.target_selection:
+            return
+
+        ok = view.target_selection.confirm()
+        if ok:
+            view.combat_grid_section.hide_path()
+            view.target_selection = None
+            view.item_menu_mode_allowed = True
+
+    return _handle
+
+
+def end_turn_button(view) -> UIFlatButton:
+    btn = UIFlatButton(text="CLICK ME TO ADVANCE!")
+    btn.on_click = end_turn_handler(view)
+
+    return btn
