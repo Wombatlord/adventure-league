@@ -42,6 +42,7 @@ class Fighter:
         self._in_combat = False
         self._current_item = None
         self._forfeit_turn = False
+        self._current_destination = None
 
     def set_owner(self, owner: Entity) -> Self:
         self.owner = owner
@@ -127,6 +128,23 @@ class Fighter:
                 "default_item": self.owner.inventory.items[0],
             },
         }
+
+    def request_move_instruction(self):
+        def _on_confirm(self, destination: node) -> bool:
+            self.provide_destination(destination)
+            return True
+
+        return {
+            "message": f"Choose a move for {self.owner.name.name_and_title}",
+            "":
+            "move_selection": {
+                "default_location": self.location,
+                "on_confirm": _on_confirm,
+            }
+        }
+
+    def provide_destination(self, destination: Node):
+        self._current_destination = destination 
 
     def provide_item(self, item: InventoryItem):
         self._current_item = item

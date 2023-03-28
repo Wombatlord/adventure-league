@@ -95,6 +95,22 @@ class Locatable:
             },
         }
 
+    def reachable_places(self) -> tuple[Node, ...]:
+        nodes = set()
+        max_depth = self.speed
+        def _recurse(start: Node, depth: int = 0):
+            if depth >= max_depth or start in nodes:
+                return
+            for location in node.adjacent:
+                if location in self.space:
+                    nodes.add(location)
+                    _recurse(location, depth=depth+1)
+
+
+
+
+            
+
     def adjacent_locations(self) -> tuple[Node, ...]:
         """A getter for the tuple of nodes that are close enough to this Locatable for
         a range 0 interaction
