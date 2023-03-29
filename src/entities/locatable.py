@@ -80,12 +80,12 @@ class Locatable:
 
         for i, place in enumerate(to_traverse):
             prev = self.location
-            action = self._step_action(prev, place == destination)
+            event = self._step_event(prev, place == destination)
             self.location = place
             self.orientation = self.location - to_traverse[i - 1]
-            yield action
+            yield event
 
-    def _step_action(self, prev: Node, in_motion: bool) -> dict:
+    def _step_event(self, prev: Node, in_motion: bool) -> dict:
         return {
             "move": {
                 "start": prev,
@@ -97,7 +97,7 @@ class Locatable:
 
     def adjacent_locations(self) -> tuple[Node, ...]:
         """A getter for the tuple of nodes that are close enough to this Locatable for
-        a range 0 interaction
+        a range 0 interevent
         """
         # includes diagonals
         maximum_possile_adjacencies = (

@@ -569,7 +569,7 @@ class CombatInputMode(BaseInputMode):
         if not self.view.target_selection and eng.awaiting_input:
             match symbol:
                 case arcade.key.SPACE:
-                    eng.next_combat_action()
+                    eng.next_combat_event()
                     eng.awaiting_input = False
             return
 

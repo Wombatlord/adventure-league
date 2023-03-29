@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, Self
 if TYPE_CHECKING:
     from src.entities.entity import Entity
 
-Action = dict[str, Any]
+Event = dict[str, Any]
 
 
 class Inventory:
@@ -23,7 +23,7 @@ class Inventory:
         while len(self.items) < self.capacity:
             self.items.append(None)
 
-    def add_item_to_inventory(self, item: InventoryItem) -> list[Action]:
+    def add_item_to_inventory(self, item: InventoryItem) -> list[Event]:
         results = []
 
         added_to_inventory = False
@@ -60,7 +60,7 @@ class InventoryItem:
         pass
 
 
-Effect = Callable[[InventoryItem, Inventory], Action]
+Effect = Callable[[InventoryItem, Inventory], Event]
 
 
 class Exhaustable(InventoryItem):
@@ -82,10 +82,10 @@ class Consumable(InventoryItem):
     def get_consume_effect_name(self) -> str:
         return self.consume_effect_name or "no effect"
 
-    def get_consume_effect(self) -> Callable[[Self, Inventory], Action]:
+    def get_consume_effect(self) -> Callable[[Self, Inventory], Event]:
         return self.apply_consume_effect
 
-    def consume(self, inventory: Inventory) -> Action:
+    def consume(self, inventory: Inventory) -> Event:
         effect_data = {}
         item_consumed = None
 
@@ -126,7 +126,7 @@ class Throwable(InventoryItem):
     def get_on_hit_effect(self) -> Callable[[Self, Inventory], dict]:
         return self.apply_on_hit_effect
 
-    def throw(self, inventory: Inventory, target: Entity) -> Action:
+    def throw(self, inventory: Inventory, target: Entity) -> Event:
         effect_data = {}
         if hasattr(self, "apply_on_hit_effect"):
             effect_data = self.get_consume_effect()(target)

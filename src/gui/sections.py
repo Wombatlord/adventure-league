@@ -918,7 +918,7 @@ class CombatGridSection(arcade.Section):
         eng.update_clock -= delta_time
 
         if not eng.awaiting_input:
-            hook = eng.next_combat_action
+            hook = eng.next_combat_event
         else:
             hook = do_nothing
 

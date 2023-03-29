@@ -77,11 +77,11 @@ def flush() -> None:
     _health_projection = {}
 
 
-def consume(action: dict[str, Any]) -> None:
+def consume(event: dict[str, Any]) -> None:
     """
-    This will be invoked by the action queue
+    This will be invoked by the event queue
     """
-    entity = action.get(_KEY, {})
+    entity = event.get(_KEY, {})
     health = entity.get("health")
     retreat = entity.get("retreat")
     name = entity.get("name")
