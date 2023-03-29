@@ -1,15 +1,18 @@
 import weakref
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 if TYPE_CHECKING:
-    from src.engine.engine import Engine, Handler
+    from src.engine.engine import Engine
 
 from src import config
+
+Handler = Callable[[dict], None]
+HandlerRef = Callable[[], Handler]
 
 
 class Dispatcher:
     def __init__(self, engine: "Engine") -> None:
-        self.subscriptions: dict[str, dict[str, "Handler"]] = {}
+        self.subscriptions: dict[str, dict[str, HandlerRef]] = {}
         self.eng = engine
 
     def subscribe(
@@ -22,6 +25,10 @@ class Dispatcher:
     ):
         if config.DEBUG:
             print(f"{handler_id=} subscribed with {self.__class__} to {topic=}")
+
+        if not callable(handler):
+            raise TypeError(f"A non-callable {type(handler)=} was passed to subscribe")
+
         # check the subscription is a new one
         subs = {}
         if topic in self.subscriptions and handler_id in (
@@ -68,7 +75,7 @@ class Dispatcher:
     def flush_subs(self):
         if config.DEBUG:
             print(f"{self.__class__} flushed")
-        self.subscriptions: dict[str, dict[str, "Handler"]] = {}
+        self.subscriptions: dict[str, dict[str, HandlerRef]] = {}
 
 
 class VolatileDispatcher(Dispatcher):

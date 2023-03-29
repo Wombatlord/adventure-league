@@ -4,8 +4,9 @@ from typing import Self
 from arcade import BasicSprite
 from arcade.sprite import Sprite
 from arcade.texture import Texture
-from arcade.types import Point
+from arcade.types import PathOrTexture, Point
 
+from src.world.isometry.transforms import Transform, draw_priority
 from src.world.node import Node
 
 
@@ -64,16 +65,45 @@ class OffsetSprite(Sprite):
 
 
 class BaseSprite(OffsetSprite, Sprite):
+    transform: Transform
+
     def __init__(
         self,
-        scale: float = 4,
+        path_or_texture: PathOrTexture = None,
+        scale: float = 1.0,
+        center_x: float = 0.0,
+        center_y: float = 0.0,
+        angle: float = 0.0,
+        **kwargs,
     ):
-        super().__init__(scale=scale)
+        super().__init__(
+            path_or_texture,
+            scale,
+            center_x,
+            center_y,
+            angle,
+            **kwargs,
+        )
 
         self.animation_cycle = 0.75
         self.tex_idx = 0
         self.atk_cycle = 0
         self.owner = None
+        self.transform = kwargs.get("transform", Transform.trivial())
+        self._draw_priority = 0
+        self._draw_priority_offset = kwargs.get("draw_priority_offset", 0)
+
+    def get_draw_priority(self) -> float:
+        return self._draw_priority - self._draw_priority_offset
+
+    def set_node(self, node: Node) -> Self:
+        self.center_x, self.center_y = self.transform.to_screen(node)
+        self._draw_priority = draw_priority(node)
+        return self
+
+    def set_transform(self, transform: Transform) -> Self:
+        self.transform = transform
+        return self
 
     def update_animation(self, delta_time: float = 1 / 60) -> None:
         self.animation_cycle -= delta_time

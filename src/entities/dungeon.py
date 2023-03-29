@@ -9,15 +9,17 @@ from src.world.pathing.pathing_space import PathingSpace
 
 class Room:
     def __init__(self, size: tuple[int, int] = (10, 10)) -> None:
-        self.layout = basic_room(size)
+        self.layout = None
+        self.space = None
+        self.set_layout(basic_room(size))
         self.enemies: list[Entity] = []
         self.occupants: list[Entity] = []
         self._cleared = False
-        self.space = PathingSpace.from_level_geometry(self.layout)
         self.entry_door = Node(x=0, y=5) if size[1] > 5 else Node(0, 0)
 
     def set_layout(self, layout: tuple[Node, ...]) -> Self:
         self.layout = layout
+        self.space = PathingSpace.from_level_geometry(self.layout)
         return self
 
     def update_pathing_obstacles(self):

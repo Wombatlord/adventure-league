@@ -98,6 +98,7 @@ class CombatRound:
             )
 
         combatant = self.current_combatant()
+        combatant.on_turn_start()
         opposing_team = self.teams_of(combatant).opposing
         enemies = self.get_enemies(opposing_team)
 
@@ -110,7 +111,8 @@ class CombatRound:
         # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
         combatant = self.current_combatant(pop=True)
 
-        yield from self.execute_turn_choices(combatant)
+        if not combatant.turn_is_forfeit():
+            yield from self.execute_turn_choices(combatant)
 
     def gather_turn_choices(
         self, combatant: Fighter, enemies: list[Fighter]
@@ -124,7 +126,7 @@ class CombatRound:
         # If the combatant cannot acquire a target for whatever reason, this
         # will hold up combat forever!
         has_notified_item = False
-        while not combatant.current_target():
+        while not combatant.current_target() and not combatant.turn_is_forfeit():
             if combatant.is_enemy:
                 yield combatant.choose_nearest_target(enemies)
             else:
@@ -134,7 +136,7 @@ class CombatRound:
                     has_notified_item = True
                     yield {"message": f"{combatant.owner.name} will use a {item_name}"}
 
-                yield combatant.request_target(enemies)
+                yield from combatant.request_target(enemies)
 
     def execute_turn_choices(self, combatant: Fighter) -> Generator[Action, None, None]:
         # Move toward the target as far as speed allows

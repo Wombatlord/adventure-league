@@ -9,7 +9,8 @@ from pyglet.math import Vec2
 from src import config
 from src.engine.init_engine import eng
 from src.entities.dungeon import Room
-from src.entities.sprites import BaseSprite, OffsetSprite
+from src.entities.entity import Entity
+from src.entities.sprites import BaseSprite
 from src.gui.buttons import CommandBarMixin
 from src.gui.combat_screen import CombatScreen
 from src.gui.gui_components import (
@@ -795,45 +796,21 @@ class CombatGridSection(arcade.Section):
         self.encounter_room = None
         self._original_dims = width, height
 
-        self.tile_sprite_list = arcade.SpriteList()
+        self.world_sprite_list = arcade.SpriteList()
         self.dudes_sprite_list = arcade.SpriteList()
         self.combat_screen = CombatScreen()
         self.grid_camera = arcade.Camera()
         self.grid_camera.zoom = 1.0
         self.other_camera = arcade.Camera()
         self._subscribe_to_events()
-        self.selected_path_sprites = self.init_path()
         self.cam_controls = CameraController(self.grid_camera)
-        self.transform = Transform(
-            block_dimensions=(16, 8, 8), absolute_scale=self.SPRITE_SCALE
+
+        self.transform = Transform.isometric(
+            block_dimensions=(16, 8, 8),
+            absolute_scale=self.SPRITE_SCALE,
+            translation=Vec2(self.width, self.height) / 2,
         )
-
-    def to_screen(self, node: Node) -> Vec2:
-        return self.transform.to_screen(node) + Vec2(self.width, self.height) / 2
-
-    @classmethod
-    def init_path(cls) -> arcade.SpriteList:
-        selected_path_sprites = arcade.SpriteList()
-        start_sprite = OffsetSprite(
-            WindowData.indicators[SelectionCursor.GREEN.value], cls.SPRITE_SCALE
-        ).offset_anchor((0, 4.5))
-        start_sprite.visible = False
-        selected_path_sprites.append(start_sprite)
-        for _ in range(1, 19):
-            sprite_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
-            sprite = OffsetSprite(sprite_tex, scale=cls.SPRITE_SCALE).offset_anchor(
-                (0, 3.5)
-            )
-            selected_path_sprites.append(sprite)
-            sprite.visible = False
-
-        end_sprite = OffsetSprite(
-            WindowData.indicators[SelectionCursor.RED.value], cls.SPRITE_SCALE
-        ).offset_anchor((0, 4.5))
-        selected_path_sprites.append(end_sprite)
-        end_sprite.visible = False
-
-        return selected_path_sprites
+        self.all_path_sprites = self.init_path()
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -850,8 +827,8 @@ class CombatGridSection(arcade.Section):
 
         eng.combat_dispatcher.volatile_subscribe(
             topic="cleanup",
-            handler_id="CombatGrid.clear_occupants",
-            handler=self.clear_occupants,
+            handler_id="CombatGrid.teardown_level",
+            handler=self.teardown_level,
         )
 
         eng.combat_dispatcher.volatile_subscribe(
@@ -861,16 +838,81 @@ class CombatGridSection(arcade.Section):
         )
 
         eng.combat_dispatcher.volatile_subscribe(
-            topic="dead",
+            topic="dying",
+            handler_id="CombatGrid.clear_dead_sprites",
+            handler=self.clear_dead_sprites,
+        )
+        eng.combat_dispatcher.volatile_subscribe(
+            topic="retreat",
             handler_id="CombatGrid.clear_dead_sprites",
             handler=self.clear_dead_sprites,
         )
 
-    def clear_occupants(self, event):
-        encounter = event["cleanup"]
-        for occupant in encounter.occupants:
-            if not occupant.fighter.is_enemy:
-                encounter.remove(occupant)
+    def init_path(self) -> arcade.SpriteList:
+        selected_path_sprites = arcade.SpriteList()
+        start_sprite = BaseSprite(
+            WindowData.indicators[SelectionCursor.GREEN.value],
+            scale=self.SPRITE_SCALE,
+            transform=self.transform,
+            draw_priority_offset=0.1,
+        ).offset_anchor((0, 4.5))
+        selected_path_sprites.append(start_sprite)
+
+        main_path_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
+        for _ in range(1, 19):
+            sprite = BaseSprite(
+                main_path_tex,
+                scale=self.SPRITE_SCALE,
+                transform=self.transform,
+                draw_priority_offset=0.1,
+            ).offset_anchor((0, 3.5))
+
+            selected_path_sprites.append(sprite)
+
+        end_sprite = BaseSprite(
+            WindowData.indicators[SelectionCursor.RED.value],
+            scale=self.SPRITE_SCALE,
+            transform=self.transform,
+            draw_priority_offset=0.1,
+        ).offset_anchor((0, 4.5))
+
+        selected_path_sprites.append(end_sprite)
+
+        return selected_path_sprites
+
+    def show_path(self, current: tuple[Node]):
+        head = (0,)
+        body = tuple(range(1, len(current) - 1))
+        tail = (19,)
+        rest = range(len(current) - 1, 19)
+
+        visible = [*head, *body, *tail]
+        invisible = rest
+
+        for i, sprite in enumerate(self.all_path_sprites):
+            if i in visible:
+                node_idx = i if i in head + body else -1
+                node = current[node_idx]
+                sprite.set_node(node)
+                if sprite not in self.world_sprite_list:
+                    self.world_sprite_list.append(sprite)
+
+            elif i in invisible:
+                sprite.visible = True
+                if sprite in self.world_sprite_list:
+                    self.world_sprite_list.remove(sprite)
+
+        self.refresh_draw_order()
+
+    def hide_path(self):
+        for sprite in self.all_path_sprites:
+            if sprite in self.world_sprite_list:
+                self.world_sprite_list.remove(sprite)
+
+        self.refresh_draw_order()
+
+    def refresh_draw_order(self):
+        self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
 
     def on_update(self, delta_time: float):
         self.cam_controls.on_update()
@@ -891,9 +933,7 @@ class CombatGridSection(arcade.Section):
     def on_draw(self):
         self.grid_camera.use()
 
-        self.tile_sprite_list.draw(pixelated=True)
-        self.selected_path_sprites.draw(pixelated=True)
-        self.dudes_sprite_list.draw(pixelated=True)
+        self.world_sprite_list.draw(pixelated=True)
 
         self.other_camera.use()
         if config.DEBUG:
@@ -933,11 +973,13 @@ class CombatGridSection(arcade.Section):
             self.update_dudes(event)
 
     def level_to_sprite_list(self):
-        self.tile_sprite_list.clear()
+        self.world_sprite_list.clear()
         for node in self.encounter_room.layout:
-            sprite = arcade.Sprite(WindowData.tiles[89], scale=self.SPRITE_SCALE)
-            sprite.position = self.to_screen(node)
-            self.tile_sprite_list.append(sprite)
+            sprite = BaseSprite(
+                WindowData.tiles[89], scale=self.SPRITE_SCALE, transform=self.transform
+            )
+            sprite.set_node(node)
+            self.world_sprite_list.append(sprite)
 
     def prepare_dude_sprites(self):
         """
@@ -952,9 +994,11 @@ class CombatGridSection(arcade.Section):
         for dude in self.encounter_room.occupants:
             if dude.fighter.is_boss:
                 dude.entity_sprite.sprite.scale = dude.entity_sprite.sprite.scale * 1.5
-            dude.entity_sprite.sprite.position = self.to_screen(dude.locatable.location)
+            dude.entity_sprite.sprite.set_transform(self.transform)
+            dude.entity_sprite.sprite.set_node(dude.locatable.location)
 
             dude.entity_sprite.orient(dude.locatable.orientation)
+            self.world_sprite_list.append(dude.entity_sprite.sprite)
             self.dudes_sprite_list.append(dude.entity_sprite.sprite)
 
     def update_dudes(self, _: dict) -> None:
@@ -971,32 +1015,14 @@ class CombatGridSection(arcade.Section):
             return
 
         for dude in self.encounter_room.occupants:
-            dude.entity_sprite.sprite.position = self.to_screen(dude.locatable.location)
+            dude.entity_sprite.sprite.set_node(dude.locatable.location)
             dude.entity_sprite.orient(dude.locatable.orientation)
-        self.dudes_sprite_list.sort(key=lambda s: sum(s.position), reverse=True)
 
-    def show_path(self, current: tuple[Node]):
-        head = (0,)
-        body = tuple(range(1, len(current) - 1))
-        tail = (19,)
-        rest = range(len(current) - 1, 19)
+        self.refresh_draw_order()
 
-        visible = [*head, *body, *tail]
-        invisible = rest
-
-        for i, sprite in enumerate(self.selected_path_sprites):
-            if i in visible:
-                node_idx = i if i in head + body else -1
-                node = current[node_idx]
-                position = self.to_screen(node)
-                sprite.visible = True
-                sprite.center_x, sprite.center_y = position.x, position.y
-            elif i in invisible:
-                sprite.visible = False
-
-    def hide_path(self):
-        for sprite in self.selected_path_sprites:
-            sprite.visible = False
+    def teardown_level(self):
+        self.dudes_sprite_list.clear()
+        self.world_sprite_list.clear()
 
     def idle_or_attack(self, event):
         dude = event["attack"]
@@ -1006,7 +1032,5 @@ class CombatGridSection(arcade.Section):
         """
         If a sprite is associated to a dead entity, remove the sprite from the sprite list.
         """
-        dead_dude = event["dead"]
-        self.dudes_sprite_list.pop(
-            self.dudes_sprite_list.index(dead_dude.owner.entity_sprite.sprite)
-        )
+        dead_dude: Entity = event.get("dying") or event.get("retreat")
+        dead_dude.entity_sprite.sprite.remove_from_sprite_lists()
