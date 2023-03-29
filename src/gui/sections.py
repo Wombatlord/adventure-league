@@ -27,6 +27,7 @@ from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
+from src.gui.texture_data import TextureData
 from src.utils.camera_controls import CameraController
 from src.world.isometry.transforms import Transform, draw_priority
 from src.world.level.room import basic_room
@@ -844,21 +845,21 @@ class CombatGridSection(arcade.Section):
         )
         eng.combat_dispatcher.volatile_subscribe(
             topic="retreat",
-            handler_id="CombatGrid.clear_dead_sprites",
-            handler=self.clear_dead_sprites,
+            handler_id="CombatGrid.clear_retreating_sprites",
+            handler=self.clear_retreating_sprites,
         )
 
     def init_path(self) -> arcade.SpriteList:
         selected_path_sprites = arcade.SpriteList()
         start_sprite = BaseSprite(
-            WindowData.indicators[SelectionCursor.GREEN.value],
+            TextureData.indicators[SelectionCursor.GREEN.value],
             scale=self.SPRITE_SCALE,
             transform=self.transform,
             draw_priority_offset=0.1,
         ).offset_anchor((0, 4.5))
         selected_path_sprites.append(start_sprite)
 
-        main_path_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
+        main_path_tex = TextureData.indicators[SelectionCursor.GOLD_EDGE.value]
         for _ in range(1, 19):
             sprite = BaseSprite(
                 main_path_tex,
@@ -870,7 +871,7 @@ class CombatGridSection(arcade.Section):
             selected_path_sprites.append(sprite)
 
         end_sprite = BaseSprite(
-            WindowData.indicators[SelectionCursor.RED.value],
+            TextureData.indicators[SelectionCursor.RED.value],
             scale=self.SPRITE_SCALE,
             transform=self.transform,
             draw_priority_offset=0.1,
@@ -976,7 +977,7 @@ class CombatGridSection(arcade.Section):
         self.world_sprite_list.clear()
         for node in self.encounter_room.layout:
             sprite = BaseSprite(
-                WindowData.tiles[89], scale=self.SPRITE_SCALE, transform=self.transform
+                TextureData.tiles[89], scale=self.SPRITE_SCALE, transform=self.transform
             )
             sprite.set_node(node)
             self.world_sprite_list.append(sprite)
@@ -1028,6 +1029,10 @@ class CombatGridSection(arcade.Section):
         dude = event["attack"]
         dude.entity_sprite.swap_idle_and_attack_textures()
 
+    def clear_retreating_sprites(self, event): 
+        retreating_dude = event.get("dying") or event.get("retreat")
+        retreating_dude.owner.entity_sprite.sprite.remove_from_sprite_lists()
+    
     def clear_dead_sprites(self, event):
         """
         If a sprite is associated to a dead entity, remove the sprite from the sprite list.

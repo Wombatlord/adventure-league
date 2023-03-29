@@ -27,6 +27,7 @@ from src.gui.sections import (
 )
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
+from src.gui.texture_data import TextureData
 from src.utils.input_capture import BaseInputMode, Selection
 from src.world.node import Node
 
@@ -34,7 +35,7 @@ from src.world.node import Node
 class TitleView(arcade.View):
     def __init__(self, window: Window | None = None):
         super().__init__(window)
-        self.background = WindowData.title_background
+        self.background = TextureData.title_background
         self.title_y = -10
         self.start_y = -10
 
@@ -339,13 +340,13 @@ class RosterView(arcade.View):
             UIFlatButton: Button with attached handler.
         """
         main_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[7]
+            left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[7]
         )
         pressed_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=3, texture=WindowData.buttons[9]
+            left=1, right=1, bottom=3, top=3, texture=TextureData.buttons[9]
         )
         hovered_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[11]
+            left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[11]
         )
 
         btn = UITextureButton(
@@ -365,13 +366,13 @@ class RosterView(arcade.View):
             UIFlatButton: Button with attached handler.
         """
         main_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[7]
+            left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[7]
         )
         pressed_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=3, texture=WindowData.buttons[9]
+            left=1, right=1, bottom=3, top=3, texture=TextureData.buttons[9]
         )
         hovered_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[11]
+            left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[11]
         )
 
         btn = UITextureButton(
@@ -482,7 +483,6 @@ class MissionsView(arcade.View):
 
     def __init__(self, window: Window = None):
         super().__init__(window)
-        self.background = WindowData.mission_background
         self.margin = 5
         self.selection = Cycle(
             3, 2
@@ -657,7 +657,6 @@ class BattleView(arcade.View):
 
         # CommandBar config
         self.buttons = [
-            end_turn_button(self),
             end_turn_button(self),
         ]
 

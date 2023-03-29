@@ -7,7 +7,7 @@ from arcade.gui.events import UIEvent
 from arcade.gui.widgets.buttons import UIFlatButton, UITextureButton
 
 from src.engine.init_engine import eng
-from src.gui.window_data import WindowData
+from src.gui.texture_data import TextureData
 
 
 class CommandBarMixin:
@@ -94,13 +94,13 @@ def nav_button(target: type[arcade.View], text: str) -> UITextureButton:
         UITextureButton: A button with a text label and an attached click handler.
     """
     main_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[7]
+        left=16, right=16, bottom=6, top=9, texture=TextureData.buttons[7]
     )
     pressed_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=3, texture=WindowData.buttons[9]
+        left=16, right=16, bottom=6, top=9, texture=TextureData.buttons[9]
     )
     hovered_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[11]
+        left=16, right=16, bottom=6, top=9, texture=TextureData.buttons[11]
     )
 
     btn = UITextureButton(
@@ -120,13 +120,13 @@ def get_new_missions_handler(event: UIEvent) -> UIEventHandler:
 
 def get_new_missions_button() -> UITextureButton:
     main_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[7]
+        left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[7]
     )
     pressed_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=3, texture=WindowData.buttons[9]
+        left=1, right=1, bottom=3, top=3, texture=TextureData.buttons[9]
     )
     hovered_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[11]
+        left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[11]
     )
     btn = UITextureButton(
         text="New Missions",
@@ -160,13 +160,13 @@ def end_turn_handler(view) -> UIEventHandler:
 
 def end_turn_button(view) -> UITextureButton:
     main_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[7]
+        left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[7]
     )
     pressed_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=3, texture=WindowData.buttons[9]
+        left=1, right=1, bottom=3, top=3, texture=TextureData.buttons[9]
     )
     hovered_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[11]
+        left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[11]
     )
 
     btn = UITextureButton(
