@@ -1,8 +1,8 @@
 from typing import Callable
-import arcade
-from arcade.hitbox import BoundingHitBoxAlgorithm, HitBoxAlgorithm
-from arcade import Texture
 
+import arcade
+from arcade import Texture
+from arcade.hitbox import BoundingHitBoxAlgorithm, HitBoxAlgorithm
 
 SpriteSheetSpec = tuple[tuple[str], dict[str, int | tuple | HitBoxAlgorithm]]
 
@@ -10,9 +10,7 @@ SingleTextureSpec = tuple[str,]
 
 
 class SingleTextureSpecs:
-    title_background: SingleTextureSpec = (
-        "./assets/background_glacial_mountains.png",
-    )
+    title_background: SingleTextureSpec = ("./assets/background_glacial_mountains.png",)
 
 
 class SpriteSheetSpecs:
@@ -70,12 +68,9 @@ def _load_sheet_from_spec(spec: SpriteSheetSpec) -> list[Texture]:
     hitbox_algo = None
     if hitbox_algorithm_class:
         hitbox_algo = hitbox_algorithm_class()
-    
-    return arcade.load_spritesheet(
-        *args,
-        **kwargs,
-        hit_box_algorithm=hitbox_algo
-    )
+
+    return arcade.load_spritesheet(*args, **kwargs, hit_box_algorithm=hitbox_algo)
+
 
 def _load_texture_from_spec(spec: SingleTextureSpec) -> Texture:
     return arcade.load_texture(*spec)
@@ -83,9 +78,10 @@ def _load_texture_from_spec(spec: SingleTextureSpec) -> Texture:
 
 TextureData = None
 
+
 class _LazyTextureData:
     __annotations__ = {
-        **SpriteSheetSpecs.__annotations__, 
+        **SpriteSheetSpecs.__annotations__,
         **SingleTextureSpecs.__annotations__,
     }
     loaders = {
@@ -93,24 +89,30 @@ class _LazyTextureData:
         SingleTextureSpecs: _load_texture_from_spec,
     }
 
-    def _load_if_specified(self, specs: type, loader: Callable, asset_name: str) -> list[Texture] | Texture | None:
+    def _load_if_specified(
+        self, specs: type, loader: Callable, asset_name: str
+    ) -> list[Texture] | Texture | None:
         if hasattr(specs, asset_name):
             asset = loader(getattr(specs, asset_name))
             setattr(self, asset_name, asset)
             return asset
         return None
 
-    def __getattr__(self, attr_name: str) -> list[Texture] | Texture:      
+    def __getattr__(self, attr_name: str) -> list[Texture] | Texture:
         try:
             for specs, loader in self.loaders.items():
-                if asset := self._load_if_specified(specs, loader, asset_name=attr_name):
+                if asset := self._load_if_specified(
+                    specs, loader, asset_name=attr_name
+                ):
                     return asset
         except Exception:
-            print(f"encountered error with {specs=} and {loader=} when trying to load asset {attr_name}")
+            print(
+                f"encountered error with {specs=} and {loader=} when trying to load asset {attr_name}"
+            )
             raise
-        
+
         raise AttributeError(f"Attempted to load undefined asset spec {attr_name}")
+
 
 if TextureData is None:
     TextureData = _LazyTextureData()
-

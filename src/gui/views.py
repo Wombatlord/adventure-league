@@ -26,8 +26,8 @@ from src.gui.sections import (
     RosterAndTeamPaneSection,
 )
 from src.gui.states import ViewStates
-from src.gui.window_data import WindowData
 from src.gui.texture_data import TextureData
+from src.gui.window_data import WindowData
 from src.utils.input_capture import BaseInputMode, Selection
 from src.world.node import Node
 

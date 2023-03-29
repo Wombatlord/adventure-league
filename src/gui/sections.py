@@ -25,9 +25,9 @@ from src.gui.gui_components import (
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
+from src.gui.texture_data import TextureData
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
-from src.gui.texture_data import TextureData
 from src.utils.camera_controls import CameraController
 from src.world.isometry.transforms import Transform, draw_priority
 from src.world.level.room import basic_room
@@ -1029,10 +1029,10 @@ class CombatGridSection(arcade.Section):
         dude = event["attack"]
         dude.entity_sprite.swap_idle_and_attack_textures()
 
-    def clear_retreating_sprites(self, event): 
+    def clear_retreating_sprites(self, event):
         retreating_dude = event.get("dying") or event.get("retreat")
         retreating_dude.owner.entity_sprite.sprite.remove_from_sprite_lists()
-    
+
     def clear_dead_sprites(self, event):
         """
         If a sprite is associated to a dead entity, remove the sprite from the sprite list.
