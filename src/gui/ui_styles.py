@@ -29,7 +29,7 @@ ADVENTURE_STYLE = {
     "hover": UIStyle(
         font_size=24,
         font_name=WindowData.font,
-        font_color=arcade.color.GOLD,
+        font_color=arcade.color.GOLDENROD,
         bg=(41, 39, 41),
         border=None,
         border_width=0,
@@ -37,7 +37,7 @@ ADVENTURE_STYLE = {
     "press": UIStyle(
         font_size=24,
         font_name=WindowData.font,
-        font_color=arcade.color.GOLD,
+        font_color=arcade.color.GOLD_FUSION,
         bg=arcade.color.BLACK,
         border=None,
         border_width=0,
