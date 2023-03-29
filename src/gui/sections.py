@@ -100,7 +100,7 @@ class CommandBarSection(arcade.Section, CommandBarMixin):
         for button in buttons:
             button.size_hint = (1 / len(buttons), 1)
             button.style = ADVENTURE_STYLE
-            button.with_border(width=3, color=arcade.color.GOLD)
+            # button.with_border(width=3, color=arcade.color.GOLD)
 
         return buttons
 
@@ -791,6 +791,7 @@ class CombatGridSection(arcade.Section):
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)
+
         self.encounter_room = None
         self._original_dims = width, height
 

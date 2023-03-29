@@ -3,12 +3,18 @@ import arcade.color
 import arcade.key
 from arcade import Window
 from arcade.gui.events import UIEvent
-from arcade.gui.widgets.buttons import UIFlatButton
+from arcade.gui.widgets.buttons import UIFlatButton, UITextureButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
 from src.entities.inventory import InventoryItem
-from src.gui.buttons import end_turn_button, get_new_missions_button, nav_button
+from src.gui.buttons import (
+    PixelatedNinePatch,
+    end_turn_button,
+    end_turn_handler,
+    get_new_missions_button,
+    nav_button,
+)
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
 from src.gui.sections import (
@@ -325,27 +331,55 @@ class RosterView(arcade.View):
         self.command_bar_section.flush()
         self.command_bar_section.manager.enable()
 
-    def recruit_button(self) -> UIFlatButton:
+    def recruit_button(self) -> UITextureButton:
         """Attached Handler will change from displaying the roster & team panes
         to showing recruits available for hire, with the appropriate command bar.
 
         Returns:
             UIFlatButton: Button with attached handler.
         """
-        btn = UIFlatButton(
-            text="Recruit "
+        main_tex = PixelatedNinePatch(
+            left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[7]
+        )
+        pressed_tex = PixelatedNinePatch(
+            left=1, right=1, bottom=3, top=3, texture=WindowData.buttons[9]
+        )
+        hovered_tex = PixelatedNinePatch(
+            left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[11]
+        )
+
+        btn = UITextureButton(
+            text="Recruit ",
+            texture=main_tex,
+            texture_hovered=hovered_tex,
+            texture_pressed=pressed_tex,
         )  # Space at the end here to stop the t getting clipped when drawn.
         btn.on_click = self.switch_to_recruitment_pane
         return btn
 
-    def roster_button(self) -> UIFlatButton:
+    def roster_button(self) -> UITextureButton:
         """Attached Handler will change from displaying the roster & team panes
         to showing recruits available for hire, with the appropriate command bar.
 
         Returns:
             UIFlatButton: Button with attached handler.
         """
-        btn = UIFlatButton(text="Roster")
+        main_tex = PixelatedNinePatch(
+            left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[7]
+        )
+        pressed_tex = PixelatedNinePatch(
+            left=1, right=1, bottom=3, top=3, texture=WindowData.buttons[9]
+        )
+        hovered_tex = PixelatedNinePatch(
+            left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[11]
+        )
+
+        btn = UITextureButton(
+            text="Roster",
+            texture=main_tex,
+            texture_hovered=hovered_tex,
+            texture_pressed=pressed_tex,
+        )
         btn.on_click = self.switch_to_roster_and_team_panes
         return btn
 
@@ -575,7 +609,7 @@ class CombatInputMode(BaseInputMode):
 
         # if not self.view.target_selection:
         #     return
-        
+
         match symbol:
             case arcade.key.UP:
                 self.view.target_selection.prev()
@@ -586,7 +620,7 @@ class CombatInputMode(BaseInputMode):
                 print(self.view.target_selection)
 
             case arcade.key.SPACE:
-                self.view.buttons[0].on_click(UIEvent(self))
+                self.view.end_turn_handler(self)
 
 
 class MenuInputMode(BaseInputMode):
@@ -612,6 +646,7 @@ class BattleView(arcade.View):
 
     def __init__(self, window: Window = None):
         super().__init__(window)
+
         self.combat_grid_section = CombatGridSection(
             left=0,
             bottom=WindowData.height / 2,
@@ -623,7 +658,9 @@ class BattleView(arcade.View):
         # CommandBar config
         self.buttons = [
             end_turn_button(self),
+            end_turn_button(self),
         ]
+
         self.command_bar_section = CommandBarSection(
             left=0,
             bottom=0,
@@ -632,13 +669,13 @@ class BattleView(arcade.View):
             buttons=self.buttons,
             prevent_dispatch_view={False},
         )
+        self.end_turn_handler = end_turn_handler(self)
 
         self.target_selection: Selection[tuple[Node, ...]] | None = None
         self.item_selection: Selection[list[InventoryItem]] | None = None
         self.item_menu_mode_allowed = True
         self.input_mode = None
         self.bind_input_modes()
-
         self.add_section(self.command_bar_section)
         self.add_section(self.combat_grid_section)
         eng.init_combat()

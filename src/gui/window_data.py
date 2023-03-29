@@ -42,6 +42,15 @@ class WindowData:
         margin=1,
     )
 
+    buttons = arcade.load_spritesheet(
+        "./assets/sprites/buttons.png",
+        sprite_height=16,
+        sprite_width=48,
+        columns=6,
+        count=24,
+        margin=0,
+    )
+
     indicators = arcade.load_spritesheet(
         "./assets/sprites/TRPGIsometricAssetPack_MapIndicators.png",
         sprite_height=8,

@@ -2,10 +2,12 @@ from typing import Callable
 
 import arcade
 from arcade import get_window
+from arcade.gui import NinePatchTexture
 from arcade.gui.events import UIEvent
-from arcade.gui.widgets.buttons import UIFlatButton
+from arcade.gui.widgets.buttons import UIFlatButton, UITextureButton
 
 from src.engine.init_engine import eng
+from src.gui.window_data import WindowData
 
 
 class CommandBarMixin:
@@ -21,6 +23,45 @@ class CommandBarMixin:
     @property
     def command_bar(self) -> list[UIFlatButton]:
         ...
+
+
+class PixelatedNinePatch(NinePatchTexture):
+    """
+    This only exists because I can't see any way to set the pixelated flag to True via the base NinePatchTexture.
+    The implementation of draw_sized here is literally identical, the only difference is the default for the pixelated param.
+    """
+
+    def draw_sized(
+        self,
+        *,
+        position: tuple[float, float] = (0, 0),
+        size: tuple[float, float],
+        pixelated: bool = True,
+        **kwargs
+    ):
+        """
+        Draw the 9-patch.
+
+        :param size: size of the 9-patch
+        """
+        # TODO support to draw at a given position
+        self.program.set_uniform_safe(
+            "texture_id", self._atlas.get_texture_id(self._texture.atlas_name)
+        )
+        if pixelated:
+            self._atlas.texture.filter = self._ctx.NEAREST, self._ctx.NEAREST
+        else:
+            self._atlas.texture.filter = self._ctx.LINEAR, self._ctx.LINEAR
+
+        self.program["position"] = position
+        self.program["start"] = self._left, self._bottom
+        self.program["end"] = self.width - self._right, self.height - self._top
+        self.program["size"] = size
+        self.program["t_size"] = self._texture.size
+
+        self._atlas.use_uv_texture(0)
+        self._atlas.texture.use(1)
+        self._geometry.render(self._program, vertices=1)
 
 
 UIEventHandler = Callable[[UIEvent], None]
@@ -42,7 +83,7 @@ def nav_handler(target: type[arcade.View]) -> UIEventHandler:
     return _handle
 
 
-def nav_button(target: type[arcade.View], text: str) -> UIFlatButton:
+def nav_button(target: type[arcade.View], text: str) -> UITextureButton:
     """A generic button for changing to a different View.
 
     Args:
@@ -50,9 +91,24 @@ def nav_button(target: type[arcade.View], text: str) -> UIFlatButton:
         text (str): The text to render on the button, typically the name of the view that will be displayed on click.
 
     Returns:
-        UIFlatButton: A button with a text label and an attached click handler.
+        UITextureButton: A button with a text label and an attached click handler.
     """
-    btn = UIFlatButton(text=text)
+    main_tex = PixelatedNinePatch(
+        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[7]
+    )
+    pressed_tex = PixelatedNinePatch(
+        left=1, right=1, bottom=3, top=3, texture=WindowData.buttons[9]
+    )
+    hovered_tex = PixelatedNinePatch(
+        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[11]
+    )
+
+    btn = UITextureButton(
+        text=text,
+        texture=main_tex,
+        texture_hovered=hovered_tex,
+        texture_pressed=pressed_tex,
+    )
     btn.on_click = nav_handler(target)
 
     return btn
@@ -62,8 +118,22 @@ def get_new_missions_handler(event: UIEvent) -> UIEventHandler:
     eng.refresh_mission_board()
 
 
-def get_new_missions_button() -> UIFlatButton:
-    btn = UIFlatButton(text="New Missions")
+def get_new_missions_button() -> UITextureButton:
+    main_tex = PixelatedNinePatch(
+        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[7]
+    )
+    pressed_tex = PixelatedNinePatch(
+        left=1, right=1, bottom=3, top=3, texture=WindowData.buttons[9]
+    )
+    hovered_tex = PixelatedNinePatch(
+        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[11]
+    )
+    btn = UITextureButton(
+        text="New Missions",
+        texture=main_tex,
+        texture_hovered=hovered_tex,
+        texture_pressed=pressed_tex,
+    )
     btn.on_click = get_new_missions_handler
 
     return btn
@@ -88,8 +158,24 @@ def end_turn_handler(view) -> UIEventHandler:
     return _handle
 
 
-def end_turn_button(view) -> UIFlatButton:
-    btn = UIFlatButton(text="CLICK ME TO ADVANCE!")
+def end_turn_button(view) -> UITextureButton:
+    main_tex = PixelatedNinePatch(
+        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[7]
+    )
+    pressed_tex = PixelatedNinePatch(
+        left=1, right=1, bottom=3, top=3, texture=WindowData.buttons[9]
+    )
+    hovered_tex = PixelatedNinePatch(
+        left=1, right=1, bottom=3, top=1, texture=WindowData.buttons[11]
+    )
+
+    btn = UITextureButton(
+        text="CLICK ME TO ADVANCE!",
+        texture=main_tex,
+        texture_pressed=pressed_tex,
+        texture_hovered=hovered_tex,
+    )
+
     btn.on_click = end_turn_handler(view)
 
     return btn
