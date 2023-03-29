@@ -97,7 +97,7 @@ class Locatable:
 
     def adjacent_locations(self) -> tuple[Node, ...]:
         """A getter for the tuple of nodes that are close enough to this Locatable for
-        a range 0 interevent
+        a range 0 interaction
         """
         # includes diagonals
         maximum_possile_adjacencies = (
