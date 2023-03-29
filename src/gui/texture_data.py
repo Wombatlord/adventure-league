@@ -4,17 +4,17 @@ import arcade
 from arcade import Texture
 from arcade.hitbox import BoundingHitBoxAlgorithm, HitBoxAlgorithm
 
-SpriteSheetSpec = tuple[tuple[str], dict[str, int | tuple | HitBoxAlgorithm]]
+SheetSpec = tuple[tuple[str], dict[str, int | tuple | HitBoxAlgorithm]]
 
-SingleTextureSpec = tuple[str,]
+TextureSpec = tuple[str,]
 
 
 class SingleTextureSpecs:
-    title_background: SingleTextureSpec = ("./assets/background_glacial_mountains.png",)
+    title_background: TextureSpec = ("./assets/background_glacial_mountains.png",)
 
 
 class SpriteSheetSpecs:
-    tiles: SpriteSheetSpec = (
+    tiles: SheetSpec = (
         ("./assets/sprites/Isometric_MedievalFantasy_Tiles.png",),
         {
             "sprite_height": 17,
@@ -26,7 +26,7 @@ class SpriteSheetSpecs:
         },
     )
 
-    fighters: SpriteSheetSpec = (
+    fighters: SheetSpec = (
         ("./assets/sprites/IsometricTRPGAssetPack_OutlinedEntities.png",),
         {
             "sprite_width": 16,
@@ -37,7 +37,7 @@ class SpriteSheetSpecs:
         },
     )
 
-    buttons: SpriteSheetSpec = (
+    buttons: SheetSpec = (
         ("./assets/sprites/buttons.png",),
         {
             "sprite_height": 16,
@@ -48,7 +48,7 @@ class SpriteSheetSpecs:
         },
     )
 
-    indicators: SpriteSheetSpec = (
+    indicators: SheetSpec = (
         ("./assets/sprites/TRPGIsometricAssetPack_MapIndicators.png",),
         {
             "sprite_height": 8,
@@ -60,7 +60,7 @@ class SpriteSheetSpecs:
     )
 
 
-def _load_sheet_from_spec(spec: SpriteSheetSpec) -> list[Texture]:
+def _load_sheet_from_spec(spec: SheetSpec) -> list[Texture]:
     args, kwargs = spec
     if not isinstance(args, tuple):
         raise TypeError(f"You have misconfigured a sprite sheet spec. {spec=}")
@@ -72,7 +72,7 @@ def _load_sheet_from_spec(spec: SpriteSheetSpec) -> list[Texture]:
     return arcade.load_spritesheet(*args, **kwargs, hit_box_algorithm=hitbox_algo)
 
 
-def _load_texture_from_spec(spec: SingleTextureSpec) -> Texture:
+def _load_texture_from_spec(spec: TextureSpec) -> Texture:
     return arcade.load_texture(*spec)
 
 
