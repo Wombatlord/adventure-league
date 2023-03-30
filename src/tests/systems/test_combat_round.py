@@ -54,9 +54,9 @@ class CombatRoundTest(TestCase):
             combat_round = CombatRound([merc], [enemy])
 
             while combat_round.continues():
-                for action in combat_round.do_turn():
+                for event in combat_round.do_turn():
                     # auto select first target
-                    if sel := action.get("target_selection"):
+                    if sel := event.get("target_selection"):
                         assert sel["on_confirm"](
                             0
                         ), "Something went wrong while selecting a target"
@@ -84,57 +84,56 @@ class CombatRoundTest(TestCase):
         # ======
         combat_round = CombatRound([merc], [enemy])
 
-        initiative_roll_actions, turn_actions = [], []
+        initiative_roll_events, turn_events = [], []
 
-        initiative_roll_actions.extend(combat_round.initiative_roll_actions)
+        initiative_roll_events.extend(combat_round.initiative_roll_events)
 
         # Assert
         # ======
         assert (
-            len(initiative_roll_actions) == 1
-            and "message" in initiative_roll_actions[0]
+            len(initiative_roll_events) == 1 and "message" in initiative_roll_events[0]
         ), (
             f"expected 2 entities in the turn order, \n"
-            f"got {initiative_roll_actions=}\n"
+            f"got {initiative_roll_events=}\n"
         )
 
         round_gen = combat_round.do_turn()
-        for action in round_gen:
-            turn_actions.append(action)
-            if sel := action.get("target_selection"):
+        for event in round_gen:
+            turn_events.append(event)
+            if sel := event.get("target_selection"):
                 assert sel["on_confirm"](
                     0
                 ), "we got an error while calling the on confirm"
                 break
 
-        dying_action = {}
+        dying_event = {}
         turns = [combat_round.do_turn(), combat_round.do_turn()]
 
         # iterate through the first turn
-        for action in turns[0]:
-            turn_actions.append(action)
-            if sel := action.get("target_selection"):
+        for event in turns[0]:
+            turn_events.append(event)
+            if sel := event.get("target_selection"):
                 assert sel["on_confirm"](
                     0
                 ), "Something went wrong while selecting a target"
-            if "dying" in action:
+            if "dying" in event:
                 # if somebody got clapped, record that
-                dying_action = action
+                dying_event = event
 
         # if nobody got clapped, keep fighting
-        if not dying_action:
-            for action in turns[1]:
-                turn_actions.append(action)
+        if not dying_event:
+            for event in turns[1]:
+                turn_events.append(event)
 
-                if "dying" in action:
-                    dying_action = action
+                if "dying" in event:
+                    dying_event = event
 
         assert len(combat_round.teams[0]) == 1, (
             f"expected one merc remains, {combat_round.teams[0]=} and {combat_round.teams[1]=}\n"
             f"{merc.fighter=}, {merc.fighter.retreating=}\n"
             f"{enemy.fighter=}, {enemy.fighter.incapacitated=}\n"
         )
-        assert dying_action, f"we expected a death, none occurred"
+        assert dying_event, f"we expected a death, none occurred"
         assert (
-            dying_action["dying"] is enemy
-        ), f"the enemy should be dead, got {dying_action=}"
+            dying_event["dying"] is enemy
+        ), f"the enemy should be dead, got {dying_event=}"

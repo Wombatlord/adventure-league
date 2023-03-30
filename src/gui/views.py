@@ -500,16 +500,6 @@ class CombatInputMode(BaseInputMode):
     name = "combat"
 
     def on_key_press(self, symbol: int, modifiers: int):
-        # if not self.view.target_selection and eng.awaiting_input:
-        #     match symbol:
-        #         case arcade.key.SPACE:
-        #             eng.next_combat_action()
-        #             eng.awaiting_input = False
-        #     return
-
-        # if not self.view.target_selection:
-        #     return
-
         match symbol:
             case arcade.key.UP:
                 self.view.target_selection.prev()

@@ -7,7 +7,7 @@ from src.entities.entity import Entity
 from src.entities.inventory import Consumable, Inventory, InventoryItem, Throwable
 from src.world.node import Node
 
-Action = dict[str, Any]
+Event = dict[str, Any]
 
 
 # A class attached to any Entity that can fight
@@ -68,7 +68,7 @@ class Fighter:
         self.xp_reward = dict.get("xp_reward")
         self.current_xp = dict.get("current_xp")
 
-    def request_target(self, targets: list[Fighter]) -> Action:
+    def request_target(self, targets: list[Fighter]) -> Event:
         paths = [
             *filter(
                 lambda p: p is not None,
@@ -223,12 +223,12 @@ class Fighter:
         is_incapacitated = self.owner.is_dead or self.retreating
         return is_incapacitated
 
-    def initial_health(self) -> Action:
+    def initial_health(self) -> Event:
         result = {}
         result.update(**self.owner.annotate_event({}))
         return result
 
-    def take_damage(self, amount) -> Action:
+    def take_damage(self, amount) -> Event:
         result = {}
         self.hp -= amount
         result.update(**self.owner.annotate_event({}))
@@ -240,7 +240,7 @@ class Fighter:
 
         return result
 
-    def attack(self, target: Entity | None = None) -> Action:
+    def attack(self, target: Entity | None = None) -> Event:
         if target is not None:
             self.provide_target(target.fighter)
 
@@ -292,7 +292,7 @@ class Fighter:
 
         return result
 
-    def consume_item(self) -> Generator[Action, None, None]:
+    def consume_item(self) -> Generator[Event, None, None]:
         item: Consumable = self._current_item or Consumable()
         self._current_item = None
         yield item.consume(self.owner.inventory)

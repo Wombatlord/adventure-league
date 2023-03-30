@@ -6,7 +6,7 @@ from src.entities.entity import Entity
 from src.entities.fighter import Fighter
 from src.entities.items import HealingPotion
 
-Action = dict[str, Any]
+Event = dict[str, Any]
 Hook = Callable[[], None]
 
 
@@ -32,10 +32,10 @@ class CombatRound:
             [member.fighter for member in team_a],
             [member.fighter for member in team_b],
         )
-        self.initiative_roll_actions = self._roll_initiative()
+        self.initiative_roll_events = self._roll_initiative()
 
-    def _roll_initiative(self) -> list[Action]:
-        actions = []
+    def _roll_initiative(self) -> list[Event]:
+        events = []
 
         combatants = [
             yob for yob in self.teams[0] + self.teams[1] if yob.incapacitated == False
@@ -55,13 +55,13 @@ class CombatRound:
 
         # drop the initiative for the turn order since the index is the battle_size - (initiative + 1)
         self._round_order = [combatant for combatant, _ in initiative_roll]
-        actions.append(
+        events.append(
             {
                 "message": f"{self._round_order[0].owner.name.name_and_title} goes first this turn"
             }
         )
 
-        return actions
+        return events
 
     def teams_of(self, combatant) -> Teams:
         team = 0
@@ -85,11 +85,11 @@ class CombatRound:
             )
         )
 
-    def do_turn(self) -> Generator[Action, None, None]:
+    def do_turn(self) -> Generator[Event, None, None]:
         """
         This will play out a turn if the current fighter at the start of the round order is an enemy.
-        If the fighter is a player character, it will instead emit a request_target action from the fighter,
-        initiating a transition into the player_turn() through the engines _generate_combat_actions() func.
+        If the fighter is a player character, it will instead emit a request_target event from the fighter,
+        initiating a transition into the player_turn() through the engines _generate_combat_events() func.
         """
         if len(self._round_order) == 0:
             # Stop the iteration when the round is over
@@ -108,7 +108,7 @@ class CombatRound:
         # This is where we wait for input on a player turn
         yield from self.gather_turn_choices(combatant, enemies)
 
-        # Play out the attack sequence for the fighter if it is an enemy and yield the actions.
+        # Play out the attack sequence for the fighter if it is an enemy and yield the events.
         combatant = self.current_combatant(pop=True)
 
         if not combatant.turn_is_forfeit():
@@ -116,7 +116,7 @@ class CombatRound:
 
     def gather_turn_choices(
         self, combatant: Fighter, enemies: list[Fighter]
-    ) -> Generator[Action, None, None]:
+    ) -> Generator[Event, None, None]:
         # If no item is explicitly chosen, a trivial consumable with no effects/message is chosen
         if combatant.is_enemy:
             yield combatant.choose_item()
@@ -138,7 +138,7 @@ class CombatRound:
 
                 yield from combatant.request_target(enemies)
 
-    def execute_turn_choices(self, combatant: Fighter) -> Generator[Action, None, None]:
+    def execute_turn_choices(self, combatant: Fighter) -> Generator[Event, None, None]:
         # Move toward the target as far as speed allows
         yield from combatant.consume_item()
         target = combatant.current_target()
@@ -157,7 +157,7 @@ class CombatRound:
 
         yield from self._check_for_retreat(combatant)
 
-    def _check_for_death(self, target) -> Action:
+    def _check_for_death(self, target) -> Event:
         name = target.owner.name.name_and_title
         if target.owner.is_dead:
             target.owner.die()
@@ -165,7 +165,7 @@ class CombatRound:
 
             yield {"dying": target.owner, "message": f"{name} is dead!"}
 
-    def _check_for_retreat(self, fighter: Fighter) -> Action:
+    def _check_for_retreat(self, fighter: Fighter) -> Event:
         result = {}
         if fighter.retreating:
             self._purge_fighter(fighter)

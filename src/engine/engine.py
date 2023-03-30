@@ -20,8 +20,8 @@ class MessagesWithAlphas(NamedTuple):
     alphas: list[int]
 
 
-Action = dict[str, Any]
-Turn = Generator[None, None, Action]  # <-
+Event = dict[str, Any]
+Turn = Generator[None, None, Event]  # <-
 Round = Generator[None, None, Turn]  # <- These are internal to the combat system
 Encounter = Generator[None, None, Round]
 Quest = Generator[None, None, Encounter]
@@ -35,9 +35,9 @@ class Engine:
     default_clock_value = 0.3
 
     def __init__(self) -> None:
-        self.action_queue: list[Action] = []
+        self.event_queue: list[Event] = []
         self.messages: list[str] = []
-        self.combat: Generator[None, None, Action]
+        self.combat: Generator[None, None, Event]
         self.awaiting_input: bool = False
         self.message_alphas: list[int] = []
         self.alpha_max: int = 255
@@ -103,10 +103,10 @@ class Engine:
         entity_pool = self.game_state.get_entity_pool()
         guild.recruit(selection_id, entity_pool.pool)
 
-    def process_action_queue(self) -> None:
+    def process_event_queue(self) -> None:
         while True:
             try:
-                event = self.action_queue.pop(0)
+                event = self.event_queue.pop(0)
 
             except IndexError:
                 break
@@ -121,14 +121,14 @@ class Engine:
             print(f"SOURCE: {__file__}; ERROR: Failed to select target with error: {e}")
             return False
 
-    def process_one(self, event: Action) -> None:
+    def process_one(self, event: Event) -> None:
         if "cleanup" in event:
             self.flush_all()
             return
 
         if "delay" in event:
             # Purely an instruction to the engine
-            self._handle_delay_action(event)
+            self._handle_delay_event(event)
             del event["delay"]
 
         if "message" in event:
@@ -137,7 +137,7 @@ class Engine:
         self.projection_dispatcher.publish(event)
         self.combat_dispatcher.publish(event)
 
-    def _handle_delay_action(self, event):
+    def _handle_delay_event(self, event):
         self.increase_update_clock_by_delay(event.get("delay", 0))
 
     def reset_update_clock(self):
@@ -167,22 +167,22 @@ class Engine:
 
     def set_target(self, target_choice) -> None:
         self.chosen_target = target_choice
-        self.next_combat_action()
+        self.next_combat_event()
         self.awaiting_input = False
 
-    def end_of_combat(self, win: bool = True) -> list[Action]:
+    def end_of_combat(self, win: bool = True) -> list[Event]:
         guild = self.game_state.get_guild()
         dungeon = self.game_state.get_dungeon()
 
         if win:
-            actions = self.team_triumphant_actions(guild, dungeon)
+            events = self.team_triumphant_events(guild, dungeon)
             self.game_state.guild.claim_rewards(dungeon)
         else:
-            actions = self.team_defeated(guild.team)
+            events = self.team_defeated(guild.team)
 
         self.game_state.dungeon = None
         self.mission_in_progress = False
-        return actions
+        return events
 
     def init_dungeon(self) -> None:
         mission_board = self.game_state.get_mission_board()
@@ -193,9 +193,9 @@ class Engine:
         self.messages = []
         self.message_alphas = []
         self.alpha_max = 255
-        self.combat = self._generate_combat_actions()
+        self.combat = self._generate_combat_events()
 
-    def initial_health_values(self, team, enemies) -> list[Action]:
+    def initial_health_values(self, team, enemies) -> list[Event]:
         result = []
 
         for combatant in team:
@@ -212,19 +212,19 @@ class Engine:
             (x + y) * grid_aspect[1],
         ) * constant_scale + Vec2(w / 2, 7 * h / 8)
 
-    def next_combat_action(self) -> bool:
+    def next_combat_event(self) -> bool:
         """
-        This is the source ==Action==> consumer connection
+        This is the source ==Event==> consumer connection
         """
         try:
-            # print(f"{self.__class__}.next_combat_action: trying next(self.combat)")
-            action = next(self.combat)
-            self.process_one(action)
+            # print(f"{self.__class__}.next_combat_event: trying next(self.combat)")
+            event = next(self.combat)
+            self.process_one(event)
             return True
         except StopIteration:
             return False
 
-    def _generate_combat_actions(self) -> Generator[Action, None, None]:
+    def _generate_combat_events(self) -> Generator[Event, None, None]:
         quest = self.game_state.dungeon.room_generator()
 
         yield {"message": Describer.describe_entrance(self), "delay": 3}
@@ -239,14 +239,14 @@ class Engine:
             )
 
             while encounter.enemies and self.game_state.guild.team.members:
-                # Beginning of encounter actions/state changes go here
+                # Beginning of encounter events/state changes go here
                 combat_round = CombatRound(
                     self.game_state.guild.team.members,
                     encounter.enemies,
                 )
 
-                # example of per-round actions
-                yield from combat_round.initiative_roll_actions
+                # example of per-round events
+                yield from combat_round.initiative_roll_events
 
                 # then we begin iterating turns
                 while combat_round.continues():
@@ -268,7 +268,7 @@ class Engine:
         yield {"cleanup": encounter}
 
     @staticmethod
-    def team_triumphant_actions(guild, dungeon) -> list[Action]:
+    def team_triumphant_events(guild, dungeon) -> list[Event]:
         results = []
 
         message = "\n".join(
@@ -283,7 +283,7 @@ class Engine:
         return results
 
     @staticmethod
-    def team_defeated(team) -> list[Action]:
+    def team_defeated(team) -> list[Event]:
         results = []
 
         results.append({"message": f"{team.name} defeated!"})
