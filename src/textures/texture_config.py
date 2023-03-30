@@ -19,13 +19,13 @@ class TextureButtonNinePatchConfig:
                 7
             ],  # <-- this says how to access texture data
         },
-        "pressed_texture": {
-            **boundaries,
-            "texture": lambda: TextureData.buttons[9],
-        },
         "hovered_texture": {
             **boundaries,
             "texture": lambda: TextureData.buttons[11],
+        },
+        "pressed_texture": {
+            **boundaries,
+            "texture": lambda: TextureData.buttons[9],
         },
     }
 
@@ -44,10 +44,19 @@ def load_nine_patch(config: dict) -> PixelatedNinePatch:
 
 
 def load_ui_texture_button(texture_config: dict, text: str) -> UITextureButton:
+    expected_keys = ("main_texture", "hovered_texture", "pressed_texture")
     kwargs = {k: load_nine_patch(v) for k, v in texture_config.items()}
+
+    for key in expected_keys:
+        if key in kwargs.keys():
+            raise KeyError(
+                f"Missing Key in {texture_config.keys()}: Expected {expected_keys=} got {kwargs.keys()=}"
+            )
+
     mt = kwargs["main_texture"]
     ht = kwargs["hovered_texture"]
     pt = kwargs["pressed_texture"]
+
     return UITextureButton(
         texture=mt, texture_hovered=ht, texture_pressed=pt, text=text
     )
