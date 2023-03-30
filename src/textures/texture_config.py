@@ -48,7 +48,7 @@ def load_ui_texture_button(texture_config: dict, text: str) -> UITextureButton:
     kwargs = {k: load_nine_patch(v) for k, v in texture_config.items()}
 
     for key in expected_keys:
-        if key in kwargs.keys():
+        if key not in kwargs.keys():
             raise KeyError(
                 f"Missing Key in {texture_config.keys()}: Expected {expected_keys=} got {kwargs.keys()=}"
             )
