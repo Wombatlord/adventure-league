@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable
 
 import arcade
 from arcade import get_window
@@ -6,8 +6,10 @@ from arcade.gui import NinePatchTexture
 from arcade.gui.events import UIEvent
 from arcade.gui.widgets.buttons import UIFlatButton, UITextureButton
 
+from src.config.texture_config import TextureButtonNinePatchConfig
 from src.engine.init_engine import eng
-from src.gui.texture_data import TextureData
+from src.gui.states import ViewStates
+from src.textures.pixelated_nine_patch import get_pixelated_nine_patch
 
 
 class CommandBarMixin:
@@ -25,49 +27,10 @@ class CommandBarMixin:
         ...
 
 
-class PixelatedNinePatch(NinePatchTexture):
-    """
-    This only exists because I can't see any way to set the pixelated flag to True via the base NinePatchTexture.
-    The implementation of draw_sized here is literally identical, the only difference is the default for the pixelated param.
-    """
-
-    def draw_sized(
-        self,
-        *,
-        position: tuple[float, float] = (0, 0),
-        size: tuple[float, float],
-        pixelated: bool = True,
-        **kwargs
-    ):
-        """
-        Draw the 9-patch.
-
-        :param size: size of the 9-patch
-        """
-        # TODO support to draw at a given position
-        self.program.set_uniform_safe(
-            "texture_id", self._atlas.get_texture_id(self._texture.atlas_name)
-        )
-        if pixelated:
-            self._atlas.texture.filter = self._ctx.NEAREST, self._ctx.NEAREST
-        else:
-            self._atlas.texture.filter = self._ctx.LINEAR, self._ctx.LINEAR
-
-        self.program["position"] = position
-        self.program["start"] = self._left, self._bottom
-        self.program["end"] = self.width - self._right, self.height - self._top
-        self.program["size"] = size
-        self.program["t_size"] = self._texture.size
-
-        self._atlas.use_uv_texture(0)
-        self._atlas.texture.use(1)
-        self._geometry.render(self._program, vertices=1)
-
-
 UIEventHandler = Callable[[UIEvent], None]
 
 
-def nav_handler(target: type[arcade.View]) -> UIEventHandler:
+def get_nav_handler(target: type[arcade.View]) -> UIEventHandler:
     """An UIEventHandler which changes the View.
 
     Args:
@@ -93,23 +56,17 @@ def nav_button(target: type[arcade.View], text: str) -> UITextureButton:
     Returns:
         UITextureButton: A button with a text label and an attached click handler.
     """
-    main_tex = PixelatedNinePatch(
-        left=16, right=16, bottom=6, top=9, texture=TextureData.buttons[7]
-    )
-    pressed_tex = PixelatedNinePatch(
-        left=16, right=16, bottom=6, top=9, texture=TextureData.buttons[9]
-    )
-    hovered_tex = PixelatedNinePatch(
-        left=16, right=16, bottom=6, top=9, texture=TextureData.buttons[11]
+    texture, texture_hovered, texture_pressed = get_pixelated_nine_patch(
+        TextureButtonNinePatchConfig.gold
     )
 
     btn = UITextureButton(
         text=text,
-        texture=main_tex,
-        texture_hovered=hovered_tex,
-        texture_pressed=pressed_tex,
+        texture=texture,
+        texture_hovered=texture_hovered,
+        texture_pressed=texture_pressed,
     )
-    btn.on_click = nav_handler(target)
+    btn.on_click = get_nav_handler(target)
 
     return btn
 
@@ -119,27 +76,131 @@ def get_new_missions_handler(event: UIEvent) -> UIEventHandler:
 
 
 def get_new_missions_button() -> UITextureButton:
-    main_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[7]
+    texture, texture_hovered, texture_pressed = get_pixelated_nine_patch(
+        TextureButtonNinePatchConfig.gold
     )
-    pressed_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=3, texture=TextureData.buttons[9]
-    )
-    hovered_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[11]
-    )
+
     btn = UITextureButton(
         text="New Missions",
-        texture=main_tex,
-        texture_hovered=hovered_tex,
-        texture_pressed=pressed_tex,
+        texture=texture,
+        texture_hovered=texture_hovered,
+        texture_pressed=texture_pressed,
     )
     btn.on_click = get_new_missions_handler
 
     return btn
 
 
-def end_turn_handler(view) -> UIEventHandler:
+def get_switch_to_recruitment_pane_handler(view) -> UIEventHandler:
+    """
+    Do any necessary reconfiguration of recruitment_pane_section when switching to this section from the roster and team display.
+    Ensures the section has appropriate window size values if the window was resized while recruitment section was disabled.
+    Assigns the correct buttons to the command bar for this section.
+
+    Attached to self.recruit_button as click_handler or called directly in on_key_press.
+    """
+
+    def _handle(event: UIEvent = None):
+        view.state = ViewStates.RECRUIT
+        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+            0
+        ].label.text = "Guild Coffers: "
+        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+            1
+        ].label.text = f"{eng.game_state.guild.funds} gp"
+        # Disable the roster_and_team_pane_section
+        view.roster_and_team_pane_section.enabled = False
+        view.roster_and_team_pane_section.manager.disable()
+
+        view.recruitment_pane_section.flush()
+        view.recruitment_pane_section.manager.enable()
+        view.recruitment_pane_section.enabled = True
+
+        # Set up CommandBar with appropriate buttons
+        view.command_bar_section.manager.disable()
+        view.command_bar_section.buttons = view.recruitment_pane_buttons
+        view.command_bar_section.flush()
+        view.command_bar_section.manager.enable()
+
+    return _handle
+
+
+def get_switch_to_roster_and_team_panes_handler(view) -> UIEventHandler:
+    """
+    Do any necessary reconfiguration of roster_and_team_pane_section when switching to this section from the recruitment display.
+    Ensures the section has appropriate window size values if the window was resized while roster_and_team_pane_section was disabled.
+    Assigns the correct buttons to the command bar for this section.
+
+    Attached to self.roster_button as click_handler and called directly in on_key_press.
+    """
+
+    def _handle(event: UIEvent = None):
+        view.state = ViewStates.ROSTER
+        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+            0
+        ].label.text = ""
+        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+            1
+        ].label.text = ""
+        # Disable the recruitment_pane_section
+        view.recruitment_pane_section.enabled = False
+
+        # Flush and setup the section so that new recruits are present and selectable via the UIManager
+        view.roster_and_team_pane_section.flush()
+        view.roster_and_team_pane_section.enabled = True
+
+        # Setup CommandBarSection with appropriate buttons
+        view.command_bar_section.manager.disable()
+        view.command_bar_section.buttons = view.roster_pane_buttons
+        view.command_bar_section.flush()
+        view.command_bar_section.manager.enable()
+
+    return _handle
+
+
+def recruit_button(view) -> UITextureButton:
+    """Attached Handler will change from displaying the roster & team panes
+    to showing recruits available for hire, with the appropriate command bar.
+
+    Returns:
+        UIFlatButton: Button with attached handler.
+    """
+    texture, texture_hovered, texture_pressed = get_pixelated_nine_patch(
+        TextureButtonNinePatchConfig.gold
+    )
+
+    btn = UITextureButton(
+        text="Recruit ",
+        texture=texture,
+        texture_hovered=texture_hovered,
+        texture_pressed=texture_pressed,
+    )  # Space at the end here to stop the t getting clipped when drawn.
+    btn.on_click = get_switch_to_recruitment_pane_handler(view)
+    return btn
+
+
+def roster_button(view) -> UITextureButton:
+    """Attached Handler will change from displaying the roster & team panes
+    to showing recruits available for hire, with the appropriate command bar.
+
+    Returns:
+        UIFlatButton: Button with attached handler.
+    """
+    texture, texture_hovered, texture_pressed = get_pixelated_nine_patch(
+        TextureButtonNinePatchConfig.gold
+    )
+
+    btn = UITextureButton(
+        text="Roster",
+        texture=texture,
+        texture_hovered=texture_hovered,
+        texture_pressed=texture_pressed,
+    )
+    btn.on_click = get_switch_to_roster_and_team_panes_handler(view)
+    return btn
+
+
+def get_end_turn_handler(view) -> UIEventHandler:
     def _handle(event: UIEvent):
         if not view.target_selection and eng.awaiting_input:
             eng.next_combat_action()
@@ -159,23 +220,17 @@ def end_turn_handler(view) -> UIEventHandler:
 
 
 def end_turn_button(view) -> UITextureButton:
-    main_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[7]
-    )
-    pressed_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=3, texture=TextureData.buttons[9]
-    )
-    hovered_tex = PixelatedNinePatch(
-        left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[11]
+    texture, texture_hovered, texture_pressed = get_pixelated_nine_patch(
+        TextureButtonNinePatchConfig.gold
     )
 
     btn = UITextureButton(
         text="CLICK ME TO ADVANCE!",
-        texture=main_tex,
-        texture_pressed=pressed_tex,
-        texture_hovered=hovered_tex,
+        texture=texture,
+        texture_hovered=texture_hovered,
+        texture_pressed=texture_pressed,
     )
 
-    btn.on_click = end_turn_handler(view)
+    btn.on_click = get_end_turn_handler(view)
 
     return btn

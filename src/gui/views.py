@@ -9,11 +9,14 @@ from arcade.gui.widgets.text import UILabel
 from src.engine.init_engine import eng
 from src.entities.inventory import InventoryItem
 from src.gui.buttons import (
-    PixelatedNinePatch,
     end_turn_button,
-    end_turn_handler,
+    get_end_turn_handler,
     get_new_missions_button,
+    get_switch_to_recruitment_pane_handler,
+    get_switch_to_roster_and_team_panes_handler,
     nav_button,
+    recruit_button,
+    roster_button,
 )
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
@@ -26,8 +29,8 @@ from src.gui.sections import (
     RosterAndTeamPaneSection,
 )
 from src.gui.states import ViewStates
-from src.gui.texture_data import TextureData
 from src.gui.window_data import WindowData
+from src.textures.texture_data import TextureData
 from src.utils.input_capture import BaseInputMode, Selection
 from src.world.node import Node
 
@@ -254,11 +257,11 @@ class RosterView(arcade.View):
 
         # CommandBar Config
         self.recruitment_pane_buttons = [
-            self.roster_button(),
+            roster_button(self),
             nav_button(GuildView, "Guild"),
         ]
         self.roster_pane_buttons = [
-            self.recruit_button(),
+            recruit_button(self),
             nav_button(GuildView, "Guild"),
         ]
         self.command_bar_section = CommandBarSection(
@@ -270,119 +273,13 @@ class RosterView(arcade.View):
             prevent_dispatch_view={False},
         )
 
+        self.show_roster = get_switch_to_roster_and_team_panes_handler(self)
+        self.show_recruitment = get_switch_to_recruitment_pane_handler(self)
+
         self.add_section(self.roster_and_team_pane_section)
         self.add_section(self.recruitment_pane_section)
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
-
-    def switch_to_recruitment_pane(self, event: UIEvent = None):
-        """
-        Do any necessary reconfiguration of recruitment_pane_section when switching to this section from the roster and team display.
-        Ensures the section has appropriate window size values if the window was resized while recruitment section was disabled.
-        Assigns the correct buttons to the command bar for this section.
-
-        Attached to self.recruit_button as click_handler or called directly in on_key_press.
-        """
-        self.state = ViewStates.RECRUIT
-        self.info_pane_section.manager.children[0][0].children[0].children[2].children[
-            0
-        ].label.text = "Guild Coffers: "
-        self.info_pane_section.manager.children[0][0].children[0].children[2].children[
-            1
-        ].label.text = f"{eng.game_state.guild.funds} gp"
-        # Disable the roster_and_team_pane_section
-        self.roster_and_team_pane_section.enabled = False
-        self.roster_and_team_pane_section.manager.disable()
-
-        self.recruitment_pane_section.flush()
-        self.recruitment_pane_section.manager.enable()
-        self.recruitment_pane_section.enabled = True
-
-        # Set up CommandBar with appropriate buttons
-        self.command_bar_section.manager.disable()
-        self.command_bar_section.buttons = self.recruitment_pane_buttons
-        self.command_bar_section.flush()
-        self.command_bar_section.manager.enable()
-
-    def switch_to_roster_and_team_panes(self, event: UIEvent = None):
-        """
-        Do any necessary reconfiguration of roster_and_team_pane_section when switching to this section from the recruitment display.
-        Ensures the section has appropriate window size values if the window was resized while roster_and_team_pane_section was disabled.
-        Assigns the correct buttons to the command bar for this section.
-
-        Attached to self.roster_button as click_handler and called directly in on_key_press.
-        """
-        self.state = ViewStates.ROSTER
-        self.info_pane_section.manager.children[0][0].children[0].children[2].children[
-            0
-        ].label.text = ""
-        self.info_pane_section.manager.children[0][0].children[0].children[2].children[
-            1
-        ].label.text = ""
-        # Disable the recruitment_pane_section
-        self.recruitment_pane_section.enabled = False
-
-        # Flush and setup the section so that new recruits are present and selectable via the UIManager
-        self.roster_and_team_pane_section.flush()
-        self.roster_and_team_pane_section.enabled = True
-
-        # Setup CommandBarSection with appropriate buttons
-        self.command_bar_section.manager.disable()
-        self.command_bar_section.buttons = self.roster_pane_buttons
-        self.command_bar_section.flush()
-        self.command_bar_section.manager.enable()
-
-    def recruit_button(self) -> UITextureButton:
-        """Attached Handler will change from displaying the roster & team panes
-        to showing recruits available for hire, with the appropriate command bar.
-
-        Returns:
-            UIFlatButton: Button with attached handler.
-        """
-        main_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[7]
-        )
-        pressed_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=3, texture=TextureData.buttons[9]
-        )
-        hovered_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[11]
-        )
-
-        btn = UITextureButton(
-            text="Recruit ",
-            texture=main_tex,
-            texture_hovered=hovered_tex,
-            texture_pressed=pressed_tex,
-        )  # Space at the end here to stop the t getting clipped when drawn.
-        btn.on_click = self.switch_to_recruitment_pane
-        return btn
-
-    def roster_button(self) -> UITextureButton:
-        """Attached Handler will change from displaying the roster & team panes
-        to showing recruits available for hire, with the appropriate command bar.
-
-        Returns:
-            UIFlatButton: Button with attached handler.
-        """
-        main_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[7]
-        )
-        pressed_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=3, texture=TextureData.buttons[9]
-        )
-        hovered_tex = PixelatedNinePatch(
-            left=1, right=1, bottom=3, top=1, texture=TextureData.buttons[11]
-        )
-
-        btn = UITextureButton(
-            text="Roster",
-            texture=main_tex,
-            texture_hovered=hovered_tex,
-            texture_pressed=pressed_tex,
-        )
-        btn.on_click = self.switch_to_roster_and_team_panes
-        return btn
 
     def _roster_entity(self) -> None:
         """Sets self.merc to the selected entry in the roster scroll window.
@@ -464,10 +361,10 @@ class RosterView(arcade.View):
 
             case arcade.key.R:
                 if self.state == ViewStates.ROSTER:
-                    self.switch_to_recruitment_pane()
+                    self.show_recruitment()
 
                 elif self.state == ViewStates.RECRUIT:
-                    self.switch_to_roster_and_team_panes()
+                    self.show_roster()
 
         self._log_state()
 
@@ -668,7 +565,7 @@ class BattleView(arcade.View):
             buttons=self.buttons,
             prevent_dispatch_view={False},
         )
-        self.end_turn_handler = end_turn_handler(self)
+        self.end_turn_handler = get_end_turn_handler(self)
 
         self.target_selection: Selection[tuple[Node, ...]] | None = None
         self.item_selection: Selection[list[InventoryItem]] | None = None

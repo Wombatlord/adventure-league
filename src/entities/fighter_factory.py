@@ -9,8 +9,8 @@ from src.entities.inventory import Inventory
 from src.entities.items import HealingPotion
 from src.entities.sprites import EntitySprite
 from src.gui.entity_texture_enums import *
-from src.gui.texture_data import TextureData
 from src.gui.window_data import WindowData
+from src.textures.texture_data import TextureData
 from src.utils.proc_gen import syllables
 
 MERC_TEXTURES = [

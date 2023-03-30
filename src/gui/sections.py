@@ -25,9 +25,9 @@ from src.gui.gui_components import (
 from src.gui.gui_utils import Cycle, ScrollWindow
 from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
-from src.gui.texture_data import TextureData
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
+from src.textures.texture_data import TextureData
 from src.utils.camera_controls import CameraController
 from src.world.isometry.transforms import Transform, draw_priority
 from src.world.level.room import basic_room
