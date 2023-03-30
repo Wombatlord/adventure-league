@@ -12,39 +12,38 @@ class TextureButtonNinePatchConfig:
         "top": 9,
     }
 
-    gold = {
-        "main_texture": {
-            **boundaries,
-            "texture": lambda: TextureData.buttons[
-                7
-            ],  # <-- this says how to access texture data
+    gold = lambda: {
+        "texture": {
+            **TextureButtonNinePatchConfig.boundaries,
+            "texture": lambda: TextureData.buttons[7], 
         },
         "hovered_texture": {
-            **boundaries,
+            **TextureButtonNinePatchConfig.boundaries,
             "texture": lambda: TextureData.buttons[11],
         },
         "pressed_texture": {
-            **boundaries,
+            **TextureButtonNinePatchConfig.boundaries,
             "texture": lambda: TextureData.buttons[9],
         },
     }
 
 
 def load_nine_patch(config: dict) -> PixelatedNinePatch:
-    tex_loader = {**config}.pop("texture")
+    tex_loader = config.pop("texture", None)
 
     if not callable(tex_loader):
         raise TypeError("should not be loaded yet!")
 
     kwargs = {
-        **config,
         "texture": tex_loader(),  # <---- at this point we access the TextureData
+        **config,
     }
+
     return PixelatedNinePatch(**kwargs)
 
 
 def load_ui_texture_button(texture_config: dict, text: str) -> UITextureButton:
-    expected_keys = ("main_texture", "hovered_texture", "pressed_texture")
+    expected_keys = ("texture", "hovered_texture", "pressed_texture")
     kwargs = {k: load_nine_patch(v) for k, v in texture_config.items()}
 
     for key in expected_keys:
@@ -53,10 +52,6 @@ def load_ui_texture_button(texture_config: dict, text: str) -> UITextureButton:
                 f"Missing Key in {texture_config.keys()}: Expected {expected_keys=} got {kwargs.keys()=}"
             )
 
-    mt = kwargs["main_texture"]
-    ht = kwargs["hovered_texture"]
-    pt = kwargs["pressed_texture"]
-
     return UITextureButton(
-        texture=mt, texture_hovered=ht, texture_pressed=pt, text=text
+        **kwargs, text=text
     )

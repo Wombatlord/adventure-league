@@ -58,9 +58,8 @@ def nav_button(target: type[arcade.View], text: str) -> UITextureButton:
         UITextureButton: A button with a text label and an attached click handler.
     """
     btn = load_ui_texture_button(
-        texture_config=TextureButtonNinePatchConfig.gold, text=text
+        texture_config=TextureButtonNinePatchConfig.gold(), text=text
     )
-    btn.text = text
     btn.on_click = get_nav_handler(target)
 
     return btn
@@ -72,7 +71,7 @@ def get_new_missions_handler(event: UIEvent) -> UIEventHandler:
 
 def get_new_missions_button() -> UITextureButton:
     btn = load_ui_texture_button(
-        texture_config=TextureButtonNinePatchConfig.gold, text="New Missions"
+        texture_config=TextureButtonNinePatchConfig.gold(), text="New Missions"
     )
     btn.on_click = get_new_missions_handler
 
@@ -154,7 +153,7 @@ def recruit_button(view) -> UITextureButton:
         UIFlatButton: Button with attached handler.
     """
     btn = load_ui_texture_button(
-        texture_config=TextureButtonNinePatchConfig.gold, text="Recruit"
+        texture_config=TextureButtonNinePatchConfig.gold(), text="Recruit"
     )
     btn.on_click = get_switch_to_recruitment_pane_handler(view)
     return btn
@@ -168,7 +167,7 @@ def roster_button(view) -> UITextureButton:
         UIFlatButton: Button with attached handler.
     """
     btn = load_ui_texture_button(
-        texture_config=TextureButtonNinePatchConfig.gold, text="Roster"
+        texture_config=TextureButtonNinePatchConfig.gold(), text="Roster"
     )
     btn.on_click = get_switch_to_roster_and_team_panes_handler(view)
     return btn
@@ -195,7 +194,7 @@ def get_end_turn_handler(view) -> UIEventHandler:
 
 def end_turn_button(view) -> UITextureButton:
     btn = load_ui_texture_button(
-        texture_config=TextureButtonNinePatchConfig.gold, text="Click me to Advance!"
+        texture_config=TextureButtonNinePatchConfig.gold(), text="Click me to Advance!"
     )
     btn.on_click = get_end_turn_handler(view)
 
