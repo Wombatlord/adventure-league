@@ -177,7 +177,7 @@ def roster_button(view) -> UITextureButton:
 def get_end_turn_handler(view) -> UIEventHandler:
     def _handle(event: UIEvent):
         if not view.target_selection and eng.awaiting_input:
-            eng.next_combat_action()
+            eng.next_combat_event()
             eng.awaiting_input = False
             return
 
