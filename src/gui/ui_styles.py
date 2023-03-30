@@ -16,7 +16,7 @@ Default style is provided. To create a style compose a dict as in ADVENTURE_STYL
 
 @dataclass
 class UIStyle(UIStyleBase):
-    font_size: int = 12
+    font_size: int = 24
     font_name: FontNameOrNames = WindowData.font
     font_color: Color = arcade.color.WHITE
     bg: Color = arcade.color.BLACK
@@ -27,23 +27,23 @@ class UIStyle(UIStyleBase):
 ADVENTURE_STYLE = {
     "normal": UIStyle(),
     "hover": UIStyle(
-        font_size=12,
+        font_size=24,
         font_name=WindowData.font,
-        font_color=arcade.color.GOLD,
+        font_color=arcade.color.GOLDENROD,
         bg=(41, 39, 41),
         border=None,
         border_width=0,
     ),
     "press": UIStyle(
-        font_size=12,
+        font_size=24,
         font_name=WindowData.font,
-        font_color=arcade.color.GOLD,
+        font_color=arcade.color.GOLD_FUSION,
         bg=arcade.color.BLACK,
         border=None,
         border_width=0,
     ),
     "disabled": UIStyle(
-        font_size=12,
+        font_size=24,
         font_name=WindowData.font,
         font_color=arcade.color.WHITE,
         bg=arcade.color.GRAY,
