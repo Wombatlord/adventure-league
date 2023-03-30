@@ -18,10 +18,10 @@ class TextureButtonNinePatchConfig:
         },
         "pressed_tex": {
             **boundaries,
-            "texture": TextureData.buttons[9],
+            "texture": TextureData.buttons[11],
         },
         "hovered_tex": {
             **boundaries,
-            "texture": TextureData.buttons[11],
+            "texture": TextureData.buttons[9],
         },
     }

@@ -1,15 +1,14 @@
-from typing import Any, Callable
+from typing import Callable
 
 import arcade
 from arcade import get_window
-from arcade.gui import NinePatchTexture
 from arcade.gui.events import UIEvent
 from arcade.gui.widgets.buttons import UIFlatButton, UITextureButton
 
 from src.config.texture_config import TextureButtonNinePatchConfig
 from src.engine.init_engine import eng
 from src.gui.states import ViewStates
-from src.textures.pixelated_nine_patch import get_pixelated_nine_patch
+from src.textures.button_textures import get_texture_button_textures
 
 
 class CommandBarMixin:
@@ -56,7 +55,7 @@ def nav_button(target: type[arcade.View], text: str) -> UITextureButton:
     Returns:
         UITextureButton: A button with a text label and an attached click handler.
     """
-    texture, texture_hovered, texture_pressed = get_pixelated_nine_patch(
+    texture, texture_hovered, texture_pressed = get_texture_button_textures(
         TextureButtonNinePatchConfig.gold
     )
 
@@ -76,7 +75,7 @@ def get_new_missions_handler(event: UIEvent) -> UIEventHandler:
 
 
 def get_new_missions_button() -> UITextureButton:
-    texture, texture_hovered, texture_pressed = get_pixelated_nine_patch(
+    texture, texture_hovered, texture_pressed = get_texture_button_textures(
         TextureButtonNinePatchConfig.gold
     )
 
@@ -165,7 +164,7 @@ def recruit_button(view) -> UITextureButton:
     Returns:
         UIFlatButton: Button with attached handler.
     """
-    texture, texture_hovered, texture_pressed = get_pixelated_nine_patch(
+    texture, texture_hovered, texture_pressed = get_texture_button_textures(
         TextureButtonNinePatchConfig.gold
     )
 
@@ -186,7 +185,7 @@ def roster_button(view) -> UITextureButton:
     Returns:
         UIFlatButton: Button with attached handler.
     """
-    texture, texture_hovered, texture_pressed = get_pixelated_nine_patch(
+    texture, texture_hovered, texture_pressed = get_texture_button_textures(
         TextureButtonNinePatchConfig.gold
     )
 
@@ -220,7 +219,7 @@ def get_end_turn_handler(view) -> UIEventHandler:
 
 
 def end_turn_button(view) -> UITextureButton:
-    texture, texture_hovered, texture_pressed = get_pixelated_nine_patch(
+    texture, texture_hovered, texture_pressed = get_texture_button_textures(
         TextureButtonNinePatchConfig.gold
     )
 
