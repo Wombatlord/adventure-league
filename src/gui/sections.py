@@ -27,6 +27,7 @@ from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
+from src.textures.texture_data import TextureData
 from src.utils.camera_controls import CameraController
 from src.world.isometry.transforms import Transform, draw_priority
 from src.world.level.room import basic_room
@@ -101,7 +102,7 @@ class CommandBarSection(arcade.Section, CommandBarMixin):
         for button in buttons:
             button.size_hint = (1 / len(buttons), 1)
             button.style = ADVENTURE_STYLE
-            button.with_border(width=3, color=arcade.color.GOLD)
+            # button.with_border(width=3, color=arcade.color.GOLD)
 
         return buttons
 
@@ -792,6 +793,7 @@ class CombatGridSection(arcade.Section):
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)
+
         self.encounter_room = None
         self._original_dims = width, height
 
@@ -843,21 +845,21 @@ class CombatGridSection(arcade.Section):
         )
         eng.combat_dispatcher.volatile_subscribe(
             topic="retreat",
-            handler_id="CombatGrid.clear_dead_sprites",
-            handler=self.clear_dead_sprites,
+            handler_id="CombatGrid.clear_retreating_sprites",
+            handler=self.clear_retreating_sprites,
         )
 
     def init_path(self) -> arcade.SpriteList:
         selected_path_sprites = arcade.SpriteList()
         start_sprite = BaseSprite(
-            WindowData.indicators[SelectionCursor.GREEN.value],
+            TextureData.indicators[SelectionCursor.GREEN.value],
             scale=self.SPRITE_SCALE,
             transform=self.transform,
             draw_priority_offset=0.1,
         ).offset_anchor((0, 4.5))
         selected_path_sprites.append(start_sprite)
 
-        main_path_tex = WindowData.indicators[SelectionCursor.GOLD_EDGE.value]
+        main_path_tex = TextureData.indicators[SelectionCursor.GOLD_EDGE.value]
         for _ in range(1, 19):
             sprite = BaseSprite(
                 main_path_tex,
@@ -869,7 +871,7 @@ class CombatGridSection(arcade.Section):
             selected_path_sprites.append(sprite)
 
         end_sprite = BaseSprite(
-            WindowData.indicators[SelectionCursor.RED.value],
+            TextureData.indicators[SelectionCursor.RED.value],
             scale=self.SPRITE_SCALE,
             transform=self.transform,
             draw_priority_offset=0.1,
@@ -944,11 +946,11 @@ class CombatGridSection(arcade.Section):
                 width=self.width,
             ).draw()
 
-        if eng.awaiting_input:
-            self.combat_screen.draw_turn_prompt()
+        # if eng.awaiting_input:
+        #     self.combat_screen.draw_turn_prompt()
 
-        if not eng.mission_in_progress:
-            self.combat_screen.draw_turn_prompt()
+        # if not eng.mission_in_progress:
+        #     self.combat_screen.draw_turn_prompt()
 
         self.combat_screen.draw_message()
         self.combat_screen.draw_stats()
@@ -975,7 +977,7 @@ class CombatGridSection(arcade.Section):
         self.world_sprite_list.clear()
         for node in self.encounter_room.layout:
             sprite = BaseSprite(
-                WindowData.tiles[89], scale=self.SPRITE_SCALE, transform=self.transform
+                TextureData.tiles[89], scale=self.SPRITE_SCALE, transform=self.transform
             )
             sprite.set_node(node)
             self.world_sprite_list.append(sprite)
@@ -1026,6 +1028,10 @@ class CombatGridSection(arcade.Section):
     def idle_or_attack(self, event):
         dude = event["attack"]
         dude.entity_sprite.swap_idle_and_attack_textures()
+
+    def clear_retreating_sprites(self, event):
+        retreating_dude = event.get("dying") or event.get("retreat")
+        retreating_dude.owner.entity_sprite.sprite.remove_from_sprite_lists()
 
     def clear_dead_sprites(self, event):
         """

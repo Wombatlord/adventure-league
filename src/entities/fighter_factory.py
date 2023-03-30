@@ -10,6 +10,7 @@ from src.entities.items import HealingPotion
 from src.entities.sprites import EntitySprite
 from src.gui.entity_texture_enums import *
 from src.gui.window_data import WindowData
+from src.textures.texture_data import TextureData
 from src.utils.proc_gen import syllables
 
 MERC_TEXTURES = [
@@ -119,7 +120,7 @@ def select_textures(species: str, fighter: Fighter):
     idle_textures, attack_textures = unpack_tex(choice(texture_opts))
 
     idle_one, idle_two, atk_one, atk_two = tuple(
-        map(lambda tex: WindowData.fighters[tex], idle_textures + attack_textures),
+        map(lambda tex: TextureData.fighters[tex], idle_textures + attack_textures),
     )
 
     return atk_one, atk_two, idle_one, idle_two
