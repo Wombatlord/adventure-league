@@ -5,10 +5,12 @@ from arcade import get_window
 from arcade.gui.events import UIEvent
 from arcade.gui.widgets.buttons import UIFlatButton, UITextureButton
 
-from src.config.texture_config import TextureButtonNinePatchConfig
 from src.engine.init_engine import eng
 from src.gui.states import ViewStates
-from src.textures.button_textures import get_texture_button_textures
+from src.textures.texture_config import (
+    TextureButtonNinePatchConfig,
+    load_ui_texture_button,
+)
 
 
 class CommandBarMixin:
@@ -55,16 +57,10 @@ def nav_button(target: type[arcade.View], text: str) -> UITextureButton:
     Returns:
         UITextureButton: A button with a text label and an attached click handler.
     """
-    texture, texture_hovered, texture_pressed = get_texture_button_textures(
-        TextureButtonNinePatchConfig.gold
+    btn = load_ui_texture_button(
+        texture_config=TextureButtonNinePatchConfig.gold, text=text
     )
-
-    btn = UITextureButton(
-        text=text,
-        texture=texture,
-        texture_hovered=texture_hovered,
-        texture_pressed=texture_pressed,
-    )
+    btn.text = text
     btn.on_click = get_nav_handler(target)
 
     return btn
@@ -75,15 +71,8 @@ def get_new_missions_handler(event: UIEvent) -> UIEventHandler:
 
 
 def get_new_missions_button() -> UITextureButton:
-    texture, texture_hovered, texture_pressed = get_texture_button_textures(
-        TextureButtonNinePatchConfig.gold
-    )
-
-    btn = UITextureButton(
-        text="New Missions",
-        texture=texture,
-        texture_hovered=texture_hovered,
-        texture_pressed=texture_pressed,
+    btn = load_ui_texture_button(
+        texture_config=TextureButtonNinePatchConfig.gold, text="New Missions"
     )
     btn.on_click = get_new_missions_handler
 
@@ -164,16 +153,9 @@ def recruit_button(view) -> UITextureButton:
     Returns:
         UIFlatButton: Button with attached handler.
     """
-    texture, texture_hovered, texture_pressed = get_texture_button_textures(
-        TextureButtonNinePatchConfig.gold
+    btn = load_ui_texture_button(
+        texture_config=TextureButtonNinePatchConfig.gold, text="Recruit"
     )
-
-    btn = UITextureButton(
-        text="Recruit ",
-        texture=texture,
-        texture_hovered=texture_hovered,
-        texture_pressed=texture_pressed,
-    )  # Space at the end here to stop the t getting clipped when drawn.
     btn.on_click = get_switch_to_recruitment_pane_handler(view)
     return btn
 
@@ -185,15 +167,8 @@ def roster_button(view) -> UITextureButton:
     Returns:
         UIFlatButton: Button with attached handler.
     """
-    texture, texture_hovered, texture_pressed = get_texture_button_textures(
-        TextureButtonNinePatchConfig.gold
-    )
-
-    btn = UITextureButton(
-        text="Roster",
-        texture=texture,
-        texture_hovered=texture_hovered,
-        texture_pressed=texture_pressed,
+    btn = load_ui_texture_button(
+        texture_config=TextureButtonNinePatchConfig.gold, text="Roster"
     )
     btn.on_click = get_switch_to_roster_and_team_panes_handler(view)
     return btn
@@ -219,17 +194,9 @@ def get_end_turn_handler(view) -> UIEventHandler:
 
 
 def end_turn_button(view) -> UITextureButton:
-    texture, texture_hovered, texture_pressed = get_texture_button_textures(
-        TextureButtonNinePatchConfig.gold
+    btn = load_ui_texture_button(
+        texture_config=TextureButtonNinePatchConfig.gold, text="Click me to Advance!"
     )
-
-    btn = UITextureButton(
-        text="CLICK ME TO ADVANCE!",
-        texture=texture,
-        texture_hovered=texture_hovered,
-        texture_pressed=texture_pressed,
-    )
-
     btn.on_click = get_end_turn_handler(view)
 
     return btn

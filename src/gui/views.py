@@ -182,6 +182,9 @@ class GuildView(arcade.View):
             case arcade.key.R:
                 roster_view = RosterView()
                 self.window.show_view(roster_view)
+            
+            case arcade.key.ESCAPE:
+                arcade.exit()
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
