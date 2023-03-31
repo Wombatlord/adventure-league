@@ -15,7 +15,7 @@ class TextureButtonNinePatchConfig:
     gold = lambda: {
         "texture": {
             **TextureButtonNinePatchConfig.boundaries,
-            "texture": lambda: SpriteSheetSpecs.buttons.load_one(7), 
+            "texture": lambda: SpriteSheetSpecs.buttons.load_one(7),
         },
         "texture_hovered": {
             **TextureButtonNinePatchConfig.boundaries,
@@ -45,12 +45,10 @@ def load_nine_patch(config: dict) -> PixelatedNinePatch:
 def load_ui_texture_button(texture_config: dict, text: str) -> UITextureButton:
     expected_keys = {"texture", "texture_hovered", "texture_pressed"}
     kwargs = {k: load_nine_patch(v) for k, v in texture_config.items()}
-    
-    if expected_keys - {*kwargs.keys()} != set():    
+
+    if expected_keys - {*kwargs.keys()} != set():
         raise KeyError(
             f"Missing Key in {texture_config.keys()}: Expected {expected_keys=} got {kwargs.keys()=}"
         )
 
-    return UITextureButton(
-        **kwargs,text=text
-    )
+    return UITextureButton(**kwargs, text=text)
