@@ -17,11 +17,11 @@ class TextureButtonNinePatchConfig:
             **TextureButtonNinePatchConfig.boundaries,
             "texture": lambda: SpriteSheetSpecs.buttons.load_one(7), 
         },
-        "hovered_texture": {
+        "texture_hovered": {
             **TextureButtonNinePatchConfig.boundaries,
             "texture": lambda: SpriteSheetSpecs.buttons.load_one(11),
         },
-        "pressed_texture": {
+        "texture_pressed": {
             **TextureButtonNinePatchConfig.boundaries,
             "texture": lambda: SpriteSheetSpecs.buttons.load_one(9),
         },
@@ -43,7 +43,7 @@ def load_nine_patch(config: dict) -> PixelatedNinePatch:
 
 
 def load_ui_texture_button(texture_config: dict, text: str) -> UITextureButton:
-    expected_keys = {"texture", "hovered_texture", "pressed_texture"}
+    expected_keys = {"texture", "texture_hovered", "texture_pressed"}
     kwargs = {k: load_nine_patch(v) for k, v in texture_config.items()}
     
     if expected_keys - {*kwargs.keys()} != set():    
@@ -52,5 +52,5 @@ def load_ui_texture_button(texture_config: dict, text: str) -> UITextureButton:
         )
 
     return UITextureButton(
-        **kwargs, text=text
+        **kwargs,text=text
     )
