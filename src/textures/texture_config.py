@@ -6,10 +6,10 @@ from src.textures.texture_data import SpriteSheetSpecs
 
 class TextureButtonNinePatchConfig:
     boundaries = {
-        "left": 16,
-        "right": 16,
-        "bottom": 6,
-        "top": 9,
+        "left": 32,
+        "right": 32,
+        "bottom": 12,
+        "top": 18,
     }
 
     gold = lambda: {

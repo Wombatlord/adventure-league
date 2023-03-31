@@ -68,11 +68,11 @@ class SpriteSheetSpecs:
     )
 
     buttons = SheetSpec(
-        args=("./assets/sprites/buttons.png",),
+        args=("./assets/sprites/buttons_scaled.png",),
         kwargs=_hashable(
             **{
-                "sprite_height": 16,
-                "sprite_width": 48,
+                "sprite_height": 32,
+                "sprite_width": 96,
                 "columns": 6,
                 "count": 24,
                 "margin": 0,
