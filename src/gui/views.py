@@ -2,8 +2,7 @@ import arcade
 import arcade.color
 import arcade.key
 from arcade import Window
-from arcade.gui.events import UIEvent
-from arcade.gui.widgets.buttons import UIFlatButton, UITextureButton
+from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
@@ -30,7 +29,7 @@ from src.gui.sections import (
 )
 from src.gui.states import ViewStates
 from src.gui.window_data import WindowData
-from src.textures.texture_data import TextureData
+from src.textures.texture_data import SingleTextureSpecs, SpriteSheetSpecs
 from src.utils.input_capture import BaseInputMode, Selection
 from src.world.node import Node
 
@@ -38,7 +37,7 @@ from src.world.node import Node
 class TitleView(arcade.View):
     def __init__(self, window: Window | None = None):
         super().__init__(window)
-        self.background = TextureData.title_background
+        self.background = SingleTextureSpecs.title_background.loaded
         self.title_y = -10
         self.start_y = -10
 
@@ -182,7 +181,7 @@ class GuildView(arcade.View):
             case arcade.key.R:
                 roster_view = RosterView()
                 self.window.show_view(roster_view)
-            
+
             case arcade.key.ESCAPE:
                 arcade.exit()
 

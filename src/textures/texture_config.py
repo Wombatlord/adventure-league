@@ -1,7 +1,7 @@
 from arcade.gui import UITextureButton
 
 from src.textures.pixelated_nine_patch import PixelatedNinePatch
-from src.textures.texture_data import TextureData
+from src.textures.texture_data import SingleTextureSpecs, SpriteSheetSpecs
 
 
 class TextureButtonNinePatchConfig:
@@ -15,15 +15,15 @@ class TextureButtonNinePatchConfig:
     gold = lambda: {
         "texture": {
             **TextureButtonNinePatchConfig.boundaries,
-            "texture": lambda: TextureData.buttons[7], 
+            "texture": lambda: SpriteSheetSpecs.buttons.loaded[7],
         },
         "hovered_texture": {
             **TextureButtonNinePatchConfig.boundaries,
-            "texture": lambda: TextureData.buttons[11],
+            "texture": lambda: SpriteSheetSpecs.buttons.loaded[11],
         },
         "pressed_texture": {
             **TextureButtonNinePatchConfig.boundaries,
-            "texture": lambda: TextureData.buttons[9],
+            "texture": lambda: SpriteSheetSpecs.buttons.loaded[9],
         },
     }
 
@@ -35,7 +35,7 @@ def load_nine_patch(config: dict) -> PixelatedNinePatch:
         raise TypeError("should not be loaded yet!")
 
     kwargs = {
-        "texture": tex_loader(),  # <---- at this point we access the TextureData
+        "texture": tex_loader(),  # <---- at this point we access the texture data
         **config,
     }
 
@@ -52,6 +52,4 @@ def load_ui_texture_button(texture_config: dict, text: str) -> UITextureButton:
                 f"Missing Key in {texture_config.keys()}: Expected {expected_keys=} got {kwargs.keys()=}"
             )
 
-    return UITextureButton(
-        **kwargs, text=text
-    )
+    return UITextureButton(**kwargs, text=text)

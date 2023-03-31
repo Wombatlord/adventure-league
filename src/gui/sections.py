@@ -27,7 +27,7 @@ from src.gui.selection_texture_enums import SelectionCursor
 from src.gui.states import MissionCards
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.gui.window_data import WindowData
-from src.textures.texture_data import TextureData
+from src.textures.texture_data import SingleTextureSpecs, SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
 from src.world.isometry.transforms import Transform, draw_priority
 from src.world.level.room import basic_room
@@ -852,14 +852,16 @@ class CombatGridSection(arcade.Section):
     def init_path(self) -> arcade.SpriteList:
         selected_path_sprites = arcade.SpriteList()
         start_sprite = BaseSprite(
-            TextureData.indicators[SelectionCursor.GREEN.value],
+            SpriteSheetSpecs.indicators.loaded[SelectionCursor.GREEN.value],
             scale=self.SPRITE_SCALE,
             transform=self.transform,
             draw_priority_offset=0.1,
         ).offset_anchor((0, 4.5))
         selected_path_sprites.append(start_sprite)
 
-        main_path_tex = TextureData.indicators[SelectionCursor.GOLD_EDGE.value]
+        main_path_tex = SpriteSheetSpecs.indicators.loaded[
+            SelectionCursor.GOLD_EDGE.value
+        ]
         for _ in range(1, 19):
             sprite = BaseSprite(
                 main_path_tex,
@@ -871,7 +873,7 @@ class CombatGridSection(arcade.Section):
             selected_path_sprites.append(sprite)
 
         end_sprite = BaseSprite(
-            TextureData.indicators[SelectionCursor.RED.value],
+            SpriteSheetSpecs.indicators.loaded[SelectionCursor.RED.value],
             scale=self.SPRITE_SCALE,
             transform=self.transform,
             draw_priority_offset=0.1,
@@ -977,7 +979,9 @@ class CombatGridSection(arcade.Section):
         self.world_sprite_list.clear()
         for node in self.encounter_room.layout:
             sprite = BaseSprite(
-                TextureData.tiles[89], scale=self.SPRITE_SCALE, transform=self.transform
+                SpriteSheetSpecs.tiles.loaded[89],
+                scale=self.SPRITE_SCALE,
+                transform=self.transform,
             )
             sprite.set_node(node)
             self.world_sprite_list.append(sprite)

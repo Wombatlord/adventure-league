@@ -1,6 +1,6 @@
 from copy import deepcopy
-from random import choice, randint
-from typing import Callable, NamedTuple
+from random import randint
+from typing import Callable, NamedTuple, Self
 
 from src.config.constants import merc_names
 from src.entities.entity import Entity, Name, Species
@@ -8,32 +8,23 @@ from src.entities.fighter import Fighter
 from src.entities.inventory import Inventory
 from src.entities.items import HealingPotion
 from src.entities.sprites import EntitySprite
-from src.gui.entity_texture_enums import *
-from src.gui.window_data import WindowData
-from src.textures.texture_data import TextureData
+from src.gui.entity_texture_enums import (
+    AnimatedSpriteConfig,
+    choose_boss_texture,
+    choose_goblin_textures,
+    choose_merc_textures,
+    choose_slime_textures,
+)
 from src.utils.proc_gen import syllables
 
-MERC_TEXTURES = [
-    MercenaryOneTextures,
-    MercenaryTwoTextures,
-    MercenaryThreeTextures,
-    MercenaryFourTextures,
-]
 
-LICH_TEXTURES = [
-    ImpTextures,
-    ShadowTextures,
-    LichTextures,
-]
-
-SLIME_TEXTURES = [SlimeTexture]
-
-GOBLIN_TEXTURES = [
-    GoblinOneTextures,
-    GoblinTwoTextures,
-    GoblinThreeTextures,
-    GoblinFourTextures,
-]
+class FactoryConfigurationError(ValueError):
+    @classmethod
+    def missing_mob_species(cls, species: str) -> Self:
+        return cls(
+            f"Could not choose sprite animation frames for character {species=}. Available species are "
+            f"{', '.join([*MOB_TEXTURE_MAPPING.keys()])}"
+        )
 
 
 NAME_GENS: dict[str, Callable[[], str]] = {
@@ -100,30 +91,28 @@ _boss = StatBlock(
     hp=(30, 30), defence=(2, 4), power=(2, 4), speed=1, is_enemy=True, is_boss=True
 )
 
+MOB_TEXTURE_MAPPING = {
+    Species.GOBLIN: choose_goblin_textures,
+    Species.SLIME: choose_slime_textures,
+}
 
-def select_textures(species: str, fighter: Fighter):
+
+def select_textures(species: str, fighter: Fighter) -> AnimatedSpriteConfig:
     """
     Set up textures for the fighter.
     As we have the name already, use that to determine particular enemy textures for hostile fighters.
     """
-    texture_opts = MERC_TEXTURES
-    match (fighter.is_enemy, fighter.is_boss):
-        case (True, False):
-            if species == Species.GOBLIN:
-                texture_opts = GOBLIN_TEXTURES
-            elif species == Species.SLIME:
-                texture_opts = SLIME_TEXTURES
+    if not fighter.is_enemy:
+        return choose_merc_textures()
 
-        case (True, True):
-            texture_opts = LICH_TEXTURES
+    elif fighter.is_boss:
+        return choose_boss_texture()
+    else:
+        choose_mob_textures = MOB_TEXTURE_MAPPING.get(species)
+        if choose_mob_textures is None:
+            raise FactoryConfigurationError.missing_mob_species(species)
 
-    idle_textures, attack_textures = unpack_tex(choice(texture_opts))
-
-    idle_one, idle_two, atk_one, atk_two = tuple(
-        map(lambda tex: TextureData.fighters[tex], idle_textures + attack_textures),
-    )
-
-    return atk_one, atk_two, idle_one, idle_two
+        return choose_mob_textures()
 
 
 def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factory:
@@ -138,12 +127,11 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         )
 
     def _attach_sprites(entity: Entity) -> Entity:
-        atk_one, atk_two, idle_one, idle_two = select_textures(
-            entity.species, entity.fighter
-        )
+        sprite_config = select_textures(entity.species, entity.fighter)
         entity.set_entity_sprite(
             EntitySprite(
-                idle_textures=(idle_one, idle_two), attack_textures=(atk_one, atk_two)
+                idle_textures=sprite_config.idle_textures,
+                attack_textures=sprite_config.attack_textures,
             )
         )
 
@@ -168,10 +156,6 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         return entity
 
     return factory
-
-
-def unpack_tex(tex_enum) -> tuple[tuple[int, int], tuple[int, int]]:
-    return tex_enum.idle_pair.value, tex_enum.attack_pair.value
 
 
 create_random_fighter = _mercenary.factory
