@@ -149,6 +149,7 @@ class Fighter:
         }
 
     def on_turn_start(self):
+        self.action_points.on_turn_start()
         self._forfeit_turn = False
 
     def choose_item(self):
