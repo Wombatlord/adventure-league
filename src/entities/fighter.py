@@ -1,20 +1,14 @@
 from __future__ import annotations
 
-import functools
-from typing import Any, Generator, Optional, Self
+from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
-from src.entities.actions import (
-    ActionCompendium,
-    ActionPoints,
-    AttackAction,
-    BaseAction,
-    ConsumeItemAction,
-    EndTurnAction,
-    MoveAction,
-)
+from src.entities.actions import ActionCompendium, ActionMeta, ActionPoints, BaseAction
 from src.entities.entity import Entity
 from src.entities.inventory import Consumable, Inventory, InventoryItem, Throwable
 from src.world.node import Node
+
+if TYPE_CHECKING:
+    from src.entities.dungeon import Room
 
 Event = dict[str, Any]
 
@@ -22,6 +16,7 @@ Event = dict[str, Any]
 # A class attached to any Entity that can fight
 class Fighter:
     _readied_action: BaseAction | None
+    _encounter_context: Room | None
 
     def __init__(
         self,
@@ -55,12 +50,26 @@ class Fighter:
         self._forfeit_turn = False
         self.action_points = ActionPoints()
         self._readied_action = None
+        self._encounter_context = None
 
     def set_owner(self, owner: Entity) -> Self:
         self.owner = owner
         if not self.owner.inventory:
             self.owner.inventory = Inventory(owner=owner, capacity=1)
         return self
+
+    def set_encounter_context(self, encounter: Room) -> None:
+        self._encounter_context = encounter
+        self.on_retreat_hooks.append(self.clear_encounter_context)
+
+    def get_encounter_context(self) -> Room | None:
+        return self._encounter_context
+
+    def clear_encounter_context(self) -> None:
+        self._encounter_context = None
+
+    def is_enemy_of(self, other: Fighter) -> bool:
+        return self.is_enemy != other.is_enemy
 
     def get_dict(self) -> dict:
         d = self.__dict__
@@ -98,41 +107,24 @@ class Fighter:
         self._readied_action = None
         yield from action
 
-    def does(self, action: BaseAction) -> bool:
+    def does(self, action: ActionMeta) -> bool:
         return action.cost(self) <= self.action_points.current
 
-    def currently_available(self, action_type) -> list[tuple[dict]]:
-        available = []
-
-        # I'm not sure if either of these are right, I just tried to follow the type hint.
-        available.append(({action_type.name: action_type},))
-
-        # if action_type == EndTurnAction:
-        #     available.append((action_type.details(self),))
-
-        # elif action_type == AttackAction:
-        #     available.append((action_type.details(self, self.current_target()),))
-
-        # elif action_type == ConsumeItemAction:
-        #     available.append((action_type.details(self),))
-
-        # If I don't pass a destination here, it is unhappy about NoneTypes.
-        # The action is also included in the yield from request_action_choice even if the cost is too high with this way.
-        # elif action_type == MoveAction:
-        #     available.append((action_type.details(self),)) 
-
-        return available
-
     def request_action_choice(self):
-        action_types = ActionCompendium.available_to(self)
+        action_types = ActionCompendium.all_available_to(self)
         choices = {}
         for name, action_type in action_types.items():
-            choices[name] = self.currently_available(action_type)
+            choices[name] = action_type.all_available_to(self)
+
+        event = {}
+        if not self.is_enemy:
+            event[
+                "message"
+            ] = f"{self.owner.name.name_and_title} requires your input milord"
 
         yield {
-            "message": f"{self.owner.name.name_and_title} requires your input milord",
-            "owner": self,
-            "await_input": self,  # This should go here?
+            **event,
+            "await_input": self,
             "choices": choices,
         }
 

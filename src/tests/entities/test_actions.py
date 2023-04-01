@@ -30,9 +30,8 @@ class ActionsTest(unittest.TestCase):
         return room
 
     def test_currently_available(self):
-        
         # No assertion here, this is just so I could investigate what was coming out of: next(merc.fighter.request_action_choice())
-        
+
         merc = self.get_entity()
         self.set_up_encounter(10, merc)
         event = next(merc.fighter.request_action_choice())

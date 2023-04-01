@@ -34,6 +34,7 @@ class Species:
 
 class Entity:
     entity_sprite: EntitySprite | None
+    inventory: Inventory | None
 
     def __init__(
         self,

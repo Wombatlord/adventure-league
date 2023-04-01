@@ -11,6 +11,9 @@ if TYPE_CHECKING:
     from src.entities.entity import Entity
 
 
+Path = tuple[Node]
+
+
 class Orientation(Enum):
     NORTH = Node(0, 1)
     EAST = Node(1, 0)
@@ -97,6 +100,32 @@ class Locatable:
                 "orientation": self.orientation,
             },
         }
+
+    def reachable_places(self, speed: int | None = None) -> tuple[Node, ...]:
+        nodes = set()
+        max_depth = speed or self.speed
+
+        def _recurse(start: Node, depth: int = 0):
+            if depth >= max_depth or start in nodes:
+                return
+            for location in start.adjacent:
+                if location in self.space:
+                    nodes.add(location)
+                    _recurse(location, depth=depth + 1)
+
+        _recurse(self.location)
+        return tuple(nodes)
+
+    def available_moves(self) -> list[Path]:
+        paths = []
+        for dest in self.reachable_places():
+            path = self.path_to_destination(dest)
+            if len(path) > self.speed:
+                continue
+
+            paths.append(path)
+
+        return paths
 
     def adjacent_locations(self) -> tuple[Node, ...]:
         """A getter for the tuple of nodes that are close enough to this Locatable for

@@ -29,7 +29,7 @@ class ActionCompendium:
     all_actions: dict[str, ActionMeta] = {}
 
     @classmethod
-    def available_to(cls, fighter: Fighter) -> dict[str, ActionMeta]:
+    def all_available_to(cls, fighter: Fighter) -> dict[str, ActionMeta]:
         return {
             name: action
             for name, action in cls.all_actions.items()
@@ -59,6 +59,9 @@ class ActionMeta(type):
             "cost": cls.cost(fighter, *args),
         }
 
+    def all_available_to(cls, fighter: Fighter) -> list[dict]:
+        raise NotImplementedError()
+
 
 class BaseAction:
     name = "BASE"
@@ -78,7 +81,7 @@ class EndTurnAction(BaseAction, metaclass=ActionMeta):
         return fighter.action_points.current
 
     @classmethod
-    def execute(cls):
+    def execute(cls, *args):
         pass
 
     @classmethod
@@ -87,6 +90,10 @@ class EndTurnAction(BaseAction, metaclass=ActionMeta):
             **ActionMeta.details(cls, fighter),
             "on_confirm": lambda: fighter.ready_action(cls(fighter)),
         }
+
+    @classmethod
+    def all_available(cls, fighter: Fighter) -> list[dict]:
+        return [cls.details(fighter)]
 
     def __init__(self, fighter: Fighter) -> None:
         self.fighter = fighter
@@ -114,6 +121,14 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
             "on_confirm": lambda: fighter.ready_action(cls(fighter, target)),
         }
 
+    @classmethod
+    def all_available(cls, fighter: Fighter) -> list[dict]:
+        return [
+            cls.details(fighter, occupant.fighter)
+            for occupant in fighter.get_encounter_context().occupants
+            if occupant.fighter.is_enemy_of(fighter)
+        ]
+
     def __init__(self, fighter: Fighter, target: Fighter) -> None:
         self.fighter = fighter
         self.target = target
@@ -135,11 +150,18 @@ class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
         yield from fighter.consume_item()
 
     @classmethod
-    def details(cls, fighter: Fighter) -> dict:
+    def details(cls, fighter: Fighter, consumable: Consumable) -> dict:
         return {
             **ActionMeta.details(cls, fighter),
-            "on_confirm": lambda: fighter.ready_action(cls(fighter)),
+            "on_confirm": lambda: fighter.ready_action(cls(fighter, consumable)),
         }
+
+    @classmethod
+    def all_available(cls, fighter: Fighter) -> list[dict]:
+        return [
+            cls.details(fighter, consumable)
+            for consumable in fighter.owner.inventory.consumables()
+        ]
 
     def __init__(self, fighter: Fighter, consumable: Consumable) -> None:
         self.fighter = fighter
@@ -190,6 +212,10 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
             "path": fighter.locatable.path_to_destination(destination),
             "on_confirm": lambda: fighter.ready_action(cls(fighter, destination)),
         }
+
+    @classmethod
+    def all_available(cls, fighter: Fighter) -> list[dict]:
+        return fighter.locatable.available_moves()
 
     def __init__(self, fighter: Fighter, destination: Node) -> None:
         self.fighter = fighter
