@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.entities.fighter import Fighter
     from src.world.node import Node
+    from src.entities.items import Consumable
 
 from typing import Any, Generator
 
@@ -40,7 +41,7 @@ class ActionMeta(type):
     name: str
 
     def __new__(cls, *args, **kwargs):
-        action_class = super().__new__(*args, **kwargs)
+        action_class = super().__new__(cls, *args, **kwargs)
         ActionCompendium.all_actions[action_class.name] = action_class
 
         return action_class
@@ -103,7 +104,7 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def execute(cls, fighter: Fighter, target: Fighter) -> Generator[Event]:
-        fighter.action_points.deduct_cost(cls.cost(fighter, target))
+        fighter.action_points.deduct_cost(cls.cost(fighter))
         yield from fighter.attack(target=target)
 
     @classmethod
@@ -119,6 +120,33 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
 
     def __call__(self) -> Generator[Event]:
         yield from self.execute(self.fighter, self.target)
+
+
+class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
+    name = "consume_item"
+
+    @classmethod
+    def cost(cls, consumable: Consumable) -> int:
+        return consumable.action_point_cost
+
+    @classmethod
+    def execute(cls, fighter: Fighter, consumable: Consumable) -> Generator[Event]:
+        fighter.action_points.deduct_cost(cls.cost(consumable))
+        yield from fighter.consume_item()
+
+    @classmethod
+    def details(cls, fighter: Fighter) -> dict:
+        return {
+            **ActionMeta.details(cls, fighter),
+            "on_confirm": lambda: fighter.ready_action(cls(fighter)),
+        }
+
+    def __init__(self, fighter: Fighter, consumable: Consumable) -> None:
+        self.fighter = fighter
+        self.consumable = consumable
+
+    def __call__(self) -> Generator[Event]:
+        yield from self.execute(self.fighter, self.consumable)
 
 
 class MoveAction(BaseAction, metaclass=ActionMeta):
