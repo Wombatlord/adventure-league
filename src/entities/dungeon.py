@@ -1,4 +1,9 @@
-from typing import Generator, Optional, Self
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Generator, Optional, Self
+
+if TYPE_CHECKING:
+    from src.entities.fighter import Fighter
 
 from src.entities.entity import Entity
 from src.entities.loot import Loot, Rewarder
@@ -57,6 +62,9 @@ class Room:
                 lambda f: Entity.flush_locatable(f.owner),
             ]
         )
+
+        fighter: Fighter = entity.fighter
+        fighter.set_encounter_context(self)
 
     def include_party(self, party: list[Entity]) -> None:
         for member in party:

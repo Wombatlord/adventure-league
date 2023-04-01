@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from src.entities.actions import AttackAction
 from src.entities.dungeon import Room
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
@@ -7,8 +8,55 @@ from src.entities.inventory import Inventory
 from src.systems.combat import CombatRound
 from src.tests.fixtures import FighterFixtures
 
+_fallback_selection = {"on_confirm": lambda _: False}
+
+
+class TestAI:
+    def __init__(self, preferred_choice: str, max_decisions: int | None = None):
+        self.preferred_choice = preferred_choice
+        self.max_decisions = max_decisions
+        self.total_decisions = 0
+
+    def choose(self, event: dict):
+        self.check_decision_count()
+
+        choices = event.get("choices")
+        if not choices:
+            raise ValueError(f"Nothing to choose between, {event=}")
+
+        options = choices.get(self.preferred_choice)
+        if not options:
+            raise ValueError(
+                f"No actions of type {self.preferred_choice} were offered, got {choices.keys()=}"
+            )
+
+        choice = options[0]
+        callback = choice.get("on_confirm")
+        if not callable(callback):
+            raise TypeError(f"The callback {choice.get('on_confirm')=} is not callable")
+
+        callback()
+        self.count_decision()
+
+    def check_decision_count(self):
+        if self.max_decisions is None:
+            return
+
+        if self.total_decisions >= self.max_decisions:
+            raise RuntimeError(
+                f"Hit specified max decisions. choice called "
+                + f"{self.total_decisions + 1} times"
+            )
+
+    def count_decision(self):
+        self.total_decisions += 1
+
 
 class CombatRoundTest(TestCase):
+    @classmethod
+    def get_aggressive_ai(self, max_decisions: int) -> TestAI:
+        return TestAI(AttackAction.name, max_decisions=max_decisions)
+
     @classmethod
     def get_entities(cls) -> tuple[Entity, Entity]:
         merc = Entity(
@@ -20,7 +68,7 @@ class CombatRoundTest(TestCase):
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
-
+        enemy.inventory = Inventory(owner=enemy, capacity=1)
         return merc, enemy
 
     @classmethod
@@ -41,25 +89,23 @@ class CombatRoundTest(TestCase):
         # Arrange
         # =======
         merc, enemy = self.get_entities()
+        ai = self.get_aggressive_ai(max_decisions=10)
         merc.fighter.speed = 4
 
         # A fight in a phone booth
         self.set_up_encounter(10, merc, enemy)
+        max_rounds, rounds = 20, 0
+        combat_round = None
 
         # Action
         # ======
-        max_rounds, rounds = 20, 0
-        combat_round = None
         while not merc.fighter.incapacitated and not enemy.fighter.incapacitated:
             combat_round = CombatRound([merc], [enemy])
-
             while combat_round.continues():
                 for event in combat_round.do_turn():
                     # auto select first target
-                    if sel := event.get("target_selection"):
-                        assert sel["on_confirm"](
-                            0
-                        ), "Something went wrong while selecting a target"
+                    if "await_input" in event:
+                        ai.choose(event)
 
             # assert we're actually progressing the state
             assert (
@@ -76,6 +122,7 @@ class CombatRoundTest(TestCase):
         # Arrange
         # =======
         merc, enemy = self.get_entities()
+        ai = self.get_aggressive_ai(max_decisions=10)
 
         # A fight in a phone booth
         self.set_up_encounter(2, merc, enemy)
@@ -100,22 +147,20 @@ class CombatRoundTest(TestCase):
         round_gen = combat_round.do_turn()
         for event in round_gen:
             turn_events.append(event)
-            if sel := event.get("target_selection"):
-                assert sel["on_confirm"](
-                    0
-                ), "we got an error while calling the on confirm"
+            if "await_input" in event:
+                print(event)
+                ai.choose(event)
                 break
 
+        breakpoint()
         dying_event = {}
         turns = [combat_round.do_turn(), combat_round.do_turn()]
 
         # iterate through the first turn
         for event in turns[0]:
             turn_events.append(event)
-            if sel := event.get("target_selection"):
-                assert sel["on_confirm"](
-                    0
-                ), "Something went wrong while selecting a target"
+            if "await_input" in event:
+                ai.choose(event)
             if "dying" in event:
                 # if somebody got clapped, record that
                 dying_event = event

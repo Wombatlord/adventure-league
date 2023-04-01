@@ -60,7 +60,10 @@ class Fighter:
 
     def set_encounter_context(self, encounter: Room) -> None:
         self._encounter_context = encounter
-        self.on_retreat_hooks.append(self.clear_encounter_context)
+        self.on_retreat_hooks.append(Fighter.clear_encounter_context)
+        self.owner.on_death_hooks.append(
+            lambda e: Fighter.clear_encounter_context(e.fighter)
+        )
 
     def get_encounter_context(self) -> Room | None:
         return self._encounter_context
@@ -91,8 +94,6 @@ class Fighter:
         self.current_xp = dict.get("current_xp")
 
     def ready_action(self, action: BaseAction) -> bool:
-        if self._readied_action:
-            return False
         self._readied_action = action
         return True
 
@@ -201,13 +202,6 @@ class Fighter:
         self._cleanse_targets()
         return self._prev_target
 
-    def provide_target(self, target: Fighter | None) -> bool:
-        if self._target is not None:
-            self._prev_target = self._target
-        self._target = target
-        self._cleanse_targets()
-        return True
-
     def _cleanse_targets(self):
         if self._prev_target and self._prev_target.incapacitated:
             self._prev_target = None
@@ -302,11 +296,6 @@ class Fighter:
         return result
 
     def attack(self, target: Entity | None = None) -> Event:
-        if target is not None:
-            self.provide_target(target.fighter)
-
-        target = self.current_target().owner
-
         result = {}
         if self.owner.is_dead:
             raise ValueError(f"{self.owner.name=}: I'm dead jim.")
@@ -347,9 +336,6 @@ class Fighter:
 
             if not self.is_enemy:
                 self.commence_retreat()
-
-        self._prev_target = target.fighter
-        self.provide_target(None)
 
         return result
 

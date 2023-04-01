@@ -112,7 +112,7 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
     @classmethod
     def execute(cls, fighter: Fighter, target: Fighter) -> Generator[Event]:
         fighter.action_points.deduct_cost(cls.cost(fighter))
-        yield from fighter.attack(target=target)
+        yield from fighter.attack(target=target.owner)
 
     @classmethod
     def details(cls, fighter: Fighter, target: Fighter) -> dict:
@@ -215,10 +215,11 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        return [
-            cls.details(fighter, path[-1])
-            for path in fighter.locatable.available_moves()
-        ]
+        available = []
+        for path in fighter.locatable.available_moves():
+            available.append(cls.details(fighter, path[-1]))
+
+        return available
 
     def __init__(self, fighter: Fighter, destination: Node) -> None:
         self.fighter = fighter

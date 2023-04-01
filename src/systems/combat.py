@@ -109,13 +109,9 @@ class CombatRound:
         # INTEGRATING WITH ACTIONS
         # TODO: before we can test this
         #  - In self.advance there are some state integrity checks around death and dishonour
-        #  - Consume Item action and Fighter.currently_available need an implementation.
         while combatant.can_act():
             # ready an action
-            if combatant.is_enemy:
-                combatant.ready_action(EndTurnAction(combatant))
-            else:
-                combatant.request_action_choice()
+            yield from combatant.request_action_choice()
 
             if not combatant.is_ready_to_act():
                 # if still not ready, from the top
@@ -123,6 +119,10 @@ class CombatRound:
             else:
                 # otherwise do that action!
                 yield from combatant.act()
+                yield from self._check_for_death(enemies)
+                yield from self._check_for_retreat(
+                    self.teams[self.teams_of(combatant).current]
+                )
 
     def gather_turn_choices(
         self, combatant: Fighter, enemies: list[Fighter]
@@ -167,28 +167,30 @@ class CombatRound:
 
         yield from self._check_for_retreat(combatant)
 
-    def _check_for_death(self, target) -> Event:
-        name = target.owner.name.name_and_title
-        if target.owner.is_dead:
-            target.owner.die()
-            self._purge_fighter(target)
+    def _check_for_death(self, team) -> Event:
+        for target in team:
+            name = target.owner.name.name_and_title
+            if target.owner.is_dead:
+                target.owner.die()
+                self._purge_fighter(target)
 
-            yield {"dying": target.owner, "message": f"{name} is dead!"}
+                yield {"dying": target.owner, "message": f"{name} is dead!"}
 
-    def _check_for_retreat(self, fighter: Fighter) -> Event:
-        result = {}
-        if fighter.retreating:
-            self._purge_fighter(fighter)
+    def _check_for_retreat(self, team) -> Event:
+        for fighter in team:
+            if fighter.retreating:
+                result = {}
+                self._purge_fighter(fighter)
 
-            result.update(**fighter.owner.annotate_event({}))
-            result.update(
-                {
-                    "retreat": fighter,
-                    "message": f"{fighter.owner.name.name_and_title} is retreating!",
-                }
-            )
+                result.update(**fighter.owner.annotate_event({}))
+                result.update(
+                    {
+                        "retreat": fighter,
+                        "message": f"{fighter.owner.name.name_and_title} is retreating!",
+                    }
+                )
 
-            yield result
+                yield result
 
     def _purge_fighter(self, fighter: Fighter) -> None:
         team_id = 0 if fighter in self.teams[0] else 1
