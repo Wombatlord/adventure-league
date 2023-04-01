@@ -92,7 +92,7 @@ class EndTurnAction(BaseAction, metaclass=ActionMeta):
         }
 
     @classmethod
-    def all_available(cls, fighter: Fighter) -> list[dict]:
+    def all_available_to(cls, fighter: Fighter) -> list[dict]:
         return [cls.details(fighter)]
 
     def __init__(self, fighter: Fighter) -> None:
@@ -122,7 +122,7 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
         }
 
     @classmethod
-    def all_available(cls, fighter: Fighter) -> list[dict]:
+    def all_available_to(cls, fighter: Fighter) -> list[dict]:
         return [
             cls.details(fighter, occupant.fighter)
             for occupant in fighter.get_encounter_context().occupants
@@ -157,7 +157,7 @@ class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
         }
 
     @classmethod
-    def all_available(cls, fighter: Fighter) -> list[dict]:
+    def all_available_to(cls, fighter: Fighter) -> list[dict]:
         return [
             cls.details(fighter, consumable)
             for consumable in fighter.owner.inventory.consumables()
@@ -214,7 +214,7 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
         }
 
     @classmethod
-    def all_available(cls, fighter: Fighter) -> list[dict]:
+    def all_available_to(cls, fighter: Fighter) -> list[dict]:
         return fighter.locatable.available_moves()
 
     def __init__(self, fighter: Fighter, destination: Node) -> None:
