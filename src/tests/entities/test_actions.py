@@ -1,13 +1,20 @@
 import unittest
 
-from src.entities.actions import ActionCompendium, EndTurnAction, AttackAction, ConsumeItemAction, MoveAction
-from src.entities.inventory import Inventory
-from src.entities.items import HealingPotion
+from src.entities.actions import (
+    ActionCompendium,
+    AttackAction,
+    ConsumeItemAction,
+    EndTurnAction,
+    MoveAction,
+)
 from src.entities.dungeon import Room
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
-from src.world.node import Node
+from src.entities.inventory import Inventory
+from src.entities.items import HealingPotion
 from src.tests.fixtures import FighterFixtures
+from src.world.node import Node
+
 
 class ActionsTest(unittest.TestCase):
     @classmethod
@@ -23,7 +30,7 @@ class ActionsTest(unittest.TestCase):
         )
 
         return merc, enemy
-    
+
     @classmethod
     def get_potion(cls) -> HealingPotion:
         potion_entity = Entity()
@@ -46,58 +53,50 @@ class ActionsTest(unittest.TestCase):
 
     def test_action_compendium_has_registered_all_actions(self):
         # Arrange
-        keys = ["end turn", "attack", "consume_item", "move"]
+        keys = {"end turn", "attack", "consume item", "move"}
+        actions = ActionCompendium.all_actions
 
         # Assert
-        for k in keys:
-            assert k in ActionCompendium.all_actions.keys() # Check all expected keys are contained in the ActionCompendium.all_actions
-        
-        for k, v in ActionCompendium.all_actions.items(): # Check each key contains the correct ActionMeta
-            if k == "end turn":
-                assert v == EndTurnAction
-            
-            if k =="attack":
-                assert v == AttackAction
-                
-            if k == "consume_item":
-                assert v == ConsumeItemAction
-                
-            if k == "move":
-                assert v == MoveAction
-            
-        
-    def test_action_schema(self):
+        assert keys == {*actions.keys()}
+
+        # Check each key contains the correct ActionMeta
+        assert actions.get("end turn") is EndTurnAction
+        assert actions.get("attack") is AttackAction
+        assert actions.get("consume item") is ConsumeItemAction
+        assert actions.get("move") is MoveAction
+
+    def test_request_action_event_schema(self):
         # Arrange
         merc, enemy = self.get_entities()
         potion = self.get_potion()
         merc.inventory.add_item_to_inventory(potion)
         room = self.set_up_encounter(10, merc, enemy)
         merc.fighter.set_encounter_context(room)
-        
+
         # Action
         event = next(merc.fighter.request_action_choice())
 
         # Assert
         assert isinstance(event, dict)
-        assert isinstance(event['choices'], dict)
+        assert isinstance(event["choices"], dict)
+        choices = event.get("choices")
 
-        for v in event['choices'].values(): # Traverse the object graph to check values associated to keys are of the correct Type.
-            for k in v:
-                if k == 'name': # The name of the ActionType
-                    assert isinstance(v, str)
-                
-                if k == 'actor': # The Fighter to which the actions are available
-                    assert isinstance(v, Fighter)
-                
-                if k == 'cost': # The cost of a particular action
-                    assert isinstance(v, int)
-                
-                if k == 'on_confirm': # The callable to be invoked to carry out the action
-                    assert callable(v)
-                
-                if k == 'destination': # The destination associated to a particular Move Action
-                    assert isinstance(v, Node)
-                
-                if k == 'path': # The path to a particular Move Action's destination.
-                    assert isinstance(v, tuple[Node])
-        
+        for option_list in choices.values():
+            for option in option_list:
+                self._assert_schema(option)
+
+    def _assert_schema(self, option: dict):
+        assert type(option.get("name")) is str
+        assert type(option.get("actor")) is Fighter
+        assert type(option.get("cost")) is int
+        assert callable(option.get("on_confirm"))
+
+        destination = option.get("destination")
+        assert destination is None or isinstance(
+            destination, Node
+        ), f"expected Node or None, got {type(destination)=}"
+
+        path = option.get("path")
+        assert path is None or isinstance(path, tuple)
+        if path:
+            assert all(isinstance(item, Node) for item in path)

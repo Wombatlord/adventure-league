@@ -138,7 +138,7 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
 
 
 class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
-    name = "consume_item"
+    name = "consume item"
 
     @classmethod
     def cost(cls, fighter: Fighter) -> int:
@@ -215,17 +215,10 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        
-        nodes = []
-        for d in fighter.locatable.available_moves():
-            nodes.append(d[-1])
-
         return [
-            cls.details(fighter, destination)
-            for destination in nodes
+            cls.details(fighter, path[-1])
+            for path in fighter.locatable.available_moves()
         ]
-        
-        # return fighter.locatable.available_moves()
 
     def __init__(self, fighter: Fighter, destination: Node) -> None:
         self.fighter = fighter
