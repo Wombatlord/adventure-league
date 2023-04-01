@@ -29,7 +29,10 @@ class Locatable:
         self.orientation = Node(*choice([o.value for o in Orientation]))
 
     def path_to_target(self, target) -> tuple[Node, ...]:
-        return self.space.get_path(self.location, target.location)
+        return self.path_to_destination(target.location)
+
+    def path_to_destination(self, destination: Node) -> tuple[Node, ...]:
+        return self.space.get_path(self.location, destination)
 
     def _no_move(self):
         return {
@@ -67,7 +70,7 @@ class Locatable:
 
         yield from self.traverse(path_to_target[: dest_index + 1])
 
-    def traverse(self, path: Sequence[Node, ...]) -> Generator[dict]:
+    def traverse(self, path: Sequence[Node]) -> Generator[dict]:
         if not path or len(path) == 1:
             yield self._no_move()
             return

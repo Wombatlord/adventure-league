@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 from typing import Any, Generator, Optional, Self
 
+from src.entities.actions import ActionCompendium, ActionPoints, BaseAction
 from src.entities.entity import Entity
 from src.entities.inventory import Consumable, Inventory, InventoryItem, Throwable
 from src.world.node import Node
@@ -12,6 +13,8 @@ Event = dict[str, Any]
 
 # A class attached to any Entity that can fight
 class Fighter:
+    _readied_action: BaseAction | None
+
     def __init__(
         self,
         is_enemy: bool,
@@ -42,6 +45,8 @@ class Fighter:
         self._in_combat = False
         self._current_item = None
         self._forfeit_turn = False
+        self.action_points = ActionPoints()
+        self._readied_action = None
 
     def set_owner(self, owner: Entity) -> Self:
         self.owner = owner
@@ -67,6 +72,41 @@ class Fighter:
         self.level = dict.get("level")
         self.xp_reward = dict.get("xp_reward")
         self.current_xp = dict.get("current_xp")
+
+    def ready_action(self, action: BaseAction) -> bool:
+        if self._readied_action:
+            return False
+        self._readied_action = action
+        return True
+
+    def is_ready_to_act(self) -> bool:
+        return self._readied_action is not None
+
+    def can_act(self) -> bool:
+        return self.action_points.current > 0
+
+    def act(self) -> Generator[Event]:
+        action = self._readied_action()
+        self._readied_action = None
+        yield from action
+
+    def does(self, action: BaseAction) -> bool:
+        return action.cost(self) <= self.action_points.current
+
+    def currently_available(self, action_type) -> list[tuple[dict]]:
+        pass
+
+    def request_action_choice(self):
+        action_types = ActionCompendium.available_to(self)
+        choices = {}
+        for name, action_type in action_types.items():
+            choices[name] = self.currently_available(action_type)
+
+        yield {
+            "message": f"{self.owner.name.name_and_title} requires your input milord",
+            "owner": self,
+            "choices": choices,
+        }
 
     def request_target(self, targets: list[Fighter]) -> Event:
         paths = [

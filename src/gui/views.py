@@ -20,13 +20,13 @@ from src.gui.buttons import (
 from src.gui.combat_sections import CombatGridSection
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
-from src.gui.missions_section import MissionsSection
-from src.gui.roster_and_recruit_sections import (
+from src.gui.missions_view_section import MissionsSection
+from src.gui.roster_view_sections import (
     RecruitmentPaneSection,
     RosterAndTeamPaneSection,
 )
 from src.gui.states import ViewStates
-from src.gui.utility_sections import CommandBarSection, InfoPaneSection
+from src.gui.view_components import CommandBarSection, InfoPaneSection
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SingleTextureSpecs
 from src.utils.input_capture import BaseInputMode, Selection

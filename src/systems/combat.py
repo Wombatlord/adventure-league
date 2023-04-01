@@ -2,6 +2,7 @@ from enum import Enum
 from random import shuffle
 from typing import Any, Callable, Generator, NamedTuple
 
+from src.entities.actions import EndTurnAction
 from src.entities.entity import Entity
 from src.entities.fighter import Fighter
 from src.entities.items import HealingPotion
@@ -105,14 +106,23 @@ class CombatRound:
         if combatant.incapacitated:
             raise Exception(f"Incapacitated combatant {combatant.get_dict()}: oops!")
 
-        # This is where we wait for input on a player turn
-        yield from self.gather_turn_choices(combatant, enemies)
+        # INTEGRATING WITH ACTIONS
+        # TODO: before we can test this
+        #  - In self.advance there are some state integrity checks around death and dishonour
+        #  - Consume Item action and Fighter.currently_available need an implementation.
+        while combatant.can_act():
+            # ready an action
+            if combatant.is_enemy:
+                combatant.ready_action(EndTurnAction(combatant))
+            else:
+                combatant.request_action_choice()
 
-        # Play out the attack sequence for the fighter if it is an enemy and yield the events.
-        combatant = self.current_combatant(pop=True)
-
-        if not combatant.turn_is_forfeit():
-            yield from self.execute_turn_choices(combatant)
+            if not combatant.is_ready_to_act():
+                # if still not ready, from the top
+                continue
+            else:
+                # otherwise do that action!
+                yield from combatant.act()
 
     def gather_turn_choices(
         self, combatant: Fighter, enemies: list[Fighter]
