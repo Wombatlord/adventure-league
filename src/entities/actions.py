@@ -126,8 +126,8 @@ class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
     name = "consume_item"
 
     @classmethod
-    def cost(cls, consumable: Consumable) -> int:
-        return consumable.action_point_cost
+    def cost(cls, fighter: Fighter) -> int:
+        return fighter.action_points.current
 
     @classmethod
     def execute(cls, fighter: Fighter, consumable: Consumable) -> Generator[Event]:

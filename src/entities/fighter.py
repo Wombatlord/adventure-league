@@ -3,7 +3,15 @@ from __future__ import annotations
 import functools
 from typing import Any, Generator, Optional, Self
 
-from src.entities.actions import ActionCompendium, ActionPoints, BaseAction
+from src.entities.actions import (
+    ActionCompendium,
+    ActionPoints,
+    AttackAction,
+    BaseAction,
+    ConsumeItemAction,
+    EndTurnAction,
+    MoveAction,
+)
 from src.entities.entity import Entity
 from src.entities.inventory import Consumable, Inventory, InventoryItem, Throwable
 from src.world.node import Node
@@ -94,7 +102,26 @@ class Fighter:
         return action.cost(self) <= self.action_points.current
 
     def currently_available(self, action_type) -> list[tuple[dict]]:
-        pass
+        available = []
+
+        # I'm not sure if either of these are right, I just tried to follow the type hint.
+        available.append(({action_type.name: action_type},))
+
+        # if action_type == EndTurnAction:
+        #     available.append((action_type.details(self),))
+
+        # elif action_type == AttackAction:
+        #     available.append((action_type.details(self, self.current_target()),))
+
+        # elif action_type == ConsumeItemAction:
+        #     available.append((action_type.details(self),))
+
+        # If I don't pass a destination here, it is unhappy about NoneTypes.
+        # The action is also included in the yield from request_action_choice even if the cost is too high with this way.
+        # elif action_type == MoveAction:
+        #     available.append((action_type.details(self),)) 
+
+        return available
 
     def request_action_choice(self):
         action_types = ActionCompendium.available_to(self)
@@ -105,6 +132,7 @@ class Fighter:
         yield {
             "message": f"{self.owner.name.name_and_title} requires your input milord",
             "owner": self,
+            "await_input": self,  # This should go here?
             "choices": choices,
         }
 
