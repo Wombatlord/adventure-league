@@ -13,7 +13,7 @@ Event = dict[str, Any]
 
 
 class ActionPoints:
-    def __init__(self, per_turn=2):
+    def __init__(self, per_turn=5):
         self.per_turn = per_turn
         self.current = self.per_turn
 
@@ -215,7 +215,17 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        return fighter.locatable.available_moves()
+        
+        nodes = []
+        for d in fighter.locatable.available_moves():
+            nodes.append(d[-1])
+
+        return [
+            cls.details(fighter, destination)
+            for destination in nodes
+        ]
+        
+        # return fighter.locatable.available_moves()
 
     def __init__(self, fighter: Fighter, destination: Node) -> None:
         self.fighter = fighter
