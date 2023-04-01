@@ -106,10 +106,11 @@ class Locatable:
         max_depth = speed or self.speed
 
         def _recurse(start: Node, depth: int = 0):
-            if depth >= max_depth or start in nodes:
+            nonlocal nodes
+            if depth >= max_depth:
                 return
             for location in start.adjacent:
-                if location in self.space:
+                if location in self.space and not location in nodes:
                     nodes.add(location)
                     _recurse(location, depth=depth + 1)
 
@@ -120,7 +121,7 @@ class Locatable:
         paths = []
         for dest in self.reachable_places():
             path = self.path_to_destination(dest)
-            if len(path) > self.speed:
+            if len(path) > self.speed + 1:
                 continue
 
             paths.append(path)
