@@ -621,7 +621,7 @@ class BattleView(arcade.View):
                 hide_stuff()
                 self.reset_input_mode()
                 eng.input_received()
-                return options[option_index]["on_confirm"](option_index)
+                return options[option_index]["on_confirm"]()
 
             selections[name] = Selection(
                 options=[opt["subject"] for opt in options],
