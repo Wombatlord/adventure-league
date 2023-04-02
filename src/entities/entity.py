@@ -1,4 +1,4 @@
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional, Self
 
 from src.entities.ai import AiInterface
 from src.entities.inventory import Inventory, InventoryItem
@@ -67,6 +67,10 @@ class Entity:
         self.set_entity_sprite(sprite)
 
         self.locatable = None
+
+    def with_inventory_capacity(self, capacity: int) -> Self:
+        self.inventory = Inventory(owner=self, capacity=capacity)
+        return self
 
     def set_entity_sprite(self, sprite: EntitySprite):
         self.entity_sprite = sprite

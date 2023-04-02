@@ -1,3 +1,10 @@
+from src.entities.dungeon import Room
+from src.entities.entity import Entity, Name
+from src.entities.fighter import Fighter
+from src.entities.inventory import Inventory
+from src.entities.items import HealingPotion
+
+
 class FighterFixtures:
     @staticmethod
     def strong(enemy=False, boss=False):
@@ -20,3 +27,81 @@ class FighterFixtures:
             "speed": 1,
             "is_boss": boss,
         }
+
+
+def _nth(n):
+    suffix = "th"
+    match n % 10, n % 100:
+        case 3, _:
+            suffix = "rd"
+        case 2, x if x != 12:
+            suffix = "nd"
+        case 1, x if x != 11:
+            suffix = "st"
+
+    return f"{n}{suffix}"
+
+
+class EncounterFactory:
+    @classmethod
+    def _make_strong(cls, enemy: bool, count=1) -> Entity:
+        return Entity(
+            name=Name(
+                first_name="strong", last_name="tactical", title=f"the {_nth(count)}"
+            ),
+            fighter=Fighter(**FighterFixtures.strong(enemy=enemy, boss=False)),
+        ).with_inventory_capacity(1)
+
+    @classmethod
+    def _make_baby(cls, enemy: bool, count=1) -> Entity:
+        return Entity(
+            name=Name(
+                first_name="baby", last_name="feeble", title=f"the {_nth(count)}"
+            ),
+            fighter=Fighter(**FighterFixtures.baby(enemy=enemy, boss=False)),
+        ).with_inventory_capacity(1)
+
+    @classmethod
+    def _make_team(cls, strong_count=0, baby_count=0, enemy=False) -> list[Entity]:
+        team = []
+        for i in range(strong_count):
+            team.append(cls._make_strong(enemy=enemy, count=i + 1))
+
+        for i in range(baby_count):
+            team.append(cls._make_baby(enemy=enemy, count=i + 1))
+
+        return team
+
+    @classmethod
+    def _get_entities(cls) -> tuple[Entity, Entity]:
+        merc = cls._make_strong(enemy=False)
+        enemy = Entity(
+            name=Name(first_name="baby", last_name="weak", title="the feeble"),
+            fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
+        )
+
+        return merc, enemy
+
+    @classmethod
+    def _get_potion(cls) -> HealingPotion:
+        potion_entity = Entity()
+        potion = HealingPotion(owner=potion_entity)
+        return potion
+
+    @classmethod
+    def _get_encounter(cls, size=2) -> Room:
+        return Room((size, size))
+
+    @classmethod
+    def one_vs_one_enemies_lose(
+        cls, room_size: int
+    ) -> tuple[Room, list[Entity], list[Entity]]:
+        room = cls._get_encounter(room_size)
+        mercs = room.include_party(cls._make_team(strong_count=1, enemy=False))
+        enemies = room.include_party(cls._make_team(baby_count=1, enemy=False))
+
+        e1, e2 = mercs + enemies
+
+        e1.locatable.location = room.space.minima
+        e2.locatable.location = room.space.maxima.south.west
+        return room, mercs, enemies

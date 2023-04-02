@@ -1,59 +1,24 @@
 from unittest import TestCase
 
-from src.entities.actions import AttackAction
+from src.entities.actions import AttackAction, MoveAction
 from src.entities.dungeon import Room
 from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
 from src.entities.inventory import Inventory
 from src.systems.combat import CombatRound
+from src.tests.ai_fixture import TestAI
 from src.tests.fixtures import FighterFixtures
-
-
-class TestAI:
-    def __init__(self, preferred_choice: str, max_decisions: int | None = None):
-        self.preferred_choice = preferred_choice
-        self.max_decisions = max_decisions
-        self.total_decisions = 0
-
-    def choose(self, event: dict):
-        self.check_decision_count()
-
-        choices = event.get("choices")
-        if not choices:
-            raise ValueError(f"Nothing to choose between, {event=}")
-
-        options = choices.get(self.preferred_choice)
-        if not options:
-            raise ValueError(
-                f"No actions of type {self.preferred_choice} were offered, got {choices.keys()=}"
-            )
-
-        choice = options[0]
-        callback = choice.get("on_confirm")
-        if not callable(callback):
-            raise TypeError(f"The callback {choice.get('on_confirm')=} is not callable")
-
-        callback()
-        self.count_decision()
-
-    def check_decision_count(self):
-        if self.max_decisions is None:
-            return
-
-        if self.total_decisions >= self.max_decisions:
-            raise RuntimeError(
-                f"Hit specified max decisions. choice called "
-                + f"{self.total_decisions + 1} times"
-            )
-
-    def count_decision(self):
-        self.total_decisions += 1
+from src.world.node import Node
 
 
 class CombatRoundTest(TestCase):
     @classmethod
     def get_aggressive_ai(self, max_decisions: int) -> TestAI:
-        return TestAI(AttackAction.name, max_decisions=max_decisions)
+        return TestAI(
+            AttackAction.name,
+            fallback_choices=(MoveAction.name,),
+            max_decisions=max_decisions,
+        )
 
     @classmethod
     def get_entities(cls) -> tuple[Entity, Entity]:
@@ -79,15 +44,16 @@ class CombatRoundTest(TestCase):
         for entity in (e1, e2):
             room.add_entity(entity)
 
-        e1.locatable.location = room.space.maxima.south.west
+        e1.locatable.location = room.space.maxima - Node(1, 1)
         e2.locatable.location = room.space.minima
+
         return room
 
     def test_combat_when_fighters_are_fast(self):
         # Arrange
         # =======
         merc, enemy = self.get_entities()
-        ai = self.get_aggressive_ai(max_decisions=10)
+        ai = self.get_aggressive_ai(max_decisions=100)
         merc.fighter.speed = 4
 
         # A fight in a phone booth
@@ -103,7 +69,9 @@ class CombatRoundTest(TestCase):
                 for event in combat_round.do_turn():
                     # auto select first target
                     if "await_input" in event:
+                        fighter = event["await_input"]
                         ai.choose(event)
+                        assert fighter.is_ready_to_act()
 
             # assert we're actually progressing the state
             assert (
@@ -146,11 +114,9 @@ class CombatRoundTest(TestCase):
         for event in round_gen:
             turn_events.append(event)
             if "await_input" in event:
-                print(event)
                 ai.choose(event)
                 break
 
-        breakpoint()
         dying_event = {}
         turns = [combat_round.do_turn(), combat_round.do_turn()]
 

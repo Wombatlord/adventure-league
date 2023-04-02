@@ -66,9 +66,10 @@ class Room:
         fighter: Fighter = entity.fighter
         fighter.set_encounter_context(self)
 
-    def include_party(self, party: list[Entity]) -> None:
+    def include_party(self, party: list[Entity]) -> list[Entity]:
         for member in party:
             self.add_entity(member)
+        return party
 
     def mob_spawns_points(self) -> Generator[Node, None, None]:
         while True:

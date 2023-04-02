@@ -13,7 +13,7 @@ Event = dict[str, Any]
 
 
 class ActionPoints:
-    def __init__(self, per_turn=5):
+    def __init__(self, per_turn=2):
         self.per_turn = per_turn
         self.current = self.per_turn
 
@@ -21,7 +21,7 @@ class ActionPoints:
         self.current = self.per_turn
 
     def deduct_cost(self, cost: int) -> int:
-        self.current -= cost
+        self.current -= abs(cost)
         return self.current
 
 
@@ -128,8 +128,11 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
         return [
             cls.details(fighter, occupant.fighter)
-            for occupant in fighter.get_encounter_context().occupants
-            if occupant.fighter.is_enemy_of(fighter)
+            for occupant in fighter.locatable.entities_in_range(
+                room=fighter.get_encounter_context(),
+                max_range=1,
+                entity_filter=lambda e: fighter.is_enemy_of(e.fighter),
+            )
         ]
 
     def __init__(self, fighter: Fighter, target: Fighter) -> None:
@@ -149,8 +152,8 @@ class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def execute(cls, fighter: Fighter, consumable: Consumable) -> Generator[Event]:
-        fighter.action_points.deduct_cost(cls.cost(consumable))
-        yield from fighter.consume_item()
+        fighter.action_points.deduct_cost(cls.cost(fighter))
+        yield from fighter.consume_item(consumable)
 
     @classmethod
     def details(cls, fighter: Fighter, consumable: Consumable) -> dict:
@@ -192,7 +195,8 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
         distance = len(locatable.path_to_destination(destination)[1:])
 
-        distance_cost = distance // locatable.speed
+        # We want this to be 0 if distance <= speed
+        distance_cost = (distance - 1) // locatable.speed
 
         base_cost = 1
 
@@ -204,7 +208,8 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
     def execute(
         cls, fighter: Fighter, destination: Node
     ) -> Generator[Event, None, None]:
-        fighter.action_points.deduct_cost(cls.cost(fighter, destination))
+        cost = cls.cost(fighter, destination)
+        fighter.action_points.deduct_cost(cost)
         path = fighter.locatable.path_to_destination(destination)
         yield from fighter.locatable.traverse(path)
 

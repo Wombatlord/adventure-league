@@ -99,12 +99,14 @@ class CombatRound:
             )
 
         combatant = self.current_combatant()
-        combatant.on_turn_start()
+
         opposing_team = self.teams_of(combatant).opposing
         enemies = self.get_enemies(opposing_team)
 
         if combatant.incapacitated:
             raise Exception(f"Incapacitated combatant {combatant.get_dict()}: oops!")
+
+        yield from combatant.on_turn_start()
 
         # INTEGRATING WITH ACTIONS
         while combatant.can_act():
@@ -118,9 +120,9 @@ class CombatRound:
                 # otherwise do that action!
                 yield from combatant.act()
                 yield from self._check_for_death(enemies)
-                yield from self._check_for_retreat(
-                    self.teams[self.teams_of(combatant).current]
-                )
+                yield from self._check_for_retreat(self.teams[0] + self.teams[1])
+        self.current_combatant(pop=True)
+        yield from combatant.on_turn_end()
 
     def _check_for_death(self, team) -> Event:
         for target in team:
@@ -164,6 +166,8 @@ class CombatRound:
                 return None
 
     def continues(self) -> bool:
+        if not self.teams[0] or not self.teams[1]:
+            return False
         if self.victor() is None and self._round_order:
             return True
 

@@ -169,9 +169,13 @@ class Fighter:
             },
         }
 
-    def on_turn_start(self):
+    def on_turn_start(self) -> Generator[Event]:
         self.action_points.on_turn_start()
         self._forfeit_turn = False
+        yield {"turn_start": self}
+
+    def on_turn_end(self) -> Generator[Event]:
+        yield {"turn_end": self}
 
     def choose_item(self):
         self._current_item = Consumable()
@@ -339,9 +343,7 @@ class Fighter:
 
         return result
 
-    def consume_item(self) -> Generator[Event, None, None]:
-        item: Consumable = self._current_item or Consumable()
-        self._current_item = None
+    def consume_item(self, item: Consumable) -> Generator[Event, None, None]:
         yield item.consume(self.owner.inventory)
 
     def chosen_consumable(self) -> Consumable:
