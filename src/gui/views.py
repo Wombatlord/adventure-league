@@ -235,27 +235,31 @@ class RosterView(arcade.View):
         self.instruction = UILabel(
             text=f"Assign members to the team before embarking on a mission!",
             width=WindowData.width,
-            font_size=18,
+            height=75,
+            multiline=True,
+            font_size=24,
             font_name=WindowData.font,
             align="center",
-            size_hint=(1, 1),
-            text_color=self.color,
+            size_hint=(1, None),
+            text_color=arcade.color.WHITE,
         )
         self.entity_info = UILabel(
             text="",
             width=WindowData.width,
-            font_size=18,
+            height=50,
+            font_size=24,
             font_name=WindowData.font,
+            text_color=arcade.color.WHITE,
             align="center",
-            size_hint=(1, 1),
+            # size_hint=(1, 0.1),
         )
 
         self.guild_funds = box_containing_horizontal_label_pair(
             (
-                (" ", "right", 18, arcade.color.WHITE),
-                (" ", "left", 18, arcade.color.GOLD),
+                (" ", "right", 24, arcade.color.WHITE),
+                (" ", "left", 24, arcade.color.GOLD),
             ),
-            padding=(0, 0, 0, 50),
+            padding=(0, 0, 0, 150),
             size_hint=(1, None),
         )
 
@@ -412,18 +416,21 @@ class MissionsView(arcade.View):
         self.instruction = UILabel(
             text="",
             width=WindowData.width,
-            font_size=18,
+            height=50,
+            font_size=24,
             font_name=WindowData.font,
             align="center",
-            size_hint=(1, 1),
+            size_hint=(1, None),
         )
         self.team_info = UILabel(
             text="",
             width=WindowData.width,
-            font_size=18,
+            height=75,
+            font_size=24,
             font_name=WindowData.font,
+            multiline=True,
             align="center",
-            size_hint=(1, 1),
+            size_hint=(1, None),
         )
         self.info_pane_section = InfoPaneSection(
             left=0,
