@@ -3,6 +3,7 @@ from random import randint
 from typing import Callable, NamedTuple, Self
 
 from src.config.constants import merc_names
+from src.entities.ai import NoCombatAI
 from src.entities.entity import Entity, Name, Species
 from src.entities.fighter import Fighter
 from src.entities.inventory import Inventory
@@ -149,6 +150,8 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
 
         if not entity.fighter.is_enemy:
             entity.inventory.add_item_to_inventory(HealingPotion(owner=entity))
+        else:
+            entity.ai = NoCombatAI(owner=entity)
 
         if attach_sprites:
             entity = _attach_sprites(entity)

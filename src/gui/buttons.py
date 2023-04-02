@@ -176,8 +176,7 @@ def roster_button(view) -> UITextureButton:
 def get_end_turn_handler(view) -> UIEventHandler:
     def _handle(event: UIEvent):
         if not view.target_selection and eng.awaiting_input:
-            eng.next_combat_event()
-            eng.awaiting_input = False
+            eng.input_received()
             return
 
         if not view.target_selection:
@@ -192,10 +191,10 @@ def get_end_turn_handler(view) -> UIEventHandler:
     return _handle
 
 
-def end_turn_button(view) -> UITextureButton:
+def end_turn_button(on_click) -> UITextureButton:
     btn = load_ui_texture_button(
         texture_config=TextureButtonNinePatchConfig.gold(), text="Click me to Advance!"
     )
-    btn.on_click = get_end_turn_handler(view)
+    btn.on_click = on_click
 
     return btn

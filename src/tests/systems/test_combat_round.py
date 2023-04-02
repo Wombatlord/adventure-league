@@ -8,8 +8,6 @@ from src.entities.inventory import Inventory
 from src.systems.combat import CombatRound
 from src.tests.fixtures import FighterFixtures
 
-_fallback_selection = {"on_confirm": lambda _: False}
-
 
 class TestAI:
     def __init__(self, preferred_choice: str, max_decisions: int | None = None):

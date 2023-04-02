@@ -57,6 +57,7 @@ class ActionMeta(type):
             "name": cls.name,
             "actor": fighter,
             "cost": cls.cost(fighter, *args),
+            "subject": None,
         }
 
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
@@ -81,8 +82,9 @@ class EndTurnAction(BaseAction, metaclass=ActionMeta):
         return fighter.action_points.current
 
     @classmethod
-    def execute(cls, *args):
-        pass
+    def execute(cls, fighter: Fighter, *args):
+        fighter.action_points.deduct_cost(cls.cost(fighter))
+        yield {"message": f"{fighter.owner.name} whistles a tune"}
 
     @classmethod
     def details(cls, fighter: Fighter):
@@ -119,6 +121,7 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
         return {
             **ActionMeta.details(cls, fighter),
             "on_confirm": lambda: fighter.ready_action(cls(fighter, target)),
+            "subject": target,
         }
 
     @classmethod
@@ -154,6 +157,7 @@ class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
         return {
             **ActionMeta.details(cls, fighter),
             "on_confirm": lambda: fighter.ready_action(cls(fighter, consumable)),
+            "subject": consumable,
         }
 
     @classmethod
@@ -208,8 +212,7 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
     def details(cls, fighter: Fighter, destination: Node) -> dict:
         return {
             **ActionMeta.details(cls, fighter, destination),
-            "destination": destination,
-            "path": fighter.locatable.path_to_destination(destination),
+            "subject": fighter.locatable.path_to_destination(destination),
             "on_confirm": lambda: fighter.ready_action(cls(fighter, destination)),
         }
 

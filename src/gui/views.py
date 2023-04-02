@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import arcade
 import arcade.color
 import arcade.key
@@ -6,6 +8,7 @@ from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
+from src.entities.actions import MoveAction
 from src.entities.inventory import InventoryItem
 from src.gui.buttons import (
     end_turn_button,
@@ -494,43 +497,34 @@ class MissionsView(arcade.View):
                         self.window.show_view(BattleView())
 
 
-class CombatInputMode(BaseInputMode):
-    name = "combat"
+class ActionSelectionInputMode(BaseInputMode):
+    name: str
+
+    def __init__(self, view: BattleView, selection: Selection, name: str):
+        super().__init__(self)
+        self.selection = selection
+        self.name = name
+        self.view = view
 
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
+            case arcade.key.TAB:
+                self.view.next_input_mode()
             case arcade.key.UP:
-                self.view.target_selection.prev()
-                print(self.view.target_selection)
-
+                self.selection.prev()
             case arcade.key.DOWN:
-                self.view.target_selection.next()
-                print(self.view.target_selection)
-
+                self.selection.next()
             case arcade.key.SPACE:
-                self.view.end_turn_handler(self)
+                self.selection.confirm()
 
 
-class MenuInputMode(BaseInputMode):
-    name = "menu"
-
-    def on_key_press(self, symbol: int, modifiers: int):
-        if not self.view.item_selection:
-            return
-
-        match symbol:
-            case arcade.key.P:
-                if not self.view.item_selection:
-                    return
-                ok = self.view.item_selection.confirm()
-                if ok:
-                    self.view.item_selection = None
-                    self.view.item_menu_mode_allowed = False
-                self.view.next_mode()
+class NoInputMode(BaseInputMode):
+    pass
 
 
 class BattleView(arcade.View):
     input_mode: BaseInputMode
+    selections: dict[str, Selection]
 
     def __init__(self, window: Window = None):
         super().__init__(window)
@@ -545,7 +539,9 @@ class BattleView(arcade.View):
 
         # CommandBar config
         self.buttons = [
-            end_turn_button(self),
+            end_turn_button(
+                lambda _: self.input_mode.on_key_press(arcade.key.SPACE, 0)
+            ),
         ]
 
         self.command_bar_section = CommandBarSection(
@@ -556,72 +552,92 @@ class BattleView(arcade.View):
             buttons=self.buttons,
             prevent_dispatch_view={False},
         )
-        self.end_turn_handler = get_end_turn_handler(self)
-
-        self.target_selection: Selection[tuple[Node, ...]] | None = None
-        self.item_selection: Selection[list[InventoryItem]] | None = None
+        self.selections = {}
         self.item_menu_mode_allowed = True
-        self.input_mode = None
+        self.input_modes = {}
+        self.input_mode = NoInputMode(self)
+        self._default_input_mode = None
+        self.confirm_selection = lambda: None
         self.bind_input_modes()
         self.add_section(self.command_bar_section)
         self.add_section(self.combat_grid_section)
         eng.init_combat()
 
     def bind_input_modes(self):
-        combat_mode = CombatInputMode(self)
-        menu_mode = MenuInputMode(self).set_next_mode(combat_mode)
-        self.input_mode = combat_mode.set_next_mode(menu_mode)
+        if not self.selections:
+            self.input_mode = NoInputMode(self)
+            return
 
-    def next_mode(self):
+        self.input_modes = {}
+        prev_name = None
+        for name, selection in sorted(
+            self.selections.items(), key=lambda s: int(s[0] != MoveAction.name)
+        ):
+            self.input_modes[name] = ActionSelectionInputMode(self, selection, name)
+            if prev_name:
+                self.input_modes[name].set_next_mode(self.input_modes[prev_name])
+            prev_name = name
+
+        self._default_input_mode = self.input_modes[MoveAction.name]
+        self.reset_input_mode()
+
+    def next_input_mode(self):
         self.input_mode = self.input_mode.get_next_mode()
+
+    def reset_input_mode(self):
+        self.input_mode = self._default_input_mode
 
     def on_show_view(self):
         self.command_bar_section.manager.enable()
-        eng.await_input()
         eng.combat_dispatcher.volatile_subscribe(
-            "item_selection",
-            "BattleView set_use_item_input_request",
-            self.set_use_item_input_request,
-        )
-        eng.combat_dispatcher.volatile_subscribe(
-            "target_selection", "BattleView.set_input_request", self.set_input_request
+            topic="await_input",
+            handler_id="BattleView.set_input_request",
+            handler=self.set_action_selection,
         )
 
     def on_draw(self):
         self.clear()
 
-    def set_input_request(self, event):
+    def set_action_selection(self, event):
+        if requester := event.get("await_input"):
+            if requester.owner.ai:
+                return
+
         eng.await_input()
 
-        selection = event["target_selection"]
+        choices = event.get("choices")
+        selections = {}
+        no_op = lambda: None
 
-        # this is called when the user confirms the selection
-        def on_confirm(path_index: int) -> bool:
-            self.combat_grid_section.hide_path()
-            eng.input_received()
-            return selection["on_confirm"](path_index)
+        for name, options in choices.items():
+            if not options:
+                continue
 
-        self.target_selection = Selection(
-            selection["paths"],
-            default=selection["default"],
-        ).set_confirmation(on_confirm)
+            hide_stuff = no_op
+            if name == MoveAction.name:
+                hide_stuff = lambda: self.combat_grid_section.hide_path()
 
-        # This is called every time the selection changes
-        def on_change():
-            self.combat_grid_section.show_path(self.target_selection.current)
+            def _on_confirm(option_index: int) -> bool:
+                hide_stuff()
+                self.reset_input_mode()
+                eng.input_received()
+                return options[option_index]["on_confirm"](option_index)
 
-        self.target_selection.set_on_change_selection(on_change)
+            selections[name] = Selection(
+                options=[opt["subject"] for opt in options],
+                default=0,
+            ).set_confirmation(_on_confirm)
 
-    def set_use_item_input_request(self, event):
-        selection = event["item_selection"]
+            update_selection = no_op
+            if name == MoveAction.name:
+                update_selection = lambda: self.combat_grid_section.show_path(
+                    selections[name].current
+                )
 
-        def on_confirm(item_idx):
-            eng.input_received()
-            return selection["on_confirm"](item_idx)
+            selections[name].set_on_change_selection(update_selection)
 
-        self.item_selection = Selection(
-            selection["inventory_contents"], default=selection["default_item"]
-        ).set_confirmation(on_confirm)
+        self.selections = selections
+        self.bind_input_modes()
 
     def on_key_release(self, _symbol: int, _modifiers: int):
         if not self.combat_grid_section.cam_controls.on_key_release(_symbol):
@@ -638,9 +654,6 @@ class BattleView(arcade.View):
                     eng.flush_subscriptions()
                     guild_view = GuildView()
                     self.window.show_view(guild_view)
-
-        if symbol == arcade.key.TAB:
-            self.next_mode()
 
         self.input_mode.on_key_press(symbol, modifiers)
 

@@ -1,7 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from src.engine.engine import Engine
+
 from random import randint
-from typing import Optional
 
 from src.config.constants import guild_names
+from src.entities.ai import CombatAISubscriber
 from src.entities.dungeon import Dungeon
 from src.entities.entity import Entity
 from src.entities.fighter_factory import RecruitmentPool
@@ -16,10 +23,10 @@ class GameState:
     entity_pool: Optional[RecruitmentPool] = None
     dungeon: Optional[Dungeon] = None
     mission_board: Optional[MissionBoard] = None
-    occupancy_handler: SpaceOccupancyHandler | None = None
 
-    def __init__(self, occupancy_handler: SpaceOccupancyHandler):
-        self.occupancy_handler = occupancy_handler
+    def __init__(self, eng: Engine):
+        self.occupancy_handler = SpaceOccupancyHandler(eng)
+        self.combat_ai_handler = CombatAISubscriber(eng)
 
     def setup(self):
         self.set_guild(

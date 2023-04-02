@@ -1,5 +1,6 @@
 from typing import Any, NamedTuple, Optional
 
+from src.entities.ai import AiInterface
 from src.entities.inventory import Inventory, InventoryItem
 from src.entities.locatable import Locatable
 from src.entities.sprites import EntitySprite
@@ -35,6 +36,7 @@ class Species:
 class Entity:
     entity_sprite: EntitySprite | None
     inventory: Inventory | None
+    ai: AiInterface | None
 
     def __init__(
         self,
@@ -46,6 +48,7 @@ class Entity:
         item: InventoryItem | None = None,
         is_dead: bool = False,
         species: str = Species.HUMAN,
+        ai: AiInterface | None = None,
     ) -> None:
         self.name = name
         self.cost = cost
@@ -56,6 +59,7 @@ class Entity:
         self.species = species
         # Entities with a fighter component can engage in combat.
         self.fighter = fighter
+        self.ai = ai
         if self.fighter:
             self.fighter.owner = self
 
