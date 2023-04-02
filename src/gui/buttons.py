@@ -89,10 +89,10 @@ def get_switch_to_recruitment_pane_handler(view) -> UIEventHandler:
 
     def _handle(event: UIEvent = None):
         view.state = ViewStates.RECRUIT
-        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
             0
         ].label.text = "Guild Coffers: "
-        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
             1
         ].label.text = f"{eng.game_state.guild.funds} gp"
         # Disable the roster_and_team_pane_section
@@ -123,10 +123,10 @@ def get_switch_to_roster_and_team_panes_handler(view) -> UIEventHandler:
 
     def _handle(event: UIEvent = None):
         view.state = ViewStates.ROSTER
-        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
             0
         ].label.text = ""
-        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
             1
         ].label.text = ""
         # Disable the recruitment_pane_section
