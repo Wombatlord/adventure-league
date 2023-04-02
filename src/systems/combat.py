@@ -107,8 +107,6 @@ class CombatRound:
             raise Exception(f"Incapacitated combatant {combatant.get_dict()}: oops!")
 
         # INTEGRATING WITH ACTIONS
-        # TODO: before we can test this
-        #  - In self.advance there are some state integrity checks around death and dishonour
         while combatant.can_act():
             # ready an action
             yield from combatant.request_action_choice()
@@ -123,49 +121,6 @@ class CombatRound:
                 yield from self._check_for_retreat(
                     self.teams[self.teams_of(combatant).current]
                 )
-
-    def gather_turn_choices(
-        self, combatant: Fighter, enemies: list[Fighter]
-    ) -> Generator[Event, None, None]:
-        # If no item is explicitly chosen, a trivial consumable with no effects/message is chosen
-        if combatant.is_enemy:
-            yield combatant.choose_item()
-        else:
-            yield combatant.request_item_use()
-
-        # If the combatant cannot acquire a target for whatever reason, this
-        # will hold up combat forever!
-        has_notified_item = False
-        while not combatant.current_target() and not combatant.turn_is_forfeit():
-            if combatant.is_enemy:
-                yield combatant.choose_nearest_target(enemies)
-            else:
-                if (
-                    item_name := combatant.chosen_consumable().name
-                ) and not has_notified_item:
-                    has_notified_item = True
-                    yield {"message": f"{combatant.owner.name} will use a {item_name}"}
-
-                yield from combatant.request_target(enemies)
-
-    def execute_turn_choices(self, combatant: Fighter) -> Generator[Event, None, None]:
-        # Move toward the target as far as speed allows
-        yield from combatant.consume_item()
-        target = combatant.current_target()
-        step = {}
-        for step in combatant.locatable.approach_target(target):
-            yield step
-
-        target_reached = step.get("move", {})["in_motion"] is False
-        if target_reached:
-            yield combatant.attack()
-
-        combatant._prev_target = target
-        combatant.provide_target(None)
-
-        yield from self._check_for_death(target)
-
-        yield from self._check_for_retreat(combatant)
 
     def _check_for_death(self, team) -> Event:
         for target in team:
