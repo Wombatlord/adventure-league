@@ -37,6 +37,13 @@ class SingleTextureSpecs:
         "./assets/background_glacial_mountains.png",
     )
 
+    banner = TextureSpec(
+        "./assets/sprites/banner.png",
+    )
+    
+    panel = TextureSpec(
+        "./assets/sprites/panel.png"
+    )
 
 class SpriteSheetSpecs:
     _cache: dict[SheetSpec, list[Texture]] = {}

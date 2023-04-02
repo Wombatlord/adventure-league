@@ -4,7 +4,7 @@ from arcade.gui import UIAnchorLayout, UIBoxLayout, UIFlatButton, UILabel, UIMan
 from src.gui.buttons import CommandBarMixin
 from src.gui.gui_components import single_box
 from src.gui.ui_styles import ADVENTURE_STYLE
-
+from src.textures.texture_data import SingleTextureSpecs
 
 class CommandBarSection(arcade.Section, CommandBarMixin):
     manager: UIManager
@@ -95,9 +95,10 @@ class InfoPaneSection(arcade.Section):
         self.manager = UIManager()
         self.margin = margin
         self.texts = texts
+        self.panel = SingleTextureSpecs.panel.loaded
 
         self.manager.add(
-            single_box(self.bottom, self.height, self.texts, (10, 0, 0, 0))
+            single_box(self.bottom, self.height, self.texts, (10, 0, 0, 0), panel=self.panel)
         )
 
     def flush(self):

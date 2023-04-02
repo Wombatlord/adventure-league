@@ -40,19 +40,25 @@ class TitleView(arcade.View):
     def __init__(self, window: Window | None = None):
         super().__init__(window)
         self.background = SingleTextureSpecs.title_background.loaded
+        self.banner = SingleTextureSpecs.banner.loaded
         self.title_y = -10
         self.start_y = -10
-
+        self.sprite_list = arcade.SpriteList()
+        self.banner_sprite = arcade.Sprite(self.banner, center_x=WindowData.width/2, center_y=-250, scale=2)
+        self.sprite_list.append(self.banner_sprite)
+    
     def on_show_view(self):
         """Called when switching to this view"""
         pass
 
     def on_update(self, delta_time: float):
-        if self.title_y < WindowData.height * 0.75:
-            self.title_y += 5
-
+        if self.banner_sprite.center_y < WindowData.height * 0.85:
+            self.banner_sprite.center_y += 5
+        
+        if self.banner_sprite.center_y > WindowData.height * 0.85:
+            self.banner_sprite.center_y = WindowData.height * 0.85
         if (
-            self.title_y == WindowData.height * 0.75
+            self.banner_sprite.center_y == WindowData.height * 0.85
             and self.start_y < WindowData.height * 0.3
         ):
             self.start_y += 5
@@ -67,16 +73,18 @@ class TitleView(arcade.View):
         )
 
         # Draw the scrolling title text. Scrolling is handled in self.on_update().
-        arcade.draw_text(
-            "ADVENTURE LEAGUE!",
-            WindowData.width / 2,
-            self.title_y,
-            arcade.color.GOLD,
-            font_name=WindowData.font,
-            font_size=40,
-            anchor_x="center",
-        )
+        # arcade.draw_text(
+        #     "ADVENTURE LEAGUE!",
+        #     WindowData.width / 2,
+        #     self.title_y,
+        #     arcade.color.GOLD,
+        #     font_name=WindowData.font,
+        #     font_size=40,
+        #     anchor_x="center",
+        # )
 
+        self.sprite_list.draw(pixelated=True)
+        
         arcade.draw_text(
             "Press G for a Guild View!",
             WindowData.width / 2,
@@ -98,6 +106,8 @@ class TitleView(arcade.View):
 
         WindowData.width = width
         WindowData.height = height
+        
+        self.banner_sprite.center_x = WindowData.width // 2
 
 
 class GuildView(arcade.View):
@@ -111,7 +121,7 @@ class GuildView(arcade.View):
         self.guild_label = UILabel(
             text=eng.game_state.guild.name,
             width=WindowData.width,
-            font_size=18,
+            font_size=24,
             font_name=WindowData.font,
             align="center",
             size_hint=(1, None),
