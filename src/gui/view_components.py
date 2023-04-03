@@ -96,7 +96,7 @@ class InfoPaneSection(arcade.Section):
         self.manager = UIManager()
         self.margin = margin
         self.texts = texts
-        self.panel = SingleTextureSpecs.panel.loaded
+        self.panel = SingleTextureSpecs.panel_highlighted.loaded
 
         self.manager.add(
             single_box(

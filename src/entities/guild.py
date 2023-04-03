@@ -104,7 +104,7 @@ class Team:
         entity.fighter.on_retreat_hooks.append(
             lambda f: self.move_fighter_to_roster(f.owner)
         )
-
+        self.owner.roster.remove(entity)
         entity.fighter.retreating = False
         self.members.append(entity)
 
@@ -115,9 +115,12 @@ class Team:
             raise TypeError(
                 f"Can only move Entities and the owners of passed components from the team to the roster, got {entity}",
             )
-        index = self.members.index(entity)
-        member = self.members.pop(index)
-        self.owner.roster.append(member)
+
+        entity.on_death_hooks = []
+        entity.fighter.on_retreat_hooks = []
+
+        self.members.remove(entity)
+        self.owner.roster.append(entity)
 
     def remove_dead_member(self, entity):
         if entity in self.members:

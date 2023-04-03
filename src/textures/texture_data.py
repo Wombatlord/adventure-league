@@ -41,7 +41,8 @@ class SingleTextureSpecs:
         "./assets/sprites/banner.png",
     )
 
-    panel = TextureSpec("./assets/sprites/panel.png")
+    panel_highlighted = TextureSpec("./assets/sprites/panel.png")
+    panel_darkened = TextureSpec("./assets/sprites/panel_dark.png")
 
 
 class SpriteSheetSpecs:

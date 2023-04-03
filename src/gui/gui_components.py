@@ -157,7 +157,7 @@ def single_box(
         anchor.add(
             child=UIImage(
                 texture=PixelatedNinePatch(
-                    left=12, right=12, bottom=12, top=12, texture=panel
+                    left=15, right=15, bottom=15, top=15, texture=panel
                 ),
                 size_hint=(1, 1),
             )
@@ -220,32 +220,36 @@ def horizontal_box_pair(
     left_size_hint=(0.5, 1),
     right_size_hint=(0.5, 1),
     padding: Top_Right_Bottom_Left_Padding = (0, 0, 0, 0),
-    panel=None,
+    panel_highlighted=None,
+    panel_darkened=None,
+    tex_reference_buffer: list | None = None,
 ) -> UIAnchorLayout:
+    if tex_reference_buffer is None:
+        tex_reference_buffer = []
+
     anchor = UIAnchorLayout(
         y=bottom,
         height=height,
         size_hint=(1, None),
     ).with_border(color=arcade.color.GOLD, width=0)
 
-    if panel:
-        l = UIImage(
-            texture=PixelatedNinePatch(
-                left=12, right=12, bottom=12, top=12, texture=panel
-            ),
-            size_hint=(0.5, 1),
-        )
-        r = UIImage(
-            texture=PixelatedNinePatch(
-                left=12, right=12, bottom=12, top=12, texture=panel
-            ),
-            size_hint=(0.5, 1),
-        )
+    l = UIImage(
+        texture=PixelatedNinePatch(
+            left=15, right=15, bottom=15, top=15, texture=panel_highlighted
+        ),
+        size_hint=(0.5, 1),
+    )
+    r = UIImage(
+        texture=PixelatedNinePatch(
+            left=15, right=15, bottom=15, top=15, texture=panel_darkened
+        ),
+        size_hint=(0.5, 1),
+    )
 
-        x = [l, r]
+    tex_reference_buffer.extend([l, r])
 
-        for p, anchor_x in zip(x, ["left", "right"]):
-            anchor.add(child=p, anchor_x=anchor_x)
+    for panel, anchor_x in zip([l, r], ["left", "right"]):
+        anchor.add(child=panel, anchor_x=anchor_x)
 
     for anchor_x, element, size_hint in zip(
         ["left", "right"],
