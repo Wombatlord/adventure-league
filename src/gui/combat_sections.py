@@ -1,5 +1,5 @@
 import arcade
-from pyglet.math import Vec2
+from pyglet.math import Mat3, Vec2, Vec3
 
 from src import config
 from src.engine.init_engine import eng
@@ -182,6 +182,7 @@ class CombatGridSection(arcade.Section):
             [
                 repr(self.cam_controls),
                 self.view.input_mode.name,
+                repr(self.view.input_mode.selection.options)[:50],
             ]
         )
 

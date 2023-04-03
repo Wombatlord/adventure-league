@@ -312,7 +312,7 @@ class Fighter:
         target_name = target.name.name_and_title
 
         succesful_hit: int = self.power - target.fighter.defence
-        result.update(**{"attack": self.owner})
+        result.update({"attack": self.owner})
 
         if not self.in_combat:
             self.set_in_combat = True

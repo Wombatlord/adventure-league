@@ -40,10 +40,9 @@ class SingleTextureSpecs:
     banner = TextureSpec(
         "./assets/sprites/banner.png",
     )
-    
-    panel = TextureSpec(
-        "./assets/sprites/panel.png"
-    )
+
+    panel = TextureSpec("./assets/sprites/panel.png")
+
 
 class SpriteSheetSpecs:
     _cache: dict[SheetSpec, list[Texture]] = {}

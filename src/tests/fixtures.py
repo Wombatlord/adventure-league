@@ -3,6 +3,7 @@ from src.entities.entity import Entity, Name
 from src.entities.fighter import Fighter
 from src.entities.inventory import Inventory
 from src.entities.items import HealingPotion
+from src.world.node import Node
 
 
 class FighterFixtures:
@@ -75,10 +76,7 @@ class EncounterFactory:
     @classmethod
     def _get_entities(cls) -> tuple[Entity, Entity]:
         merc = cls._make_strong(enemy=False)
-        enemy = Entity(
-            name=Name(first_name="baby", last_name="weak", title="the feeble"),
-            fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
-        )
+        enemy = cls._make_baby(enemy=True)
 
         return merc, enemy
 
@@ -103,5 +101,5 @@ class EncounterFactory:
         e1, e2 = mercs + enemies
 
         e1.locatable.location = room.space.minima
-        e2.locatable.location = room.space.maxima.south.west
+        e2.locatable.location = room.space.maxima - Node(1, 1)
         return room, mercs, enemies

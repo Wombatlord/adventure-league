@@ -151,17 +151,18 @@ def single_box(
         y=bottom,
         height=height,
         size_hint=(1, None),
-    )#.with_border(color=arcade.color.GOLD, width=border_width)
+    )  # .with_border(color=arcade.color.GOLD, width=border_width)
 
     if panel:
         anchor.add(
             child=UIImage(
                 texture=PixelatedNinePatch(
                     left=12, right=12, bottom=12, top=12, texture=panel
-                ), size_hint=(1,1),
+                ),
+                size_hint=(1, 1),
             )
         )
-    
+
     anchor.add(
         child=UIBoxLayout(
             vertical=vertical,
@@ -171,7 +172,6 @@ def single_box(
             top=padding[0], right=padding[1], bottom=padding[2], left=padding[3]
         )
     )
-
 
     return anchor
 

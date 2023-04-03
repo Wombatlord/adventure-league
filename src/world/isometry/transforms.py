@@ -90,8 +90,8 @@ class Transform:
         return Vec2(*screen_xy_projection) + self._translation
 
     def to_world(self, cam_coords: Vec2) -> Node:
-        embedded = Vec3(*(cam_coords - self._translation))
-        return Node(*(self._screen_to_world @ embedded))
+        embedded = Vec3(*(cam_coords - self._translation), -1)
+        return Node(*[round(coord) for coord in (self._screen_to_world @ embedded)[:2]])
 
 
 def _embed_mat3_in_mat4(embedded: Mat3) -> Mat4:

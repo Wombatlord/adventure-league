@@ -103,32 +103,18 @@ class Locatable:
             },
         }
 
-    def reachable_places(self, speed: int | None = None) -> tuple[Node, ...]:
-        nodes = set()
-        max_depth = speed or self.speed
-
-        def _recurse(start: Node, depth: int = 0):
-            nonlocal nodes
-            if depth >= max_depth:
-                return
-            for location in start.adjacent:
-                if location in self.space and location not in nodes:
-                    nodes.add(location)
-                    _recurse(location, depth=depth + 1)
-
-        _recurse(self.location)
-        return tuple(nodes)
-
-    def available_moves(self) -> list[Path]:
+    def available_moves(self, speed: int | None = None) -> tuple[tuple[Node, ...], ...]:
         paths = []
-        for dest in self.reachable_places():
-            path = self.path_to_destination(dest)
-            if len(path) > self.speed + 1:
+        for node in self.space.all_included_nodes():
+            path = self.path_to_destination(node)
+            if path is None or len(path) <= 1:
+                continue
+            if len(path) > speed + 1:
                 continue
 
             paths.append(path)
 
-        return paths
+        return tuple(paths)
 
     def adjacent_locations(self) -> tuple[Node, ...]:
         """A getter for the tuple of nodes that are close enough to this Locatable for

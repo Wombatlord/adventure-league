@@ -49,8 +49,8 @@ class ActionsTest(unittest.TestCase):
         room.add_entity(e1)
         room.add_entity(e2)
 
-        e1.locatable.location = room.space.minima.south.east
-        e2.locatable.location = room.space.maxima.south.east
+        e1.locatable.location = room.space.minima
+        e2.locatable.location = room.space.maxima - Node(1, 1)
         return room
 
     def test_action_compendium_has_registered_all_actions(self):

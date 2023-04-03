@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from functools import lru_cache
 from random import randint
-from typing import Generator, Iterable
+from typing import Generator, Iterable, Sequence
 
 from astar import AStar
 
@@ -90,7 +90,6 @@ class PathingSpace(AStar):
     def dimensions(self) -> tuple[int, int]:
         return (self.width, self.height)
 
-    @lru_cache(maxsize=2)
     def get_path(self, start: Node, finish: Node) -> tuple[Node, ...] | None:
         # we exclude all occupied nodes so any paths from occupied nodes (i.e. all combat pathfinding)
         # will need to have the start/end node added back to the pathing space temporarily
@@ -190,6 +189,14 @@ class PathingSpace(AStar):
     @property
     def x_range(self) -> Iterable[int]:
         return range(self.minima.x, self.maxima.x)
+
+    def all_included_nodes(self) -> Sequence[Node]:
+        return tuple(
+            Node(x, y)
+            for x in range(self.minima.x, self.maxima.x)
+            for y in range(self.minima.y, self.maxima.y)
+            if Node(x, y) in self
+        )
 
 
 def pretty_path(space: PathingSpace, start: Node, end: Node) -> str:
