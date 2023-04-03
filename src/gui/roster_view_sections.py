@@ -12,6 +12,7 @@ from src.gui.gui_components import (
 )
 from src.gui.gui_utils import Cycle
 from src.gui.window_data import WindowData
+from src.textures.texture_data import SingleTextureSpecs
 
 
 def _highlight_selection(
@@ -65,14 +66,18 @@ class RecruitmentPaneSection(arcade.Section):
             self.recruitment_scroll_window
         )
         self.header = create_colored_UILabel_header(
-            "Mercenaries For Hire!", arcade.color.GO_GREEN, font_size=30, height=45
+            "Mercenaries For Hire!", arcade.color.GO_GREEN, font_size=36, height=45
         )
 
         content = (*self.header, *self.recruits_labels)
-
+        self.panel_texture = SingleTextureSpecs.panel.loaded
         self.manager.add(
             single_box(
-                self.bottom, self.height - self.bottom, content, padding=(50, 0, 0, 0)
+                self.bottom,
+                self.height - self.bottom,
+                content,
+                padding=(50, 0, 0, 0),
+                panel=self.panel_texture,
             )
         )
         self.guild_funds_label = None
@@ -96,7 +101,11 @@ class RecruitmentPaneSection(arcade.Section):
 
         self.manager.add(
             single_box(
-                self.bottom, self.height - self.bottom, content, padding=(15, 0, 0, 0)
+                self.bottom,
+                self.height - self.bottom,
+                content,
+                padding=(15, 0, 0, 0),
+                panel=self.panel_texture,
             )
         )
 
@@ -267,6 +276,7 @@ class RosterAndTeamPaneSection(arcade.Section):
 
         self.roster_content = (*self.roster_header, *self.roster_labels)
         self.team_content = (*self.team_header, *self.team_labels)
+        self.panel_texture = SingleTextureSpecs.panel.loaded
         self.manager.add(
             horizontal_box_pair(
                 self.bottom,

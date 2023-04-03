@@ -659,7 +659,6 @@ class BattleView(arcade.View):
             hide_stuff()
             self.reset_input_mode()
             eng.input_received()
-            breakpoint()
             return options[opt_idx]["on_confirm"]()
 
         return on_confirm

@@ -73,7 +73,7 @@ def entity_labels_with_cost(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]
                 text=f"{entity.name.name_and_title}: {entity.cost} gp",
                 width=WindowData.width,
                 height=22,
-                font_size=18,
+                font_size=12,
                 font_name=WindowData.font,
                 align="center",
                 size_hint=(0.75, None),
