@@ -97,11 +97,11 @@ def entity_labels_names_only(scroll_window: ScrollWindow) -> tuple[UIWidget, ...
             lambda entity: UILabel(
                 text=f"{entity.name.name_and_title}",
                 width=WindowData.width,
-                height=30,
-                font_size=18,
+                height=40,
+                font_size=24,
                 font_name=WindowData.font,
                 align="center",
-                size_hint=(0.5, None),
+                size_hint=(1, None),
             ),  # .with_border(color=arcade.color.GENERIC_VIRIDIAN),
             scroll_window.items,
         )
@@ -220,12 +220,32 @@ def horizontal_box_pair(
     left_size_hint=(0.5, 1),
     right_size_hint=(0.5, 1),
     padding: Top_Right_Bottom_Left_Padding = (0, 0, 0, 0),
+    panel=None,
 ) -> UIAnchorLayout:
     anchor = UIAnchorLayout(
         y=bottom,
         height=height,
         size_hint=(1, None),
     ).with_border(color=arcade.color.GOLD, width=0)
+
+    if panel:
+        l = UIImage(
+            texture=PixelatedNinePatch(
+                left=12, right=12, bottom=12, top=12, texture=panel
+            ),
+            size_hint=(0.5, 1),
+        )
+        r = UIImage(
+            texture=PixelatedNinePatch(
+                left=12, right=12, bottom=12, top=12, texture=panel
+            ),
+            size_hint=(0.5, 1),
+        )
+
+        x = [l, r]
+
+        for p, anchor_x in zip(x, ["left", "right"]):
+            anchor.add(child=p, anchor_x=anchor_x)
 
     for anchor_x, element, size_hint in zip(
         ["left", "right"],
@@ -238,9 +258,7 @@ def horizontal_box_pair(
                 vertical=True,
                 size_hint=size_hint,
                 children=element,
-            )
-            .with_border(color=arcade.color.ELECTRIC_BLUE, width=5)
-            .with_padding(
+            ).with_padding(
                 top=padding[0], right=padding[1], bottom=padding[2], left=padding[3]
             ),
         )

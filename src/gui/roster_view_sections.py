@@ -168,12 +168,12 @@ class RecruitmentPaneSection(arcade.Section):
                 ]
 
                 # Remove the UILabel from UIBoxLayout and pop the corresponding item from the recruitment_scroll_window.
-                self.manager.children[0][0].children[0].remove(highlighted_label)
+                self.manager.children[0][0].children[1].remove(highlighted_label)
                 self.recruitment_scroll_window.pop()
 
                 # Update state
                 self.recruits_labels = (
-                    self.manager.children[0][0].children[0].children[1:]
+                    self.manager.children[0][0].children[1].children[1:]
                 )
 
                 # Ensure highlighting carries over to the now selected recruit.
@@ -261,10 +261,10 @@ class RosterAndTeamPaneSection(arcade.Section):
         self.pane_id = (0, 1)
 
         self.roster_header = create_colored_UILabel_header(
-            "Roster", arcade.color.BYZANTIUM, font_size=30, height=45
+            "Roster", arcade.color.BYZANTIUM, font_size=36, height=60
         )
         self.team_header = create_colored_UILabel_header(
-            "Team", arcade.color.BRASS, font_size=30, height=45
+            "Team", arcade.color.BRASS, font_size=36, height=60
         )
 
         self.roster_labels: tuple[UIWidget] = entity_labels_names_only(
@@ -284,6 +284,7 @@ class RosterAndTeamPaneSection(arcade.Section):
                 self.roster_content,
                 self.team_content,
                 padding=(10, 0, 0, 0),
+                panel=self.panel_texture,
             )
         )
         self._highlight_pane()
@@ -314,6 +315,7 @@ class RosterAndTeamPaneSection(arcade.Section):
                 self.roster_content,
                 self.team_content,
                 padding=(10, 0, 0, 0),
+                panel=self.panel_texture,
             )
         )
         self.manager.enable()
@@ -321,8 +323,8 @@ class RosterAndTeamPaneSection(arcade.Section):
 
     def _highlight_pane(self):
         if self.pane_selector.pos == self.pane_id[0]:
-            self.manager.children[0][0].children[0]._border_width = 5
-            self.manager.children[0][0].children[1]._border_width = 0
+            # self.manager.children[0][0].children[0]._border_width = 5
+            # self.manager.children[0][0].children[1]._border_width = 0
 
             if len(self.team_labels) > 0:
                 _clear_highlight_roster_or_team_selection(
@@ -335,8 +337,8 @@ class RosterAndTeamPaneSection(arcade.Section):
                 )
 
         if self.pane_selector.pos == self.pane_id[1]:
-            self.manager.children[0][0].children[0]._border_width = 0
-            self.manager.children[0][0].children[1]._border_width = 5
+            # self.manager.children[0][0].children[0]._border_width = 0
+            # self.manager.children[0][0].children[1]._border_width = 5
 
             if len(self.roster_labels) > 0:
                 _clear_highlight_roster_or_team_selection(
@@ -347,6 +349,8 @@ class RosterAndTeamPaneSection(arcade.Section):
                 _highlight_roster_or_team_selection(
                     self.team_scroll_window, self.team_labels
                 )
+
+        self.manager.trigger_render()
 
     def on_draw(self):
         self.manager.draw()
