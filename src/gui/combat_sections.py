@@ -1,5 +1,5 @@
 import arcade
-from pyglet.math import Vec2
+from pyglet.math import Mat3, Vec2, Vec3
 
 from src import config
 from src.engine.init_engine import eng
@@ -54,6 +54,7 @@ class CombatGridSection(arcade.Section):
             translation=Vec2(self.width, self.height) / 2,
         )
         self.all_path_sprites = self.init_path()
+        self.debug_text = ""
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -161,6 +162,7 @@ class CombatGridSection(arcade.Section):
 
     def on_update(self, delta_time: float):
         self.cam_controls.on_update()
+        self.update_debug_text()
         eng.update_clock -= delta_time
 
         if not eng.awaiting_input:
@@ -175,6 +177,15 @@ class CombatGridSection(arcade.Section):
             eng.reset_update_clock()
             hook()
 
+    def update_debug_text(self):
+        self.debug_text = "\n".join(
+            [
+                repr(self.cam_controls),
+                self.view.input_mode.name,
+                repr(self.view.input_mode.selection.options)[:50],
+            ]
+        )
+
     def on_draw(self):
         self.grid_camera.use()
 
@@ -183,7 +194,7 @@ class CombatGridSection(arcade.Section):
         self.other_camera.use()
         if config.DEBUG:
             arcade.Text(
-                repr(self.cam_controls),
+                self.debug_text,
                 10,
                 WindowData.height - 20,
                 multiline=True,

@@ -3,6 +3,7 @@ import sys
 import arcade
 
 import src.engine.init_engine as _
+from src import config
 from src.gui.views import TitleView, WindowData
 
 
@@ -23,9 +24,16 @@ def start_adventure_league():
     arcade.run()
 
 
-if len(sys.argv) > 1 and sys.argv[1] == "S":
-    from src.utils.sprites import sprite_viewer
+if len(sys.argv) > 2 and sys.argv[1] == "-m":
+    match sys.argv[2]:
+        case "S":
+            from src.utils.sprites import sprite_viewer
 
-    sprite_viewer.main()
+            sprite_viewer.main()
+
+        case "D":
+            config.DEBUG = True
+            start_adventure_league()
+
 else:
     start_adventure_league()

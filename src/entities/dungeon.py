@@ -1,4 +1,9 @@
-from typing import Generator, Optional, Self
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Generator, Optional, Self
+
+if TYPE_CHECKING:
+    from src.entities.fighter import Fighter
 
 from src.entities.entity import Entity
 from src.entities.loot import Loot, Rewarder
@@ -58,9 +63,13 @@ class Room:
             ]
         )
 
-    def include_party(self, party: list[Entity]) -> None:
+        fighter: Fighter = entity.fighter
+        fighter.set_encounter_context(self)
+
+    def include_party(self, party: list[Entity]) -> list[Entity]:
         for member in party:
             self.add_entity(member)
+        return party
 
     def mob_spawns_points(self) -> Generator[Node, None, None]:
         while True:

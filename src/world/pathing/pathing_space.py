@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from functools import lru_cache
 from random import randint
-from typing import Generator, Iterable
+from typing import Generator, Iterable, Sequence
 
 from astar import AStar
 
@@ -90,22 +90,24 @@ class PathingSpace(AStar):
     def dimensions(self) -> tuple[int, int]:
         return (self.width, self.height)
 
-    @lru_cache(maxsize=2)
     def get_path(self, start: Node, finish: Node) -> tuple[Node, ...] | None:
         # we exclude all occupied nodes so any paths from occupied nodes (i.e. all combat pathfinding)
         # will need to have the start/end node added back to the pathing space temporarily
         deferred_restore = [
-            end if end not in self else False for end in (start, finish)
+            start if start in self.dynamic_exclusions else False,
+            finish if finish in self.dynamic_exclusions else False,
         ]
         for include in deferred_restore:
-            include and self._include(include)
+            if include:
+                self._include(include)
 
         path = self.astar(start, finish)
 
         # after we've got the path, we make sure that if it wasn't in the space before we started
         # then it won't be after we return
         for exclude in deferred_restore:
-            exclude and self._exclude(exclude)
+            if exclude:
+                self._exclude(exclude)
 
         if path is None:
             return
@@ -116,7 +118,7 @@ class PathingSpace(AStar):
         self.dynamic_exclusions -= {node}  # idempotent remove from set
 
     def _exclude(self, node: Node) -> None:
-        self.dynamic_exclusions |= {node}  # idempotent add to set
+        self.dynamic_exclusions.add(node)  # idempotent add to set
 
     def get_path_len(self, start: Node, end: Node) -> int | None:
         path = self.get_path(start, end)
@@ -187,6 +189,14 @@ class PathingSpace(AStar):
     @property
     def x_range(self) -> Iterable[int]:
         return range(self.minima.x, self.maxima.x)
+
+    def all_included_nodes(self) -> Sequence[Node]:
+        return tuple(
+            Node(x, y)
+            for x in range(self.minima.x, self.maxima.x)
+            for y in range(self.minima.y, self.maxima.y)
+            if Node(x, y) in self
+        )
 
 
 def pretty_path(space: PathingSpace, start: Node, end: Node) -> str:

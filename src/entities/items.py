@@ -14,6 +14,7 @@ class HealingPotion(Exhaustable, Consumable, Throwable):
     hit_effect_name = effect_name
     apply_consume_effect = apply_heal_consumption_effect
     apply_on_hit_effect = apply_heal_on_hit_effect
+    action_point_cost = 1
 
     def __init__(self, owner: "Entity", heal_amount=5) -> None:
         self.owner = owner

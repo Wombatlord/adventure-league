@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Callable
+
 import arcade
 import arcade.color
 import arcade.key
@@ -6,6 +10,7 @@ from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
+from src.entities.actions import MoveAction
 from src.entities.inventory import InventoryItem
 from src.gui.buttons import (
     end_turn_button,
@@ -20,16 +25,16 @@ from src.gui.buttons import (
 from src.gui.combat_sections import CombatGridSection
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
-from src.gui.missions_section import MissionsSection
-from src.gui.roster_and_recruit_sections import (
+from src.gui.missions_view_section import MissionsSection
+from src.gui.roster_view_sections import (
     RecruitmentPaneSection,
     RosterAndTeamPaneSection,
 )
 from src.gui.states import ViewStates
-from src.gui.utility_sections import CommandBarSection, InfoPaneSection
+from src.gui.view_components import CommandBarSection, InfoPaneSection
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SingleTextureSpecs
-from src.utils.input_capture import BaseInputMode, Selection
+from src.utils.input_capture import BaseInputMode, GridSelection, Selection
 from src.world.node import Node
 
 
@@ -37,19 +42,27 @@ class TitleView(arcade.View):
     def __init__(self, window: Window | None = None):
         super().__init__(window)
         self.background = SingleTextureSpecs.title_background.loaded
+        self.banner = SingleTextureSpecs.banner.loaded
         self.title_y = -10
         self.start_y = -10
+        self.sprite_list = arcade.SpriteList()
+        self.banner_sprite = arcade.Sprite(
+            self.banner, center_x=WindowData.width / 2, center_y=-250, scale=2
+        )
+        self.sprite_list.append(self.banner_sprite)
 
     def on_show_view(self):
         """Called when switching to this view"""
         pass
 
     def on_update(self, delta_time: float):
-        if self.title_y < WindowData.height * 0.75:
-            self.title_y += 5
+        if self.banner_sprite.center_y < WindowData.height * 0.85:
+            self.banner_sprite.center_y += 5
 
+        if self.banner_sprite.center_y > WindowData.height * 0.85:
+            self.banner_sprite.center_y = WindowData.height * 0.85
         if (
-            self.title_y == WindowData.height * 0.75
+            self.banner_sprite.center_y == WindowData.height * 0.85
             and self.start_y < WindowData.height * 0.3
         ):
             self.start_y += 5
@@ -64,15 +77,17 @@ class TitleView(arcade.View):
         )
 
         # Draw the scrolling title text. Scrolling is handled in self.on_update().
-        arcade.draw_text(
-            "ADVENTURE LEAGUE!",
-            WindowData.width / 2,
-            self.title_y,
-            arcade.color.GOLD,
-            font_name=WindowData.font,
-            font_size=40,
-            anchor_x="center",
-        )
+        # arcade.draw_text(
+        #     "ADVENTURE LEAGUE!",
+        #     WindowData.width / 2,
+        #     self.title_y,
+        #     arcade.color.GOLD,
+        #     font_name=WindowData.font,
+        #     font_size=40,
+        #     anchor_x="center",
+        # )
+
+        self.sprite_list.draw(pixelated=True)
 
         arcade.draw_text(
             "Press G for a Guild View!",
@@ -96,6 +111,8 @@ class TitleView(arcade.View):
         WindowData.width = width
         WindowData.height = height
 
+        self.banner_sprite.center_x = WindowData.width // 2
+
 
 class GuildView(arcade.View):
     """Draw a view displaying information about a guild"""
@@ -108,7 +125,7 @@ class GuildView(arcade.View):
         self.guild_label = UILabel(
             text=eng.game_state.guild.name,
             width=WindowData.width,
-            font_size=18,
+            font_size=24,
             font_name=WindowData.font,
             align="center",
             size_hint=(1, None),
@@ -222,27 +239,31 @@ class RosterView(arcade.View):
         self.instruction = UILabel(
             text=f"Assign members to the team before embarking on a mission!",
             width=WindowData.width,
-            font_size=18,
+            height=75,
+            multiline=True,
+            font_size=24,
             font_name=WindowData.font,
             align="center",
-            size_hint=(1, 1),
-            text_color=self.color,
+            size_hint=(1, None),
+            text_color=arcade.color.WHITE,
         )
         self.entity_info = UILabel(
             text="",
             width=WindowData.width,
-            font_size=18,
+            height=50,
+            font_size=24,
             font_name=WindowData.font,
+            text_color=arcade.color.WHITE,
             align="center",
-            size_hint=(1, 1),
+            # size_hint=(1, 0.1),
         )
 
         self.guild_funds = box_containing_horizontal_label_pair(
             (
-                (" ", "right", 18, arcade.color.WHITE),
-                (" ", "left", 18, arcade.color.GOLD),
+                (" ", "right", 24, arcade.color.WHITE),
+                (" ", "left", 24, arcade.color.GOLD),
             ),
-            padding=(0, 0, 0, 50),
+            padding=(0, 0, 0, 150),
             size_hint=(1, None),
         )
 
@@ -399,18 +420,21 @@ class MissionsView(arcade.View):
         self.instruction = UILabel(
             text="",
             width=WindowData.width,
-            font_size=18,
+            height=50,
+            font_size=24,
             font_name=WindowData.font,
             align="center",
-            size_hint=(1, 1),
+            size_hint=(1, None),
         )
         self.team_info = UILabel(
             text="",
             width=WindowData.width,
-            font_size=18,
+            height=75,
+            font_size=24,
             font_name=WindowData.font,
+            multiline=True,
             align="center",
-            size_hint=(1, 1),
+            size_hint=(1, None),
         )
         self.info_pane_section = InfoPaneSection(
             left=0,
@@ -494,43 +518,63 @@ class MissionsView(arcade.View):
                         self.window.show_view(BattleView())
 
 
-class CombatInputMode(BaseInputMode):
-    name = "combat"
+class ActionSelectionInputMode(BaseInputMode):
+    name: str
+
+    def __init__(self, view: BattleView, selection: Selection, name: str):
+        self.selection = selection
+        self.name = name
+        self.view = view
 
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
+            case arcade.key.TAB:
+                self.view.next_input_mode()
             case arcade.key.UP:
-                self.view.target_selection.prev()
-                print(self.view.target_selection)
-
+                self.selection.prev()
             case arcade.key.DOWN:
-                self.view.target_selection.next()
-                print(self.view.target_selection)
-
+                self.selection.next()
             case arcade.key.SPACE:
-                self.view.end_turn_handler(self)
+                self.selection.confirm()
 
 
-class MenuInputMode(BaseInputMode):
-    name = "menu"
+class GridSelectionMode(ActionSelectionInputMode):
+    name: str
+    selection: GridSelection[tuple[Node, ...]]
+
+    def __init__(
+        self, view: BattleView, selection: GridSelection[tuple[Node, ...]], name: str
+    ):
+        super().__init__(view, selection, name)
 
     def on_key_press(self, symbol: int, modifiers: int):
-        if not self.view.item_selection:
-            return
-
         match symbol:
-            case arcade.key.P:
-                if not self.view.item_selection:
-                    return
-                ok = self.view.item_selection.confirm()
-                if ok:
-                    self.view.item_selection = None
-                    self.view.item_menu_mode_allowed = False
-                self.view.next_mode()
+            case arcade.key.TAB:
+                self.view.next_input_mode()
+            case arcade.key.UP:
+                self.selection.up()
+            case arcade.key.DOWN:
+                self.selection.down()
+            case arcade.key.LEFT:
+                self.selection.left()
+            case arcade.key.RIGHT:
+                self.selection.right()
+            case arcade.key.SPACE:
+                self.selection.confirm()
+
+
+class NoSelection:
+    options = "no options"
+
+
+class NoInputMode(BaseInputMode):
+    name = "no input"
+    selection = NoSelection
 
 
 class BattleView(arcade.View):
     input_mode: BaseInputMode
+    selections: dict[str, Selection]
 
     def __init__(self, window: Window = None):
         super().__init__(window)
@@ -545,7 +589,9 @@ class BattleView(arcade.View):
 
         # CommandBar config
         self.buttons = [
-            end_turn_button(self),
+            end_turn_button(
+                lambda _: self.input_mode.on_key_press(arcade.key.SPACE, 0)
+            ),
         ]
 
         self.command_bar_section = CommandBarSection(
@@ -556,79 +602,116 @@ class BattleView(arcade.View):
             buttons=self.buttons,
             prevent_dispatch_view={False},
         )
-        self.end_turn_handler = get_end_turn_handler(self)
-
-        self.target_selection: Selection[tuple[Node, ...]] | None = None
-        self.item_selection: Selection[list[InventoryItem]] | None = None
+        self.selections = {}
         self.item_menu_mode_allowed = True
-        self.input_mode = None
+        self.input_modes = {}
+        self.input_mode = NoInputMode(self)
+        self._default_input_mode = None
+        self.confirm_selection = lambda: None
         self.bind_input_modes()
         self.add_section(self.command_bar_section)
         self.add_section(self.combat_grid_section)
         eng.init_combat()
 
     def bind_input_modes(self):
-        combat_mode = CombatInputMode(self)
-        menu_mode = MenuInputMode(self).set_next_mode(combat_mode)
-        self.input_mode = combat_mode.set_next_mode(menu_mode)
+        if not self.selections:
+            self.input_mode = NoInputMode(self)
+            return
 
-    def next_mode(self):
+        self.input_modes = {}
+        prev_name = None
+        for name, selection in sorted(
+            self.selections.items(), key=lambda s: int(s[0] != MoveAction.name)
+        ):
+            input_mode_class = (
+                GridSelectionMode
+                if name == MoveAction.name
+                else ActionSelectionInputMode
+            )
+            self.input_modes[name] = input_mode_class(self, selection, name)
+            if prev_name:
+                self.input_modes[name].set_next_mode(self.input_modes[prev_name])
+            prev_name = name
+
+        self.input_modes[MoveAction.name].set_next_mode(self.input_modes[prev_name])
+        self._default_input_mode = self.input_modes[MoveAction.name]
+        self.reset_input_mode()
+
+    def next_input_mode(self):
         self.input_mode = self.input_mode.get_next_mode()
+
+    def reset_input_mode(self):
+        self.input_mode = self._default_input_mode
 
     def on_show_view(self):
         self.command_bar_section.manager.enable()
-        eng.await_input()
         eng.combat_dispatcher.volatile_subscribe(
-            "item_selection",
-            "BattleView set_use_item_input_request",
-            self.set_use_item_input_request,
-        )
-        eng.combat_dispatcher.volatile_subscribe(
-            "target_selection", "BattleView.set_input_request", self.set_input_request
+            topic="await_input",
+            handler_id="BattleView.set_input_request",
+            handler=self.set_action_selection,
         )
 
     def on_draw(self):
         self.clear()
 
-    def set_input_request(self, event):
+    def make_on_confirm(self, options, hide_stuff) -> Callable[[int], bool]:
+        def on_confirm(opt_idx: int) -> bool:
+            hide_stuff()
+            self.reset_input_mode()
+            eng.input_received()
+            breakpoint()
+            return options[opt_idx]["on_confirm"]()
+
+        return on_confirm
+
+    def set_action_selection(self, event):
+        if requester := event.get("await_input"):
+            if requester.owner.ai:
+                return
+
         eng.await_input()
 
-        selection = event["target_selection"]
+        choices = event.get("choices")
+        selections = {}
+        no_op = lambda: None
 
-        # this is called when the user confirms the selection
-        def on_confirm(path_index: int) -> bool:
-            self.combat_grid_section.hide_path()
-            eng.input_received()
-            return selection["on_confirm"](path_index)
+        for name, options in choices.items():
+            if not options:
+                continue
 
-        self.target_selection = Selection(
-            selection["paths"],
-            default=selection["default"],
-        ).set_confirmation(on_confirm)
+            hide_stuff = no_op
+            if name == MoveAction.name:
+                hide_stuff = lambda: self.combat_grid_section.hide_path()
 
-        # This is called every time the selection changes
-        def on_change():
-            self.combat_grid_section.show_path(self.target_selection.current)
+            _on_confirm = self.make_on_confirm(options, hide_stuff)
 
-        self.target_selection.set_on_change_selection(on_change)
+            kwargs = {"options": tuple(opt["subject"] for opt in options)}
+            if name == MoveAction.name:
+                selection_class = GridSelection
+                kwargs["key"] = lambda opt: tuple(opt[-1][:2])
+            else:
+                selection_class = Selection
 
-    def set_use_item_input_request(self, event):
-        selection = event["item_selection"]
+            selections[name] = selection_class(
+                **kwargs,
+            ).set_confirmation(_on_confirm)
 
-        def on_confirm(item_idx):
-            eng.input_received()
-            return selection["on_confirm"](item_idx)
+            update_selection = no_op
+            if name == MoveAction.name:
+                update_selection = lambda: self.combat_grid_section.show_path(
+                    selections[MoveAction.name].current()
+                )
 
-        self.item_selection = Selection(
-            selection["inventory_contents"], default=selection["default_item"]
-        ).set_confirmation(on_confirm)
+            selections[name].set_on_change_selection(update_selection)
+        self.selections = selections
+        self.bind_input_modes()
 
     def on_key_release(self, _symbol: int, _modifiers: int):
         if not self.combat_grid_section.cam_controls.on_key_release(_symbol):
             return
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
-        print(f"{self.__class__}.on_key_press called with '{chr(symbol)}'")
+        print(f"{self.__class__}.on_key_press called with '{symbol}'")
         if not self.combat_grid_section.cam_controls.on_key_press(symbol):
             return
 
@@ -638,9 +721,6 @@ class BattleView(arcade.View):
                     eng.flush_subscriptions()
                     guild_view = GuildView()
                     self.window.show_view(guild_view)
-
-        if symbol == arcade.key.TAB:
-            self.next_mode()
 
         self.input_mode.on_key_press(symbol, modifiers)
 

@@ -1,10 +1,12 @@
 import arcade.color
+from arcade.gui import UIImage
 from arcade.gui.widgets import UIWidget
 from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
 from arcade.gui.widgets.text import UILabel
 
 from src.gui.gui_utils import ScrollWindow
 from src.gui.window_data import WindowData
+from src.textures.pixelated_nine_patch import PixelatedNinePatch
 
 Rgba = tuple[int, int, int, int]
 Colored_Label = tuple[str, str, int, Rgba]
@@ -143,12 +145,23 @@ def single_box(
     padding: Top_Right_Bottom_Left_Padding = (0, 0, 0, 0),
     vertical=True,
     border_width=5,
+    panel=None,
 ) -> UIAnchorLayout:
     anchor = UIAnchorLayout(
         y=bottom,
         height=height,
         size_hint=(1, None),
-    ).with_border(color=arcade.color.GOLD, width=border_width)
+    )  # .with_border(color=arcade.color.GOLD, width=border_width)
+
+    if panel:
+        anchor.add(
+            child=UIImage(
+                texture=PixelatedNinePatch(
+                    left=12, right=12, bottom=12, top=12, texture=panel
+                ),
+                size_hint=(1, 1),
+            )
+        )
 
     anchor.add(
         child=UIBoxLayout(

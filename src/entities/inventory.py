@@ -49,6 +49,9 @@ class Inventory:
             item_idx = self.items.index(item)
             self.items[item_idx] = None
 
+    def consumables(self) -> tuple[Consumable, ...]:
+        return tuple(item for item in self.items if isinstance(item, Consumable))
+
 
 class InventoryItem:
     name = ""

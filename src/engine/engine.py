@@ -60,13 +60,14 @@ class Engine:
             handler=health.flush_handler,
         )
 
+    def static_subscribe(self, topic: str, handler_id: str, handler: Handler):
+        self.projection_dispatcher.subscribe(topic, handler_id, handler)
+
     def subscribe(self, topic: str, handler_id: str, handler: Handler):
         self.combat_dispatcher.subscribe(topic, handler_id, handler)
 
     def setup(self) -> None:
-        self.game_state = GameState(
-            SpaceOccupancyHandler(self),
-        )
+        self.game_state = GameState(self)
         self.projection_dispatcher.static_subscribe(
             topic="team triumphant",
             handler_id="game_state",

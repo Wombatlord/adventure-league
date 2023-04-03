@@ -77,8 +77,7 @@ class HealingPotionTest(unittest.TestCase):
 
         # Action
         merc.inventory.add_item_to_inventory(potion_1)
-        merc.fighter.provide_item(potion_1)
-        event = next(merc.fighter.consume_item())
+        event = next(merc.fighter.consume_item(potion_1))
 
         # Assert
         assert potion_1 not in merc.inventory, f"{merc.inventory.items}"

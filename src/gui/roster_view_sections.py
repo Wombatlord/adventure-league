@@ -102,7 +102,7 @@ class RecruitmentPaneSection(arcade.Section):
 
         self.guild_funds_label = (
             self.view.info_pane_section.manager.children[0][0]
-            .children[0]
+            .children[1]
             .children[2]
             .children[1]
         )

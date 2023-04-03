@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -7,10 +9,9 @@ from src.entities.dungeon import Room
 
 
 class SpaceOccupancyHandler:
-    eng: "Engine"
     current_room: Room | None
 
-    def __init__(self, eng: "Engine"):
+    def __init__(self, eng: Engine):
         self.current_room = None
         eng.projection_dispatcher.static_subscribe(
             topic="new_encounter",

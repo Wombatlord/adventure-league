@@ -2,6 +2,7 @@ from enum import Enum
 from random import shuffle
 from typing import Any, Callable, Generator, NamedTuple
 
+from src.entities.actions import EndTurnAction
 from src.entities.entity import Entity
 from src.entities.fighter import Fighter
 from src.entities.items import HealingPotion
@@ -98,87 +99,55 @@ class CombatRound:
             )
 
         combatant = self.current_combatant()
-        combatant.on_turn_start()
+
         opposing_team = self.teams_of(combatant).opposing
         enemies = self.get_enemies(opposing_team)
 
         if combatant.incapacitated:
             raise Exception(f"Incapacitated combatant {combatant.get_dict()}: oops!")
 
-        # This is where we wait for input on a player turn
-        yield from self.gather_turn_choices(combatant, enemies)
+        yield from combatant.on_turn_start()
 
-        # Play out the attack sequence for the fighter if it is an enemy and yield the events.
-        combatant = self.current_combatant(pop=True)
+        # INTEGRATING WITH ACTIONS
+        while combatant.can_act():
+            # ready an action
+            yield from combatant.request_action_choice()
 
-        if not combatant.turn_is_forfeit():
-            yield from self.execute_turn_choices(combatant)
-
-    def gather_turn_choices(
-        self, combatant: Fighter, enemies: list[Fighter]
-    ) -> Generator[Event, None, None]:
-        # If no item is explicitly chosen, a trivial consumable with no effects/message is chosen
-        if combatant.is_enemy:
-            yield combatant.choose_item()
-        else:
-            yield combatant.request_item_use()
-
-        # If the combatant cannot acquire a target for whatever reason, this
-        # will hold up combat forever!
-        has_notified_item = False
-        while not combatant.current_target() and not combatant.turn_is_forfeit():
-            if combatant.is_enemy:
-                yield combatant.choose_nearest_target(enemies)
+            if not combatant.is_ready_to_act():
+                # if still not ready, from the top
+                continue
             else:
-                if (
-                    item_name := combatant.chosen_consumable().name
-                ) and not has_notified_item:
-                    has_notified_item = True
-                    yield {"message": f"{combatant.owner.name} will use a {item_name}"}
+                # otherwise do that action!
+                yield from combatant.act()
+                yield from self._check_for_death(enemies)
+                yield from self._check_for_retreat(self.teams[0] + self.teams[1])
+        self.current_combatant(pop=True)
+        yield from combatant.on_turn_end()
 
-                yield from combatant.request_target(enemies)
+    def _check_for_death(self, team) -> Event:
+        for target in team:
+            name = target.owner.name.name_and_title
+            if target.owner.is_dead:
+                target.owner.die()
+                self._purge_fighter(target)
 
-    def execute_turn_choices(self, combatant: Fighter) -> Generator[Event, None, None]:
-        # Move toward the target as far as speed allows
-        yield from combatant.consume_item()
-        target = combatant.current_target()
-        step = {}
-        for step in combatant.locatable.approach_target(target):
-            yield step
+                yield {"dying": target.owner, "message": f"{name} is dead!"}
 
-        target_reached = step.get("move", {})["in_motion"] is False
-        if target_reached:
-            yield combatant.attack()
+    def _check_for_retreat(self, team) -> Event:
+        for fighter in team:
+            if fighter.retreating:
+                result = {}
+                self._purge_fighter(fighter)
 
-        combatant._prev_target = target
-        combatant.provide_target(None)
+                result.update(**fighter.owner.annotate_event({}))
+                result.update(
+                    {
+                        "retreat": fighter,
+                        "message": f"{fighter.owner.name.name_and_title} is retreating!",
+                    }
+                )
 
-        yield from self._check_for_death(target)
-
-        yield from self._check_for_retreat(combatant)
-
-    def _check_for_death(self, target) -> Event:
-        name = target.owner.name.name_and_title
-        if target.owner.is_dead:
-            target.owner.die()
-            self._purge_fighter(target)
-
-            yield {"dying": target.owner, "message": f"{name} is dead!"}
-
-    def _check_for_retreat(self, fighter: Fighter) -> Event:
-        result = {}
-        if fighter.retreating:
-            self._purge_fighter(fighter)
-
-            result.update(**fighter.owner.annotate_event({}))
-            result.update(
-                {
-                    "retreat": fighter,
-                    "message": f"{fighter.owner.name.name_and_title} is retreating!",
-                }
-            )
-
-            yield result
+                yield result
 
     def _purge_fighter(self, fighter: Fighter) -> None:
         team_id = 0 if fighter in self.teams[0] else 1
@@ -197,6 +166,8 @@ class CombatRound:
                 return None
 
     def continues(self) -> bool:
+        if not self.teams[0] or not self.teams[1]:
+            return False
         if self.victor() is None and self._round_order:
             return True
 

@@ -2,13 +2,18 @@ from __future__ import annotations
 
 from enum import Enum
 from random import choice
-from typing import TYPE_CHECKING, Generator, Sequence
+from typing import TYPE_CHECKING, Callable, Generator, Sequence
 
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
 
 if TYPE_CHECKING:
+    from src.entities.dungeon import Room
     from src.entities.entity import Entity
+    from src.entities.fighter import Fighter
+
+
+Path = tuple[Node]
 
 
 class Orientation(Enum):
@@ -28,8 +33,11 @@ class Locatable:
         self.speed = speed
         self.orientation = Node(*choice([o.value for o in Orientation]))
 
-    def path_to_target(self, target) -> tuple[Node, ...]:
-        return self.space.get_path(self.location, target.location)
+    def path_to_target(self, target: Locatable | Fighter) -> tuple[Node, ...]:
+        return self.path_to_destination(target.location)
+
+    def path_to_destination(self, destination: Node) -> tuple[Node, ...]:
+        return self.space.get_path(self.location, destination)
 
     def _no_move(self):
         return {
@@ -67,7 +75,7 @@ class Locatable:
 
         yield from self.traverse(path_to_target[: dest_index + 1])
 
-    def traverse(self, path: Sequence[Node, ...]) -> Generator[dict]:
+    def traverse(self, path: Sequence[Node]) -> Generator[dict]:
         if not path or len(path) == 1:
             yield self._no_move()
             return
@@ -80,20 +88,33 @@ class Locatable:
 
         for i, place in enumerate(to_traverse):
             prev = self.location
-            event = self._step_event(prev, place == destination)
+            event = self._step_event(prev, place, place != destination)
             self.location = place
             self.orientation = self.location - to_traverse[i - 1]
             yield event
 
-    def _step_event(self, prev: Node, in_motion: bool) -> dict:
+    def _step_event(self, before: Node, after: Node, in_motion: bool) -> dict:
         return {
             "move": {
-                "start": prev,
-                "end": self.location,
+                "start": before,
+                "end": after,
                 "in_motion": in_motion,
                 "orientation": self.orientation,
             },
         }
+
+    def available_moves(self, speed: int | None = None) -> tuple[tuple[Node, ...], ...]:
+        paths = []
+        for node in self.space.all_included_nodes():
+            path = self.path_to_destination(node)
+            if path is None or len(path) <= 1:
+                continue
+            if len(path) > speed + 1:
+                continue
+
+            paths.append(path)
+
+        return tuple(paths)
 
     def adjacent_locations(self) -> tuple[Node, ...]:
         """A getter for the tuple of nodes that are close enough to this Locatable for
@@ -118,3 +139,80 @@ class Locatable:
                 maximum_possile_adjacencies,
             )
         )
+
+    def entities_in_range(
+        self,
+        room: Room,
+        max_range: int,
+        entity_filter: Callable[[Entity], bool] = lambda e: True,
+    ) -> list[Entity]:
+        """
+        This function can be used to retrieve a list of all locatable entities in range of
+        an entity's current position
+        Args:
+            room: Room. The space shared by the entities
+            max_range:  The range within which an entity should be considered in range
+            entity_filter: A function that can be applied to each entity to filter. It should
+            return True if the entity should be included in the resulting list. This will
+            only be applied to entities that are actually in range
+
+        Returns:
+
+        """
+        in_range = []
+        for occupant in room.occupants:
+            if (
+                # do this before calculating the path length to avoid unnecessary
+                # calculation of paths for entities that we can't or shouldn't check
+                not occupant.locatable
+                or occupant.locatable is self
+            ):
+                continue
+
+            path = self.path_to_target(occupant.locatable)
+            if path is None:
+                print(f"{occupant.name} {occupant.locatable.location=} is unreachable")
+                continue
+            path_length = len(path)
+            is_in_range = path_length - (max_range + 1) <= 0
+
+            if is_in_range and entity_filter(occupant):
+                in_range.append(occupant)
+
+        return in_range
+
+    def nearest_entity(
+        self, room: Room, entity_filter: Callable[[Entity], bool] = lambda e: True
+    ) -> Entity:
+        shortest_path = None
+        closest_entity = None
+        for occupant in room.occupants:
+            # Ignore self, and apply the filter to rule out occupants based on the
+            # provided filter predicate
+            if occupant is self.owner or not entity_filter(occupant):
+                continue
+
+            path = self.path_to_target(occupant.locatable)
+            # if there is no path to the target, go to the next
+            if path is None:
+                continue
+
+            # if no shortest path has been set, then the current one is by default
+            # the shortest
+            if shortest_path is None:
+                shortest_path = path
+                closest_entity = occupant
+                continue
+
+            # A length 2 path is a single step, so can't be closer than this without
+            # occupying the same node
+            if len(shortest_path) <= 2:
+                break
+
+            # if the path is shorter than the shortest yet, then record the current
+            # as the new shortest and set the closest entity
+            if len(shortest_path) > len(path):
+                shortest_path = path
+                closest_entity = occupant
+
+        return closest_entity

@@ -89,10 +89,10 @@ def get_switch_to_recruitment_pane_handler(view) -> UIEventHandler:
 
     def _handle(event: UIEvent = None):
         view.state = ViewStates.RECRUIT
-        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
             0
         ].label.text = "Guild Coffers: "
-        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
             1
         ].label.text = f"{eng.game_state.guild.funds} gp"
         # Disable the roster_and_team_pane_section
@@ -123,10 +123,10 @@ def get_switch_to_roster_and_team_panes_handler(view) -> UIEventHandler:
 
     def _handle(event: UIEvent = None):
         view.state = ViewStates.ROSTER
-        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
             0
         ].label.text = ""
-        view.info_pane_section.manager.children[0][0].children[0].children[2].children[
+        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
             1
         ].label.text = ""
         # Disable the recruitment_pane_section
@@ -176,8 +176,7 @@ def roster_button(view) -> UITextureButton:
 def get_end_turn_handler(view) -> UIEventHandler:
     def _handle(event: UIEvent):
         if not view.target_selection and eng.awaiting_input:
-            eng.next_combat_event()
-            eng.awaiting_input = False
+            eng.input_received()
             return
 
         if not view.target_selection:
@@ -192,10 +191,10 @@ def get_end_turn_handler(view) -> UIEventHandler:
     return _handle
 
 
-def end_turn_button(view) -> UITextureButton:
+def end_turn_button(on_click) -> UITextureButton:
     btn = load_ui_texture_button(
         texture_config=TextureButtonNinePatchConfig.gold(), text="Click me to Advance!"
     )
-    btn.on_click = get_end_turn_handler(view)
+    btn.on_click = on_click
 
     return btn

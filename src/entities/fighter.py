@@ -1,17 +1,23 @@
 from __future__ import annotations
 
-import functools
-from typing import Any, Generator, Optional, Self
+from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
+from src.entities.actions import ActionCompendium, ActionMeta, ActionPoints, BaseAction
 from src.entities.entity import Entity
 from src.entities.inventory import Consumable, Inventory, InventoryItem, Throwable
 from src.world.node import Node
+
+if TYPE_CHECKING:
+    from src.entities.dungeon import Room
 
 Event = dict[str, Any]
 
 
 # A class attached to any Entity that can fight
 class Fighter:
+    _readied_action: BaseAction | None
+    _encounter_context: Room | None
+
     def __init__(
         self,
         is_enemy: bool,
@@ -42,12 +48,31 @@ class Fighter:
         self._in_combat = False
         self._current_item = None
         self._forfeit_turn = False
+        self.action_points = ActionPoints()
+        self._readied_action = None
+        self._encounter_context = None
 
     def set_owner(self, owner: Entity) -> Self:
         self.owner = owner
         if not self.owner.inventory:
             self.owner.inventory = Inventory(owner=owner, capacity=1)
         return self
+
+    def set_encounter_context(self, encounter: Room) -> None:
+        self._encounter_context = encounter
+        self.on_retreat_hooks.append(Fighter.clear_encounter_context)
+        self.owner.on_death_hooks.append(
+            lambda e: Fighter.clear_encounter_context(e.fighter)
+        )
+
+    def get_encounter_context(self) -> Room | None:
+        return self._encounter_context
+
+    def clear_encounter_context(self) -> None:
+        self._encounter_context = None
+
+    def is_enemy_of(self, other: Fighter) -> bool:
+        return self.is_enemy != other.is_enemy
 
     def get_dict(self) -> dict:
         d = self.__dict__
@@ -67,6 +92,42 @@ class Fighter:
         self.level = dict.get("level")
         self.xp_reward = dict.get("xp_reward")
         self.current_xp = dict.get("current_xp")
+
+    def ready_action(self, action: BaseAction) -> bool:
+        self._readied_action = action
+        return True
+
+    def is_ready_to_act(self) -> bool:
+        return self._readied_action is not None
+
+    def can_act(self) -> bool:
+        return self.action_points.current > 0
+
+    def act(self) -> Generator[Event]:
+        action = self._readied_action()
+        self._readied_action = None
+        yield from action
+
+    def does(self, action: ActionMeta) -> bool:
+        return action.cost(self) <= self.action_points.current
+
+    def request_action_choice(self):
+        action_types = ActionCompendium.all_available_to(self)
+        choices = {}
+        for name, action_type in action_types.items():
+            choices[name] = action_type.all_available_to(self)
+
+        event = {}
+        if not self.is_enemy:
+            event[
+                "message"
+            ] = f"{self.owner.name.name_and_title} requires your input milord"
+
+        yield {
+            **event,
+            "await_input": self,
+            "choices": choices,
+        }
 
     def request_target(self, targets: list[Fighter]) -> Event:
         paths = [
@@ -108,8 +169,13 @@ class Fighter:
             },
         }
 
-    def on_turn_start(self):
+    def on_turn_start(self) -> Generator[Event]:
+        self.action_points.on_turn_start()
         self._forfeit_turn = False
+        yield {"turn_start": self}
+
+    def on_turn_end(self) -> Generator[Event]:
+        yield {"turn_end": self}
 
     def choose_item(self):
         self._current_item = Consumable()
@@ -139,13 +205,6 @@ class Fighter:
     def last_target(self) -> Fighter | None:
         self._cleanse_targets()
         return self._prev_target
-
-    def provide_target(self, target: Fighter | None) -> bool:
-        if self._target is not None:
-            self._prev_target = self._target
-        self._target = target
-        self._cleanse_targets()
-        return True
 
     def _cleanse_targets(self):
         if self._prev_target and self._prev_target.incapacitated:
@@ -241,11 +300,6 @@ class Fighter:
         return result
 
     def attack(self, target: Entity | None = None) -> Event:
-        if target is not None:
-            self.provide_target(target.fighter)
-
-        target = self.current_target().owner
-
         result = {}
         if self.owner.is_dead:
             raise ValueError(f"{self.owner.name=}: I'm dead jim.")
@@ -258,7 +312,7 @@ class Fighter:
         target_name = target.name.name_and_title
 
         succesful_hit: int = self.power - target.fighter.defence
-        result.update(**{"attack": self.owner})
+        result.update({"attack": self.owner})
 
         if not self.in_combat:
             self.set_in_combat = True
@@ -287,14 +341,9 @@ class Fighter:
             if not self.is_enemy:
                 self.commence_retreat()
 
-        self._prev_target = target.fighter
-        self.provide_target(None)
-
         return result
 
-    def consume_item(self) -> Generator[Event, None, None]:
-        item: Consumable = self._current_item or Consumable()
-        self._current_item = None
+    def consume_item(self, item: Consumable) -> Generator[Event, None, None]:
         yield item.consume(self.owner.inventory)
 
     def chosen_consumable(self) -> Consumable:
