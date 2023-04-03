@@ -96,7 +96,7 @@ class EncounterFactory:
     ) -> tuple[Room, list[Entity], list[Entity]]:
         room = cls._get_encounter(room_size)
         mercs = room.include_party(cls._make_team(strong_count=1, enemy=False))
-        enemies = room.include_party(cls._make_team(baby_count=1, enemy=False))
+        enemies = room.include_party(cls._make_team(baby_count=1, enemy=True))
 
         e1, e2 = mercs + enemies
 
