@@ -220,8 +220,8 @@ class RosterView(arcade.View):
         self.roster_and_team_pane_section = RosterAndTeamPaneSection(
             left=2,
             bottom=242,
-            width=WindowData.width - 2,
-            height=WindowData.height - 2,
+            width=WindowData.width,
+            height=WindowData.height,
             prevent_dispatch_view={False},
         )
 
@@ -230,8 +230,8 @@ class RosterView(arcade.View):
             name="recruitment_pane_section",
             left=2,
             bottom=242,
-            width=WindowData.width - 2,
-            height=WindowData.height - 2,
+            width=WindowData.width,
+            height=WindowData.height,
             prevent_dispatch_view={False},
         )
 
@@ -383,9 +383,13 @@ class RosterView(arcade.View):
 
             case arcade.key.R:
                 if self.state == ViewStates.ROSTER:
+                    self.recruitment_pane_section.height = WindowData.height
+                    self.recruitment_pane_section.width = WindowData.width
                     self.show_recruitment()
-
+                
                 elif self.state == ViewStates.RECRUIT:
+                    self.roster_and_team_pane_section.height = WindowData.height
+                    self.roster_and_team_pane_section.width = WindowData.width
                     self.show_roster()
 
         self._log_state()

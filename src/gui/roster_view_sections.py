@@ -338,9 +338,14 @@ class RosterAndTeamPaneSection(arcade.Section):
         self.manager.draw()
 
     def on_resize(self, width: int, height: int):
-        super().on_resize(width, height)
-        self.manager.children[0][0].resize(width=width - 2, height=height - self.bottom)
+        # super().on_resize(width, height)
+        # self.manager.children[0][0].resize(width=width - 2, height=height - self.bottom)
 
+        super().on_resize(width, height)
+        self.manager.children[0][0].resize(
+            width=width, height=(height - self.bottom)
+        )
+        
     def on_select(self):
         """
         Update the model in response to a selection by the user. This should manage
