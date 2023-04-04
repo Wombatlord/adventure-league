@@ -58,42 +58,19 @@ class RecruitmentPaneSection(arcade.Section):
     ):
         super().__init__(left, bottom, width, height, **kwargs)
 
+        self.margin = 2
+        self.panel_texture = SingleTextureSpecs.panel_highlighted.loaded
+        self.update_ui()
+
+    def update_ui(self):
         self.manager = UIManager()
+
         self.recruitment_scroll_window = ScrollWindow(
             eng.game_state.entity_pool.pool, 10, 10
-        )
-        self.margin = 2
-        self.recruits_labels: tuple[UIWidget] = entity_labels_with_cost(
-            self.recruitment_scroll_window
         )
         self.header = create_colored_UILabel_header(
             "Mercenaries For Hire!", arcade.color.GO_GREEN, font_size=36, height=45
         )
-
-        content = (*self.header, *self.recruits_labels)
-        self.panel_texture = SingleTextureSpecs.panel_highlighted.loaded
-        self.manager.add(
-            single_box(
-                self.bottom,
-                self.height - self.bottom,
-                content,
-                padding=(50, 0, 0, 0),
-                panel=self.panel_texture,
-            )
-        )
-        self.guild_funds_label = None
-
-        _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
-
-    def flush(self):
-        self.width = WindowData.width - 2
-        self.height = WindowData.height - 2
-        self.manager = UIManager()
-
-        self.recruitment_scroll_window = ScrollWindow(
-            eng.game_state.entity_pool.pool, 10, 10
-        )
-
         self.recruits_labels: tuple[UIWidget] = entity_labels_with_cost(
             self.recruitment_scroll_window
         )
@@ -110,14 +87,17 @@ class RecruitmentPaneSection(arcade.Section):
             )
         )
 
-        self.guild_funds_label = (
+        _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
+
+    def set_guild_funds_label(self):
+        current_funds = (
             self.view.info_pane_section.manager.children[0][0]
             .children[1]
             .children[2]
             .children[1]
         )
 
-        _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
+        self.guild_funds_label = current_funds
 
     # def on_update(self, delta_time: float):
     #     print(delta_time)
@@ -385,7 +365,6 @@ class RosterAndTeamPaneSection(arcade.Section):
         """
         self.roster_scroll_window.items = [*eng.game_state.guild.roster]
         self.team_scroll_window.items = [*eng.game_state.guild.team.members]
-
 
     def on_key_press(self, symbol: int, modifiers: int):
         """

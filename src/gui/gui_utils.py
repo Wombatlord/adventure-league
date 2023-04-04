@@ -100,14 +100,14 @@ class ScrollWindow:
     @property
     def items(self):
         return self._items
-    
+
     @items.setter
     def items(self, new_items: list):
         if len(self._items) != len(new_items):
             self.position.length = len(new_items)
-        
-        self._items = new_items 
-    
+
+        self._items = new_items
+
     @property
     def frame_start(self) -> int:
         return self._frame_offset.pos
