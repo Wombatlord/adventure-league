@@ -384,9 +384,8 @@ class RosterAndTeamPaneSection(arcade.Section):
         This method is for reading the state from the model into the view.
         """
         self.roster_scroll_window.items = [*eng.game_state.guild.roster]
-        self.roster_scroll_window.position.length = len(self.roster_scroll_window.items)
         self.team_scroll_window.items = [*eng.game_state.guild.team.members]
-        self.team_scroll_window.position.length = len(self.team_scroll_window.items)
+
 
     def on_key_press(self, symbol: int, modifiers: int):
         """

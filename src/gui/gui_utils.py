@@ -66,7 +66,7 @@ def gen_heights(
 
 
 class ScrollWindow:
-    items: list
+    _items: list
     visible_size: int
     stretch_limit: int
     position: Cycle
@@ -86,7 +86,7 @@ class ScrollWindow:
         self._frame_offset = Cycle(len(items) - visible_size + 1, pos=0)
         self.position = Cycle(len(items), pos=0)
         self.visible_size = visible_size
-        self.items = [*items]
+        self._items = [*items]
 
     def __str__(self) -> str:
         state = {**self.__dict__}
@@ -97,6 +97,17 @@ class ScrollWindow:
 
         return json.dumps(state)
 
+    @property
+    def items(self):
+        return self._items
+    
+    @items.setter
+    def items(self, new_items: list):
+        if len(self._items) != len(new_items):
+            self.position.length = len(new_items)
+        
+        self._items = new_items 
+    
     @property
     def frame_start(self) -> int:
         return self._frame_offset.pos
