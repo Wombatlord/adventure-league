@@ -11,7 +11,8 @@ from src.gui.window_data import WindowData
 from src.textures.pixelated_nine_patch import PixelatedNinePatch
 
 Rgba = tuple[int, int, int, int]
-Colored_Label = tuple[str, str, int, Rgba]
+Attach = Callable[[UILabel], UILabel]
+Colored_Label = tuple[str, str, int, Rgba] | tuple[str, str, int, Rgba, Attach]
 
 
 class ColoredLabel(NamedTuple):
@@ -19,7 +20,7 @@ class ColoredLabel(NamedTuple):
     align: str
     font_size: int
     colour: Rgba
-    attach_observer: Callable[[UILabel], UILabel] = lambda *args: args[-1]
+    attach_observer: Attach = lambda *args: args[-1]
 
 
 Colored_Label_Pair = tuple[Colored_Label, Colored_Label]
