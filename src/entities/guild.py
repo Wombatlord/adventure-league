@@ -9,6 +9,8 @@ from src.entities.loot import Loot
 
 
 class Guild:
+    funds: int
+
     def __init__(
         self,
         name: str = None,

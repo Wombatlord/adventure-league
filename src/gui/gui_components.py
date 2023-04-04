@@ -1,3 +1,5 @@
+from typing import Callable, NamedTuple
+
 import arcade.color
 from arcade.gui import UIImage
 from arcade.gui.widgets import UIWidget
@@ -10,6 +12,16 @@ from src.textures.pixelated_nine_patch import PixelatedNinePatch
 
 Rgba = tuple[int, int, int, int]
 Colored_Label = tuple[str, str, int, Rgba]
+
+
+class ColoredLabel(NamedTuple):
+    text: str
+    align: str
+    font_size: int
+    colour: Rgba
+    set_on_update: Callable[[UILabel], UILabel] = lambda *args: args[-1]
+
+
 Colored_Label_Pair = tuple[Colored_Label, Colored_Label]
 
 Top_Right_Bottom_Left_Padding = tuple[int, int, int, int]
@@ -26,16 +38,18 @@ def box_containing_horizontal_label_pair(
         vertical=False,
         size_hint=(1, 0.2),
         children=map(
-            lambda x: UILabel(
-                text=x[0],
-                font_size=x[2],
-                font_name=WindowData.font,
-                width=width,
-                align=x[1],
-                size_hint=size_hint,
-                text_color=x[3],
+            lambda cl: cl.set_on_update(
+                UILabel(
+                    text=cl.text,
+                    font_size=cl.font_size,
+                    font_name=WindowData.font,
+                    width=width,
+                    align=cl.align,
+                    size_hint=size_hint,
+                    text_color=cl.colour,
+                ),
             ),
-            labels_with_colors,
+            [ColoredLabel(*l) for l in labels_with_colors],
         ),
         space_between=space_between_labels,
     ).with_padding(top=padding[0], right=padding[1], bottom=padding[2], left=padding[3])

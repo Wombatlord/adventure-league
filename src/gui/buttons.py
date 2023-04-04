@@ -99,7 +99,7 @@ def get_switch_to_recruitment_pane_handler(view) -> UIEventHandler:
         view.roster_and_team_pane_section.enabled = False
         view.roster_and_team_pane_section.manager.disable()
 
-        view.recruitment_pane_section.set_guild_funds_label()
+        # view.recruitment_pane_section.set_guild_funds_label()
         view.recruitment_pane_section.update_ui()
         view.recruitment_pane_section.manager.enable()
         view.recruitment_pane_section.enabled = True

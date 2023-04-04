@@ -58,7 +58,6 @@ class RecruitmentPaneSection(arcade.Section):
     ):
         super().__init__(left, bottom, width, height, **kwargs)
 
-        self.margin = 2
         self.panel_texture = SingleTextureSpecs.panel_highlighted.loaded
         self.update_ui()
 
@@ -89,16 +88,6 @@ class RecruitmentPaneSection(arcade.Section):
 
         _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
 
-    def set_guild_funds_label(self):
-        current_funds = (
-            self.view.info_pane_section.manager.children[0][0]
-            .children[1]
-            .children[2]
-            .children[1]
-        )
-
-        self.guild_funds_label = current_funds
-
     # def on_update(self, delta_time: float):
     #     print(delta_time)
 
@@ -107,9 +96,41 @@ class RecruitmentPaneSection(arcade.Section):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.manager.children[0][0].resize(
-            width=width - self.margin, height=(height - self.bottom) - self.margin
+        self.manager.children[0][0].resize(width=width, height=(height - self.bottom))
+
+    def recruitment_limit_not_reached(self):
+        current_member_amount = len(eng.game_state.guild.roster) + len(
+            eng.game_state.team.members
         )
+        return current_member_amount < eng.game_state.guild.roster_limit
+
+    def on_select(self):
+        eng.recruit_entity_to_guild(
+            eng.game_state.entity_pool.pool.index(
+                self.recruitment_scroll_window.selection
+            )
+        )
+
+        # Assign currently selected child to pass to the remove() func of the UIBoxLayout
+        # to maintain correspondence with the recruitment_scroll_window.items
+        highlighted_label = self.recruits_labels[
+            self.recruitment_scroll_window.position.pos
+        ]
+
+        # Remove the UILabel from UIBoxLayout and pop the corresponding item from the recruitment_scroll_window.
+        self.manager.children[0][0].children[1].remove(highlighted_label)
+        self.recruitment_scroll_window.pop()
+
+        # Update state
+        self.recruits_labels = self.manager.children[0][0].children[1].children[1:]
+
+        # Ensure highlighting carries over to the now selected recruit.
+        _highlight_selection(
+            self.recruitment_scroll_window,
+            self.recruits_labels,
+        )
+
+        self.manager.trigger_render()
 
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.UP:
@@ -132,39 +153,10 @@ class RecruitmentPaneSection(arcade.Section):
 
         if symbol == arcade.key.ENTER:
             # If the total amount of guild members does not equal the roster_limit, recruit the selected mercenary to the guild.
-            if (
-                len(eng.game_state.guild.roster) + len(eng.game_state.team.members)
-                < eng.game_state.guild.roster_limit
-            ):
-                eng.recruit_entity_to_guild(
-                    eng.game_state.entity_pool.pool.index(
-                        self.recruitment_scroll_window.selection
-                    )
-                )
+            if self.recruitment_limit_not_reached():
+                self.on_select()
 
-                # Assign currently selected child to pass to the remove() func of the UIBoxLayout
-                # to maintain correspondence with the recruitment_scroll_window.items
-                highlighted_label = self.recruits_labels[
-                    self.recruitment_scroll_window.position.pos
-                ]
-
-                # Remove the UILabel from UIBoxLayout and pop the corresponding item from the recruitment_scroll_window.
-                self.manager.children[0][0].children[1].remove(highlighted_label)
-                self.recruitment_scroll_window.pop()
-
-                # Update state
-                self.recruits_labels = (
-                    self.manager.children[0][0].children[1].children[1:]
-                )
-
-                # Ensure highlighting carries over to the now selected recruit.
-                _highlight_selection(
-                    self.recruitment_scroll_window,
-                    self.recruits_labels,
-                )
-                self.guild_funds_label.label.text = f"{eng.game_state.guild.funds} gp"
-
-                self.manager.trigger_render()
+        self.update_ui()
 
 
 def _highlight_selection_text(
@@ -338,14 +330,9 @@ class RosterAndTeamPaneSection(arcade.Section):
         self.manager.draw()
 
     def on_resize(self, width: int, height: int):
-        # super().on_resize(width, height)
-        # self.manager.children[0][0].resize(width=width - 2, height=height - self.bottom)
-
         super().on_resize(width, height)
-        self.manager.children[0][0].resize(
-            width=width, height=(height - self.bottom)
-        )
-        
+        self.manager.children[0][0].resize(width=width, height=(height - self.bottom))
+
     def on_select(self):
         """
         Update the model in response to a selection by the user. This should manage

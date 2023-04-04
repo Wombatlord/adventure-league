@@ -11,10 +11,8 @@ from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
 from src.entities.actions import MoveAction
-from src.entities.inventory import InventoryItem
 from src.gui.buttons import (
     end_turn_button,
-    get_end_turn_handler,
     get_new_missions_button,
     get_switch_to_recruitment_pane_handler,
     get_switch_to_roster_and_team_panes_handler,
@@ -26,6 +24,7 @@ from src.gui.combat_sections import CombatGridSection
 from src.gui.gui_components import box_containing_horizontal_label_pair
 from src.gui.gui_utils import Cycle
 from src.gui.missions_view_section import MissionsSection
+from src.gui.observer import observe
 from src.gui.roster_view_sections import (
     RecruitmentPaneSection,
     RosterAndTeamPaneSection,
@@ -258,10 +257,18 @@ class RosterView(arcade.View):
             # size_hint=(1, 0.1),
         )
 
+        def set_funds_label_text(ui_label: UILabel, funds: int) -> None:
+            ui_label.text = f"{funds} gp"
+
+        funds_text_observer = observe(
+            get_observed_state=lambda: eng.game_state.guild.funds,
+            sync_widget=set_funds_label_text,
+        )
+
         self.guild_funds = box_containing_horizontal_label_pair(
             (
                 (" ", "right", 24, arcade.color.WHITE),
-                (" ", "left", 24, arcade.color.GOLD),
+                (" ", "left", 24, arcade.color.GOLD, funds_text_observer),
             ),
             padding=(0, 0, 0, 150),
             size_hint=(1, None),
@@ -386,7 +393,7 @@ class RosterView(arcade.View):
                     self.recruitment_pane_section.height = WindowData.height
                     self.recruitment_pane_section.width = WindowData.width
                     self.show_recruitment()
-                
+
                 elif self.state == ViewStates.RECRUIT:
                     self.roster_and_team_pane_section.height = WindowData.height
                     self.roster_and_team_pane_section.width = WindowData.width

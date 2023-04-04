@@ -100,12 +100,21 @@ class InfoPaneSection(arcade.Section):
 
         self.manager.add(
             single_box(
-                self.bottom, self.height, self.texts, (10, 0, 0, 0), panel=self.panel
+                bottom=self.bottom,
+                height=self.height,
+                children=self.texts,
+                padding=(10, 0, 0, 0),
+                panel=self.panel,
             )
         )
 
     def flush(self):
         self.manager = UIManager()
+
+    def set_guild_funds_label(self):
+        current_funds = self.manager.children[0][0].children[1].children[2].children[1]
+
+        self.guild_funds_label = current_funds
 
     def on_draw(self):
         self.manager.draw()
