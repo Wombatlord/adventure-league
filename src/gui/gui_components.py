@@ -19,7 +19,7 @@ class ColoredLabel(NamedTuple):
     align: str
     font_size: int
     colour: Rgba
-    set_on_update: Callable[[UILabel], UILabel] = lambda *args: args[-1]
+    attach_observer: Callable[[UILabel], UILabel] = lambda *args: args[-1]
 
 
 Colored_Label_Pair = tuple[Colored_Label, Colored_Label]
@@ -38,7 +38,7 @@ def box_containing_horizontal_label_pair(
         vertical=False,
         size_hint=(1, 0.2),
         children=map(
-            lambda cl: cl.set_on_update(
+            lambda cl: cl.attach_observer(
                 UILabel(
                     text=cl.text,
                     font_size=cl.font_size,
