@@ -362,6 +362,10 @@ class RosterAndTeamPaneSection(arcade.Section):
         self.manager.children[0][0].resize(width=width - 2, height=height - self.bottom)
 
     def on_select(self):
+        """
+        Update the model in response to a selection by the user. This should manage
+        all game state change controlled by this view is here.
+        """
         highlighted, normal = self.highlight_states()
         scroll_windows = [self.roster_scroll_window, self.team_scroll_window]
 
@@ -375,8 +379,14 @@ class RosterAndTeamPaneSection(arcade.Section):
         scroll_windows[normal].append(item)
 
     def sync_state(self):
+        """
+        Query the model for the updated team/roster composition.
+        This method is for reading the state from the model into the view.
+        """
         self.roster_scroll_window.items = [*eng.game_state.guild.roster]
+        self.roster_scroll_window.position.length = len(self.roster_scroll_window.items)
         self.team_scroll_window.items = [*eng.game_state.guild.team.members]
+        self.team_scroll_window.position.length = len(self.team_scroll_window.items)
 
     def on_key_press(self, symbol: int, modifiers: int):
         """
@@ -414,5 +424,9 @@ class RosterAndTeamPaneSection(arcade.Section):
             case arcade.key.ENTER:
                 if scroll_windows[highlighted].items:
                     self.on_select()
+
+            case _:
+                # prevents pointless re-render on unbound keypress
+                return
 
         self.update_ui()

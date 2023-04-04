@@ -133,7 +133,7 @@ def get_switch_to_roster_and_team_panes_handler(view) -> UIEventHandler:
         view.recruitment_pane_section.enabled = False
 
         # Flush and setup the section so that new recruits are present and selectable via the UIManager
-        view.roster_and_team_pane_section.flush()
+        view.roster_and_team_pane_section.update_ui()
         view.roster_and_team_pane_section.enabled = True
 
         # Setup CommandBarSection with appropriate buttons
