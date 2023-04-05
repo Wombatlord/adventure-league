@@ -360,17 +360,19 @@ class RosterView(arcade.View):
             else:
                 ui_label.text = "No stats to display."
 
-        def observable():
-            if self.roster_and_team_pane_section.roster_scroll_window.items:
-                return self.roster_and_team_pane_section.roster_scroll_window.items[
-                    self.roster_and_team_pane_section.roster_scroll_window.position.pos
-                ]
+        def observable() -> Entity | None:
+            cursor_position = (
+                self.roster_and_team_pane_section.roster_scroll_window.position.pos
+            )
+            
+            if items := self.roster_and_team_pane_section.roster_scroll_window.items:
+                return items[cursor_position]
 
             else:
                 return None
 
         recruit_info_observer = observe(
-            get_observed_state=lambda: observable(),
+            get_observed_state=observable,
             sync_widget=set_roster_member_info_label,
         )
 
@@ -387,17 +389,17 @@ class RosterView(arcade.View):
 
         return entity_info
 
-    def _roster_entity(self, selection) -> None:
+    def _roster_entity(self, selection) -> Entity | None:
         """Sets self.merc to the selected entry in the roster scroll window.
         Allows the InfoPaneSection to display entity reference from RosterAndTeamPaneSection
         """
+        merc = None
+
         if (
             self.roster_and_team_pane_section.pane_selector.pos == 0
             and len(self.roster_and_team_pane_section.roster_scroll_window.items) > 0
         ):
             merc = selection
-        else:
-            merc = None
 
         return merc
 
@@ -413,10 +415,12 @@ class RosterView(arcade.View):
                 self.roster_and_team_pane_section.team_scroll_window.position.pos
             ]
 
-    def _recruits_entity(self, selection) -> Entity:
+    def _recruits_entity(self, selection) -> Entity | None:
         """Sets self.merc to the selected entry in the recruitment scroll window.
         Allows the InfoPaneSection to display entity reference from RecruitmentPaneSection
         """
+        merc = None
+
         if len(self.recruitment_pane_section.recruitment_scroll_window.items) > 0:
             merc = selection
 
