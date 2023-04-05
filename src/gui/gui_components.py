@@ -27,6 +27,7 @@ class ColoredLabel(NamedTuple):
         width,
         size_hint: tuple[int, int] | None = None,
         height: int | None = None,
+        multiline=False,
     ) -> UILabel:
         return self.attach_observer(
             UILabel(
@@ -35,6 +36,7 @@ class ColoredLabel(NamedTuple):
                 font_name=WindowData.font,
                 width=width,
                 height=height,
+                multiline=multiline,
                 align=self.align,
                 size_hint=size_hint,
                 text_color=self.colour,
@@ -55,10 +57,10 @@ def label_with_observer(
     font_size,
     color,
     attach,
+    multiline,
 ):
     return ColoredLabel(label, align, font_size, color, attach).get_ui_label(
-        width=width,
-        height=height,
+        width=width, height=height, multiline=multiline
     )
 
 

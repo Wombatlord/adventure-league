@@ -226,7 +226,7 @@ class RosterAndTeamPaneSection(arcade.Section):
         super().__init__(left, bottom, width, height, **kwargs)
 
         self.init_nine_patch_pair()
-
+        self._is_active = False
         self.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
         self.team_scroll_window = ScrollWindow(
             eng.game_state.guild.team.members, 10, 10
@@ -236,6 +236,13 @@ class RosterAndTeamPaneSection(arcade.Section):
         self.pane_selector = Cycle(2)
 
         self.update_ui()
+
+    @property
+    def is_active(self):
+        return self._is_active
+
+    def toggle_active(self):
+        self._is_active = not self.is_active
 
     def update_labels(self):
         self.roster_labels: tuple[UIWidget] = entity_labels_names_only(

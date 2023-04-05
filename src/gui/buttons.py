@@ -119,12 +119,6 @@ def get_switch_to_roster_and_team_panes_handler(view) -> UIEventHandler:
 
     def _handle(event: UIEvent = None):
         view.state = ViewStates.ROSTER
-        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
-            0
-        ].label.text = ""
-        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
-            1
-        ].label.text = ""
         # Disable the recruitment_pane_section
         view.recruitment_pane_section.enabled = False
 

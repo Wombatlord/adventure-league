@@ -6,12 +6,13 @@ import arcade
 import arcade.color
 import arcade.key
 from arcade import Window
+from arcade.gui import UIWidget
 from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
-from src.entities.entity import Entity
 from src.entities.actions import MoveAction
+from src.entities.entity import Entity
 from src.gui.buttons import (
     end_turn_button,
     get_new_missions_button,
@@ -78,17 +79,6 @@ class TitleView(arcade.View):
         arcade.draw_lrwh_rectangle_textured(
             0, 0, WindowData.width, WindowData.height, self.background
         )
-
-        # Draw the scrolling title text. Scrolling is handled in self.on_update().
-        # arcade.draw_text(
-        #     "ADVENTURE LEAGUE!",
-        #     WindowData.width / 2,
-        #     self.title_y,
-        #     arcade.color.GOLD,
-        #     font_name=WindowData.font,
-        #     font_size=40,
-        #     anchor_x="center",
-        # )
 
         self.sprite_list.draw(pixelated=True)
 
@@ -251,46 +241,6 @@ class RosterView(arcade.View):
             text_color=arcade.color.WHITE,
         )
 
-        ## NEW OBSERVER.
-        """
-        This is generally working great!
-        The only "issue" currently is that this is only hooked up for the recruitment side of things.
-        As such we don't get info about the roster / team entities at the moment, things need disentangling a little further.
-        The InfoPane is shared between the RosterAndTeamPaneSection & RecruitmentSection, so need to be able to switch what it's
-        displaying when changing with R key.        
-        """
-
-        def set_recruit_info_label(ui_label, selection) -> None:
-            if merc := self._recruits_entity(selection):
-                ui_label.text = self.entity_info.text = (
-                    f"{merc.name.name_and_title} "
-                    f"| LVL: {merc.fighter.level} "
-                    f"|  HP: {merc.fighter.hp} "
-                    f"| ATK: {merc.fighter.power} "
-                    f"| DEF: {merc.fighter.defence} "
-                )
-
-            else:
-                ui_label.text = " "
-
-        recruit_info_observer = observe(
-            get_observed_state=lambda: self.recruitment_pane_section.recruitment_scroll_window.items[
-                self.recruitment_pane_section.recruitment_scroll_window.position.pos
-            ],
-            sync_widget=set_recruit_info_label,
-        )
-
-        self.entity_info = label_with_observer(
-            label=f"Arrow Keys adjust selection and Enter will recruit!",
-            width=WindowData.width,
-            height=50,
-            align="center",
-            font_size=24,
-            color=arcade.color.WHITE,
-            attach=recruit_info_observer,
-        )
-        ## DONE
-
         self.info_pane_section = InfoPaneSection(
             left=0,
             bottom=52,
@@ -298,10 +248,7 @@ class RosterView(arcade.View):
             height=188,
             prevent_dispatch_view={False},
             margin=self.margin,
-            texts=[
-                self.instruction,
-                self.entity_info,
-            ],  # The Guild Funds labels have been made internal to the InfoPane
+            texts=[self.instruction, self._roster_member_observer_widget()],
         )
 
         # CommandBar Config
@@ -330,7 +277,110 @@ class RosterView(arcade.View):
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
 
-    def _roster_entity(self) -> None:
+    def _guild_funds_info_observer_widget(self) -> UIWidget:
+        def set_funds_label_text(ui_label: UILabel, funds: int) -> None:
+            ui_label.text = f"{funds} gp"
+
+        funds_text_observer = observe(
+            get_observed_state=lambda: eng.game_state.guild.funds,
+            sync_widget=set_funds_label_text,
+        )
+
+        guild_funds = box_containing_horizontal_label_pair(
+            (
+                ("Guild Coffers: ", "right", 24, arcade.color.WHITE),
+                (
+                    f"{eng.game_state.guild.funds}",
+                    "left",
+                    24,
+                    arcade.color.GOLD,
+                    funds_text_observer,
+                ),
+            ),
+            padding=(0, 0, 0, 150),
+            size_hint=(1, None),
+        )
+
+        return guild_funds
+
+    ## NEW OBSERVER.
+    """
+    This is generally working great!
+    The only "issue" currently is that this is only hooked up for the recruitment side of things.
+    As such we don't get info about the roster / team entities at the moment, things need disentangling a little further.
+    The InfoPane is shared between the RosterAndTeamPaneSection & RecruitmentSection, so need to be able to switch what it's
+    displaying when changing with R key.        
+    """
+
+    def _potential_recruit_observer_widget(self):
+        def set_recruit_info_label(ui_label, selection) -> None:
+            if merc := self._recruits_entity(selection):
+                ui_label.text = entity_info.text = (
+                    f"{merc.name.name_and_title} "
+                    f"| LVL: {merc.fighter.level} "
+                    f"|  HP: {merc.fighter.hp} "
+                    f"| ATK: {merc.fighter.power} "
+                    f"| DEF: {merc.fighter.defence} "
+                )
+
+            else:
+                ui_label.text = " "
+
+        recruit_info_observer = observe(
+            get_observed_state=lambda: self.recruitment_pane_section.recruitment_scroll_window.items[
+                self.recruitment_pane_section.recruitment_scroll_window.position.pos
+            ],
+            sync_widget=set_recruit_info_label,
+        )
+
+        entity_info = label_with_observer(
+            label=f"Arrow Keys adjust selection and Enter will recruit!",
+            width=WindowData.width,
+            height=50,
+            align="center",
+            font_size=24,
+            color=arcade.color.WHITE,
+            attach=recruit_info_observer,
+            multiline=True,
+        )
+
+        return entity_info
+
+    def _roster_member_observer_widget(self):
+        def set_roster_member_info_label(ui_label, selection) -> None:
+            if merc := self._roster_entity(selection):
+                ui_label.text = entity_info.text = (
+                    f"{merc.name.name_and_title} "
+                    f"| LVL: {merc.fighter.level} "
+                    f"|  HP: {merc.fighter.hp} "
+                    f"| ATK: {merc.fighter.power} "
+                    f"| DEF: {merc.fighter.defence} "
+                )
+
+            else:
+                ui_label.text = " "
+
+        recruit_info_observer = observe(
+            get_observed_state=lambda: self.roster_and_team_pane_section.roster_scroll_window.items[
+                self.roster_and_team_pane_section.roster_scroll_window.position.pos
+            ],
+            sync_widget=set_roster_member_info_label,
+        )
+
+        entity_info = label_with_observer(
+            label=f"Arrow Keys adjust selection and Enter will assign to Team!",
+            width=WindowData.width,
+            height=150,
+            align="center",
+            font_size=24,
+            color=arcade.color.WHITE,
+            attach=recruit_info_observer,
+            multiline=True,
+        )
+
+        return entity_info
+
+    def _roster_entity(self, selection) -> None:
         """Sets self.merc to the selected entry in the roster scroll window.
         Allows the InfoPaneSection to display entity reference from RosterAndTeamPaneSection
         """
@@ -338,9 +388,9 @@ class RosterView(arcade.View):
             self.roster_and_team_pane_section.pane_selector.pos == 0
             and len(self.roster_and_team_pane_section.roster_scroll_window.items) > 0
         ):
-            self.merc = self.roster_and_team_pane_section.roster_scroll_window.items[
-                self.roster_and_team_pane_section.roster_scroll_window.position.pos
-            ]
+            merc = selection
+
+        return merc
 
     def _team_entity(self) -> None:
         """Sets self.merc to the selected entry in the team scroll window.
@@ -377,19 +427,19 @@ class RosterView(arcade.View):
         self.info_pane_section.manager.disable()
         self.command_bar_section.manager.disable()
 
-    def on_update(self, delta_time: float):
-        self.merc = None
-        if self.state == ViewStates.ROSTER:
-            self._roster_entity()
-            self._team_entity()
+    # def on_update(self, delta_time: float):
+    #     self.merc = None
+    #     if self.state == ViewStates.ROSTER:
+    #         self._roster_entity()
+    #         self._team_entity()
 
-        # if self.state == ViewStates.RECRUIT:
-        #     self._recruits_entity()
+    #     if self.state == ViewStates.RECRUIT:
+    #         self._recruits_entity()
 
-        # if self.merc is None:
-        #     self.entity_info.text = ""
-        # else:
-        #     self.entity_info.text = f"{self.merc.name.name_and_title} | LVL: {self.merc.fighter.level}  |  HP: {self.merc.fighter.hp}  |  ATK: {self.merc.fighter.power}  |  DEF: {self.merc.fighter.defence}"
+    #     if self.merc is None:
+    #         self.entity_info.text = ""
+    #     else:
+    #         self.entity_info.text = f"{self.merc.name.name_and_title} | LVL: {self.merc.fighter.level}  |  HP: {self.merc.fighter.hp}  |  ATK: {self.merc.fighter.power}  |  DEF: {self.merc.fighter.defence}"
 
     def on_draw(self) -> None:
         self.clear()
@@ -412,11 +462,39 @@ class RosterView(arcade.View):
                 if self.state == ViewStates.ROSTER:
                     self.recruitment_pane_section.height = WindowData.height
                     self.recruitment_pane_section.width = WindowData.width
+                    self.section_manager.remove_section(self.info_pane_section)
+                    self.info_pane_section = InfoPaneSection(
+                        left=0,
+                        bottom=52,
+                        width=WindowData.width,
+                        height=188,
+                        prevent_dispatch_view={False},
+                        margin=self.margin,
+                        texts=[
+                            self.instruction,
+                            self._potential_recruit_observer_widget(),
+                            self._guild_funds_info_observer_widget(),
+                        ],
+                    )
+                    self.add_section(self.info_pane_section)
+                    self.info_pane_section.manager.enable()
                     self.show_recruitment()
 
                 elif self.state == ViewStates.RECRUIT:
                     self.roster_and_team_pane_section.height = WindowData.height
                     self.roster_and_team_pane_section.width = WindowData.width
+                    self.section_manager.remove_section(self.info_pane_section)
+                    self.info_pane_section = InfoPaneSection(
+                        left=0,
+                        bottom=52,
+                        width=WindowData.width,
+                        height=188,
+                        prevent_dispatch_view={False},
+                        margin=self.margin,
+                        texts=[self.instruction, self._roster_member_observer_widget()],
+                    )
+                    self.add_section(self.info_pane_section)
+                    self.info_pane_section.manager.enable()
                     self.show_roster()
 
         self._log_state()

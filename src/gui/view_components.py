@@ -111,42 +111,11 @@ class InfoPaneSection(arcade.Section):
             single_box(
                 bottom=self.bottom,
                 height=self.height,
-                children=[*self.texts, self.guild_funds_info()],
+                children=self.texts,
                 padding=(10, 0, 0, 0),
                 panel=self.panel,
             )
         )
-
-    # Considering moving the potential info available to view in the InfoPane into here.
-    # The only issue at the moment is that obviously with this set up as is, the self.guild_funds_info() is in every views InfoPane.
-    # I tried creating a sort of mode switch to determine the children for the UIManager with a function to return the appropriate composite set.
-    # Got quite close but it kept breaking the observer defined below.
-    # The info would display but not update with state change until returning to recruitment section.
-    def guild_funds_info(self) -> UIWidget:
-        def set_funds_label_text(ui_label: UILabel, funds: int) -> None:
-            ui_label.text = f"{funds} gp"
-
-        funds_text_observer = observe(
-            get_observed_state=lambda: eng.game_state.guild.funds,
-            sync_widget=set_funds_label_text,
-        )
-
-        guild_funds = box_containing_horizontal_label_pair(
-            (
-                ("Guild Coffers: ", "right", 24, arcade.color.WHITE),
-                (
-                    f"{eng.game_state.guild.funds}",
-                    "left",
-                    24,
-                    arcade.color.GOLD,
-                    funds_text_observer,
-                ),
-            ),
-            padding=(0, 0, 0, 150),
-            size_hint=(1, None),
-        )
-
-        return guild_funds
 
     def flush(self):
         self.manager = UIManager()
