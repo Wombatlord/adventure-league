@@ -21,7 +21,10 @@ from src.gui.buttons import (
     roster_button,
 )
 from src.gui.combat_sections import CombatGridSection
-from src.gui.gui_components import box_containing_horizontal_label_pair
+from src.gui.gui_components import (
+    box_containing_horizontal_label_pair,
+    label_with_observer,
+)
 from src.gui.gui_utils import Cycle
 from src.gui.missions_view_section import MissionsSection
 from src.gui.observer import observe
@@ -246,33 +249,46 @@ class RosterView(arcade.View):
             size_hint=(1, None),
             text_color=arcade.color.WHITE,
         )
-        self.entity_info = UILabel(
-            text="",
+
+        ## NEW OBSERVER.
+        """
+        This is generally working great!
+        The only "issue" currently is that this is only hooked up for the recruitment side of things.
+        As such we don't get info about the roster / team entities at the moment, things need disentangling a little further.
+        The InfoPane is shared between the RosterAndTeamPaneSection & RecruitmentSection, so need to be able to switch what it's
+        displaying when changing with R key.        
+        """
+
+        def set_recruit_info_label(ui_label, selection) -> None:
+            if merc := self._recruits_entity(selection):
+                ui_label.text = self.entity_info.text = (
+                    f"{merc.name.name_and_title} "
+                    f"| LVL: {merc.fighter.level} "
+                    f"|  HP: {merc.fighter.hp} "
+                    f"| ATK: {merc.fighter.power} "
+                    f"| DEF: {merc.fighter.defence} "
+                )
+
+            else:
+                ui_label.text = " "
+
+        recruit_info_observer = observe(
+            get_observed_state=lambda: self.recruitment_pane_section.recruitment_scroll_window.items[
+                self.recruitment_pane_section.recruitment_scroll_window.position.pos
+            ],
+            sync_widget=set_recruit_info_label,
+        )
+
+        self.entity_info = label_with_observer(
+            label=f"Arrow Keys adjust selection and Enter will recruit!",
             width=WindowData.width,
             height=50,
-            font_size=24,
-            font_name=WindowData.font,
-            text_color=arcade.color.WHITE,
             align="center",
-            # size_hint=(1, 0.1),
+            font_size=24,
+            color=arcade.color.WHITE,
+            attach=recruit_info_observer,
         )
-
-        def set_funds_label_text(ui_label: UILabel, funds: int) -> None:
-            ui_label.text = f"{funds} gp"
-
-        funds_text_observer = observe(
-            get_observed_state=lambda: eng.game_state.guild.funds,
-            sync_widget=set_funds_label_text,
-        )
-
-        self.guild_funds = box_containing_horizontal_label_pair(
-            (
-                (" ", "right", 24, arcade.color.WHITE),
-                (" ", "left", 24, arcade.color.GOLD, funds_text_observer),
-            ),
-            padding=(0, 0, 0, 150),
-            size_hint=(1, None),
-        )
+        ## DONE
 
         self.info_pane_section = InfoPaneSection(
             left=0,
@@ -281,7 +297,10 @@ class RosterView(arcade.View):
             height=188,
             prevent_dispatch_view={False},
             margin=self.margin,
-            texts=[self.instruction, self.entity_info, self.guild_funds],
+            texts=[
+                self.instruction,
+                self.entity_info,
+            ],  # The Guild Funds labels have been made internal to the InfoPane
         )
 
         # CommandBar Config
@@ -334,14 +353,14 @@ class RosterView(arcade.View):
                 self.roster_and_team_pane_section.team_scroll_window.position.pos
             ]
 
-    def _recruits_entity(self) -> None:
+    def _recruits_entity(self, selection):
         """Sets self.merc to the selected entry in the recruitment scroll window.
         Allows the InfoPaneSection to display entity reference from RecruitmentPaneSection
         """
         if len(self.recruitment_pane_section.recruitment_scroll_window.items) > 0:
-            self.merc = self.recruitment_pane_section.recruitment_scroll_window.items[
-                self.recruitment_pane_section.recruitment_scroll_window.position.pos
-            ]
+            merc = selection
+
+        return merc
 
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
@@ -363,13 +382,13 @@ class RosterView(arcade.View):
             self._roster_entity()
             self._team_entity()
 
-        if self.state == ViewStates.RECRUIT:
-            self._recruits_entity()
+        # if self.state == ViewStates.RECRUIT:
+        #     self._recruits_entity()
 
-        if self.merc is None:
-            self.entity_info.text = ""
-        else:
-            self.entity_info.text = f"{self.merc.name.name_and_title} | LVL: {self.merc.fighter.level}  |  HP: {self.merc.fighter.hp}  |  ATK: {self.merc.fighter.power}  |  DEF: {self.merc.fighter.defence}"
+        # if self.merc is None:
+        #     self.entity_info.text = ""
+        # else:
+        #     self.entity_info.text = f"{self.merc.name.name_and_title} | LVL: {self.merc.fighter.level}  |  HP: {self.merc.fighter.hp}  |  ATK: {self.merc.fighter.power}  |  DEF: {self.merc.fighter.defence}"
 
     def on_draw(self) -> None:
         self.clear()

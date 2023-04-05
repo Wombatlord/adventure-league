@@ -59,14 +59,14 @@ class RecruitmentPaneSection(arcade.Section):
         super().__init__(left, bottom, width, height, **kwargs)
 
         self.panel_texture = SingleTextureSpecs.panel_highlighted.loaded
+        self.recruitment_scroll_window = ScrollWindow(
+            eng.game_state.entity_pool.pool, 10, 10
+        )
         self.update_ui()
 
     def update_ui(self):
         self.manager = UIManager()
 
-        self.recruitment_scroll_window = ScrollWindow(
-            eng.game_state.entity_pool.pool, 10, 10
-        )
         self.header = create_colored_UILabel_header(
             "Mercenaries For Hire!", arcade.color.GO_GREEN, font_size=36, height=45
         )
@@ -87,6 +87,7 @@ class RecruitmentPaneSection(arcade.Section):
         )
 
         _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
+        self.manager.trigger_render()
 
     # def on_update(self, delta_time: float):
     #     print(delta_time)
@@ -130,7 +131,7 @@ class RecruitmentPaneSection(arcade.Section):
             self.recruits_labels,
         )
 
-        self.manager.trigger_render()
+        # self.manager.trigger_render()
 
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.UP:
@@ -140,7 +141,7 @@ class RecruitmentPaneSection(arcade.Section):
             """
             self.recruitment_scroll_window.decr_selection()
             _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
-            self.manager.trigger_render()
+            # self.manager.trigger_render()
 
         if symbol == arcade.key.DOWN:
             """
@@ -149,7 +150,7 @@ class RecruitmentPaneSection(arcade.Section):
             """
             self.recruitment_scroll_window.incr_selection()
             _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
-            self.manager.trigger_render()
+            # self.manager.trigger_render()
 
         if symbol == arcade.key.ENTER:
             # If the total amount of guild members does not equal the roster_limit, recruit the selected mercenary to the guild.

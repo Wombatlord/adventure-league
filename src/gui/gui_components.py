@@ -22,13 +22,19 @@ class ColoredLabel(NamedTuple):
     colour: Rgba
     attach_observer: Attach = lambda *args: args[-1]
 
-    def get_ui_label(self, width, size_hint) -> UILabel:
+    def get_ui_label(
+        self,
+        width,
+        size_hint: tuple[int, int] | None = None,
+        height: int | None = None,
+    ) -> UILabel:
         return self.attach_observer(
             UILabel(
                 text=self.text,
                 font_size=self.font_size,
                 font_name=WindowData.font,
                 width=width,
+                height=height,
                 align=self.align,
                 size_hint=size_hint,
                 text_color=self.colour,
@@ -39,6 +45,21 @@ class ColoredLabel(NamedTuple):
 Colored_Label_Pair = tuple[Colored_Label, Colored_Label]
 
 Top_Right_Bottom_Left_Padding = tuple[int, int, int, int]
+
+
+def label_with_observer(
+    label: Colored_Label,
+    width,
+    height,
+    align,
+    font_size,
+    color,
+    attach,
+):
+    return ColoredLabel(label, align, font_size, color, attach).get_ui_label(
+        width=width,
+        height=height,
+    )
 
 
 def box_containing_horizontal_label_pair(
