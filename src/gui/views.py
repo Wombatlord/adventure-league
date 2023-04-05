@@ -10,6 +10,7 @@ from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
+from src.entities.entity import Entity
 from src.entities.actions import MoveAction
 from src.gui.buttons import (
     end_turn_button,
@@ -353,7 +354,7 @@ class RosterView(arcade.View):
                 self.roster_and_team_pane_section.team_scroll_window.position.pos
             ]
 
-    def _recruits_entity(self, selection):
+    def _recruits_entity(self, selection) -> Entity:
         """Sets self.merc to the selected entry in the recruitment scroll window.
         Allows the InfoPaneSection to display entity reference from RecruitmentPaneSection
         """
