@@ -358,17 +358,24 @@ class RosterView(arcade.View):
                 )
 
             else:
-                ui_label.text = " "
+                ui_label.text = "No stats to display."
+
+        def observable():
+            if self.roster_and_team_pane_section.roster_scroll_window.items:
+                return self.roster_and_team_pane_section.roster_scroll_window.items[
+                    self.roster_and_team_pane_section.roster_scroll_window.position.pos
+                ]
+
+            else:
+                return None
 
         recruit_info_observer = observe(
-            get_observed_state=lambda: self.roster_and_team_pane_section.roster_scroll_window.items[
-                self.roster_and_team_pane_section.roster_scroll_window.position.pos
-            ],
+            get_observed_state=lambda: observable(),
             sync_widget=set_roster_member_info_label,
         )
 
         entity_info = label_with_observer(
-            label=f"Arrow Keys adjust selection and Enter will assign to Team!",
+            label=f"Up / Down to adjust selection. Right / Left to switch between Roster and Team! Enter will move members!",
             width=WindowData.width,
             height=150,
             align="center",
@@ -389,6 +396,8 @@ class RosterView(arcade.View):
             and len(self.roster_and_team_pane_section.roster_scroll_window.items) > 0
         ):
             merc = selection
+        else:
+            merc = None
 
         return merc
 
