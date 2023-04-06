@@ -49,7 +49,7 @@ def entity_observer_widget(get_entity: Callable[[], Entity | None]):
         width=WindowData.width,
         height=50,
         align="center",
-        font_size=font_sizes.BODY,
+        font_size=font_sizes.SUBTITLE,
         color=arcade.color.WHITE,
         attach=recruit_info_observer,
         multiline=True,
@@ -82,7 +82,7 @@ class RecruitmentView(arcade.View):
         self.instruction = UILabel(
             text=f"Press Enter to Recruit!",
             width=WindowData.width,
-            height=50,
+            height=65,
             multiline=True,
             font_size=font_sizes.SUBTITLE,
             font_name=WindowData.font,
@@ -126,7 +126,7 @@ class RecruitmentView(arcade.View):
         self.info_pane_section.manager.enable()
         self.recruitment_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-        self.info_pane_section.manager.on_update(0)
+        self.clear()
 
     def on_hide_view(self) -> None:
         self.recruitment_pane_section.manager.disable()
@@ -147,11 +147,11 @@ class RecruitmentView(arcade.View):
 
         guild_funds = box_containing_horizontal_label_pair(
             (
-                ("Guild Coffers: ", "right", font_sizes.TITLE, arcade.color.WHITE),
+                ("Guild Coffers: ", "right", font_sizes.SUBTITLE, arcade.color.WHITE),
                 (
-                    f"{eng.game_state.guild.funds}",
+                    f"{eng.game_state.guild.funds} gp",
                     "left",
-                    font_sizes.TITLE,
+                    font_sizes.SUBTITLE,
                     arcade.color.GOLD,
                     funds_text_observer,
                 ),
@@ -197,7 +197,7 @@ class RosterView(arcade.View):
         self.instruction = UILabel(
             text=f"Assign members to the team before embarking on a mission!",
             width=WindowData.width,
-            height=75,
+            height=85,
             multiline=True,
             font_size=font_sizes.SUBTITLE,
             font_name=WindowData.font,
@@ -205,6 +205,7 @@ class RosterView(arcade.View):
             size_hint=(1, None),
             text_color=arcade.color.WHITE,
         )
+        self.add_section(self.roster_and_team_pane_section)
 
         self.info_pane_section = InfoPaneSection(
             left=0,
@@ -215,6 +216,7 @@ class RosterView(arcade.View):
             margin=self.margin,
             texts=[self.instruction, entity_observer_widget(self.get_selected_entity)],
         )
+        self.add_section(self.info_pane_section)
 
         self.roster_pane_buttons = [
             nav_button(lambda: RecruitmentView(self.parent), "Recruit"),
@@ -229,9 +231,6 @@ class RosterView(arcade.View):
             buttons=self.roster_pane_buttons,
             prevent_dispatch_view={False},
         )
-
-        self.add_section(self.roster_and_team_pane_section)
-        self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
 
     def get_selected_entity(self) -> Entity | None:
@@ -241,14 +240,16 @@ class RosterView(arcade.View):
         self.info_pane_section.manager.enable()
         self.roster_and_team_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
+        self.clear()
 
     def on_hide_view(self) -> None:
         self.roster_and_team_pane_section.manager.disable()
         self.info_pane_section.manager.disable()
         self.command_bar_section.manager.disable()
 
-    def on_draw(self) -> None:
-        self.clear()
+    # Uncomment to show font being borked
+    # def on_draw(self) -> None:
+    #     self.clear()
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:

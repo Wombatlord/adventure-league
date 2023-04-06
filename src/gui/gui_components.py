@@ -9,6 +9,7 @@ from arcade.gui.widgets.text import UILabel
 from src.gui.gui_utils import ScrollWindow
 from src.gui.window_data import WindowData
 from src.textures.pixelated_nine_patch import PixelatedNinePatch
+from src.config import font_sizes
 
 Rgba = tuple[int, int, int, int]
 Attach = Callable[[UILabel], UILabel]
@@ -114,7 +115,7 @@ def entity_labels_with_cost(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]
                 text=f"{entity.name.name_and_title}: {entity.cost} gp",
                 width=WindowData.width,
                 height=22,
-                font_size=12,
+                font_size=font_sizes.BODY,
                 font_name=WindowData.font,
                 align="center",
                 size_hint=(0.75, None),
@@ -139,7 +140,7 @@ def entity_labels_names_only(scroll_window: ScrollWindow) -> tuple[UIWidget, ...
                 text=f"{entity.name.name_and_title}",
                 width=WindowData.width,
                 height=40,
-                font_size=24,
+                font_size=font_sizes.BODY,
                 font_name=WindowData.font,
                 align="center",
                 size_hint=(1, None),

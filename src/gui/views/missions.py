@@ -107,9 +107,6 @@ class MissionsView(arcade.View):
         self.info_pane_section.manager.disable()
         self.mission_section.manager.disable()
 
-    def on_draw(self) -> None:
-        self.clear()
-
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
         WindowData.width = width

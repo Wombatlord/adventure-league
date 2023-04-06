@@ -15,6 +15,7 @@ from src.gui.gui_utils import Cycle
 from src.gui.window_data import WindowData
 from src.textures.pixelated_nine_patch import PixelatedNinePatch
 from src.textures.texture_data import SingleTextureSpecs
+from src.config import font_sizes
 
 
 def _highlight_selection(
@@ -73,7 +74,7 @@ class RecruitmentPaneSection(arcade.Section):
         self.manager = UIManager()
 
         self.header = create_colored_UILabel_header(
-            "Mercenaries For Hire!", arcade.color.GO_GREEN, font_size=36, height=45
+            "Mercenaries For Hire!", arcade.color.GO_GREEN, font_size=font_sizes.TITLE, height=55
         )
         self.recruits_labels: tuple[UIWidget] = entity_labels_with_cost(
             self.recruitment_scroll_window
@@ -262,10 +263,10 @@ class RosterAndTeamPaneSection(arcade.Section):
         self.sync_state()
         self.manager = UIManager()
         self.roster_header = create_colored_UILabel_header(
-            "Roster", arcade.color.BYZANTIUM, font_size=36, height=60
+            "Roster", arcade.color.BYZANTIUM, font_size=font_sizes.TITLE, height=60
         )
         self.team_header = create_colored_UILabel_header(
-            "Team", arcade.color.BRASS, font_size=36, height=60
+            "Team", arcade.color.BRASS, font_size=font_sizes.TITLE, height=60
         )
         self.update_labels()
 
