@@ -73,7 +73,7 @@ class RecruitmentPaneSection(arcade.Section):
         self.manager = UIManager()
 
         self.header = create_colored_UILabel_header(
-            "Mercenaries For Hire!", arcade.color.GO_GREEN, font_size=36, height=45
+            "Mercenaries For Hire!", arcade.color.GO_GREEN, font_size=36, height=55
         )
         self.recruits_labels: tuple[UIWidget] = entity_labels_with_cost(
             self.recruitment_scroll_window

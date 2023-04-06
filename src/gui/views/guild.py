@@ -9,6 +9,7 @@ from arcade import Window
 from arcade.gui import UITextureButton
 from arcade.gui.widgets.text import UILabel
 
+from src.config import font_sizes
 from src.engine.init_engine import eng
 from src.gui.buttons import nav_button, update_button
 from src.gui.view_components import CommandBarSection, InfoPaneSection
@@ -45,7 +46,6 @@ class TitleView(arcade.View):
 
     def on_draw(self):
         """Draw the title screen"""
-        self.clear()
 
         # Draw the background image
         arcade.draw_lrwh_rectangle_textured(
@@ -94,7 +94,7 @@ class GuildView(arcade.View):
         self.guild_label = UILabel(
             text=eng.game_state.guild.name,
             width=WindowData.width,
-            font_size=24,
+            font_size=font_sizes.TITLE,
             font_name=WindowData.font,
             align="center",
             size_hint=(1, None),
@@ -129,6 +129,7 @@ class GuildView(arcade.View):
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
+        self.clear()
 
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.
@@ -137,9 +138,6 @@ class GuildView(arcade.View):
         """
         self.command_bar_section.manager.disable()
         self.info_pane_section.manager.disable()
-
-    def on_draw(self) -> None:
-        self.clear()
 
     # def on_update(self, delta_time: float):
     #     print(delta_time)
