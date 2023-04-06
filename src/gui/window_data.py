@@ -1,7 +1,6 @@
 import pyglet
 
 pyglet.font.add_file("./assets/alagard.ttf")
-pyglet.font.add_file("./assets/PirataOne-Regular.ttf")
 
 
 def _cross_platform_name(name: str) -> str:

@@ -82,9 +82,9 @@ class RecruitmentView(arcade.View):
         self.instruction = UILabel(
             text=f"Press Enter to Recruit!",
             width=WindowData.width,
-            height=50,
+            height=65,
             multiline=True,
-            font_size=font_sizes.TITLE,
+            font_size=font_sizes.SUBTITLE,
             font_name=WindowData.font,
             align="center",
             size_hint=(1, None),
@@ -147,11 +147,11 @@ class RecruitmentView(arcade.View):
 
         guild_funds = box_containing_horizontal_label_pair(
             (
-                ("Guild Coffers: ", "right", font_sizes.TITLE, arcade.color.WHITE),
+                ("Guild Coffers: ", "right", font_sizes.SUBTITLE, arcade.color.WHITE),
                 (
                     f"{eng.game_state.guild.funds} gp",
                     "left",
-                    font_sizes.TITLE,
+                    font_sizes.SUBTITLE,
                     arcade.color.GOLD,
                     funds_text_observer,
                 ),
@@ -197,9 +197,9 @@ class RosterView(arcade.View):
         self.instruction = UILabel(
             text=f"Assign members to the team before embarking on a mission!",
             width=WindowData.width,
-            height=50,
+            height=85,
             multiline=True,
-            font_size=font_sizes.TITLE,
+            font_size=font_sizes.SUBTITLE,
             font_name=WindowData.font,
             align="center",
             size_hint=(1, None),
