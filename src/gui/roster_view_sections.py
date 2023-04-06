@@ -2,6 +2,7 @@ import arcade
 from arcade.gui import UIImage, UIManager, UIWidget
 
 from src.engine.init_engine import eng
+from src.entities.entity import Entity
 from src.gui.gui_components import (
     ScrollWindow,
     create_colored_UILabel_header,
@@ -63,6 +64,10 @@ class RecruitmentPaneSection(arcade.Section):
             eng.game_state.entity_pool.pool, 10, 10
         )
         self.update_ui()
+
+    @property
+    def selected_entity(self) -> Entity | None:
+        return self.recruitment_scroll_window.selection
 
     def update_ui(self):
         self.manager = UIManager()
@@ -238,11 +243,12 @@ class RosterAndTeamPaneSection(arcade.Section):
         self.update_ui()
 
     @property
-    def is_active(self):
-        return self._is_active
+    def selected_menu(self) -> ScrollWindow:
+        return [self.roster_scroll_window, self.team_scroll_window][self.pane_selector]
 
-    def toggle_active(self):
-        self._is_active = not self.is_active
+    @property
+    def selected_entity(self) -> Entity | None:
+        return self.selected_menu.selection
 
     def update_labels(self):
         self.roster_labels: tuple[UIWidget] = entity_labels_names_only(

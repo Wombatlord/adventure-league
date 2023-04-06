@@ -31,7 +31,7 @@ class CommandBarMixin:
 UIEventHandler = Callable[[UIEvent], None]
 
 
-def get_nav_handler(target: type[arcade.View]) -> UIEventHandler:
+def get_nav_handler(target: type[arcade.View] | arcade.View) -> UIEventHandler:
     """An UIEventHandler which changes the View.
 
     Args:
@@ -41,13 +41,16 @@ def get_nav_handler(target: type[arcade.View]) -> UIEventHandler:
         UIEventHandler: An implementation of a handler for a UIEvent (eg. on_click, on_keypress etc.)
     """
 
-    def _handle(event: UIEvent):
-        get_window().show_view(target())
+    def _handle(event: UIEvent | None = None):
+        destination = target if isinstance(target, arcade.View) else target()
+        get_window().show_view(destination)
 
     return _handle
 
 
-def nav_button(target: type[arcade.View], text: str) -> UITextureButton:
+def nav_button(
+    target: Callable[[], arcade.View] | type[arcade.View] | arcade.View, text: str
+) -> UITextureButton:
     """A generic button for changing to a different View.
 
     Args:

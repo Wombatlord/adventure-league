@@ -1,0 +1,3 @@
+TITLE = 24
+SUBTITLE = 18
+BODY = 12

@@ -10,6 +10,9 @@ class Cycle:
     def __str__(self) -> str:
         return json.dumps(self.__dict__)
 
+    def __index__(self) -> int:
+        return self.pos
+
     def reset_pos(self, new_pos: int = 0):
         self.pos = new_pos
 
@@ -124,6 +127,8 @@ class ScrollWindow:
 
     @property
     def selection(self) -> Any:
+        if not self.items:
+            return None
         return self.items[self.position.pos]
 
     def _drag_frame(self):

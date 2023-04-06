@@ -73,7 +73,7 @@ def box_containing_horizontal_label_pair(
 ):
     return UIBoxLayout(
         vertical=False,
-        size_hint=(1, 0.2),
+        size_hint=(1, 1),
         children=map(
             lambda cl: cl.get_ui_label(width=width, size_hint=size_hint),
             [ColoredLabel(*l) for l in labels_with_colors],
