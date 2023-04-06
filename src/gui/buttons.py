@@ -6,7 +6,6 @@ from arcade.gui.events import UIEvent
 from arcade.gui.widgets.buttons import UIFlatButton, UITextureButton
 
 from src.engine.init_engine import eng
-from src.gui.states import ViewStates
 from src.textures.texture_config import (
     TextureButtonNinePatchConfig,
     load_ui_texture_button,
@@ -68,15 +67,14 @@ def nav_button(
     return btn
 
 
-def get_new_missions_handler(event: UIEvent) -> UIEventHandler:
-    eng.refresh_mission_board()
+def update_button(on_click: Callable[[None], None], text: str):
+    def update_handler(event: UIEvent | None = None):
+        on_click()
 
-
-def get_new_missions_button() -> UITextureButton:
     btn = load_ui_texture_button(
-        texture_config=TextureButtonNinePatchConfig.gold(), text="New Missions"
+        texture_config=TextureButtonNinePatchConfig.gold(), text=text
     )
-    btn.on_click = get_new_missions_handler
+    btn.on_click = update_handler
 
     return btn
 

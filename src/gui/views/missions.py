@@ -10,15 +10,12 @@ from src.engine.init_engine import eng
 from src.gui.buttons import nav_button
 from src.gui.gui_utils import Cycle
 from src.gui.missions_view_section import MissionsSection
-from src.gui.states import ViewStates
 from src.gui.view_components import CommandBarSection, InfoPaneSection
 from src.gui.views.combat import CombatView
 from src.gui.window_data import WindowData
 
 
 class MissionsView(arcade.View):
-    state = ViewStates.MISSIONS
-
     def __init__(self, parent: arcade.View):
         super().__init__()
         self.parent = parent

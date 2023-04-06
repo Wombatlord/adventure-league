@@ -10,8 +10,7 @@ from arcade.gui import UITextureButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
-from src.gui.buttons import get_new_missions_button, nav_button
-from src.gui.states import ViewStates
+from src.gui.buttons import nav_button, update_button
 from src.gui.view_components import CommandBarSection, InfoPaneSection
 from src.gui.views.missions import MissionsView
 from src.gui.views.roster import RosterView
@@ -89,8 +88,6 @@ class GuildViewButtons(NamedTuple):
 class GuildView(arcade.View):
     """Draw a view displaying information about a guild"""
 
-    state = ViewStates.GUILD
-
     def __init__(self):
         super().__init__()
         # InfoPane config.
@@ -115,7 +112,7 @@ class GuildView(arcade.View):
         self.buttons = GuildViewButtons(
             nav_button(lambda: MissionsView(self), "Missions"),
             nav_button(lambda: RosterView(self), "Roster"),
-            get_new_missions_button(),
+            update_button(on_click=eng.refresh_mission_board, text="New Missions"),
         )
         self.command_bar_section = CommandBarSection(
             left=0,

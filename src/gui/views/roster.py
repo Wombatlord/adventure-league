@@ -21,7 +21,6 @@ from src.gui.roster_view_sections import (
     RecruitmentPaneSection,
     RosterAndTeamPaneSection,
 )
-from src.gui.states import ViewStates
 from src.gui.view_components import CommandBarSection, InfoPaneSection
 from src.gui.window_data import WindowData
 
@@ -179,8 +178,6 @@ class RecruitmentView(arcade.View):
 
 
 class RosterView(arcade.View):
-    state = ViewStates.ROSTER
-
     def __init__(self, parent):
         super().__init__()
         self.margin = 5
