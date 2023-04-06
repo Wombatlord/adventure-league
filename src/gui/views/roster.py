@@ -11,7 +11,7 @@ from arcade.gui.widgets.text import UILabel
 from src.config import font_sizes
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
-from src.gui.buttons import get_nav_handler, nav_button, recruit_button, roster_button
+from src.gui.buttons import nav_button
 from src.gui.gui_components import (
     box_containing_horizontal_label_pair,
     label_with_observer,
