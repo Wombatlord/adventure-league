@@ -1,8 +1,17 @@
 import arcade
-from arcade.gui import UIAnchorLayout, UIBoxLayout, UIFlatButton, UILabel, UIManager
+from arcade.gui import (
+    UIAnchorLayout,
+    UIBoxLayout,
+    UIFlatButton,
+    UILabel,
+    UIManager,
+    UIWidget,
+)
 
+from src.engine.init_engine import eng
 from src.gui.buttons import CommandBarMixin
-from src.gui.gui_components import single_box
+from src.gui.gui_components import box_containing_horizontal_label_pair, single_box
+from src.gui.observer import observe
 from src.gui.ui_styles import ADVENTURE_STYLE
 from src.textures.texture_data import SingleTextureSpecs
 
@@ -110,11 +119,6 @@ class InfoPaneSection(arcade.Section):
 
     def flush(self):
         self.manager = UIManager()
-
-    def set_guild_funds_label(self):
-        current_funds = self.manager.children[0][0].children[1].children[2].children[1]
-
-        self.guild_funds_label = current_funds
 
     def on_draw(self):
         self.manager.draw()

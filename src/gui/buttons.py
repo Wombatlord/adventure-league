@@ -31,7 +31,7 @@ class CommandBarMixin:
 UIEventHandler = Callable[[UIEvent], None]
 
 
-def get_nav_handler(target: type[arcade.View]) -> UIEventHandler:
+def get_nav_handler(target: type[arcade.View] | arcade.View) -> UIEventHandler:
     """An UIEventHandler which changes the View.
 
     Args:
@@ -41,13 +41,16 @@ def get_nav_handler(target: type[arcade.View]) -> UIEventHandler:
         UIEventHandler: An implementation of a handler for a UIEvent (eg. on_click, on_keypress etc.)
     """
 
-    def _handle(event: UIEvent):
-        get_window().show_view(target())
+    def _handle(event: UIEvent | None = None):
+        destination = target if isinstance(target, arcade.View) else target()
+        get_window().show_view(destination)
 
     return _handle
 
 
-def nav_button(target: type[arcade.View], text: str) -> UITextureButton:
+def nav_button(
+    target: Callable[[], arcade.View] | type[arcade.View] | arcade.View, text: str
+) -> UITextureButton:
     """A generic button for changing to a different View.
 
     Args:
@@ -89,12 +92,7 @@ def get_switch_to_recruitment_pane_handler(view) -> UIEventHandler:
 
     def _handle(event: UIEvent = None):
         view.state = ViewStates.RECRUIT
-        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
-            0
-        ].label.text = "Guild Coffers: "
-        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
-            1
-        ].label.text = f"{eng.game_state.guild.funds} gp"
+
         # Disable the roster_and_team_pane_section
         view.roster_and_team_pane_section.enabled = False
         view.roster_and_team_pane_section.manager.disable()
@@ -124,12 +122,6 @@ def get_switch_to_roster_and_team_panes_handler(view) -> UIEventHandler:
 
     def _handle(event: UIEvent = None):
         view.state = ViewStates.ROSTER
-        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
-            0
-        ].label.text = ""
-        view.info_pane_section.manager.children[0][0].children[1].children[2].children[
-            1
-        ].label.text = ""
         # Disable the recruitment_pane_section
         view.recruitment_pane_section.enabled = False
 

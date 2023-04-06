@@ -4,7 +4,7 @@ import arcade
 
 import src.engine.init_engine as _
 from src import config
-from src.gui.views import TitleView, WindowData
+from src.gui.views.guild import TitleView, WindowData
 
 
 def start_adventure_league():

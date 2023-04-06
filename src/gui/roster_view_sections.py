@@ -2,6 +2,7 @@ import arcade
 from arcade.gui import UIImage, UIManager, UIWidget
 
 from src.engine.init_engine import eng
+from src.entities.entity import Entity
 from src.gui.gui_components import (
     ScrollWindow,
     create_colored_UILabel_header,
@@ -59,14 +60,18 @@ class RecruitmentPaneSection(arcade.Section):
         super().__init__(left, bottom, width, height, **kwargs)
 
         self.panel_texture = SingleTextureSpecs.panel_highlighted.loaded
+        self.recruitment_scroll_window = ScrollWindow(
+            eng.game_state.entity_pool.pool, 10, 10
+        )
         self.update_ui()
+
+    @property
+    def selected_entity(self) -> Entity | None:
+        return self.recruitment_scroll_window.selection
 
     def update_ui(self):
         self.manager = UIManager()
 
-        self.recruitment_scroll_window = ScrollWindow(
-            eng.game_state.entity_pool.pool, 10, 10
-        )
         self.header = create_colored_UILabel_header(
             "Mercenaries For Hire!", arcade.color.GO_GREEN, font_size=36, height=45
         )
@@ -87,6 +92,7 @@ class RecruitmentPaneSection(arcade.Section):
         )
 
         _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
+        self.manager.trigger_render()
 
     # def on_update(self, delta_time: float):
     #     print(delta_time)
@@ -130,7 +136,7 @@ class RecruitmentPaneSection(arcade.Section):
             self.recruits_labels,
         )
 
-        self.manager.trigger_render()
+        # self.manager.trigger_render()
 
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.UP:
@@ -140,7 +146,7 @@ class RecruitmentPaneSection(arcade.Section):
             """
             self.recruitment_scroll_window.decr_selection()
             _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
-            self.manager.trigger_render()
+            # self.manager.trigger_render()
 
         if symbol == arcade.key.DOWN:
             """
@@ -149,7 +155,7 @@ class RecruitmentPaneSection(arcade.Section):
             """
             self.recruitment_scroll_window.incr_selection()
             _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
-            self.manager.trigger_render()
+            # self.manager.trigger_render()
 
         if symbol == arcade.key.ENTER:
             # If the total amount of guild members does not equal the roster_limit, recruit the selected mercenary to the guild.
@@ -225,7 +231,7 @@ class RosterAndTeamPaneSection(arcade.Section):
         super().__init__(left, bottom, width, height, **kwargs)
 
         self.init_nine_patch_pair()
-
+        self._is_active = False
         self.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
         self.team_scroll_window = ScrollWindow(
             eng.game_state.guild.team.members, 10, 10
@@ -235,6 +241,14 @@ class RosterAndTeamPaneSection(arcade.Section):
         self.pane_selector = Cycle(2)
 
         self.update_ui()
+
+    @property
+    def selected_menu(self) -> ScrollWindow:
+        return [self.roster_scroll_window, self.team_scroll_window][self.pane_selector]
+
+    @property
+    def selected_entity(self) -> Entity | None:
+        return self.selected_menu.selection
 
     def update_labels(self):
         self.roster_labels: tuple[UIWidget] = entity_labels_names_only(
