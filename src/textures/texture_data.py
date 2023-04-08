@@ -37,10 +37,15 @@ class SingleTextureSpecs:
         "./assets/background_glacial_mountains.png",
     )
 
-    banner = TextureSpec(
+    title_banner = TextureSpec(
         "./assets/sprites/banner.png",
     )
 
+    start_banner = TextureSpec("./assets/sprites/start_banner.png")
+    roster_banner = TextureSpec("./assets/sprites/roster_banner.png")
+    roster_banner_dark = TextureSpec("./assets/sprites/roster_banner_dark.png")
+    team_banner = TextureSpec("./assets/sprites/team_banner.png")
+    team_banner_dark = TextureSpec("./assets/sprites/team_banner_dark.png")
     panel_highlighted = TextureSpec("./assets/sprites/panel.png")
     panel_darkened = TextureSpec("./assets/sprites/panel_dark.png")
 

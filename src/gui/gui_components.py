@@ -6,10 +6,10 @@ from arcade.gui.widgets import UIWidget
 from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
 from arcade.gui.widgets.text import UILabel
 
+from src.config import font_sizes
 from src.gui.gui_utils import ScrollWindow
 from src.gui.window_data import WindowData
 from src.textures.pixelated_nine_patch import PixelatedNinePatch
-from src.config import font_sizes
 
 Rgba = tuple[int, int, int, int]
 Attach = Callable[[UILabel], UILabel]

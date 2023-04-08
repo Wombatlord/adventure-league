@@ -1,82 +1,110 @@
 from __future__ import annotations
 
+import math
 from typing import NamedTuple
 
 import arcade
 import arcade.color
 import arcade.key
 from arcade import Window
-from arcade.gui import UITextureButton
+from arcade.gui import UIAnchorLayout, UIImage, UIManager, UITextureButton
 from arcade.gui.widgets.text import UILabel
 
 from src.config import font_sizes
 from src.engine.init_engine import eng
+from src.gui import motion
 from src.gui.buttons import nav_button, update_button
 from src.gui.view_components import CommandBarSection, InfoPaneSection
 from src.gui.views.missions import MissionsView
 from src.gui.views.roster import RosterView
 from src.gui.window_data import WindowData
+from src.textures.pixelated_nine_patch import PixelatedNinePatch
 from src.textures.texture_data import SingleTextureSpecs
 
 
 class TitleView(arcade.View):
     def __init__(self, window: Window | None = None):
         super().__init__(window)
-        self.background = SingleTextureSpecs.title_background.loaded
-        self.banner = SingleTextureSpecs.banner.loaded
-        self.title_y = -10
-        self.start_y = -10
+        self.initial_title_y_pos = -250
+        self.initial_subtitle_y_pos = -50
         self.sprite_list = arcade.SpriteList()
         self.banner_sprite = arcade.Sprite(
-            self.banner, center_x=WindowData.width / 2, center_y=-250, scale=2
+            path_or_texture=SingleTextureSpecs.title_banner.loaded,
+            center_x=WindowData.width / 2,
+            center_y=self.initial_title_y_pos,
+            scale=0,
         )
-        self.sprite_list.append(self.banner_sprite)
+        self.banner_sprite.alpha = 0
+        self.start_banner_sprite = arcade.Sprite(
+            path_or_texture=SingleTextureSpecs.start_banner.loaded,
+            center_x=WindowData.width / 2,
+            center_y=WindowData.height * 0.1,
+            scale=0,
+        )
+        self.start_banner_sprite.alpha = 0
+        sprites = [self.banner_sprite, self.start_banner_sprite]
+        for sprite in sprites:
+            self.sprite_list.append(sprite)
+
+        self.angle = 0
 
     def on_update(self, delta_time: float):
-        if self.banner_sprite.center_y < WindowData.height * 0.85:
-            self.banner_sprite.center_y += 5
+        self.update_angle(delta_time)
+        self.animate_title_banner()
+        self.animate_start_banner()
 
-        if self.banner_sprite.center_y > WindowData.height * 0.85:
-            self.banner_sprite.center_y = WindowData.height * 0.85
-        if (
-            self.banner_sprite.center_y == WindowData.height * 0.85
-            and self.start_y < WindowData.height * 0.3
-        ):
-            self.start_y += 5
+    def animate_start_banner(self):
+        if self.banner_sprite.alpha == 255 and self.start_banner_sprite.alpha < 255:
+            self.start_banner_sprite.alpha += 1
+
+            if self.start_banner_sprite.scale < 2:
+                self.start_banner_sprite.scale += 0.01
+
+        self.start_banner_sprite.center_y = motion.harmonic_motion(
+            10, 2, self.angle, v_shift=WindowData.height * 0.1
+        ).y
+
+    def animate_title_banner(self):
+        if self.banner_sprite.alpha < 255:
+            self.banner_sprite.alpha += 1
+
+        if self.banner_sprite.scale < 2:
+            self.banner_sprite.scale += 0.01
+
+        self.banner_sprite.center_y = motion.harmonic_motion(
+            10, 2, self.angle, v_shift=WindowData.height * 0.85
+        ).y
+        self.banner_sprite.center_x = motion.harmonic_motion(
+            10, 1.5, self.angle * 2, phase_shift=WindowData.width / 2
+        ).x
+
+    def update_angle(self, delta_time):
+        self.angle += delta_time / 2
 
     def on_draw(self):
         """Draw the title screen"""
-
         # Draw the background image
         arcade.draw_lrwh_rectangle_textured(
-            0, 0, WindowData.width, WindowData.height, self.background
+            0,
+            0,
+            WindowData.width,
+            WindowData.height,
+            SingleTextureSpecs.title_background.loaded,
         )
-
         self.sprite_list.draw(pixelated=True)
-
-        arcade.draw_text(
-            "Press G for a Guild View!",
-            WindowData.width / 2,
-            self.start_y,
-            arcade.color.GOLDENROD,
-            font_name=WindowData.font,
-            font_size=20,
-            anchor_x="center",
-        )
 
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
-            case arcade.key.G:
+            case arcade.key.G | arcade.key.ENTER:
                 guild_view = GuildView()
                 self.window.show_view(guild_view)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-
         WindowData.width = width
         WindowData.height = height
 
-        self.banner_sprite.center_x = WindowData.width // 2
+        self.start_banner_sprite.center_x = width / 2
 
 
 class GuildViewButtons(NamedTuple):
@@ -147,7 +175,7 @@ class GuildView(arcade.View):
             case arcade.key.G:
                 title_view = TitleView()
                 title_view.title_y = WindowData.height * 0.75
-                title_view.start_y = WindowData.height * 0.3
+                title_view.initial_subtitle_y_pos = WindowData.height * 0.3
                 self.window.show_view(title_view)
 
             case arcade.key.N:
