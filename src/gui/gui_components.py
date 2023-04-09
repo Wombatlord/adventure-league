@@ -160,7 +160,6 @@ def vstack_of_three_boxes(
     content_btm: tuple[UIWidget, ...],
     panel_highlighted: PixelatedNinePatch,
     panel_darkened: PixelatedNinePatch,
-    banner=PixelatedNinePatch,
     tex_reference_buffer: list | None = None,
 ) -> UIAnchorLayout:
     anchor = UIAnchorLayout(
@@ -172,43 +171,42 @@ def vstack_of_three_boxes(
     if tex_reference_buffer is None:
         tex_reference_buffer = []
 
-    t = UIImage(
-        texture=PixelatedNinePatch(
-            left=15, right=15, bottom=15, top=15, texture=panel_highlighted
-        ),
-        size_hint=(1, 1 / 3),
-    )
-    c = UIImage(
-        texture=PixelatedNinePatch(
-            left=15, right=15, bottom=15, top=15, texture=panel_darkened
-        ),
-        size_hint=(1, 1 / 3),
-    )
+    # Prepare and add the texture backgrounds to the mission cards.
+    top_panel = get_background_panel(panel_highlighted)
+    center_panel = get_background_panel(panel_darkened)
+    bottom_panel = get_background_panel(panel_darkened)
 
-    b = UIImage(
-        texture=PixelatedNinePatch(
-            left=15, right=15, bottom=15, top=15, texture=panel_darkened
-        ),
-        size_hint=(1, 1 / 3),
-    )
-
-    ### WIP Mission Banner
-    x = Image.open("assets\sprites\mission_banner.png")
-    s = UIImage(
-        texture=PixelatedTexture(image=x),
-        size_hint=(None, None),
-        height=61,
-        width=772,
-    )
-
-    tex_reference_buffer.extend([t, c, b])
+    tex_reference_buffer.extend([top_panel, center_panel, bottom_panel])
 
     for panel, anchor_y in zip(tex_reference_buffer, ["top", "center", "bottom"]):
         anchor.add(child=panel, anchor_y=anchor_y)
 
     ### WIP Mission Banner
-    anchor.add(child=s, anchor_y="top", align_y=-8)
+    # Adds a BoxLayout overlapping with the BoxLayout for labels to allow drawing mission_banner behind mission header label
+    # with correct alignments.
+    with Image.open("assets\sprites\mission_banner.png") as banner_image:
+        banner_refs = []
+        for _ in range(3):
+            banner_refs.append(get_mission_banner(banner_image))
 
+    for element, anchor_y in zip(
+        banner_refs,
+        ["top", "center", "bottom"],
+    ):
+        anchor.add(
+            anchor_x="center",
+            anchor_y=anchor_y,
+            child=UIBoxLayout(
+                vertical=True,
+                # height=122,
+                size_hint=(1, 0.335),
+                children=[element],
+                space_between=0,
+            ).with_padding(top=10),
+        )
+    ### WIP Mission Banner
+
+    # Add a BoxLayout for the labels
     for element, anchor_y in zip(
         [content_top, content_mid, content_btm],
         ["top", "center", "bottom"],
@@ -226,6 +224,24 @@ def vstack_of_three_boxes(
         )
 
     return anchor
+
+
+def get_mission_banner(x):
+    return UIImage(
+        texture=PixelatedTexture(image=x),
+        size_hint=(None, None),
+        height=61,
+        width=772,
+    )
+
+
+def get_background_panel(panel_highlighted):
+    return UIImage(
+        texture=PixelatedNinePatch(
+            left=15, right=15, bottom=15, top=15, texture=panel_highlighted
+        ),
+        size_hint=(1, 1 / 3),
+    )
 
 
 def single_box(

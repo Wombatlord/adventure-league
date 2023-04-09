@@ -1,5 +1,5 @@
 import arcade
-from arcade.gui import UIManager, UISpriteWidget
+from arcade.gui import UIManager
 
 from src.config import font_sizes
 from src.gui.gui_components import (
@@ -39,13 +39,13 @@ class MissionsSection(arcade.Section):
                 header_string=self.missions[1].description,
                 font_size=font_sizes.SUBTITLE,
                 color=arcade.color.GOLD,
-                height=35,
+                height=45,
             ),
             create_colored_UILabel_header(
                 header_string=self.missions[2].description,
                 font_size=font_sizes.SUBTITLE,
                 color=arcade.color.GOLD,
-                height=35,
+                height=45,
             ),
         )
 
@@ -179,7 +179,6 @@ class MissionsSection(arcade.Section):
                 content_btm=labels[2],
                 panel_highlighted=SingleTextureSpecs.panel_highlighted.loaded,
                 panel_darkened=SingleTextureSpecs.panel_darkened.loaded,
-                banner=SingleTextureSpecs.mission_banner.loaded,
                 tex_reference_buffer=references,
             ),
         )
