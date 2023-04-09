@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from src.gui.views.guild import GuildView
 
 import arcade
 import arcade.color
@@ -126,12 +129,12 @@ class RecruitmentView(arcade.View):
         self.info_pane_section.manager.enable()
         self.recruitment_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-        self.clear()
 
     def on_hide_view(self) -> None:
         self.recruitment_pane_section.manager.disable()
         self.info_pane_section.manager.disable()
         self.command_bar_section.manager.disable()
+        self.clear()
 
     def get_selected_entity(self) -> Entity | None:
         return self.recruitment_pane_section.selected_entity
@@ -165,7 +168,8 @@ class RecruitmentView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
             case arcade.key.G:
-                self.window.show_view(self.parent)
+                g = self.parent()
+                self.window.show_view(g)
 
             case arcade.key.R:
                 self.window.show_view(RosterView(parent=self.parent))
@@ -183,7 +187,7 @@ class RosterView(arcade.View):
         self.margin = 5
         self.merc = None
         self.color = arcade.color.WHITE
-        self.parent = parent
+        self.parent: GuildView = parent
         # RosterAndTeamPane Config
         self.roster_and_team_pane_section = RosterAndTeamPaneSection(
             left=2,
@@ -240,27 +244,23 @@ class RosterView(arcade.View):
         self.info_pane_section.manager.enable()
         self.roster_and_team_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-        self.clear()
 
     def on_hide_view(self) -> None:
         self.roster_and_team_pane_section.manager.disable()
         self.info_pane_section.manager.disable()
         self.command_bar_section.manager.disable()
-
-    # Uncomment to show font being borked
-    # def on_draw(self) -> None:
-    #     self.clear()
+        self.clear()
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.G:
-                self.window.show_view(self.parent)
+                g = self.parent()
+                self.window.show_view(g)
 
             case arcade.key.R:
                 self.window.show_view(RecruitmentView(parent=self.parent))
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
-
         WindowData.width = width
         WindowData.height = height

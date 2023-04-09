@@ -1,7 +1,7 @@
 from typing import Callable, NamedTuple
 
 import arcade.color
-from arcade.gui import UIImage
+from arcade.gui import UIImage, UISpriteWidget
 from arcade.gui.widgets import UIWidget
 from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
 from arcade.gui.widgets.text import UILabel
@@ -74,7 +74,8 @@ def box_containing_horizontal_label_pair(
 ):
     return UIBoxLayout(
         vertical=False,
-        size_hint=(1, 1),
+        height=35,
+        size_hint=(1, None),
         children=map(
             lambda cl: cl.get_ui_label(width=width, size_hint=size_hint),
             [ColoredLabel(*l) for l in labels_with_colors],
@@ -156,12 +157,55 @@ def vstack_of_three_boxes(
     content_top: tuple[UIWidget, ...],
     content_mid: tuple[UIWidget, ...],
     content_btm: tuple[UIWidget, ...],
+    panel_highlighted: PixelatedNinePatch,
+    panel_darkened: PixelatedNinePatch,
+    banner=PixelatedNinePatch,
+    tex_reference_buffer: list | None = None,
 ) -> UIAnchorLayout:
     anchor = UIAnchorLayout(
         y=bottom,
         height=height,
         size_hint=(1, None),
-    ).with_border(color=arcade.color.GOLD, width=5)
+    )
+
+    if tex_reference_buffer is None:
+        tex_reference_buffer = []
+
+    t = UIImage(
+        texture=PixelatedNinePatch(
+            left=15, right=15, bottom=15, top=15, texture=panel_highlighted
+        ),
+        size_hint=(1, 1 / 3),
+    )
+    c = UIImage(
+        texture=PixelatedNinePatch(
+            left=15, right=15, bottom=15, top=15, texture=panel_darkened
+        ),
+        size_hint=(1, 1 / 3),
+    )
+
+    b = UIImage(
+        texture=PixelatedNinePatch(
+            left=15, right=15, bottom=15, top=15, texture=panel_darkened
+        ),
+        size_hint=(1, 1 / 3),
+    )
+
+    ### WIP Mission Banner
+    # s = UIImage(
+    #     texture=banner,
+    #     size_hint=(None, None),
+    #     height=50,
+    #     width=700,
+    # )
+
+    tex_reference_buffer.extend([t, c, b])
+
+    for panel, anchor_y in zip(tex_reference_buffer, ["top", "center", "bottom"]):
+        anchor.add(child=panel, anchor_y=anchor_y)
+
+    ### WIP Mission Banner
+    # anchor.add(child=s,  anchor_y="top", align_y=-8)
 
     for element, anchor_y in zip(
         [content_top, content_mid, content_btm],
@@ -172,9 +216,11 @@ def vstack_of_three_boxes(
             anchor_y=anchor_y,
             child=UIBoxLayout(
                 vertical=True,
-                size_hint=(1, 1 / 3),
+                # height=122,
+                size_hint=(1, 0.33),
                 children=element,
-            ).with_border(color=arcade.color.ELECTRIC_BLUE, width=5),
+                space_between=0,
+            ).with_padding(top=10),
         )
 
     return anchor

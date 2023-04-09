@@ -53,6 +53,9 @@ class TitleView(arcade.View):
         self.animate_title_banner()
         self.animate_start_banner()
 
+    def on_hide_view(self):
+        self.clear()
+
     def animate_start_banner(self):
         if self.banner_sprite.alpha == 255 and self.start_banner_sprite.alpha < 255:
             self.start_banner_sprite.alpha += 1
@@ -157,7 +160,6 @@ class GuildView(arcade.View):
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
-        self.clear()
 
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.
@@ -166,6 +168,7 @@ class GuildView(arcade.View):
         """
         self.command_bar_section.manager.disable()
         self.info_pane_section.manager.disable()
+        self.clear()
 
     # def on_update(self, delta_time: float):
     #     print(delta_time)
@@ -186,11 +189,11 @@ class GuildView(arcade.View):
                     )
 
             case arcade.key.M:
-                missions_view = MissionsView(parent=self)
+                missions_view = MissionsView(parent=GuildView)
                 self.window.show_view(missions_view)
 
             case arcade.key.R:
-                roster_view = RosterView(parent=self)
+                roster_view = RosterView(parent=GuildView)
                 self.window.show_view(roster_view)
 
             case arcade.key.ESCAPE:

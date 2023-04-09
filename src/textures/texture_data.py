@@ -42,12 +42,10 @@ class SingleTextureSpecs:
     )
 
     start_banner = TextureSpec("./assets/sprites/start_banner.png")
-    roster_banner = TextureSpec("./assets/sprites/roster_banner.png")
-    roster_banner_dark = TextureSpec("./assets/sprites/roster_banner_dark.png")
-    team_banner = TextureSpec("./assets/sprites/team_banner.png")
-    team_banner_dark = TextureSpec("./assets/sprites/team_banner_dark.png")
     panel_highlighted = TextureSpec("./assets/sprites/panel.png")
     panel_darkened = TextureSpec("./assets/sprites/panel_dark.png")
+    mercenaries_banner = TextureSpec("./assets/sprites/mercenaries_banner.png")
+    mission_banner = TextureSpec("./assets/sprites/mission_banner.png")
 
 
 class SpriteSheetSpecs:
@@ -100,6 +98,19 @@ class SpriteSheetSpecs:
                 "sprite_width": 16,
                 "columns": 2,
                 "count": 6,
+                "margin": 0,
+            }
+        ),
+    )
+
+    banners = SheetSpec(
+        args=("./assets/sprites/banner_sheet.png",),
+        kwargs=_hashable(
+            **{
+                "sprite_height": 31,
+                "sprite_width": 193,
+                "columns": 1,
+                "count": 4,
                 "margin": 0,
             }
         ),

@@ -1,6 +1,7 @@
 import arcade
-from arcade.gui import UIManager
+from arcade.gui import UIManager, UISpriteWidget
 
+from src.config import font_sizes
 from src.gui.gui_components import (
     box_containing_horizontal_label_pair,
     create_colored_UILabel_header,
@@ -8,6 +9,7 @@ from src.gui.gui_components import (
 )
 from src.gui.gui_utils import Cycle
 from src.gui.states import MissionCards
+from src.textures.texture_data import SingleTextureSpecs
 
 
 class MissionsSection(arcade.Section):
@@ -28,13 +30,22 @@ class MissionsSection(arcade.Section):
 
         headers = (
             create_colored_UILabel_header(
-                header_string=self.missions[0].description, color=arcade.color.GOLD
+                header_string=self.missions[0].description,
+                font_size=font_sizes.SUBTITLE,
+                color=arcade.color.GOLD,
+                height=35,
             ),
             create_colored_UILabel_header(
-                header_string=self.missions[1].description, color=arcade.color.GOLD
+                header_string=self.missions[1].description,
+                font_size=font_sizes.SUBTITLE,
+                color=arcade.color.GOLD,
+                height=35,
             ),
             create_colored_UILabel_header(
-                header_string=self.missions[2].description, color=arcade.color.GOLD
+                header_string=self.missions[2].description,
+                font_size=font_sizes.SUBTITLE,
+                color=arcade.color.GOLD,
+                height=35,
             ),
         )
 
@@ -43,11 +54,11 @@ class MissionsSection(arcade.Section):
                 *headers[0],
                 box_containing_horizontal_label_pair(
                     (
-                        ("Boss:", "left", 16, arcade.color.GOLD),
+                        ("Boss:", "left", font_sizes.BODY, arcade.color.GOLD),
                         (
                             self.missions[0].boss.name.name_and_title,
                             "left",
-                            16,
+                            font_sizes.BODY,
                             arcade.color.ALABAMA_CRIMSON,
                         ),
                     ),
@@ -61,11 +72,11 @@ class MissionsSection(arcade.Section):
                 ),
                 box_containing_horizontal_label_pair(
                     (
-                        ("Rewards:", "left", 14, arcade.color.GOLD),
+                        ("Rewards:", "left", font_sizes.BODY, arcade.color.GOLD),
                         (
                             self.missions[0].peek_reward(),
                             "left",
-                            16,
+                            font_sizes.BODY,
                             arcade.color.PALATINATE_BLUE,
                         ),
                     ),
@@ -82,11 +93,11 @@ class MissionsSection(arcade.Section):
                 *headers[1],
                 box_containing_horizontal_label_pair(
                     (
-                        ("Boss:", "left", 16, arcade.color.GOLD),
+                        ("Boss:", "left", font_sizes.BODY, arcade.color.GOLD),
                         (
                             self.missions[1].boss.name.name_and_title,
                             "left",
-                            16,
+                            font_sizes.BODY,
                             arcade.color.ALABAMA_CRIMSON,
                         ),
                     ),
@@ -100,11 +111,11 @@ class MissionsSection(arcade.Section):
                 ),
                 box_containing_horizontal_label_pair(
                     (
-                        ("Rewards:", "left", 14, arcade.color.GOLD),
+                        ("Rewards:", "left", font_sizes.BODY, arcade.color.GOLD),
                         (
                             self.missions[1].peek_reward(),
                             "left",
-                            16,
+                            font_sizes.BODY,
                             arcade.color.PALATINATE_BLUE,
                         ),
                     ),
@@ -121,11 +132,11 @@ class MissionsSection(arcade.Section):
                 *headers[2],
                 box_containing_horizontal_label_pair(
                     (
-                        ("Boss:", "left", 16, arcade.color.GOLD),
+                        ("Boss:", "left", font_sizes.BODY, arcade.color.GOLD),
                         (
                             self.missions[2].boss.name.name_and_title,
                             "left",
-                            16,
+                            font_sizes.BODY,
                             arcade.color.ALABAMA_CRIMSON,
                         ),
                     ),
@@ -139,11 +150,11 @@ class MissionsSection(arcade.Section):
                 ),
                 box_containing_horizontal_label_pair(
                     (
-                        ("Rewards:", "left", 14, arcade.color.GOLD),
+                        ("Rewards:", "left", font_sizes.BODY, arcade.color.GOLD),
                         (
                             self.missions[2].peek_reward(),
                             "left",
-                            16,
+                            font_sizes.BODY,
                             arcade.color.PALATINATE_BLUE,
                         ),
                     ),
@@ -158,34 +169,55 @@ class MissionsSection(arcade.Section):
             ),
         )
 
+        references = []
         self.manager.add(
             vstack_of_three_boxes(
                 self.bottom,
                 self.height,
-                *labels,
+                content_top=labels[0],
+                content_mid=labels[1],
+                content_btm=labels[2],
+                panel_highlighted=SingleTextureSpecs.panel_highlighted.loaded,
+                panel_darkened=SingleTextureSpecs.panel_darkened.loaded,
+                banner=SingleTextureSpecs.mission_banner.loaded,
+                tex_reference_buffer=references,
             ),
         )
 
-        self.manager.children[0][0].children[0]._border_width = 5
-        self.manager.children[0][0].children[1]._border_width = 0
-        self.manager.children[0][0].children[2]._border_width = 0
+        self.highlighted_tex, self.darkened_tex = [
+            ref.texture for ref in references[:2]
+        ]
+        self.top_pane, self.mid_pane, self.bottom_pane = references
+        self.tex_panes = references
+
+    def highlight_states(self) -> tuple[int, int, int]:
+        return (
+            # highlighted
+            self.mission_selection.pos,
+            # normal
+            (self.mission_selection.pos + 1) % 3,
+            (self.mission_selection.pos + 2) % 3,
+        )
+
+    def _highlight_selected_pane(self, highlighted, normal, _normal):
+        self.tex_panes[highlighted].texture = self.highlighted_tex
+        self.tex_panes[normal].texture = self.darkened_tex
+        self.tex_panes[_normal].texture = self.darkened_tex
 
     def scroll_mission_selection(self):
         match self.mission_selection.pos:
             case MissionCards.TOP.value:
-                self.manager.children[0][0].children[0]._border_width = 5
-                self.manager.children[0][0].children[1]._border_width = 0
-                self.manager.children[0][0].children[2]._border_width = 0
+                # self.manager.children[0][0].children[0].
+                highlight, normal, _normal = self.highlight_states()
+                self._highlight_selected_pane(highlight, normal, _normal)
 
             case MissionCards.MIDDLE.value:
-                self.manager.children[0][0].children[0]._border_width = 0
-                self.manager.children[0][0].children[1]._border_width = 5
-                self.manager.children[0][0].children[2]._border_width = 0
+                highlight, normal, _normal = self.highlight_states()
+                self._highlight_selected_pane(highlight, normal, _normal)
 
             case MissionCards.BOTTOM.value:
-                self.manager.children[0][0].children[0]._border_width = 0
-                self.manager.children[0][0].children[1]._border_width = 0
-                self.manager.children[0][0].children[2]._border_width = 5
+                highlight, normal, _normal = self.highlight_states()
+                self._highlight_selected_pane(highlight, normal, _normal)
 
     def on_draw(self):
         self.manager.draw()
@@ -199,9 +231,9 @@ class MissionsSection(arcade.Section):
             case arcade.key.UP:
                 self.mission_selection.decr()
                 self.scroll_mission_selection()
-                print(self.missions[self.mission_selection.pos].description)
+                self.manager.trigger_render()
 
             case arcade.key.DOWN:
                 self.mission_selection.incr()
                 self.scroll_mission_selection()
-                print(self.missions[self.mission_selection.pos].description)
+                self.manager.trigger_render()

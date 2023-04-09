@@ -106,6 +106,7 @@ class MissionsView(arcade.View):
         self.command_bar_section.manager.disable()
         self.info_pane_section.manager.disable()
         self.mission_section.manager.disable()
+        self.clear()
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
@@ -115,7 +116,8 @@ class MissionsView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.G:
-                self.window.show_view(self.parent)
+                g = self.parent
+                self.window.show_view(g())
 
             case arcade.key.DOWN:
                 self.selection.decr()

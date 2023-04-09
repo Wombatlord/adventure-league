@@ -1,21 +1,18 @@
 import arcade
-from arcade.gui import UIImage, UIManager, UIWidget
+from arcade.gui import UIManager, UIWidget
 
-from src.config import font_sizes
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
 from src.gui.gui_components import (
     ScrollWindow,
-    create_colored_UILabel_header,
     entity_labels_names_only,
     entity_labels_with_cost,
     horizontal_box_pair,
     single_box,
 )
 from src.gui.gui_utils import Cycle
-from src.gui.window_data import WindowData
 from src.textures.pixelated_nine_patch import PixelatedNinePatch
-from src.textures.texture_data import SingleTextureSpecs
+from src.textures.texture_data import SingleTextureSpecs, SpriteSheetSpecs
 
 
 def _highlight_selection(
@@ -59,11 +56,19 @@ class RecruitmentPaneSection(arcade.Section):
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)
-
         self.panel_texture = SingleTextureSpecs.panel_highlighted.loaded
         self.recruitment_scroll_window = ScrollWindow(
             eng.game_state.entity_pool.pool, 10, 10
         )
+        self.banner = arcade.Sprite(
+            SingleTextureSpecs.mercenaries_banner.loaded,
+            center_x=width / 2,
+            center_y=height - 50,
+            scale=2,
+        )
+        self.sprite_list = arcade.SpriteList()
+        self.sprite_list.append(self.banner)
+
         self.update_ui()
 
     @property
@@ -73,24 +78,24 @@ class RecruitmentPaneSection(arcade.Section):
     def update_ui(self):
         self.manager = UIManager()
 
-        self.header = create_colored_UILabel_header(
-            "Mercenaries For Hire!",
-            arcade.color.GO_GREEN,
-            font_size=font_sizes.TITLE,
-            height=55,
-        )
+        # self.header = create_colored_UILabel_header(
+        #     "Mercenaries For Hire!",
+        #     arcade.color.GO_GREEN,
+        #     font_size=font_sizes.TITLE,
+        #     height=55,
+        # )
         self.recruits_labels: tuple[UIWidget] = entity_labels_with_cost(
             self.recruitment_scroll_window
         )
 
-        content = (*self.header, *self.recruits_labels)
+        content = (*self.recruits_labels,)
 
         self.manager.add(
             single_box(
                 self.bottom,
                 self.height - self.bottom,
                 content,
-                padding=(15, 0, 0, 0),
+                padding=(85, 0, 0, 0),
                 panel=self.panel_texture,
             )
         )
@@ -103,10 +108,16 @@ class RecruitmentPaneSection(arcade.Section):
 
     def on_draw(self):
         self.manager.draw()
+        self.sprite_list.draw(pixelated=True)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
         self.manager.children[0][0].resize(width=width, height=(height - self.bottom))
+        self.width = width
+        self.height = height
+        self.update_ui()
+        self.banner.center_x = width / 2
+        self.banner.center_y = height - 50
 
     def recruitment_limit_not_reached(self):
         current_member_amount = len(eng.game_state.guild.roster) + len(
@@ -235,26 +246,25 @@ class RosterAndTeamPaneSection(arcade.Section):
         super().__init__(left, bottom, width, height, **kwargs)
 
         self.init_nine_patch_pair()
-        self._is_active = False
         self.roster_scroll_window = ScrollWindow(eng.game_state.guild.roster, 10, 10)
         self.team_scroll_window = ScrollWindow(
             eng.game_state.guild.team.members, 10, 10
         )
         self.sprite_list = arcade.SpriteList()
         self.roster_banner = arcade.Sprite(
-            SingleTextureSpecs.roster_banner.loaded,
+            SpriteSheetSpecs.banners.load_one(0),
             center_x=width / 4,
             center_y=height - 50,
             scale=2,
         )
-        self.roster_banner.textures.append(SingleTextureSpecs.roster_banner_dark.loaded)
+        self.roster_banner.textures.append(SpriteSheetSpecs.banners.load_one(1))
         self.team_banner = arcade.Sprite(
-            SingleTextureSpecs.team_banner_dark.loaded,
+            SpriteSheetSpecs.banners.load_one(3),
             center_x=width - width / 4,
             center_y=height - 50,
             scale=2,
         )
-        self.team_banner.textures.append(SingleTextureSpecs.team_banner.loaded)
+        self.team_banner.textures.append(SpriteSheetSpecs.banners.load_one(2))
         self.sprite_list.append(self.roster_banner)
         self.sprite_list.append(self.team_banner)
         # Indicates whether Roster or Team pane is the active pane.
@@ -286,12 +296,7 @@ class RosterAndTeamPaneSection(arcade.Section):
     def update_ui(self):
         self.sync_state()
         self.manager = UIManager()
-        # self.roster_header = create_colored_UILabel_header(
-        #     "Roster", arcade.color.BYZANTIUM, font_size=font_sizes.TITLE, height=60
-        # )
-        # self.team_header = create_colored_UILabel_header(
-        #     "Team", arcade.color.BRASS, font_size=font_sizes.TITLE, height=60
-        # )
+
         self.update_labels()
 
         self.roster_content = (*self.roster_labels,)
