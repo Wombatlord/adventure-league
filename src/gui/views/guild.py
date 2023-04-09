@@ -134,7 +134,7 @@ class GuildView(arcade.View):
             left=0,
             bottom=52,
             width=WindowData.width,
-            height=148,
+            height=248,
             prevent_dispatch_view={False},
             margin=5,
             texts=[self.guild_label],

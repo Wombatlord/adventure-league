@@ -74,7 +74,7 @@ class RecruitmentView(arcade.View):
         self.recruitment_pane_section = RecruitmentPaneSection(
             name="recruitment_pane_section",
             left=2,
-            bottom=242,
+            bottom=342,
             width=WindowData.width,
             height=WindowData.height,
             prevent_dispatch_view={False},
@@ -98,7 +98,7 @@ class RecruitmentView(arcade.View):
             left=0,
             bottom=52,
             width=WindowData.width,
-            height=188,
+            height=288,
             prevent_dispatch_view={False},
             margin=self.margin,
             texts=[
@@ -191,7 +191,7 @@ class RosterView(arcade.View):
         # RosterAndTeamPane Config
         self.roster_and_team_pane_section = RosterAndTeamPaneSection(
             left=2,
-            bottom=242,
+            bottom=342,
             width=WindowData.width,
             height=WindowData.height,
             prevent_dispatch_view={False},
@@ -215,7 +215,7 @@ class RosterView(arcade.View):
             left=0,
             bottom=52,
             width=WindowData.width,
-            height=188,
+            height=288,
             prevent_dispatch_view={False},
             margin=self.margin,
             texts=[self.instruction, entity_observer_widget(self.get_selected_entity)],

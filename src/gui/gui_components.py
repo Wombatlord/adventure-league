@@ -9,11 +9,12 @@ from arcade.gui.widgets.text import UILabel
 from src.config import font_sizes
 from src.gui.gui_utils import ScrollWindow
 from src.gui.window_data import WindowData
-from src.textures.pixelated_nine_patch import PixelatedNinePatch
+from src.textures.pixelated_nine_patch import PixelatedNinePatch, PixelatedTexture
 
 Rgba = tuple[int, int, int, int]
 Attach = Callable[[UILabel], UILabel]
 Colored_Label = tuple[str, str, int, Rgba] | tuple[str, str, int, Rgba, Attach]
+from PIL import Image
 
 
 class ColoredLabel(NamedTuple):
@@ -192,12 +193,13 @@ def vstack_of_three_boxes(
     )
 
     ### WIP Mission Banner
-    # s = UIImage(
-    #     texture=banner,
-    #     size_hint=(None, None),
-    #     height=50,
-    #     width=700,
-    # )
+    x = Image.open("assets\sprites\mission_banner.png")
+    s = UIImage(
+        texture=PixelatedTexture(image=x),
+        size_hint=(None, None),
+        height=61,
+        width=772,
+    )
 
     tex_reference_buffer.extend([t, c, b])
 
@@ -205,7 +207,7 @@ def vstack_of_three_boxes(
         anchor.add(child=panel, anchor_y=anchor_y)
 
     ### WIP Mission Banner
-    # anchor.add(child=s,  anchor_y="top", align_y=-8)
+    anchor.add(child=s, anchor_y="top", align_y=-8)
 
     for element, anchor_y in zip(
         [content_top, content_mid, content_btm],
@@ -220,7 +222,7 @@ def vstack_of_three_boxes(
                 size_hint=(1, 0.33),
                 children=element,
                 space_between=0,
-            ).with_padding(top=10),
+            ).with_padding(top=25),
         )
 
     return anchor

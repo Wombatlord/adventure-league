@@ -33,7 +33,7 @@ class MissionsSection(arcade.Section):
                 header_string=self.missions[0].description,
                 font_size=font_sizes.SUBTITLE,
                 color=arcade.color.GOLD,
-                height=35,
+                height=45,
             ),
             create_colored_UILabel_header(
                 header_string=self.missions[1].description,
