@@ -46,6 +46,7 @@ class SingleTextureSpecs:
     panel_darkened = TextureSpec("./assets/sprites/panel_dark.png")
     mercenaries_banner = TextureSpec("./assets/sprites/mercenaries_banner.png")
     mission_banner = TextureSpec("./assets/sprites/mission_banner.png")
+    mission_banner_dark = TextureSpec("./assets/sprites/mission_banner.png")
 
 
 class SpriteSheetSpecs:

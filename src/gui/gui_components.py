@@ -102,6 +102,33 @@ def create_colored_UILabel_header(
     )
 
 
+def create_colored_shadowed_UILabel_header(
+    header_string: str, color: tuple[int, int, int, int], font_size=25, height=35
+) -> tuple[UIWidget, UIWidget]:
+    return (
+        UILabel(
+            text=f"{header_string}",
+            width=WindowData.width,
+            height=height,
+            font_size=font_size,
+            font_name=WindowData.font,
+            align="center",
+            size_hint=(1, None),
+            text_color=arcade.color.BLACK,
+        ),
+        UILabel(
+            text=f"{header_string}",
+            width=WindowData.width,
+            height=height,
+            font_size=font_size,
+            font_name=WindowData.font,
+            align="center",
+            size_hint=(1, None),
+            text_color=color,
+        ),
+    )
+
+
 def entity_labels_with_cost(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]:
     """Returns a tuple of UILabels which can be attached to a UILayout
 
@@ -161,6 +188,7 @@ def vstack_of_three_boxes(
     panel_highlighted: PixelatedNinePatch,
     panel_darkened: PixelatedNinePatch,
     tex_reference_buffer: list | None = None,
+    banner_reference_buffer: list | None = None,
 ) -> UIAnchorLayout:
     anchor = UIAnchorLayout(
         y=bottom,
@@ -184,13 +212,13 @@ def vstack_of_three_boxes(
     ### WIP Mission Banner
     # Adds a BoxLayout overlapping with the BoxLayout for labels to allow drawing mission_banner behind mission header label
     # with correct alignments.
-    with Image.open("assets\sprites\mission_banner.png") as banner_image:
-        banner_refs = []
-        for _ in range(3):
-            banner_refs.append(get_mission_banner(banner_image))
+    if banner_reference_buffer is None:
+        banner_reference_buffer = []
+
+    banner_reference_buffer = get_mission_banner(banner_refs=banner_reference_buffer)
 
     for element, anchor_y in zip(
-        banner_refs,
+        banner_reference_buffer,
         ["top", "center", "bottom"],
     ):
         anchor.add(
@@ -206,9 +234,26 @@ def vstack_of_three_boxes(
         )
     ### WIP Mission Banner
 
-    # Add a BoxLayout for the labels
+    # DROP SHADOW UILABELS
     for element, anchor_y in zip(
-        [content_top, content_mid, content_btm],
+        [content_top[0], content_mid[0], content_btm[0]],
+        ["top", "center", "bottom"],
+    ):
+        anchor.add(
+            anchor_x="center",
+            anchor_y=anchor_y,
+            child=UIBoxLayout(
+                vertical=True,
+                # height=122,
+                size_hint=(1, 0.33),
+                children=[element],
+                space_between=0,
+            ).with_padding(top=26, right=1),
+        )
+
+    # COLORED UILABELS
+    for element, anchor_y in zip(
+        [content_top[1:], content_mid[1:], content_btm[1:]],
         ["top", "center", "bottom"],
     ):
         anchor.add(
@@ -226,13 +271,29 @@ def vstack_of_three_boxes(
     return anchor
 
 
-def get_mission_banner(x):
-    return UIImage(
-        texture=PixelatedTexture(image=x),
-        size_hint=(None, None),
-        height=61,
-        width=772,
-    )
+def get_mission_banner(banner_refs: list) -> list:
+    with Image.open("assets\sprites\mission_banner.png") as banner_image:
+        banner_refs.append(
+            UIImage(
+                texture=PixelatedTexture(image=banner_image),
+                size_hint=(None, None),
+                height=61,
+                width=772,
+            )
+        )
+
+    with Image.open("assets\sprites\mission_banner_dark.png") as banner_image:
+        for _ in range(2):
+            banner_refs.append(
+                UIImage(
+                    texture=PixelatedTexture(image=banner_image),
+                    size_hint=(None, None),
+                    height=61,
+                    width=772,
+                )
+            )
+
+    return banner_refs
 
 
 def get_background_panel(panel_highlighted):

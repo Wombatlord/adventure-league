@@ -4,12 +4,13 @@ from arcade.gui import UIManager
 from src.config import font_sizes
 from src.gui.gui_components import (
     box_containing_horizontal_label_pair,
+    create_colored_shadowed_UILabel_header,
     create_colored_UILabel_header,
     vstack_of_three_boxes,
 )
 from src.gui.gui_utils import Cycle
 from src.gui.states import MissionCards
-from src.textures.texture_data import SingleTextureSpecs
+from src.textures.texture_data import SheetSpec, SingleTextureSpecs
 
 
 class MissionsSection(arcade.Section):
@@ -29,22 +30,22 @@ class MissionsSection(arcade.Section):
         self.mission_selection = Cycle(3, 0)
 
         headers = (
-            create_colored_UILabel_header(
+            create_colored_shadowed_UILabel_header(
                 header_string=self.missions[0].description,
                 font_size=font_sizes.SUBTITLE,
-                color=arcade.color.GOLD,
+                color=arcade.color.RED,
                 height=45,
             ),
-            create_colored_UILabel_header(
+            create_colored_shadowed_UILabel_header(
                 header_string=self.missions[1].description,
                 font_size=font_sizes.SUBTITLE,
-                color=arcade.color.GOLD,
+                color=arcade.color.GRAY,
                 height=45,
             ),
-            create_colored_UILabel_header(
+            create_colored_shadowed_UILabel_header(
                 header_string=self.missions[2].description,
                 font_size=font_sizes.SUBTITLE,
-                color=arcade.color.GOLD,
+                color=arcade.color.GRAY,
                 height=45,
             ),
         )
@@ -169,7 +170,8 @@ class MissionsSection(arcade.Section):
             ),
         )
 
-        references = []
+        tex_references = []
+        banner_references = []
         self.manager.add(
             vstack_of_three_boxes(
                 self.bottom,
@@ -179,15 +181,28 @@ class MissionsSection(arcade.Section):
                 content_btm=labels[2],
                 panel_highlighted=SingleTextureSpecs.panel_highlighted.loaded,
                 panel_darkened=SingleTextureSpecs.panel_darkened.loaded,
-                tex_reference_buffer=references,
+                tex_reference_buffer=tex_references,
+                banner_reference_buffer=banner_references,
             ),
         )
 
         self.highlighted_tex, self.darkened_tex = [
-            ref.texture for ref in references[:2]
+            ref.texture for ref in tex_references[:2]
         ]
-        self.top_pane, self.mid_pane, self.bottom_pane = references
-        self.tex_panes = references
+
+        self.top_pane, self.mid_pane, self.bottom_pane = tex_references
+        self.tex_panes = tex_references
+
+        self.highlighted_banner, self.darkened_banner = [
+            ref.texture for ref in banner_references[:2]
+        ]
+
+        self.top_banner, self.mid_banner, self.bottom_banner = banner_references
+        self.banners = banner_references
+
+        self.top_label = self.manager.children[0][0].children[9].children[0]
+        self.mid_label = self.manager.children[0][0].children[10].children[0]
+        self.btm_label = self.manager.children[0][0].children[11].children[0]
 
     def highlight_states(self) -> tuple[int, int, int]:
         return (
@@ -202,6 +217,25 @@ class MissionsSection(arcade.Section):
         self.tex_panes[highlighted].texture = self.highlighted_tex
         self.tex_panes[normal].texture = self.darkened_tex
         self.tex_panes[_normal].texture = self.darkened_tex
+
+        self.banners[highlighted].texture = self.highlighted_banner
+        self.banners[normal].texture = self.darkened_banner
+        self.banners[_normal].texture = self.darkened_banner
+
+        if highlighted == 0:
+            self.top_label.label.color = arcade.color.RED
+            self.mid_label.label.color = arcade.color.GRAY
+            self.btm_label.label.color = arcade.color.GRAY
+
+        elif highlighted == 1:
+            self.top_label.label.color = arcade.color.GRAY
+            self.mid_label.label.color = arcade.color.RED
+            self.btm_label.label.color = arcade.color.GRAY
+
+        elif highlighted == 2:
+            self.top_label.label.color = arcade.color.GRAY
+            self.mid_label.label.color = arcade.color.GRAY
+            self.btm_label.label.color = arcade.color.RED
 
     def scroll_mission_selection(self):
         match self.mission_selection.pos:
