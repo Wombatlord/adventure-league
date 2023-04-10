@@ -1,7 +1,7 @@
 from typing import Callable, NamedTuple
 
 import arcade.color
-from arcade.gui import UIImage, UISpriteWidget
+from arcade.gui import UIImage, UIManager
 from arcade.gui.widgets import UIWidget
 from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
 from arcade.gui.widgets.text import UILabel
@@ -435,3 +435,70 @@ def horizontal_box_pair(
         )
 
     return anchor
+
+
+##################################################
+#             EXPERIMENTAL MENU STUFF            #
+##################################################
+from arcade.gui import UIFlatButton
+
+# DATA STRUCTURES
+ExecutableMenuItem = dict[str: Callable[[None], None]] 
+SubMenu = list[ExecutableMenuItem]
+MenuWithSubMenu = dict[str: SubMenu]
+MenuSchema = list[MenuWithSubMenu | ExecutableMenuItem]
+
+def invoke_action() -> None:
+    """
+    Standin for a callback to invoke either with UIManager on_click or keyboard on_select
+    """
+    return None
+
+begin: ExecutableMenuItem = {"begin": invoke_action}
+a_submenu: SubMenu = [{"save_a": invoke_action}, {"save_b": invoke_action}, {"save_c": invoke_action}]
+start_menu: MenuSchema = [
+    begin,
+    {"load game": a_submenu},
+    {"options": [{"callable": invoke_action}]},
+    {"exit": invoke_action},
+]
+
+combat_menu = [
+    {"move": invoke_action},
+    {"item": [{"item.name": invoke_action}, {"item.name": invoke_action}, {"item.name": invoke_action}]},
+    {"attack": [{"target": invoke_action}, {"target": invoke_action}, {"target": invoke_action}]},
+    {"cast": [{"target": invoke_action}, {"target": invoke_action}, {"target": invoke_action}]},
+    {"end": invoke_action},
+]
+
+# LE MENU
+class Menu:
+    def __init__(self, menu_config: MenuSchema, pos: tuple[int, int], area: tuple[int,int]) -> None:
+        self.full_menu_graph = menu_config
+        self.manager = UIManager()
+        self.x, self.y = pos
+        self.width, self.height = area
+        self.main_box = UIBoxLayout(x=self.x, y=self.y, width=self.width, height=self.height)
+
+    def enter_submenu(self, key):
+        self.build_menu(key)
+    
+    def build_menu(self, menu: MenuSchema):
+        self.manager.clear()
+        self.manager.add(self.main_box)
+        # Initial menu construction where there are possibly entries with sub menus
+        for i, item in enumerate(menu):
+            k, v = item.items()
+            # The item is an ExecutableMenuItem
+            if isinstance(v, Callable):
+                self.main_box.children.append(UIFlatButton(text=k, size_hint=(1, 1/len(menu))))
+                self.main_box.children[i].on_click = v
+            
+            # The item is a SubMenu
+            elif isinstance(v, list):
+                self.main_box.children[i].on_click = self.enter_submenu(menu[k])
+            
+            else:
+                raise TypeError(f"{v} should be Callable or SubMenu")
+        
+        self.manager.trigger_render()

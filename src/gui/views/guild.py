@@ -20,7 +20,7 @@ from src.gui.views.roster import RosterView
 from src.gui.window_data import WindowData
 from src.textures.pixelated_nine_patch import PixelatedNinePatch
 from src.textures.texture_data import SingleTextureSpecs
-
+from src.gui.gui_components import Menu
 
 class TitleView(arcade.View):
     def __init__(self, window: Window | None = None):
@@ -47,7 +47,10 @@ class TitleView(arcade.View):
             self.sprite_list.append(sprite)
 
         self.angle = 0
-
+        self.menu_options = [{"first": lambda: None}, {"second": lambda: None}]
+        self.menu = Menu(menu_config=self.menu_options, pos=(100,100), area=(200,200))
+        self.menu.build_menu(self.menu_options)
+        
     def on_update(self, delta_time: float):
         self.update_angle(delta_time)
         self.animate_title_banner()
@@ -94,6 +97,7 @@ class TitleView(arcade.View):
             WindowData.height,
             SingleTextureSpecs.title_background.loaded,
         )
+        self.menu.manager.draw()
         self.sprite_list.draw(pixelated=True)
 
     def on_key_press(self, symbol: int, modifiers: int):
