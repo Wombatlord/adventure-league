@@ -472,6 +472,7 @@ combat_menu = [
 ]
 
 # LE MENU
+from src.gui.buttons import update_button
 class Menu:
     def __init__(self, menu_config: MenuSchema, pos: tuple[int, int], area: tuple[int,int]) -> None:
         self.full_menu_graph = menu_config
@@ -488,16 +489,20 @@ class Menu:
         self.manager.add(self.main_box)
         # Initial menu construction where there are possibly entries with sub menus
         for i, item in enumerate(menu):
-            k, v = item.items()
+            k, v = next(iter(item.items()))
             # The item is an ExecutableMenuItem
             if isinstance(v, Callable):
-                self.main_box.children.append(UIFlatButton(text=k, size_hint=(1, 1/len(menu))))
-                self.main_box.children[i].on_click = v
+                btn = update_button(on_click=v, text=k)
+                self.manager.children[0][0].add(btn)
             
             # The item is a SubMenu
             elif isinstance(v, list):
-                self.main_box.children[i].on_click = self.enter_submenu(menu[k])
-            
+                btn = UIFlatButton(text=k)
+                sub_menu = menu[i][k]
+                btn.on_click = lambda _: self.enter_submenu(sub_menu)
+                breakpoint()
+                self.manager.children[0][0].add(btn)
+
             else:
                 raise TypeError(f"{v} should be Callable or SubMenu")
         
