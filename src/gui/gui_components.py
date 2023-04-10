@@ -481,12 +481,13 @@ class Menu:
         self.width, self.height = area
         self.main_box = UIBoxLayout(x=self.x, y=self.y, width=self.width, height=self.height)
 
-    def enter_submenu(self, key):
-        self.build_menu(key)
+    def enter_submenu(self, menu:MenuSchema):
+        breakpoint()
+        self.build_menu(menu)
     
     def build_menu(self, menu: MenuSchema):
-        self.manager.clear()
         self.manager.add(self.main_box)
+        self.manager.children[0][0].clear()
         # Initial menu construction where there are possibly entries with sub menus
         for i, item in enumerate(menu):
             k, v = next(iter(item.items()))
@@ -500,10 +501,9 @@ class Menu:
                 btn = UIFlatButton(text=k)
                 sub_menu = menu[i][k]
                 btn.on_click = lambda _: self.enter_submenu(sub_menu)
-                breakpoint()
                 self.manager.children[0][0].add(btn)
-
+   
             else:
                 raise TypeError(f"{v} should be Callable or SubMenu")
         
-        self.manager.trigger_render()
+        # self.manager.trigger_render()

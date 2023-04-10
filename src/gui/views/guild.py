@@ -47,7 +47,7 @@ class TitleView(arcade.View):
             self.sprite_list.append(sprite)
 
         self.angle = 0
-        self.menu_options = [{"first": [{"x":lambda: print("a")}]}, {"second": lambda: None}, {"Quit": arcade.exit}]
+        self.menu_options = [{"first": [{"x":lambda: print("a")}, {"y": lambda: print("b")}, {"z": lambda: print("c")}]}, {"second": lambda: None}, {"Quit": arcade.exit}]
         self.menu = Menu(menu_config=self.menu_options, pos=(100,100), area=(200,200))
         self.menu.build_menu(self.menu_options)
         self.menu.manager.enable()
