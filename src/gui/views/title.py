@@ -9,7 +9,7 @@ import arcade.key
 from arcade import Window
 
 from src.gui.animation import harmonic
-from src.gui.components.menu import Menu
+from src.gui.components.menu import ButtonRegistry, Menu
 from src.gui.views.guild import GuildView
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SingleTextureSpecs
@@ -42,29 +42,42 @@ class TitleView(arcade.View):
         self.time = 0
         self.menu_options = [
             (
+                "Start",
+                lambda: GuildView(parent_factory=TitleView),
+                ButtonRegistry.navigate,
+            ),
+            (
                 "first",
                 [
-                    ("x", lambda: print("a")),
-                    ("y", lambda: print("b")),
-                    ("z", lambda: print("c")),
+                    ("x", lambda: print("a"), ButtonRegistry.update),
+                    ("y", lambda: print("b"), ButtonRegistry.update),
+                    ("z", lambda: print("c"), ButtonRegistry.update),
                 ],
+                ButtonRegistry.update,
             ),
             (
                 "second",
                 [
-                    ("1", lambda: print("1")),
-                    ("2", lambda: print("2")),
+                    ("a", lambda: None, ButtonRegistry.update),
+                    ("1", lambda: print("1"), ButtonRegistry.update),
+                    ("2", lambda: print("2"), ButtonRegistry.update),
                     (
                         "3",
                         [
-                            ("4", lambda: print("4")),
+                            ("4", lambda: print("4"), ButtonRegistry.update),
                         ],
+                        ButtonRegistry.update,
                     ),
                 ],
+                ButtonRegistry.update,
             ),
-            ("Quit", arcade.exit),
+            ("Quit", arcade.exit, ButtonRegistry.update),
         ]
-        self.menu = Menu(menu_config=self.menu_options, pos=(100, 100), area=(200, 200))
+        self.menu = Menu(
+            menu_config=self.menu_options,
+            pos=((WindowData.width / 2) - 225, (WindowData.height * 0.30)),
+            area=(450, 200),
+        )
         self.menu.build_menu(self.menu_options)
         self.menu.manager.enable()
 
@@ -129,5 +142,6 @@ class TitleView(arcade.View):
         super().on_resize(width, height)
         WindowData.width = width
         WindowData.height = height
+        self.menu.main_box.center_on_screen()
 
         self.start_banner_sprite.center_x = width / 2
