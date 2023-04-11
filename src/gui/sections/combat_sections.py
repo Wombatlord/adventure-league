@@ -132,7 +132,9 @@ class CombatGridSection(arcade.Section):
 
         return selected_path_sprites
 
-    def show_path(self, current: tuple[Node]):
+    def show_path(self, current: tuple[Node] | None) -> None:
+        if not current:
+            return
         head = (0,)
         body = tuple(range(1, len(current) - 1))
         tail = (19,)
