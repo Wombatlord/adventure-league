@@ -1,12 +1,14 @@
 import arcade
-from pyglet.math import Mat3, Vec2, Vec3
+from pyglet.math import Vec2
 
 from src import config
 from src.engine.init_engine import eng
 from src.entities.dungeon import Room
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
+from src.gui.components import combat_menu
 from src.gui.components.combat_components import CombatScreen
+from src.gui.components.menu import Menu
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
@@ -33,6 +35,7 @@ class CombatGridSection(arcade.Section):
     SPRITE_SCALE = 5
 
     encounter_room: Room | None
+    combat_menu: Menu | None
 
     def __init__(
         self,
@@ -63,6 +66,7 @@ class CombatGridSection(arcade.Section):
         )
         self.all_path_sprites = self.init_path()
         self.debug_text = ""
+        self.combat_menu = None
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -165,6 +169,14 @@ class CombatGridSection(arcade.Section):
 
         self.refresh_draw_order()
 
+    def setup_combat_menu(self, event):
+        self.combat_menu = combat_menu.build_from_event(
+            event,
+            (self.window.width * 0.75, self.window.height * 0.75),
+            on_teardown=lambda: eng.input_received(),
+        )
+        self.combat_menu.enable()
+
     def refresh_draw_order(self):
         self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
 
@@ -196,8 +208,14 @@ class CombatGridSection(arcade.Section):
 
     def on_draw(self):
         self.grid_camera.use()
+        self.window.clear()
 
         self.world_sprite_list.draw(pixelated=True)
+
+        if self.combat_menu and self.combat_menu.is_enabled():
+            self.combat_menu.draw()
+        elif self.combat_menu and not self.combat_menu.is_enabled():
+            self.combat_menu = None
 
         self.other_camera.use()
         if config.DEBUG:

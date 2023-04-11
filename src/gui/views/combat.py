@@ -151,7 +151,7 @@ class CombatView(arcade.View):
         )
 
     def on_draw(self):
-        self.clear()
+        pass
 
     def make_on_confirm(self, options, hide_stuff) -> Callable[[int], bool]:
         def on_confirm(opt_idx: int) -> bool:
@@ -166,7 +166,7 @@ class CombatView(arcade.View):
         if requester := event.get("await_input"):
             if requester.owner.ai:
                 return
-
+        self.combat_grid_section.setup_combat_menu(event)
         eng.await_input()
 
         choices = event.get("choices")

@@ -8,9 +8,9 @@ def get_mission_banner(banner_refs: list) -> list:
     banner_refs.extend(
         get_pixelated_tex_panel(
             [
-                "assets\sprites\mission_banner.png",
-                "assets\sprites\mission_banner_dark.png",
-                "assets\sprites\mission_banner_dark.png",
+                "assets/sprites/mission_banner.png",
+                "assets/sprites/mission_banner_dark.png",
+                "assets/sprites/mission_banner_dark.png",
             ]
         )
     )

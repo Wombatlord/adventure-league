@@ -51,7 +51,7 @@ def nav_button(
     return btn
 
 
-def update_button(on_click: Callable[[None], None], text: str):
+def update_button(on_click: Callable[[], None], text: str) -> UITextureButton:
     def update_handler(event: UIEvent | None = None):
         on_click()
 

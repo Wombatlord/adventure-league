@@ -1,5 +1,11 @@
 import arcade
-from arcade.gui import UIAnchorLayout, UIBoxLayout, UIFlatButton, UIManager
+from arcade.gui import (
+    UIAnchorLayout,
+    UIBoxLayout,
+    UIFlatButton,
+    UIManager,
+    UITextureButton,
+)
 
 from src.gui.components.layouts import single_box
 from src.gui.ui_styles import ADVENTURE_STYLE
@@ -17,7 +23,7 @@ class CommandBarSection(arcade.Section):
         bottom: int,
         width: int,
         height: int,
-        buttons: list[UIFlatButton],
+        buttons: list[UIFlatButton | UITextureButton],
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)

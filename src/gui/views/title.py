@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import math
-from typing import NamedTuple
-
 import arcade
 import arcade.color
 import arcade.key
 from arcade import Window
 
 from src.gui.animation import harmonic
-from src.gui.components.menu import ButtonRegistry, Menu
+from src.gui.components.buttons import get_nav_handler
+from src.gui.components.menu import Menu
 from src.gui.views.guild import GuildView
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SingleTextureSpecs
@@ -40,46 +38,39 @@ class TitleView(arcade.View):
             self.sprite_list.append(sprite)
 
         self.time = 0
+        navigate_to_guild = get_nav_handler(GuildView(parent_factory=TitleView))
         self.menu_options = [
-            (
-                "Start",
-                lambda: GuildView(parent_factory=TitleView),
-                ButtonRegistry.navigate,
-            ),
+            ("Start", navigate_to_guild),
             (
                 "first",
                 [
-                    ("x", lambda: print("a"), ButtonRegistry.update),
-                    ("y", lambda: print("b"), ButtonRegistry.update),
-                    ("z", lambda: print("c"), ButtonRegistry.update),
+                    ("x", lambda: print("a")),
+                    ("y", lambda: print("b")),
+                    ("z", lambda: print("c")),
                 ],
-                ButtonRegistry.update,
             ),
             (
                 "second",
                 [
-                    ("a", lambda: None, ButtonRegistry.update),
-                    ("1", lambda: print("1"), ButtonRegistry.update),
-                    ("2", lambda: print("2"), ButtonRegistry.update),
+                    ("a", lambda: None),
+                    ("1", lambda: print("1")),
+                    ("2", lambda: print("2")),
                     (
                         "3",
                         [
-                            ("4", lambda: print("4"), ButtonRegistry.update),
+                            ("4", lambda: print("4")),
                         ],
-                        ButtonRegistry.update,
                     ),
                 ],
-                ButtonRegistry.update,
             ),
-            ("Quit", arcade.exit, ButtonRegistry.update),
+            ("Quit", arcade.exit),
         ]
         self.menu = Menu(
             menu_config=self.menu_options,
             pos=((WindowData.width / 2) - 225, (WindowData.height * 0.45)),
             area=(450, 350),
         )
-        self.menu.build_menu(self.menu_options)
-        self.menu.manager.enable()
+        self.menu.enable()
 
     def on_update(self, delta_time: float):
         self.update_angle(delta_time)
@@ -130,7 +121,7 @@ class TitleView(arcade.View):
             WindowData.height,
             SingleTextureSpecs.title_background.loaded,
         )
-        self.menu.manager.draw()
+        self.menu.draw()
         self.sprite_list.draw(pixelated=True)
 
     def on_key_press(self, symbol: int, modifiers: int):

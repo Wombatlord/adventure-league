@@ -2,10 +2,10 @@ from types import FunctionType
 from typing import Callable, NamedTuple, Self
 
 import arcade
-from arcade.gui import UIBoxLayout, UIEvent, UIFlatButton, UIManager
+from arcade.gui import UIBoxLayout, UIEvent, UIFlatButton, UIManager, UITextureButton
 
 from src.gui.components.buttons import nav_button, update_button
-from src.gui.ui_styles import ADVENTURE_STYLE
+from src.gui.ui_styles import ADVENTURE_STYLE, UIStyle
 
 # DATA STRUCTURES
 ExecutableMenuItem = tuple[str, Callable[[UIEvent], None]]
@@ -26,42 +26,92 @@ class ButtonRegistry(NamedTuple):
     navigate = nav_button
 
 
+ButtonCallback = Callable[[], None]
+ButtonFactory = Callable[[ButtonCallback, str], UITextureButton]
+
+
 # LE MENU
 class Menu:
+    manager: UIManager
+
     def __init__(
-        self, menu_config: MenuSchema, pos: tuple[int, int], area: tuple[int, int]
+        self,
+        menu_config: MenuSchema,
+        pos: tuple[int, int],
+        area: tuple[int, int],
+        button_style: UIStyle | None = None,
     ) -> None:
         self.full_menu_graph = menu_config
-        self.manager = UIManager()
+        self.current_menu_graph = menu_config
         self.x, self.y = pos
         self.width, self.height = area
+        self.manager = None
+        self.main_box = None
+        self.button_style = button_style or ADVENTURE_STYLE
+        self._setup()
+
+    def _setup(self):
+        if self.manager:
+            self.manager.clear()
+        else:
+            self.manager = UIManager()
+
         self.main_box = UIBoxLayout(
             width=self.width,
             height=self.height,
             size_hint=(None, None),
             space_between=2,
-        )
+        ).with_border(color=arcade.color.RED)
         self.main_box.center = self.x, self.y
         self.manager.add(self.main_box)
+        self.build_menu(self.current_menu_graph)
+
+    def disable(self):
+        self.manager.disable()
+        self.manager.clear()
+
+    def enable(self):
+        self._setup()
+        self.manager.enable()
+        self.draw()
+
+    def draw(self):
+        if self.manager._enabled:
+            self.manager.draw()
+
+    def is_enabled(self) -> bool:
+        return self.manager._enabled
 
     def build_menu(self, menu: MenuSchema):
         self.main_box.clear()
 
-        for label, content, btn_type in menu:
-            action = self.derive_button_action_from_content(content)
-            match btn_type:
-                case ButtonRegistry.update:
-                    btn = ButtonRegistry.update(on_click=action, text=label)
-                case ButtonRegistry.navigate:
-                    btn = ButtonRegistry.navigate(target=action, text=label)
+        for label, content, *options in menu:
+            if not isinstance(label, str):
+                raise TypeError(f"label must be a string, got {type(label)=}")
+            if not callable(content) and not isinstance(content, list):
+                raise TypeError(
+                    f"content must either be a list or callable, got {type(content)=}"
+                )
+
+            action = self.derive_button_action_from_content(content, *options)
+            btn = update_button(action, label)
 
             btn.size_hint = (1, None)
             btn.resize(height=50)
-            btn.style = ADVENTURE_STYLE
+            btn.style = self.button_style
             self.main_box.add(btn)
 
+    def closing_action(self, action: Callable[[], None]) -> Callable[[], None]:
+        def _do_then_close():
+            action()
+            self.disable()
+
+        return _do_then_close
+
     def derive_button_action_from_content(
-        self, content: Callable[[UIEvent], None] | list
+        self,
+        content: Callable[[UIEvent], None] | list,
+        *options,
     ) -> Callable[[UIEvent], None]:
         action = None
 
@@ -69,16 +119,16 @@ class Menu:
             case func if isinstance(func, Callable | FunctionType):
                 action = func
 
-            case sub_menu if isinstance(sub_menu, list | tuple):
+            case sub_menu if isinstance(sub_menu, list):
                 action = self.open_sub_menu_action(sub_menu=sub_menu)
-
-            case view if issubclass(view, arcade.View):
-                action = view
 
             case _:
                 raise TypeError(
                     f"{content} should be Callable, SubMenu, or arcade.View. Got {type(content)=}"
                 )
+
+        if options and options[0]:
+            action = self.closing_action(action)
 
         return action
 
@@ -89,7 +139,8 @@ class Menu:
         return _on_click
 
     def enter_submenu(self, menu: MenuSchema):
-        self.build_menu(menu)
+        self.current_menu_graph = menu
+        self._setup()
         self.add_return_to_top_level_button()
 
     def add_return_to_top_level_button(self):

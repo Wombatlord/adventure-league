@@ -74,36 +74,6 @@ class BaseAction:
         raise NotImplementedError()
 
 
-class EndTurnAction(BaseAction, metaclass=ActionMeta):
-    name = "end turn"
-
-    @classmethod
-    def cost(cls, fighter: Fighter) -> int:
-        return fighter.action_points.current
-
-    @classmethod
-    def execute(cls, fighter: Fighter, *args):
-        fighter.action_points.deduct_cost(cls.cost(fighter))
-        yield {"message": f"{fighter.owner.name} whistles a tune"}
-
-    @classmethod
-    def details(cls, fighter: Fighter):
-        return {
-            **ActionMeta.details(cls, fighter),
-            "on_confirm": lambda: fighter.ready_action(cls(fighter)),
-        }
-
-    @classmethod
-    def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        return [cls.details(fighter)]
-
-    def __init__(self, fighter: Fighter) -> None:
-        self.fighter = fighter
-
-    def __call__(self) -> Generator[Event]:
-        yield from self.execute(self.fighter)
-
-
 class AttackAction(BaseAction, metaclass=ActionMeta):
     name = "attack"
 
@@ -122,6 +92,7 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
             **ActionMeta.details(cls, fighter),
             "on_confirm": lambda: fighter.ready_action(cls(fighter, target)),
             "subject": target,
+            "label": f"{target.owner.name}",
         }
 
     @classmethod
@@ -141,41 +112,6 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
 
     def __call__(self) -> Generator[Event]:
         yield from self.execute(self.fighter, self.target)
-
-
-class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
-    name = "consume item"
-
-    @classmethod
-    def cost(cls, fighter: Fighter) -> int:
-        return fighter.action_points.current
-
-    @classmethod
-    def execute(cls, fighter: Fighter, consumable: Consumable) -> Generator[Event]:
-        fighter.action_points.deduct_cost(cls.cost(fighter))
-        yield from fighter.consume_item(consumable)
-
-    @classmethod
-    def details(cls, fighter: Fighter, consumable: Consumable) -> dict:
-        return {
-            **ActionMeta.details(cls, fighter),
-            "on_confirm": lambda: fighter.ready_action(cls(fighter, consumable)),
-            "subject": consumable,
-        }
-
-    @classmethod
-    def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        return [
-            cls.details(fighter, consumable)
-            for consumable in fighter.owner.inventory.consumables()
-        ]
-
-    def __init__(self, fighter: Fighter, consumable: Consumable) -> None:
-        self.fighter = fighter
-        self.consumable = consumable
-
-    def __call__(self) -> Generator[Event]:
-        yield from self.execute(self.fighter, self.consumable)
 
 
 class MoveAction(BaseAction, metaclass=ActionMeta):
@@ -215,10 +151,12 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def details(cls, fighter: Fighter, destination: Node) -> dict:
+        path = fighter.locatable.path_to_destination(destination)
         return {
             **ActionMeta.details(cls, fighter, destination),
-            "subject": fighter.locatable.path_to_destination(destination),
+            "subject": path,
             "on_confirm": lambda: fighter.ready_action(cls(fighter, destination)),
+            "label": f"{path[-1]}",
         }
 
     @classmethod
@@ -235,3 +173,70 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
     def __call__(self) -> Generator[Event]:
         yield from self.execute(self.fighter, self.destination)
+
+
+class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
+    name = "use item"
+
+    @classmethod
+    def cost(cls, fighter: Fighter) -> int:
+        return fighter.action_points.current
+
+    @classmethod
+    def execute(cls, fighter: Fighter, consumable: Consumable) -> Generator[Event]:
+        fighter.action_points.deduct_cost(cls.cost(fighter))
+        yield from fighter.consume_item(consumable)
+
+    @classmethod
+    def details(cls, fighter: Fighter, consumable: Consumable) -> dict:
+        return {
+            **ActionMeta.details(cls, fighter),
+            "on_confirm": lambda: fighter.ready_action(cls(fighter, consumable)),
+            "subject": consumable,
+            "label": f"{consumable.name}",
+        }
+
+    @classmethod
+    def all_available_to(cls, fighter: Fighter) -> list[dict]:
+        return [
+            cls.details(fighter, consumable)
+            for consumable in fighter.owner.inventory.consumables()
+        ]
+
+    def __init__(self, fighter: Fighter, consumable: Consumable) -> None:
+        self.fighter = fighter
+        self.consumable = consumable
+
+    def __call__(self) -> Generator[Event]:
+        yield from self.execute(self.fighter, self.consumable)
+
+
+class EndTurnAction(BaseAction, metaclass=ActionMeta):
+    name = "end turn"
+
+    @classmethod
+    def cost(cls, fighter: Fighter) -> int:
+        return fighter.action_points.current
+
+    @classmethod
+    def execute(cls, fighter: Fighter, *args):
+        fighter.action_points.deduct_cost(cls.cost(fighter))
+        yield {"message": f"{fighter.owner.name} whistles a tune"}
+
+    @classmethod
+    def details(cls, fighter: Fighter):
+        return {
+            **ActionMeta.details(cls, fighter),
+            "on_confirm": lambda: fighter.ready_action(cls(fighter)),
+            "label": "End Turn",
+        }
+
+    @classmethod
+    def all_available_to(cls, fighter: Fighter) -> list[dict]:
+        return [cls.details(fighter)]
+
+    def __init__(self, fighter: Fighter) -> None:
+        self.fighter = fighter
+
+    def __call__(self) -> Generator[Event]:
+        yield from self.execute(self.fighter)
