@@ -1,7 +1,9 @@
-from src.gui.window_data import WindowData
-from src.gui.components.scroll_window import ScrollWindow
 from arcade.gui import UILabel, UIWidget
+
 from src.config import font_sizes
+from src.gui.components.scroll_window import ScrollWindow
+from src.gui.window_data import WindowData
+
 
 def entity_labels_names_only(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]:
     """Returns a tuple of UILabels which can be attached to a UILayout

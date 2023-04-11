@@ -1,13 +1,9 @@
 import arcade
-from arcade.gui import (
-    UILabel,
-    UIManager,
-)
-
+from arcade.gui import UILabel, UIManager
 
 from src.gui.components.layouts import single_box
-
 from src.textures.texture_data import SingleTextureSpecs
+
 
 class InfoPaneSection(arcade.Section):
     def __init__(

@@ -9,12 +9,10 @@ import arcade.key
 from arcade import Window
 
 from src.gui.animation import harmonic
-
-from src.gui.window_data import WindowData
-
-from src.textures.texture_data import SingleTextureSpecs
 from src.gui.components.menu import Menu
 from src.gui.views.guild import GuildView
+from src.gui.window_data import WindowData
+from src.textures.texture_data import SingleTextureSpecs
 
 
 class TitleView(arcade.View):
@@ -43,19 +41,26 @@ class TitleView(arcade.View):
 
         self.time = 0
         self.menu_options = [
-            ("first", [
+            (
+                "first",
+                [
                     ("x", lambda: print("a")),
                     ("y", lambda: print("b")),
                     ("z", lambda: print("c")),
-                ]
+                ],
             ),
-            ("second", [
+            (
+                "second",
+                [
                     ("1", lambda: print("1")),
                     ("2", lambda: print("2")),
-                    ("3",[
-                        ("4", lambda: print("4")),
-                    ]),
-                ]
+                    (
+                        "3",
+                        [
+                            ("4", lambda: print("4")),
+                        ],
+                    ),
+                ],
             ),
             ("Quit", arcade.exit),
         ]
@@ -93,7 +98,10 @@ class TitleView(arcade.View):
             amplitude=10, period=2, theta=self.time, v_shift=WindowData.height * 0.85
         ).y
         self.banner_sprite.center_x = harmonic.harmonic_motion(
-            amplitude=10, period=1.5, theta=self.time * 2, phase_shift=WindowData.width / 2
+            amplitude=10,
+            period=1.5,
+            theta=self.time * 2,
+            phase_shift=WindowData.width / 2,
         ).x
 
     def update_angle(self, delta_time):
@@ -123,4 +131,3 @@ class TitleView(arcade.View):
         WindowData.height = height
 
         self.start_banner_sprite.center_x = width / 2
-

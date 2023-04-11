@@ -27,7 +27,6 @@ class SelectionCursor:
     GOLD_EDGE = 5
 
 
-
 class CombatGridSection(arcade.Section):
     TILE_BASE_DIMS = (16, 17)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"

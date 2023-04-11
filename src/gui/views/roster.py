@@ -20,12 +20,12 @@ from src.gui.components.layouts import (
     label_with_observer,
 )
 from src.gui.components.observer import observe
+from src.gui.sections.command_bar import CommandBarSection
+from src.gui.sections.info_pane import InfoPaneSection
 from src.gui.sections.roster_sections import (
     RecruitmentPaneSection,
     RosterAndTeamPaneSection,
 )
-from src.gui.sections.command_bar import CommandBarSection
-from src.gui.sections.info_pane import InfoPaneSection
 from src.gui.window_data import WindowData
 
 
@@ -176,7 +176,7 @@ class RecruitmentView(arcade.View):
                 self.window.show_view(RosterView(parent_factory=self.parent_factory))
 
     def on_resize(self, width: int, height: int) -> None:
-        super().on_resize(width, height) 
+        super().on_resize(width, height)
 
         WindowData.width = width
         WindowData.height = height
@@ -259,7 +259,9 @@ class RosterView(arcade.View):
                 self.window.show_view(g)
 
             case arcade.key.R:
-                self.window.show_view(RecruitmentView(parent_factory=self.parent_factory))
+                self.window.show_view(
+                    RecruitmentView(parent_factory=self.parent_factory)
+                )
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)

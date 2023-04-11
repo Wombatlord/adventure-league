@@ -1,9 +1,12 @@
 from typing import Callable, NamedTuple
+
 import arcade
-from arcade.gui import UIImage, UILabel, UIBoxLayout, UIWidget, UIAnchorLayout
-from src.textures.pixelated_nine_patch import PixelatedNinePatch, PixelatedTexture
-from src.gui.window_data import WindowData
+from arcade.gui import UIAnchorLayout, UIBoxLayout, UIImage, UILabel, UIWidget
 from PIL import Image
+
+from src.gui.window_data import WindowData
+from src.textures.pixelated_nine_patch import PixelatedNinePatch, PixelatedTexture
+
 
 def get_background_panel(panel_highlighted):
     return UIImage(
@@ -12,6 +15,7 @@ def get_background_panel(panel_highlighted):
         ),
         size_hint=(1, 1 / 3),
     )
+
 
 def get_pixelated_tex_panel(paths: list[str]) -> list[UIImage]:
     ui_images = []
@@ -27,6 +31,7 @@ def get_pixelated_tex_panel(paths: list[str]) -> list[UIImage]:
             )
 
     return ui_images
+
 
 Rgba = tuple[int, int, int, int]
 Attach = Callable[[UILabel], UILabel]
@@ -179,6 +184,7 @@ def single_box(
     )
 
     return anchor
+
 
 def vertical_box_pair(
     bottom,

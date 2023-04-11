@@ -1,7 +1,8 @@
-from arcade.gui import UIWidget, UIAnchorLayout, UIBoxLayout
-from src.textures.pixelated_nine_patch import PixelatedNinePatch
+from arcade.gui import UIAnchorLayout, UIBoxLayout, UIWidget
 
 from src.gui.components.layouts import get_background_panel, get_pixelated_tex_panel
+from src.textures.pixelated_nine_patch import PixelatedNinePatch
+
 
 def get_mission_banner(banner_refs: list) -> list:
     banner_refs.extend(

@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-from typing import NamedTuple, Callable
+from typing import Callable, NamedTuple
 
 import arcade
 import arcade.color
 import arcade.key
-
 from arcade.gui import UITextureButton
 from arcade.gui.widgets.text import UILabel
 
 from src.config import font_sizes
 from src.engine.init_engine import eng
-
 from src.gui.components.buttons import nav_button, update_button
-from src.gui.sections.info_pane import InfoPaneSection
 from src.gui.sections.command_bar import CommandBarSection
+from src.gui.sections.info_pane import InfoPaneSection
 from src.gui.views.missions import MissionsView
 from src.gui.views.roster import RosterView
 from src.gui.window_data import WindowData
@@ -97,11 +95,15 @@ class GuildView(arcade.View):
                     )
 
             case arcade.key.M:
-                missions_view = MissionsView(parent_factory=lambda: GuildView(parent_factory=self.parent_factory))
+                missions_view = MissionsView(
+                    parent_factory=lambda: GuildView(parent_factory=self.parent_factory)
+                )
                 self.window.show_view(missions_view)
 
             case arcade.key.R:
-                roster_view = RosterView(parent_factory=lambda: GuildView(parent_factory=self.parent_factory))
+                roster_view = RosterView(
+                    parent_factory=lambda: GuildView(parent_factory=self.parent_factory)
+                )
                 self.window.show_view(roster_view)
 
             case arcade.key.ESCAPE:
