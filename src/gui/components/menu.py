@@ -22,8 +22,8 @@ MenuSchema = list[MenuWithSubMenu | ExecutableMenuItem]
 
 
 class ButtonRegistry(NamedTuple):
-    update = 0
-    navigate = 1
+    update = update_button
+    navigate = nav_button
 
 
 # LE MENU
@@ -36,24 +36,25 @@ class Menu:
         self.x, self.y = pos
         self.width, self.height = area
         self.main_box = UIBoxLayout(
-            x=self.x,
-            y=self.y,
             width=self.width,
             height=self.height,
             size_hint=(None, None),
+            space_between=2,
         )
+        self.main_box.center = self.x, self.y
         self.manager.add(self.main_box)
 
     def build_menu(self, menu: MenuSchema):
         self.main_box.clear()
 
-        for label, content, btn_id in menu:
+        for label, content, btn_type in menu:
             action = self.derive_button_action_from_content(content)
-            match btn_id:
-                case 0:
-                    btn = update_button(on_click=action, text=label)
-                case 1:
-                    btn = nav_button(target=action, text=label)
+            match btn_type:
+                case ButtonRegistry.update:
+                    btn = ButtonRegistry.update(on_click=action, text=label)
+                case ButtonRegistry.navigate:
+                    btn = ButtonRegistry.navigate(target=action, text=label)
+
             btn.size_hint = (1, None)
             btn.resize(height=50)
             btn.style = ADVENTURE_STYLE

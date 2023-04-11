@@ -75,8 +75,8 @@ class TitleView(arcade.View):
         ]
         self.menu = Menu(
             menu_config=self.menu_options,
-            pos=((WindowData.width / 2) - 225, (WindowData.height * 0.30)),
-            area=(450, 200),
+            pos=((WindowData.width / 2) - 225, (WindowData.height * 0.45)),
+            area=(450, 350),
         )
         self.menu.build_menu(self.menu_options)
         self.menu.manager.enable()
@@ -142,6 +142,5 @@ class TitleView(arcade.View):
         super().on_resize(width, height)
         WindowData.width = width
         WindowData.height = height
-        self.menu.main_box.center_on_screen()
-
+        self.menu.main_box.center = (width / 2, height * 0.45)
         self.start_banner_sprite.center_x = width / 2
