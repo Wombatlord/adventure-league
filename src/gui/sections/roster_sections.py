@@ -3,14 +3,11 @@ from arcade.gui import UIManager, UIWidget
 
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
-from src.gui.gui_components import (
-    ScrollWindow,
-    entity_labels_names_only,
-    entity_labels_with_cost,
-    horizontal_box_pair,
-    single_box,
-)
-from src.gui.gui_utils import Cycle
+from src.gui.components.scroll_window import ScrollWindow
+from src.gui.components.layouts import single_box, horizontal_box_pair
+from src.gui.components.roster_components import entity_labels_names_only
+from src.gui.components.recruitment_components import entity_labels_with_cost
+from src.gui.components.scroll_window import Cycle
 from src.textures.pixelated_nine_patch import PixelatedNinePatch
 from src.textures.texture_data import SingleTextureSpecs, SpriteSheetSpecs
 

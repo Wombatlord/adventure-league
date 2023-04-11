@@ -6,8 +6,7 @@ from src.engine.init_engine import eng
 from src.entities.dungeon import Room
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
-from src.gui.combat_screen import CombatScreen
-from src.gui.selection_texture_enums import SelectionCursor
+from src.gui.components.combat_components import CombatScreen
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
@@ -17,6 +16,16 @@ from src.world.node import Node
 
 def do_nothing():
     pass
+
+
+class SelectionCursor:
+    GREEN = 0
+    YELLOW = 1
+    RED = 2
+    BLUE = 3
+    SILVER_EDGE = 4
+    GOLD_EDGE = 5
+
 
 
 class CombatGridSection(arcade.Section):
@@ -95,16 +104,14 @@ class CombatGridSection(arcade.Section):
     def init_path(self) -> arcade.SpriteList:
         selected_path_sprites = arcade.SpriteList()
         start_sprite = BaseSprite(
-            SpriteSheetSpecs.indicators.loaded[SelectionCursor.GREEN.value],
+            SpriteSheetSpecs.indicators.loaded[SelectionCursor.GREEN],
             scale=self.SPRITE_SCALE,
             transform=self.transform,
             draw_priority_offset=0.1,
         ).offset_anchor((0, 4.5))
         selected_path_sprites.append(start_sprite)
 
-        main_path_tex = SpriteSheetSpecs.indicators.loaded[
-            SelectionCursor.GOLD_EDGE.value
-        ]
+        main_path_tex = SpriteSheetSpecs.indicators.loaded[SelectionCursor.GOLD_EDGE]
         for _ in range(1, 19):
             sprite = BaseSprite(
                 main_path_tex,
@@ -116,7 +123,7 @@ class CombatGridSection(arcade.Section):
             selected_path_sprites.append(sprite)
 
         end_sprite = BaseSprite(
-            SpriteSheetSpecs.indicators.loaded[SelectionCursor.RED.value],
+            SpriteSheetSpecs.indicators.loaded[SelectionCursor.RED],
             scale=self.SPRITE_SCALE,
             transform=self.transform,
             draw_priority_offset=0.1,

@@ -3,7 +3,7 @@ from typing import Callable, Generator
 import arcade
 
 from src.engine.init_engine import eng
-from src.gui.gui_utils import gen_heights
+from src.gui.components.scroll_window import gen_heights
 from src.gui.window_data import WindowData
 from src.projection import health
 

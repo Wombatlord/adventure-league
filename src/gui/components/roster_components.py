@@ -1,0 +1,28 @@
+from src.gui.window_data import WindowData
+from src.gui.components.scroll_window import ScrollWindow
+from arcade.gui import UILabel, UIWidget
+from src.config import font_sizes
+
+def entity_labels_names_only(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]:
+    """Returns a tuple of UILabels which can be attached to a UILayout
+
+    Args:
+        scroll_window (ScrollWindow): ScrollWindow containing an array of entities with names and costs.
+
+    Returns:
+        tuple[UIWidget]: Tuple of UILabels. Can simply be attached to the children parameter of a UILayout.
+    """
+    return tuple(
+        map(
+            lambda entity: UILabel(
+                text=f"{entity.name.name_and_title}",
+                width=WindowData.width,
+                height=40,
+                font_size=font_sizes.BODY,
+                font_name=WindowData.font,
+                align="center",
+                size_hint=(1, None),
+            ),  # .with_border(color=arcade.color.GENERIC_VIRIDIAN),
+            scroll_window.items,
+        )
+    )

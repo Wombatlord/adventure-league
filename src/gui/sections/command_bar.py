@@ -3,20 +3,14 @@ from arcade.gui import (
     UIAnchorLayout,
     UIBoxLayout,
     UIFlatButton,
-    UILabel,
     UIManager,
-    UIWidget,
 )
 
-from src.engine.init_engine import eng
-from src.gui.buttons import CommandBarMixin
-from src.gui.gui_components import box_containing_horizontal_label_pair, single_box
-from src.gui.observer import observe
+from src.gui.components.layouts import single_box
 from src.gui.ui_styles import ADVENTURE_STYLE
-from src.textures.texture_data import SingleTextureSpecs
 
 
-class CommandBarSection(arcade.Section, CommandBarMixin):
+class CommandBarSection(arcade.Section):
     manager: UIManager
     anchor: UIAnchorLayout
     command_box: UIBoxLayout
@@ -87,42 +81,3 @@ class CommandBarSection(arcade.Section, CommandBarMixin):
             # button.with_border(width=3, color=arcade.color.GOLD)
 
         return buttons
-
-
-class InfoPaneSection(arcade.Section):
-    def __init__(
-        self,
-        left: int,
-        bottom: int,
-        width: int,
-        height: int,
-        margin: int,
-        texts: list[UILabel],
-        **kwargs,
-    ):
-        super().__init__(left, bottom, width, height, **kwargs)
-
-        self.manager = UIManager()
-        self.margin = margin
-        self.texts = texts
-        self.panel = SingleTextureSpecs.panel_highlighted.loaded
-
-        self.manager.add(
-            single_box(
-                bottom=self.bottom,
-                height=self.height,
-                children=self.texts,
-                padding=(10, 0, 0, 0),
-                panel=self.panel,
-            )
-        )
-
-    def flush(self):
-        self.manager = UIManager()
-
-    def on_draw(self):
-        self.manager.draw()
-
-    def on_resize(self, width: int, height: int):
-        super().on_resize(width, height)
-        self.width = width

@@ -8,11 +8,11 @@ import arcade.key
 
 from src.engine.init_engine import eng
 from src.entities.actions import MoveAction
-from src.gui.buttons import end_turn_button
-from src.gui.combat_sections import CombatGridSection
-from src.gui.view_components import CommandBarSection
+from src.gui.components.buttons import end_turn_button
+from src.gui.sections.combat_sections import CombatGridSection
+from src.gui.sections.command_bar import CommandBarSection
 from src.gui.window_data import WindowData
-from src.utils.input_capture import BaseInputMode, GridSelection, Selection
+from src.gui.components.input_capture import BaseInputMode, GridSelection, Selection
 from src.world.node import Node
 
 
@@ -74,9 +74,9 @@ class CombatView(arcade.View):
     input_mode: BaseInputMode
     selections: dict[str, Selection]
 
-    def __init__(self, parent: arcade.View):
+    def __init__(self, parent_factory: arcade.View):
         super().__init__()
-        self.parent = parent
+        self.parent_factory = parent_factory
 
         self.combat_grid_section = CombatGridSection(
             left=0,
@@ -217,7 +217,7 @@ class CombatView(arcade.View):
             case arcade.key.G:
                 if eng.mission_in_progress is False:
                     eng.flush_subscriptions()
-                    self.window.show_view(self.parent)
+                    self.window.show_view(self.parent_factory())
 
         self.input_mode.on_key_press(symbol, modifiers)
 
