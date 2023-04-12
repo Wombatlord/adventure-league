@@ -50,8 +50,18 @@ class GuildView(arcade.View):
         )
         # CommandBar config
         self.buttons = GuildViewButtons(
-            nav_button(lambda: MissionsView(self), "Missions"),
-            nav_button(lambda: RosterView(self), "Roster"),
+            nav_button(
+                lambda: MissionsView(
+                    lambda: GuildView(parent_factory=self.parent_factory)
+                ),
+                "Missions",
+            ),
+            nav_button(
+                lambda: RosterView(
+                    lambda: GuildView(parent_factory=self.parent_factory)
+                ),
+                "Roster",
+            ),
             update_button(on_click=eng.refresh_mission_board, text="New Missions"),
         )
         self.command_bar_section = CommandBarSection(

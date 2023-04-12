@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Callable
+
 import arcade
 import arcade.color
 import arcade.key
@@ -17,7 +19,7 @@ from src.gui.window_data import WindowData
 
 
 class MissionsView(arcade.View):
-    def __init__(self, parent_factory: arcade.View):
+    def __init__(self, parent_factory: Callable[[], arcade.View]):
         super().__init__()
         self.parent_factory = parent_factory
         self.margin = 5
@@ -65,7 +67,9 @@ class MissionsView(arcade.View):
         )
 
         # CommandBar Config
-        self.buttons: list[UIFlatButton] = [nav_button(self.parent_factory, "Guild")]
+        self.buttons: list[UIFlatButton] = [
+            nav_button(lambda: self.parent_factory(), "Guild")
+        ]
         self.command_bar_section: CommandBarSection = CommandBarSection(
             left=0,
             bottom=0,

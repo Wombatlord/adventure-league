@@ -1,7 +1,7 @@
 from typing import Callable, Sequence
 
 
-def in_sequence(callbacks: Sequence[Callable[[], None]]) -> Callable[[], None]:
+def call_in_order(callbacks: Sequence[Callable[[], None]]) -> Callable[[], None]:
     """
     Use this to compose callbacks to be called sequentially
     Args:

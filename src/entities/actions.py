@@ -228,7 +228,7 @@ class EndTurnAction(BaseAction, metaclass=ActionMeta):
         return {
             **ActionMeta.details(cls, fighter),
             "on_confirm": lambda: fighter.ready_action(cls(fighter)),
-            "label": "End Turn",
+            "label": "Confirm",
         }
 
     @classmethod

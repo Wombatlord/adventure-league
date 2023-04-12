@@ -169,14 +169,6 @@ class CombatGridSection(arcade.Section):
 
         self.refresh_draw_order()
 
-    def setup_combat_menu(self, event):
-        self.combat_menu = combat_menu.build_from_event(
-            event,
-            (self.window.width * 0.75, self.window.height * 0.75),
-            on_teardown=lambda: eng.input_received(),
-        )
-        self.combat_menu.enable()
-
     def refresh_draw_order(self):
         self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
 
