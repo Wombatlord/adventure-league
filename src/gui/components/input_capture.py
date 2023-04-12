@@ -199,6 +199,12 @@ class BaseInputMode:
     def get_name(self) -> str:
         return self.name or "no name"
 
+    def enable(self):
+        pass
+
+    def disable(self):
+        pass
+
     def set_next_mode(self, mode: Self) -> Self:
         self.next_mode = mode
         return self

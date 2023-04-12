@@ -1,6 +1,6 @@
 import unittest
 
-from src.gui.gui_utils import ScrollWindow
+from src.gui.components.scroll_window import ScrollWindow
 
 
 class ScrollWindowTest(unittest.TestCase):

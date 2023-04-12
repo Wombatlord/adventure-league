@@ -8,11 +8,14 @@ import arcade.key
 
 from src.engine.init_engine import eng
 from src.entities.actions import MoveAction
-from src.gui.buttons import end_turn_button
-from src.gui.combat_sections import CombatGridSection
-from src.gui.view_components import CommandBarSection
+from src.gui.components import combat_menu
+from src.gui.components.buttons import end_turn_button
+from src.gui.components.input_capture import BaseInputMode, GridSelection, Selection
+from src.gui.components.menu import Menu
+from src.gui.sections.combat_sections import CombatGridSection
+from src.gui.sections.command_bar import CommandBarSection
 from src.gui.window_data import WindowData
-from src.utils.input_capture import BaseInputMode, GridSelection, Selection
+from src.utils.functional import call_in_order
 from src.world.node import Node
 
 
@@ -26,8 +29,6 @@ class ActionSelectionInputMode(BaseInputMode):
 
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
-            case arcade.key.TAB:
-                self.view.next_input_mode()
             case arcade.key.UP:
                 self.selection.prev()
             case arcade.key.DOWN:
@@ -41,14 +42,31 @@ class GridSelectionMode(ActionSelectionInputMode):
     selection: GridSelection[tuple[Node, ...]]
 
     def __init__(
-        self, view: CombatView, selection: GridSelection[tuple[Node, ...]], name: str
+        self,
+        view: CombatView,
+        parent: Menu,
+        selection: GridSelection[tuple[Node, ...]],
+        name: str,
     ):
         super().__init__(view, selection, name)
+        self.parent = parent
+        self.enabled = False
+
+    def enable(self):
+        self.enabled = True
+
+    def disable(self):
+        self.enabled = False
 
     def on_key_press(self, symbol: int, modifiers: int):
+        if not self.enabled:
+            return
+
         match symbol:
-            case arcade.key.TAB:
-                self.view.next_input_mode()
+            case arcade.key.ESCAPE:
+                self.disable()
+                self.parent.show()
+                self.view.combat_grid_section.hide_path()
             case arcade.key.UP:
                 self.selection.up()
             case arcade.key.DOWN:
@@ -72,11 +90,11 @@ class NoInputMode(BaseInputMode):
 
 class CombatView(arcade.View):
     input_mode: BaseInputMode
-    selections: dict[str, Selection]
+    selection: GridSelection | None
 
-    def __init__(self, parent: arcade.View):
+    def __init__(self, parent_factory: Callable[[], arcade.View]):
         super().__init__()
-        self.parent = parent
+        self.parent_factory = parent_factory
 
         self.combat_grid_section = CombatGridSection(
             left=0,
@@ -107,40 +125,11 @@ class CombatView(arcade.View):
         self.input_mode = NoInputMode(self)
         self._default_input_mode = None
         self.confirm_selection = lambda: None
-        self.bind_input_modes()
+        self.selection = None
         self.add_section(self.command_bar_section)
         self.add_section(self.combat_grid_section)
+        self.combat_menu: Menu | None = None
         eng.init_combat()
-
-    def bind_input_modes(self):
-        if not self.selections:
-            self.input_mode = NoInputMode(self)
-            return
-
-        self.input_modes = {}
-        prev_name = None
-        for name, selection in sorted(
-            self.selections.items(), key=lambda s: int(s[0] != MoveAction.name)
-        ):
-            input_mode_class = (
-                GridSelectionMode
-                if name == MoveAction.name
-                else ActionSelectionInputMode
-            )
-            self.input_modes[name] = input_mode_class(self, selection, name)
-            if prev_name:
-                self.input_modes[name].set_next_mode(self.input_modes[prev_name])
-            prev_name = name
-
-        self.input_modes[MoveAction.name].set_next_mode(self.input_modes[prev_name])
-        self._default_input_mode = self.input_modes[MoveAction.name]
-        self.reset_input_mode()
-
-    def next_input_mode(self):
-        self.input_mode = self.input_mode.get_next_mode()
-
-    def reset_input_mode(self):
-        self.input_mode = self._default_input_mode
 
     def on_show_view(self):
         self.command_bar_section.manager.enable()
@@ -151,58 +140,60 @@ class CombatView(arcade.View):
         )
 
     def on_draw(self):
-        self.clear()
+        self.combat_grid_section.combat_menu = self.combat_menu
 
-    def make_on_confirm(self, options, hide_stuff) -> Callable[[int], bool]:
-        def on_confirm(opt_idx: int) -> bool:
-            hide_stuff()
-            self.reset_input_mode()
-            eng.input_received()
-            return options[opt_idx]["on_confirm"]()
-
-        return on_confirm
+    def reset_input_mode(self):
+        self.input_mode = NoInputMode(self)
 
     def set_action_selection(self, event):
         if requester := event.get("await_input"):
             if requester.owner.ai:
                 return
-
+        self.setup_combat_menu(event)
         eng.await_input()
+        self.selection = GridSelection(
+            event["choices"][MoveAction.name], key=lambda o: o["subject"][-1][:2]
+        )
+        self.selection.set_on_change_selection(
+            lambda: self.combat_grid_section.show_path(
+                self.selection.current()["subject"]
+            ),
+            call_now=False,
+        ).set_confirmation(
+            # this is a negated cast to bool bc we want to return True
+            lambda _: ~bool(
+                call_in_order(
+                    (
+                        self.selection.current()["on_confirm"],
+                        lambda: self.combat_grid_section.hide_path(),
+                        lambda: self.reset_input_mode(),
+                        lambda: eng.input_received(),
+                    )
+                )()
+            )
+        )
+        self.input_mode = GridSelectionMode(
+            self, self.combat_menu, self.selection, "move"
+        )
 
-        choices = event.get("choices")
-        selections = {}
-        no_op = lambda: None
-
-        for name, options in choices.items():
-            if not options:
-                continue
-
-            hide_stuff = no_op
-            if name == MoveAction.name:
-                hide_stuff = lambda: self.combat_grid_section.hide_path()
-
-            _on_confirm = self.make_on_confirm(options, hide_stuff)
-
-            kwargs = {"options": tuple(opt["subject"] for opt in options)}
-            if name == MoveAction.name:
-                selection_class = GridSelection
-                kwargs["key"] = lambda opt: tuple(opt[-1][:2])
-            else:
-                selection_class = Selection
-
-            selections[name] = selection_class(
-                **kwargs,
-            ).set_confirmation(_on_confirm)
-
-            update_selection = no_op
-            if name == MoveAction.name:
-                update_selection = lambda: self.combat_grid_section.show_path(
-                    selections[MoveAction.name].current()
+    def setup_combat_menu(self, event):
+        self.combat_menu = combat_menu.build_from_event(
+            event,
+            (self.window.width * 0.75, self.window.height * 0.75),
+            on_teardown=lambda: eng.input_received(),
+            submenu_overrides={
+                MoveAction.name: call_in_order(
+                    (
+                        lambda: self.combat_menu.hide(),
+                        lambda: self.input_mode.enable(),
+                        lambda: self.combat_grid_section.show_path(
+                            self.selection.current()["subject"]
+                        ),
+                    )
                 )
-
-            selections[name].set_on_change_selection(update_selection)
-        self.selections = selections
-        self.bind_input_modes()
+            },
+        )
+        self.combat_menu.enable()
 
     def on_key_release(self, _symbol: int, _modifiers: int):
         if not self.combat_grid_section.cam_controls.on_key_release(_symbol):
@@ -217,7 +208,7 @@ class CombatView(arcade.View):
             case arcade.key.G:
                 if eng.mission_in_progress is False:
                     eng.flush_subscriptions()
-                    self.window.show_view(self.parent)
+                    self.window.show_view(self.parent_factory())
 
         self.input_mode.on_key_press(symbol, modifiers)
 

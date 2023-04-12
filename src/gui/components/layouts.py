@@ -1,20 +1,44 @@
 from typing import Callable, NamedTuple
 
-import arcade.color
-from arcade.gui import UIImage, UISpriteWidget
-from arcade.gui.widgets import UIWidget
-from arcade.gui.widgets.layout import UIAnchorLayout, UIBoxLayout
-from arcade.gui.widgets.text import UILabel
+import arcade
+from arcade.gui import UIAnchorLayout, UIBoxLayout, UIImage, UILabel, UIWidget
+from PIL import Image
 
-from src.config import font_sizes
-from src.gui.gui_utils import ScrollWindow
 from src.gui.window_data import WindowData
 from src.textures.pixelated_nine_patch import PixelatedNinePatch, PixelatedTexture
+
+
+def get_background_panel(panel_highlighted):
+    return UIImage(
+        texture=PixelatedNinePatch(
+            left=15, right=15, bottom=15, top=15, texture=panel_highlighted
+        ),
+        size_hint=(1, 1 / 3),
+    )
+
+
+def get_pixelated_tex_panel(paths: list[str]) -> list[UIImage]:
+    ui_images = []
+    for path in paths:
+        with Image.open(path) as banner_image:
+            ui_images.append(
+                UIImage(
+                    texture=PixelatedTexture(image=banner_image),
+                    size_hint=(None, None),
+                    height=61,
+                    width=772,
+                )
+            )
+
+    return ui_images
+
 
 Rgba = tuple[int, int, int, int]
 Attach = Callable[[UILabel], UILabel]
 Colored_Label = tuple[str, str, int, Rgba] | tuple[str, str, int, Rgba, Attach]
-from PIL import Image
+Colored_Label_Pair = tuple[Colored_Label, Colored_Label]
+
+Top_Right_Bottom_Left_Padding = tuple[int, int, int, int]
 
 
 class ColoredLabel(NamedTuple):
@@ -44,11 +68,6 @@ class ColoredLabel(NamedTuple):
                 text_color=self.colour,
             )
         )
-
-
-Colored_Label_Pair = tuple[Colored_Label, Colored_Label]
-
-Top_Right_Bottom_Left_Padding = tuple[int, int, int, int]
 
 
 def label_with_observer(
@@ -126,182 +145,6 @@ def create_colored_shadowed_UILabel_header(
             size_hint=(1, None),
             text_color=color,
         ),
-    )
-
-
-def entity_labels_with_cost(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]:
-    """Returns a tuple of UILabels which can be attached to a UILayout
-
-    Args:
-        scroll_window (ScrollWindow): ScrollWindow containing an array of entities with names and costs.
-
-    Returns:
-        tuple[UIWidget]: Tuple of UILabels. Can simply be attached to the children parameter of a UILayout.
-    """
-    return tuple(
-        map(
-            lambda entity: UILabel(
-                text=f"{entity.name.name_and_title}: {entity.cost} gp",
-                width=WindowData.width,
-                height=22,
-                font_size=font_sizes.BODY,
-                font_name=WindowData.font,
-                align="center",
-                size_hint=(0.75, None),
-            ),  # .with_border(color=arcade.color.GENERIC_VIRIDIAN),
-            scroll_window.items,
-        )
-    )
-
-
-def entity_labels_names_only(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]:
-    """Returns a tuple of UILabels which can be attached to a UILayout
-
-    Args:
-        scroll_window (ScrollWindow): ScrollWindow containing an array of entities with names and costs.
-
-    Returns:
-        tuple[UIWidget]: Tuple of UILabels. Can simply be attached to the children parameter of a UILayout.
-    """
-    return tuple(
-        map(
-            lambda entity: UILabel(
-                text=f"{entity.name.name_and_title}",
-                width=WindowData.width,
-                height=40,
-                font_size=font_sizes.BODY,
-                font_name=WindowData.font,
-                align="center",
-                size_hint=(1, None),
-            ),  # .with_border(color=arcade.color.GENERIC_VIRIDIAN),
-            scroll_window.items,
-        )
-    )
-
-
-def vstack_of_three_boxes(
-    bottom: int,
-    height: int,
-    content_top: tuple[UIWidget, ...],
-    content_mid: tuple[UIWidget, ...],
-    content_btm: tuple[UIWidget, ...],
-    panel_highlighted: PixelatedNinePatch,
-    panel_darkened: PixelatedNinePatch,
-    tex_reference_buffer: list | None = None,
-    banner_reference_buffer: list | None = None,
-) -> UIAnchorLayout:
-    anchor = UIAnchorLayout(
-        y=bottom,
-        height=height,
-        size_hint=(1, None),
-    )
-
-    if tex_reference_buffer is None:
-        tex_reference_buffer = []
-
-    # Prepare and add the texture backgrounds to the mission cards.
-    top_panel = get_background_panel(panel_highlighted)
-    center_panel = get_background_panel(panel_darkened)
-    bottom_panel = get_background_panel(panel_darkened)
-
-    tex_reference_buffer.extend([top_panel, center_panel, bottom_panel])
-
-    for panel, anchor_y in zip(tex_reference_buffer, ["top", "center", "bottom"]):
-        anchor.add(child=panel, anchor_y=anchor_y)
-
-    ### WIP Mission Banner
-    # Adds a BoxLayout overlapping with the BoxLayout for labels to allow drawing mission_banner behind mission header label
-    # with correct alignments.
-    if banner_reference_buffer is None:
-        banner_reference_buffer = []
-
-    banner_reference_buffer = get_mission_banner(banner_refs=banner_reference_buffer)
-
-    for element, anchor_y in zip(
-        banner_reference_buffer,
-        ["top", "center", "bottom"],
-    ):
-        anchor.add(
-            anchor_x="center",
-            anchor_y=anchor_y,
-            child=UIBoxLayout(
-                vertical=True,
-                # height=122,
-                size_hint=(1, 0.335),
-                children=[element],
-                space_between=0,
-            ).with_padding(top=10),
-        )
-    ### WIP Mission Banner
-
-    # DROP SHADOW UILABELS
-    for element, anchor_y in zip(
-        [content_top[0], content_mid[0], content_btm[0]],
-        ["top", "center", "bottom"],
-    ):
-        anchor.add(
-            anchor_x="center",
-            anchor_y=anchor_y,
-            child=UIBoxLayout(
-                vertical=True,
-                # height=122,
-                size_hint=(1, 0.33),
-                children=[element],
-                space_between=0,
-            ).with_padding(top=26, right=1),
-        )
-
-    # COLORED UILABELS
-    for element, anchor_y in zip(
-        [content_top[1:], content_mid[1:], content_btm[1:]],
-        ["top", "center", "bottom"],
-    ):
-        anchor.add(
-            anchor_x="center",
-            anchor_y=anchor_y,
-            child=UIBoxLayout(
-                vertical=True,
-                # height=122,
-                size_hint=(1, 0.33),
-                children=element,
-                space_between=0,
-            ).with_padding(top=25),
-        )
-
-    return anchor
-
-
-def get_mission_banner(banner_refs: list) -> list:
-    with Image.open("assets\sprites\mission_banner.png") as banner_image:
-        banner_refs.append(
-            UIImage(
-                texture=PixelatedTexture(image=banner_image),
-                size_hint=(None, None),
-                height=61,
-                width=772,
-            )
-        )
-
-    with Image.open("assets\sprites\mission_banner_dark.png") as banner_image:
-        for _ in range(2):
-            banner_refs.append(
-                UIImage(
-                    texture=PixelatedTexture(image=banner_image),
-                    size_hint=(None, None),
-                    height=61,
-                    width=772,
-                )
-            )
-
-    return banner_refs
-
-
-def get_background_panel(panel_highlighted):
-    return UIImage(
-        texture=PixelatedNinePatch(
-            left=15, right=15, bottom=15, top=15, texture=panel_highlighted
-        ),
-        size_hint=(1, 1 / 3),
     )
 
 

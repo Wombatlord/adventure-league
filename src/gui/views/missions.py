@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Callable
+
 import arcade
 import arcade.color
 import arcade.key
@@ -7,18 +9,19 @@ from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
-from src.gui.buttons import nav_button
-from src.gui.gui_utils import Cycle
-from src.gui.missions_view_section import MissionsSection
-from src.gui.view_components import CommandBarSection, InfoPaneSection
+from src.gui.components.buttons import nav_button
+from src.gui.components.scroll_window import Cycle
+from src.gui.sections.command_bar import CommandBarSection
+from src.gui.sections.info_pane import InfoPaneSection
+from src.gui.sections.missions_section import MissionsSection
 from src.gui.views.combat import CombatView
 from src.gui.window_data import WindowData
 
 
 class MissionsView(arcade.View):
-    def __init__(self, parent: arcade.View):
+    def __init__(self, parent_factory: Callable[[], arcade.View]):
         super().__init__()
-        self.parent = parent
+        self.parent_factory = parent_factory
         self.margin = 5
         self.selection = Cycle(
             3, 2
@@ -64,7 +67,9 @@ class MissionsView(arcade.View):
         )
 
         # CommandBar Config
-        self.buttons: list[UIFlatButton] = [nav_button(self.parent, "Guild")]
+        self.buttons: list[UIFlatButton] = [
+            nav_button(lambda: self.parent_factory(), "Guild")
+        ]
         self.command_bar_section: CommandBarSection = CommandBarSection(
             left=0,
             bottom=0,
@@ -116,7 +121,7 @@ class MissionsView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.G:
-                g = self.parent
+                g = self.parent_factory
                 self.window.show_view(g())
 
             case arcade.key.DOWN:
@@ -130,4 +135,6 @@ class MissionsView(arcade.View):
                 eng.init_dungeon()
                 if not eng.game_state.dungeon.cleared:
                     if len(eng.game_state.guild.team.members) > 0:
-                        self.window.show_view(CombatView(parent=self.parent))
+                        self.window.show_view(
+                            CombatView(parent_factory=self.parent_factory)
+                        )

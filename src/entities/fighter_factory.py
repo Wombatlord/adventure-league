@@ -9,7 +9,7 @@ from src.entities.fighter import Fighter
 from src.entities.inventory import Inventory
 from src.entities.items import HealingPotion
 from src.entities.sprites import EntitySprite
-from src.gui.entity_texture_enums import (
+from src.gui.animated_sprite_config import (
     AnimatedSpriteConfig,
     choose_boss_texture,
     choose_goblin_textures,

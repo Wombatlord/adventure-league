@@ -55,16 +55,17 @@ class ActionsTest(unittest.TestCase):
 
     def test_action_compendium_has_registered_all_actions(self):
         # Arrange
-        keys = {"end turn", "attack", "consume item", "move"}
+        keys = {"end turn", "attack", "use item", "move"}
         actions = ActionCompendium.all_actions
 
         # Assert
-        assert keys == {*actions.keys()}
+        actual = {*actions.keys()}
+        assert keys == actual, f"expected {keys=}, got {actual=}"
 
         # Check each key contains the correct ActionMeta
         assert actions.get("end turn") is EndTurnAction
         assert actions.get("attack") is AttackAction
-        assert actions.get("consume item") is ConsumeItemAction
+        assert actions.get("use item") is ConsumeItemAction
         assert actions.get("move") is MoveAction
 
     def test_request_action_event_schema(self):
@@ -169,7 +170,7 @@ class MoveActionTest(unittest.TestCase):
         decision = ai.latest_decision()
         _assert_keys(
             msg=decision,
-            expected_keys={"name", "actor", "cost", "subject", "on_confirm"},
+            expected_keys={"name", "actor", "cost", "subject", "on_confirm", "label"},
         )
 
         # this has to be calculated now, if we get it later the fighter has reached their destination and

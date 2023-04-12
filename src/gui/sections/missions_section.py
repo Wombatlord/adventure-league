@@ -2,15 +2,19 @@ import arcade
 from arcade.gui import UIManager
 
 from src.config import font_sizes
-from src.gui.gui_components import (
+from src.gui.components.layouts import (
     box_containing_horizontal_label_pair,
     create_colored_shadowed_UILabel_header,
-    create_colored_UILabel_header,
-    vstack_of_three_boxes,
 )
-from src.gui.gui_utils import Cycle
-from src.gui.states import MissionCards
-from src.textures.texture_data import SheetSpec, SingleTextureSpecs
+from src.gui.components.missions_components import mission_boxes
+from src.gui.components.scroll_window import Cycle
+from src.textures.texture_data import SingleTextureSpecs
+
+
+class MissionCards:
+    TOP = 0
+    MIDDLE = 1
+    BOTTOM = 2
 
 
 class MissionsSection(arcade.Section):
@@ -173,7 +177,7 @@ class MissionsSection(arcade.Section):
         tex_references = []
         banner_references = []
         self.manager.add(
-            vstack_of_three_boxes(
+            mission_boxes(
                 self.bottom,
                 self.height,
                 content_top=labels[0],
@@ -197,7 +201,6 @@ class MissionsSection(arcade.Section):
             ref.texture for ref in banner_references[:2]
         ]
 
-        self.top_banner, self.mid_banner, self.bottom_banner = banner_references
         self.banners = banner_references
 
         self.top_label = self.manager.children[0][0].children[9].children[0]
@@ -239,16 +242,16 @@ class MissionsSection(arcade.Section):
 
     def scroll_mission_selection(self):
         match self.mission_selection.pos:
-            case MissionCards.TOP.value:
+            case MissionCards.TOP:
                 # self.manager.children[0][0].children[0].
                 highlight, normal, _normal = self.highlight_states()
                 self._highlight_selected_pane(highlight, normal, _normal)
 
-            case MissionCards.MIDDLE.value:
+            case MissionCards.MIDDLE:
                 highlight, normal, _normal = self.highlight_states()
                 self._highlight_selected_pane(highlight, normal, _normal)
 
-            case MissionCards.BOTTOM.value:
+            case MissionCards.BOTTOM:
                 highlight, normal, _normal = self.highlight_states()
                 self._highlight_selected_pane(highlight, normal, _normal)
 

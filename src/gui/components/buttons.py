@@ -3,29 +3,13 @@ from typing import Callable
 import arcade
 from arcade import get_window
 from arcade.gui.events import UIEvent
-from arcade.gui.widgets.buttons import UIFlatButton, UITextureButton
+from arcade.gui.widgets.buttons import UITextureButton
 
 from src.engine.init_engine import eng
 from src.textures.texture_config import (
     TextureButtonNinePatchConfig,
     load_ui_texture_button,
 )
-
-
-class CommandBarMixin:
-    """
-    Provides some methods to be implemented in any View which should have a command bar.
-
-    Implementations should compose the buttons with attached handlers, labels, and styling
-    ready to be added to the UIManager.
-    """
-
-    window: arcade.Window
-
-    @property
-    def command_bar(self) -> list[UIFlatButton]:
-        ...
-
 
 UIEventHandler = Callable[[UIEvent], None]
 
@@ -67,7 +51,7 @@ def nav_button(
     return btn
 
 
-def update_button(on_click: Callable[[None], None], text: str):
+def update_button(on_click: Callable[[], None], text: str) -> UITextureButton:
     def update_handler(event: UIEvent | None = None):
         on_click()
 

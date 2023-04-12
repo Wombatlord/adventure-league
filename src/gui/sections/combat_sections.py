@@ -1,13 +1,14 @@
 import arcade
-from pyglet.math import Mat3, Vec2, Vec3
+from pyglet.math import Vec2
 
 from src import config
 from src.engine.init_engine import eng
 from src.entities.dungeon import Room
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
-from src.gui.combat_screen import CombatScreen
-from src.gui.selection_texture_enums import SelectionCursor
+from src.gui.components import combat_menu
+from src.gui.components.combat_components import CombatScreen
+from src.gui.components.menu import Menu
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
@@ -19,12 +20,22 @@ def do_nothing():
     pass
 
 
+class SelectionCursor:
+    GREEN = 0
+    YELLOW = 1
+    RED = 2
+    BLUE = 3
+    SILVER_EDGE = 4
+    GOLD_EDGE = 5
+
+
 class CombatGridSection(arcade.Section):
     TILE_BASE_DIMS = (16, 17)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
     SPRITE_SCALE = 5
 
     encounter_room: Room | None
+    combat_menu: Menu | None
 
     def __init__(
         self,
@@ -55,6 +66,7 @@ class CombatGridSection(arcade.Section):
         )
         self.all_path_sprites = self.init_path()
         self.debug_text = ""
+        self.combat_menu = None
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -95,16 +107,14 @@ class CombatGridSection(arcade.Section):
     def init_path(self) -> arcade.SpriteList:
         selected_path_sprites = arcade.SpriteList()
         start_sprite = BaseSprite(
-            SpriteSheetSpecs.indicators.loaded[SelectionCursor.GREEN.value],
+            SpriteSheetSpecs.indicators.loaded[SelectionCursor.GREEN],
             scale=self.SPRITE_SCALE,
             transform=self.transform,
             draw_priority_offset=0.1,
         ).offset_anchor((0, 4.5))
         selected_path_sprites.append(start_sprite)
 
-        main_path_tex = SpriteSheetSpecs.indicators.loaded[
-            SelectionCursor.GOLD_EDGE.value
-        ]
+        main_path_tex = SpriteSheetSpecs.indicators.loaded[SelectionCursor.GOLD_EDGE]
         for _ in range(1, 19):
             sprite = BaseSprite(
                 main_path_tex,
@@ -116,7 +126,7 @@ class CombatGridSection(arcade.Section):
             selected_path_sprites.append(sprite)
 
         end_sprite = BaseSprite(
-            SpriteSheetSpecs.indicators.loaded[SelectionCursor.RED.value],
+            SpriteSheetSpecs.indicators.loaded[SelectionCursor.RED],
             scale=self.SPRITE_SCALE,
             transform=self.transform,
             draw_priority_offset=0.1,
@@ -126,7 +136,9 @@ class CombatGridSection(arcade.Section):
 
         return selected_path_sprites
 
-    def show_path(self, current: tuple[Node]):
+    def show_path(self, current: tuple[Node] | None) -> None:
+        if not current:
+            return
         head = (0,)
         body = tuple(range(1, len(current) - 1))
         tail = (19,)
@@ -188,8 +200,14 @@ class CombatGridSection(arcade.Section):
 
     def on_draw(self):
         self.grid_camera.use()
+        self.window.clear()
 
         self.world_sprite_list.draw(pixelated=True)
+
+        if self.combat_menu and self.combat_menu.is_enabled():
+            self.combat_menu.draw()
+        elif self.combat_menu and not self.combat_menu.is_enabled():
+            self.combat_menu = None
 
         self.other_camera.use()
         if config.DEBUG:

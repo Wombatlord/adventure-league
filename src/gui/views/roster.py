@@ -14,17 +14,18 @@ from arcade.gui.widgets.text import UILabel
 from src.config import font_sizes
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
-from src.gui.buttons import nav_button
-from src.gui.gui_components import (
+from src.gui.components.buttons import nav_button
+from src.gui.components.layouts import (
     box_containing_horizontal_label_pair,
     label_with_observer,
 )
-from src.gui.observer import observe
-from src.gui.roster_view_sections import (
+from src.gui.components.observer import observe
+from src.gui.sections.command_bar import CommandBarSection
+from src.gui.sections.info_pane import InfoPaneSection
+from src.gui.sections.roster_sections import (
     RecruitmentPaneSection,
     RosterAndTeamPaneSection,
 )
-from src.gui.view_components import CommandBarSection, InfoPaneSection
 from src.gui.window_data import WindowData
 
 
@@ -63,12 +64,12 @@ def entity_observer_widget(get_entity: Callable[[], Entity | None]):
 
 
 class RecruitmentView(arcade.View):
-    def __init__(self, parent=None):
+    def __init__(self, parent_factory):
         super().__init__()
         self.margin = 5
         self.merc = None
         self.color = arcade.color.WHITE
-        self.parent = parent
+        self.parent_factory = parent_factory
 
         # RecruitmentPane Config
         self.recruitment_pane_section = RecruitmentPaneSection(
@@ -111,8 +112,8 @@ class RecruitmentView(arcade.View):
 
         # CommandBar Config
         self.recruitment_pane_buttons = [
-            nav_button(lambda: RosterView(self.parent), "Roster"),
-            nav_button(self.parent, "Guild"),
+            nav_button(lambda: RosterView(self.parent_factory), "Roster"),
+            nav_button(self.parent_factory, "Guild"),
         ]
 
         self.command_bar_section = CommandBarSection(
@@ -168,11 +169,11 @@ class RecruitmentView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
             case arcade.key.G:
-                g = self.parent()
+                g = self.parent_factory()
                 self.window.show_view(g)
 
             case arcade.key.R:
-                self.window.show_view(RosterView(parent=self.parent))
+                self.window.show_view(RosterView(parent_factory=self.parent_factory))
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
@@ -182,12 +183,12 @@ class RecruitmentView(arcade.View):
 
 
 class RosterView(arcade.View):
-    def __init__(self, parent):
+    def __init__(self, parent_factory):
         super().__init__()
         self.margin = 5
         self.merc = None
         self.color = arcade.color.WHITE
-        self.parent: GuildView = parent
+        self.parent_factory: Callable[[], GuildView] = parent_factory
         # RosterAndTeamPane Config
         self.roster_and_team_pane_section = RosterAndTeamPaneSection(
             left=2,
@@ -223,8 +224,8 @@ class RosterView(arcade.View):
         self.add_section(self.info_pane_section)
 
         self.roster_pane_buttons = [
-            nav_button(lambda: RecruitmentView(self.parent), "Recruit"),
-            nav_button(self.parent, "Guild"),
+            nav_button(lambda: RecruitmentView(self.parent_factory), "Recruit"),
+            nav_button(self.parent_factory, "Guild"),
         ]
 
         self.command_bar_section = CommandBarSection(
@@ -254,11 +255,13 @@ class RosterView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.G:
-                g = self.parent()
+                g = self.parent_factory()
                 self.window.show_view(g)
 
             case arcade.key.R:
-                self.window.show_view(RecruitmentView(parent=self.parent))
+                self.window.show_view(
+                    RecruitmentView(parent_factory=self.parent_factory)
+                )
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
