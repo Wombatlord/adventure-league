@@ -6,6 +6,8 @@ from arcade.gui import UIBoxLayout, UIEvent, UIFlatButton, UIManager, UITextureB
 
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.ui_styles import ADVENTURE_STYLE, UIStyle
+from src.gui.window_data import WindowData
+from src.textures.texture_text import TextureText
 
 # DATA STRUCTURES
 ExecutableMenuItem = tuple[str, Callable[[UIEvent], None]]
@@ -48,7 +50,28 @@ class Menu:
         self.manager = None
         self.main_box = None
         self.button_style = button_style or ADVENTURE_STYLE
+        self.button_size = 50
+        self.sprite_list = arcade.SpriteList()
         self._setup()
+
+        """
+        Added a sprite list for internally handling TextureText objects.
+        Currently the labels are positioned via magic numbers and sort of correctly overlap the initial MainMenu layout.
+        
+        Problems:
+        The manager grows vertically upwards rather than downward if there are more buttons in the submenu than parent.
+        
+        TextureText positioning isn't properly tied to a button position.
+        
+        A menu build doesn't correctly position labels for submenus
+        
+        The possible existence of a Return button isn't accounted for in a build_menu call, it's just stuck on after.
+        This prevents neat use of size properties of main_box for label positioning.
+        
+        Button.center_x/y do not correspond to their position on screen. Checking the values in the debugger says they're at 25ish
+        the main_box positioning is what actually puts them where they appear, so aligning the TextureText to the button isn't 
+        just a case of setting those to equal.
+        """
 
     def _setup(self):
         if self.manager:
@@ -78,13 +101,18 @@ class Menu:
     def draw(self):
         if self.manager._enabled:
             self.manager.draw()
+            self.sprite_list.draw(pixelated=True)
 
     def is_enabled(self) -> bool:
         return self.manager._enabled
 
     def build_menu(self, menu: MenuSchema):
         self.main_box.clear()
-
+        self.main_box.resize(
+            width=self.width, height=self.button_size * len(menu)
+        )  # Ensure the height of main box is some multiple of the button size (50)
+        self.sprite_list.clear()
+        texture_text_y_incrementer = 0
         for label, content, *options in menu:
             if not isinstance(label, str):
                 raise TypeError(f"label must be a string, got {type(label)=}")
@@ -94,11 +122,32 @@ class Menu:
                 )
 
             action = self.derive_button_action_from_content(content, *options)
-            btn = update_button(action, label)
-
+            btn = update_button(action, "")
             btn.size_hint = (1, None)
-            btn.resize(height=50)
+            btn.resize(height=self.button_size)
             btn.style = self.button_style
+
+            text = TextureText(
+                text=label,
+                start_x=0,
+                lines=1,
+                color=arcade.color.WHITE,
+                font_size=12,
+                width=self.width,
+                font_name=WindowData.font,
+                multiline=True,
+                anchor_y="baseline",
+            )
+
+            # This is cursed
+            text.center_x = self.x
+
+            text.center_y = (
+                self.main_box.center_y + (self.main_box.center_y * 0.3)
+            ) - texture_text_y_incrementer
+            texture_text_y_incrementer += 52
+            text.scale = 3
+            self.sprite_list.append(text.sprite)
             self.main_box.add(btn)
 
     def closing_action(self, action: Callable[[], None]) -> Callable[[], None]:
