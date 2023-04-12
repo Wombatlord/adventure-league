@@ -2,7 +2,7 @@ from types import FunctionType
 from typing import Callable, NamedTuple, Self
 
 import arcade
-from arcade.gui import UIBoxLayout, UIEvent, UIFlatButton, UIManager, UITextureButton
+from arcade.gui import UIAnchorLayout, UIBoxLayout, UIEvent, UIManager, UITextureButton
 
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.ui_styles import ADVENTURE_STYLE, UIStyle
@@ -79,14 +79,17 @@ class Menu:
         else:
             self.manager = UIManager()
 
+        self.anchor = UIAnchorLayout(width=self.width, height=self.height)
+
         self.main_box = UIBoxLayout(
             width=self.width,
             height=self.height,
             size_hint=(None, None),
             space_between=2,
         ).with_border(color=arcade.color.RED)
-        self.main_box.center = self.x, self.y
-        self.manager.add(self.main_box)
+
+        self.anchor.add(self.main_box, anchor_x="center", anchor_y="center")
+        self.manager.add(self.anchor)
         self.build_menu(self.current_menu_graph)
 
     def disable(self):
@@ -112,7 +115,7 @@ class Menu:
             width=self.width, height=self.button_size * len(menu)
         )  # Ensure the height of main box is some multiple of the button size (50)
         self.sprite_list.clear()
-        texture_text_y_incrementer = 0
+        texture_text_y_incrementer = 50
         for label, content, *options in menu:
             if not isinstance(label, str):
                 raise TypeError(f"label must be a string, got {type(label)=}")
@@ -142,10 +145,9 @@ class Menu:
             # This is cursed
             text.center_x = self.x
 
-            text.center_y = (
-                self.main_box.center_y + (self.main_box.center_y * 0.3)
-            ) - texture_text_y_incrementer
+            text.center_y = ((self.y + self.height) + 5) - texture_text_y_incrementer
             texture_text_y_incrementer += 52
+            # breakpoint()
             text.scale = 3
             self.sprite_list.append(text.sprite)
             self.main_box.add(btn)

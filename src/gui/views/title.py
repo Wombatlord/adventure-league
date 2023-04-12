@@ -133,5 +133,5 @@ class TitleView(arcade.View):
         super().on_resize(width, height)
         WindowData.width = width
         WindowData.height = height
-        self.menu.main_box.center = (width / 2, height * 0.40)
+        # self.menu.anchor.center = (width / 2, height * 0.40)
         self.start_banner_sprite.center_x = width / 2
