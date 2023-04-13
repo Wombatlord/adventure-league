@@ -32,10 +32,10 @@ from src.gui.window_data import WindowData
 def entity_observer_widget(get_entity: Callable[[], Entity | None]):
     def entity_info_label(ui_label, merc: Entity | None) -> None:
         if merc is None:
-            ui_label._text = "No stats to display."
+            ui_label.text = "No stats to display."
             return
 
-        ui_label._text = (
+        ui_label.text = (
             f"{merc.name.name_and_title} "
             f"| LVL: {merc.fighter.level} "
             f"|  HP: {merc.fighter.hp} "
@@ -59,7 +59,6 @@ def entity_observer_widget(get_entity: Callable[[], Entity | None]):
         multiline=True,
     )
     entity_info_label(entity_info, get_entity())
-
     return entity_info
 
 
