@@ -34,6 +34,14 @@ ButtonFactory = Callable[[ButtonCallback, str], UITextureButton]
 class Menu:
     manager: UIManager | None
     main_box: UIBoxLayout | None
+    _factory = lambda *_: update_button
+
+    def set_factory(self, factory: ButtonFactory):
+        self._factory = lambda *_: factory
+
+    def button_factory(self, action, label) -> UITextureButton:
+        factory = self._factory()
+        return factory(action, label)
 
     def __init__(
         self,
@@ -101,7 +109,7 @@ class Menu:
                 )
 
             action = self.derive_button_action_from_content(content, *options)
-            btn = update_button(action, label)
+            btn = self.button_factory(action, label)
 
             btn.size_hint = (1, None)
             btn.resize(height=50)
