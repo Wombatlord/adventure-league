@@ -67,7 +67,7 @@ class TitleView(arcade.View):
         ]
         self.menu = Menu(
             menu_config=self.menu_options,
-            pos=((WindowData.width / 2), (WindowData.height * 0.4)),
+            pos=(0, 0),
             area=(450, 50 * len(self.menu_options)),
         )
         self.menu.enable()

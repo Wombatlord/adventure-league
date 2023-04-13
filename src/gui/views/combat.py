@@ -179,7 +179,7 @@ class CombatView(arcade.View):
     def setup_combat_menu(self, event):
         self.combat_menu = combat_menu.build_from_event(
             event,
-            (self.window.width * 0.75, self.window.height * 0.75),
+            (self.window.width * 0.25, self.window.height * 0.25),
             on_teardown=lambda: eng.input_received(),
             submenu_overrides={
                 MoveAction.name: call_in_order(

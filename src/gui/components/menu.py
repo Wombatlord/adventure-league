@@ -2,10 +2,11 @@ from types import FunctionType
 from typing import Callable, NamedTuple, Self
 
 import arcade
-from arcade.gui import UIBoxLayout, UIEvent, UIFlatButton, UIManager, UITextureButton
+from arcade.gui import UIBoxLayout, UIEvent, UIAnchorLayout, UIManager, UITextureButton
 
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.ui_styles import ADVENTURE_STYLE, UIStyle
+from src.gui.window_data import WindowData
 
 # DATA STRUCTURES
 ExecutableMenuItem = tuple[str, Callable[[UIEvent], None]]
@@ -49,13 +50,16 @@ class Menu:
         pos: tuple[int, int],
         area: tuple[int, int],
         button_style: UIStyle | None = None,
+        should_recenter: bool = False,
     ) -> None:
         self.full_menu_graph = menu_config
         self.current_menu_graph = menu_config
         self.x, self.y = pos
         self.width, self.height = area
         self.manager = None
+        self.anchor = None
         self.main_box = None
+        self.should_recenter = should_recenter
         self.button_style = button_style or ADVENTURE_STYLE
         self._setup()
 
@@ -65,14 +69,16 @@ class Menu:
         else:
             self.manager = UIManager()
 
+        self.anchor = UIAnchorLayout(width=self.width, height=self.height)
+        
         self.main_box = UIBoxLayout(
             width=self.width,
             height=self.height,
             size_hint=(None, None),
             space_between=2,
         ).with_border(color=arcade.color.RED)
-        self.main_box.center = self.x, self.y
-        self.manager.add(self.main_box)
+        self.anchor.add(self.main_box, align_x=self.x, align_y=self.y)
+        self.manager.add(self.anchor)
         self.build_menu(self.current_menu_graph)
 
     def disable(self):
@@ -85,10 +91,10 @@ class Menu:
         self.draw()
 
     def show(self):
-        self.main_box.center = self.x, self.y
+        self.anchor.center = self.x, self.y
 
     def hide(self):
-        self.main_box.center = -self.x, -self.y
+        self.anchor.center = -self.x * 2, -self.y * 2
 
     def draw(self):
         if self.manager._enabled:
@@ -115,7 +121,7 @@ class Menu:
             btn.resize(height=50)
             btn.style = self.button_style
             self.main_box.add(btn)
-
+        
     def closing_action(self, action: Callable[[], None]) -> Callable[[], None]:
         def _do_then_close():
             action()
