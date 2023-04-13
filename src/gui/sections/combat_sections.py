@@ -1,18 +1,20 @@
+from typing import Callable
+
 import arcade
-from pyglet.math import Vec2
+from pyglet.math import Mat3, Vec2, Vec3, Vec4
 
 from src import config
 from src.engine.init_engine import eng
 from src.entities.dungeon import Room
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
-from src.gui.components import combat_menu
 from src.gui.components.combat_components import CombatScreen
 from src.gui.components.menu import Menu
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
-from src.world.isometry.transforms import Transform
+from src.utils.functional import call_in_order
+from src.world.isometry.transforms import Transform, invert_mat3
 from src.world.node import Node
 
 
@@ -47,6 +49,7 @@ class CombatGridSection(arcade.Section):
     ):
         super().__init__(left, bottom, width, height, **kwargs)
 
+        self.on_left_clickup: Callable[[], None] = lambda *_: None
         self.encounter_room = None
         self._original_dims = width, height
 
@@ -64,9 +67,19 @@ class CombatGridSection(arcade.Section):
             absolute_scale=self.SPRITE_SCALE,
             translation=Vec2(self.width, self.height) / 2,
         )
+        self.mouse_sprite: BaseSprite | None = None
         self.all_path_sprites = self.init_path()
         self.debug_text = ""
         self.combat_menu = None
+        self.last_mouse_nodes = [Node(0, 0), Node(0, 0)]
+        self.world_sprite_list.append(self.mouse_sprite)
+        self.mouse_selection = lambda n: False
+
+    def reset_mouse_selection(self):
+        self.mouse_selection = lambda n: False
+
+    def provide_mouse_selection(self, selection: Callable[[Node], bool]):
+        self.mouse_selection = selection
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -131,6 +144,7 @@ class CombatGridSection(arcade.Section):
             transform=self.transform,
             draw_priority_offset=0.1,
         ).offset_anchor((0, 4.5))
+        self.mouse_sprite = end_sprite
 
         selected_path_sprites.append(end_sprite)
 
@@ -242,7 +256,7 @@ class CombatGridSection(arcade.Section):
         if encounter_room:
             self.encounter_room = encounter_room
             self.level_to_sprite_list()
-
+            self.world_sprite_list.append(self.mouse_sprite)
             self.prepare_dude_sprites()
             self.update_dudes(event)
 
@@ -314,3 +328,62 @@ class CombatGridSection(arcade.Section):
         """
         dead_dude: Entity = event.get("dying") or event.get("retreat")
         dead_dude.entity_sprite.sprite.remove_from_sprite_lists()
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        image_coordinates = self.get_image_coordinates((x, y), self.grid_camera)
+        node = self.transform.to_world(image_coordinates)
+        is_traversable = self.encounter_room and node in self.encounter_room.space
+
+        if self.mouse_node_has_changed(node) and is_traversable:
+            self.set_mouse_node(node)
+
+    def set_mouse_node(self, node: Node):
+        if self.mouse_selection(node):
+            self.last_mouse_nodes = [node, self.last_mouse_nodes[0]]
+            self.mouse_sprite.set_node(node)
+
+    def mouse_node_has_changed(self, new_node: Node) -> bool:
+        return self.last_mouse_nodes[0] != new_node
+
+    def get_mouse_sprite(self) -> BaseSprite:
+        return self.mouse_sprite
+
+    def show_mouse_sprite(self):
+        self.mouse_sprite.visible = True
+
+    def hide_mouse_sprite(self):
+        self.mouse_sprite.visible = False
+
+    def get_image_coordinates(
+        self, mouse_coordinates: tuple[int, int], camera: arcade.Camera
+    ) -> Vec2:
+        viewport_origin, viewport_max = Vec2(*camera.viewport[:2]), Vec2(
+            *camera.viewport[2:]
+        )
+        vec_in = Vec2(*mouse_coordinates) - viewport_origin
+        viewport_dims = viewport_max - viewport_origin
+        affine_coords = Vec2(vec_in.x / viewport_dims.x, vec_in.y / viewport_dims.y)
+
+        projected = camera.position + Vec2(
+            (camera.projection[1] - camera.projection[0])
+            * affine_coords.x
+            * camera.zoom,
+            (camera.projection[3] - camera.projection[2])
+            * affine_coords.y
+            * camera.zoom,
+        )
+
+        return projected
+
+    def disarm_click(self):
+        self.on_left_clickup = lambda *_: None
+
+    def arm_click(self, on_left_clickup: Callable[[], None]):
+        self.on_left_clickup = call_in_order(
+            (on_left_clickup, lambda: self.disarm_click())
+        )
+
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        match button:
+            case arcade.MOUSE_BUTTON_LEFT:
+                self.on_left_clickup()

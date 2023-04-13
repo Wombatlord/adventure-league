@@ -129,6 +129,8 @@ class GridSelection(Selection[_SelectionType]):
             )
             for y in range(self._dimensions[1])
         )
+        self._invert_map = lambda u, v: (u - bottom, v - left)
+
         self._cursor = (0, 0)
         if self.current() is None:
             self._increment_cursor(0, 1)
@@ -145,6 +147,17 @@ class GridSelection(Selection[_SelectionType]):
 
             if self.options[self._cursor[0]][self._cursor[1]] is not None:
                 amount_left -= 1
+
+    def select(self, u: int, v: int) -> bool:
+        possible_cursor = (v, u)
+        prev_cursor = self._cursor
+        self._cursor = self._invert_map(*possible_cursor)
+        if self.current() is None:
+            self._cursor = prev_cursor
+            return False
+        else:
+            self._update_view()
+            return True
 
     def left(self):
         self._increment_cursor(0, -1)
@@ -175,6 +188,13 @@ class GridSelection(Selection[_SelectionType]):
             self.down()
 
     def current(self) -> _SelectionType | None:
+        if self._cursor[0] >= len(self.options) or self._cursor[1] >= len(
+            self.options[self._cursor[0]]
+        ):
+            # If the cursor is out of bounds the current is None
+            return None
+
+        # Otherwise it's a _SelectionType
         return self.options[self._cursor[0]][self._cursor[1]]
 
     def _confirm(self, cursor: tuple[int, int]) -> bool:
@@ -191,6 +211,7 @@ class BaseInputMode:
     next_mode: Self
     mode: int
     name: str = ""
+    enabled = False
 
     def __init__(self, view, next_mode=None):
         self.view = view
