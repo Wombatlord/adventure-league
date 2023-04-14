@@ -1,11 +1,23 @@
 import functools
 from types import FunctionType
-from typing import Self, Optional, Union, Dict
+from typing import Dict, Optional, Self, Union
 
 import arcade
 from arcade import Texture
-from arcade.gui import UILabel, Surface, UITextWidget, UIAnchorLayout, bind, UIInteractiveWidget, UIStyledWidget, \
-    UITextureButton, UIWidget, NinePatchTexture, UIStyleBase, Property
+from arcade.gui import (
+    NinePatchTexture,
+    Property,
+    Surface,
+    UIAnchorLayout,
+    UIInteractiveWidget,
+    UILabel,
+    UIStyleBase,
+    UIStyledWidget,
+    UITextureButton,
+    UITextWidget,
+    UIWidget,
+    bind,
+)
 from arcade.text import FontNameOrNames, Text
 from arcade.types import Color
 
@@ -129,11 +141,11 @@ class TextureText:
 
     @property
     def scale(self) -> float:
-        return self._font_size/12
+        return self._font_size / 12
 
     @scale.setter
     def scale(self, sc: float):
-        self._font_size = 12*sc
+        self._font_size = 12 * sc
         self.sprite.scale = sc
 
     @property
@@ -201,18 +213,18 @@ class TextureText:
     @redraw
     def width(self, width: int):
         print(f"SETTER: {width=}")
-        self.font_size *= width/self.width
+        self.font_size *= width / self.width
         self.sprite.scale = self.scale
 
     @property
     def height(self) -> float:
-        return self.sprite.height/4
+        return self.sprite.height / 4
 
     @height.setter
     @redraw
     def height(self, value: int):
         print(f"HEIGHT_SETTER: {value=}, {self.height=}, {value/self.height=}")
-        self.font_size = value-2
+        self.font_size = value - 2
         self.sprite.scale = self.scale
         print(f"f{self.font_size=}")
 
@@ -302,7 +314,7 @@ class TXUITextWidget(UITextWidget):
             text=text,
             multiline=multiline,
             width=1000,
-            font_size=kwargs.get("font_size", 36)
+            font_size=kwargs.get("font_size", 36),
         )
         self.add(self._label)
         self.ui_label.fit_content()
@@ -357,7 +369,12 @@ class TXUInteractiveWidget(UIInteractiveWidget):
         bind(self, "disabled", self.trigger_render)
 
 
-class TXUITextureButton(UITextureButton, TXUInteractiveWidget, UIStyledWidget["UITextureButton.UIStyle"], TXUITextWidget):
+class TXUITextureButton(
+    UITextureButton,
+    TXUInteractiveWidget,
+    UIStyledWidget["UITextureButton.UIStyle"],
+    TXUITextWidget,
+):
     def get_current_state(self) -> str:
         return UITextureButton.get_current_state(self)
 
@@ -380,7 +397,6 @@ class TXUITextureButton(UITextureButton, TXUInteractiveWidget, UIStyledWidget["U
         size_hint_max=None,
         **kwargs,
     ):
-
         if width is None and texture is not None:
             width = texture.size[0]
 
