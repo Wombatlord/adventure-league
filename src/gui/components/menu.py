@@ -156,10 +156,11 @@ class Menu:
 
     def position_labels(self):
         incr = 0
+        offset_from_top = 20
         for sprite in self.sprite_list:
             sprite.center_x, sprite.center_y = (
                 self.anchor.center_x,
-                (self.anchor.top - 20) - incr,
+                (self.anchor.top - offset_from_top) - incr,
             )
             incr += 52
 

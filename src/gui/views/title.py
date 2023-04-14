@@ -6,6 +6,7 @@ import arcade.key
 from arcade import Window
 
 from src.gui.animation import harmonic
+from src.gui.animation.positioning import maintain_position
 from src.gui.components.buttons import get_nav_handler
 from src.gui.components.menu import Menu
 from src.gui.views.guild import GuildView
@@ -136,8 +137,12 @@ class TitleView(arcade.View):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.menu.position_menu(width=width, height=height)
-
+        # self.menu.position_menu(width=width, height=height)
+        self.menu.anchor.center = maintain_position(
+            v1=(WindowData.width, WindowData.height),
+            v2=(width, height),
+            thing=self.menu,
+        )
         # self.menu.anchor.center_on_screen()
         self.menu.position_labels()
         self.start_banner_sprite.center_x = width / 2
