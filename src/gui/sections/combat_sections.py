@@ -1,6 +1,7 @@
 from typing import Callable
 
 import arcade
+from arcade import get_window
 from pyglet.math import Mat3, Vec2, Vec3, Vec4
 
 from src import config
@@ -14,6 +15,7 @@ from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
 from src.utils.functional import call_in_order
+from src.utils.rectangle import Rectangle
 from src.world.isometry.transforms import Transform, invert_mat3
 from src.world.node import Node
 
@@ -48,6 +50,7 @@ class CombatGridSection(arcade.Section):
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)
+        self._mouse_coords = Vec2(0, 0)
 
         self.on_left_clickup: Callable[[], None] = lambda *_: None
         self.encounter_room = None
@@ -188,6 +191,7 @@ class CombatGridSection(arcade.Section):
 
     def on_update(self, delta_time: float):
         self.cam_controls.on_update()
+        self.grid_camera.update()
         self.update_debug_text()
         eng.update_clock -= delta_time
 
@@ -207,6 +211,11 @@ class CombatGridSection(arcade.Section):
         self.debug_text = "\n".join(
             [
                 repr(self.cam_controls),
+                f"{self.cam_controls.imaged_rect()}",
+                f"{self.cam_controls.imaged_rect().w=}",
+                f"{self.grid_camera.projection}",
+                f"{self.grid_camera.viewport}",
+                f"{self._mouse_coords=}",
                 self.view.input_mode.name,
                 repr(self.view.input_mode.selection.options)[:50],
             ]
@@ -217,6 +226,10 @@ class CombatGridSection(arcade.Section):
         self.window.clear()
 
         self.world_sprite_list.draw(pixelated=True)
+        if config.DEBUG:
+            l, r, b, t = self.grid_camera.projection
+            arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
+            arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
 
         if self.combat_menu and self.combat_menu.is_enabled():
             self.combat_menu.draw()
@@ -244,9 +257,10 @@ class CombatGridSection(arcade.Section):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.grid_camera.set_viewport(
-            (0, 0, width, height)
+        self.grid_camera.resize(
+            width, height
         )  # Stretch the sprites with the window resize
+        self.grid_camera.center(self.transform.to_screen(Node(0, 0)))
         self.other_camera.resize(
             viewport_width=width, viewport_height=height
         )  # Resize the camera displaying the combat text
@@ -330,11 +344,17 @@ class CombatGridSection(arcade.Section):
         dead_dude.entity_sprite.sprite.remove_from_sprite_lists()
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        image_coordinates = self.get_image_coordinates((x, y), self.grid_camera)
-        node = self.transform.to_world(image_coordinates)
-        is_traversable = self.encounter_room and node in self.encounter_room.space
+        self._mouse_coords = Vec2(float(x), float(y))
 
-        if self.mouse_node_has_changed(node) and is_traversable:
+        if not self.encounter_room:
+            return
+
+        node = self.transform.to_world(self.cam_controls.imaged_px(self._mouse_coords))
+
+        if node not in self.encounter_room.space:
+            return
+
+        if self.mouse_node_has_changed(node):
             self.set_mouse_node(node)
 
     def set_mouse_node(self, node: Node):
@@ -353,27 +373,6 @@ class CombatGridSection(arcade.Section):
 
     def hide_mouse_sprite(self):
         self.mouse_sprite.visible = False
-
-    def get_image_coordinates(
-        self, mouse_coordinates: tuple[int, int], camera: arcade.Camera
-    ) -> Vec2:
-        viewport_origin, viewport_max = Vec2(*camera.viewport[:2]), Vec2(
-            *camera.viewport[2:]
-        )
-        vec_in = Vec2(*mouse_coordinates) - viewport_origin
-        viewport_dims = viewport_max - viewport_origin
-        affine_coords = Vec2(vec_in.x / viewport_dims.x, vec_in.y / viewport_dims.y)
-
-        projected = camera.position + Vec2(
-            (camera.projection[1] - camera.projection[0])
-            * affine_coords.x
-            * camera.zoom,
-            (camera.projection[3] - camera.projection[2])
-            * affine_coords.y
-            * camera.zoom,
-        )
-
-        return projected
 
     def disarm_click(self):
         self.on_left_clickup = lambda *_: None
