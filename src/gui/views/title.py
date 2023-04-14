@@ -133,7 +133,8 @@ class TitleView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
             case arcade.key.G | arcade.key.ENTER:
-                self.window.show_view(GuildView(parent_factory=TitleView))
+                g = GuildView(parent_factory=TitleView)
+                self.window.show_view(g)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
