@@ -1,6 +1,8 @@
 import arcade
 from pyglet.math import Vec2
 
+from src.utils.rectangle import Rectangle
+
 
 class CameraController:
     _camera: arcade.Camera
@@ -85,9 +87,23 @@ class CameraController:
 
         return (u * x + v * y).normalize()
 
+    def imaged_rect(self) -> Rectangle:
+        return (
+            Rectangle.from_projection(*self._camera.projection)
+            .translate(self._camera.position)
+            .scale_isotropic(self._camera.zoom, fixed_point=self._camera.position)
+        )
+
+    def imaged_px(self, px: Vec2) -> Vec2:
+        return self.imaged_rect().lerp(
+            Rectangle.from_viewport(self._camera.viewport).affine_coords(px),
+            translate=True,
+        )
+
     def on_update(self):
         self._camera.zoom *= self.zoom_factor
         self._camera.move(self._camera.position + self.pan_vec * self._pan_speed)
 
     def __repr__(self):
-        return "\n".join([f"{self._camera.position=}", f"{self._camera.zoom=}"])
+        cam_pos = f"x={self._camera.position.x:.1f}, y={self._camera.position.y:.1f}"
+        return "\n".join([f"{cam_pos=}", f"{self._camera.zoom=}"])

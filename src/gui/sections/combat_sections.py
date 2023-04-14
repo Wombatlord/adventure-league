@@ -1,18 +1,22 @@
+from typing import Callable
+
 import arcade
-from pyglet.math import Vec2
+from arcade import get_window
+from pyglet.math import Mat3, Vec2, Vec3, Vec4
 
 from src import config
 from src.engine.init_engine import eng
 from src.entities.dungeon import Room
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
-from src.gui.components import combat_menu
 from src.gui.components.combat_components import CombatScreen
 from src.gui.components.menu import Menu
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
-from src.world.isometry.transforms import Transform
+from src.utils.functional import call_in_order
+from src.utils.rectangle import Rectangle
+from src.world.isometry.transforms import Transform, invert_mat3
 from src.world.node import Node
 
 
@@ -46,7 +50,9 @@ class CombatGridSection(arcade.Section):
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)
+        self._mouse_coords = Vec2(0, 0)
 
+        self.on_left_clickup: Callable[[], None] = lambda *_: None
         self.encounter_room = None
         self._original_dims = width, height
 
@@ -64,9 +70,19 @@ class CombatGridSection(arcade.Section):
             absolute_scale=self.SPRITE_SCALE,
             translation=Vec2(self.width, self.height) / 2,
         )
+        self.mouse_sprite: BaseSprite | None = None
         self.all_path_sprites = self.init_path()
         self.debug_text = ""
         self.combat_menu = None
+        self.last_mouse_nodes = [Node(0, 0), Node(0, 0)]
+        self.world_sprite_list.append(self.mouse_sprite)
+        self.mouse_selection = lambda n: False
+
+    def reset_mouse_selection(self):
+        self.mouse_selection = lambda n: False
+
+    def provide_mouse_selection(self, selection: Callable[[Node], bool]):
+        self.mouse_selection = selection
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -131,6 +147,7 @@ class CombatGridSection(arcade.Section):
             transform=self.transform,
             draw_priority_offset=0.1,
         ).offset_anchor((0, 4.5))
+        self.mouse_sprite = end_sprite
 
         selected_path_sprites.append(end_sprite)
 
@@ -174,6 +191,7 @@ class CombatGridSection(arcade.Section):
 
     def on_update(self, delta_time: float):
         self.cam_controls.on_update()
+        self.grid_camera.update()
         self.update_debug_text()
         eng.update_clock -= delta_time
 
@@ -193,6 +211,11 @@ class CombatGridSection(arcade.Section):
         self.debug_text = "\n".join(
             [
                 repr(self.cam_controls),
+                f"{self.cam_controls.imaged_rect()}",
+                f"{self.cam_controls.imaged_rect().w=}",
+                f"{self.grid_camera.projection}",
+                f"{self.grid_camera.viewport}",
+                f"{self._mouse_coords=}",
                 self.view.input_mode.name,
                 repr(self.view.input_mode.selection.options)[:50],
             ]
@@ -203,6 +226,10 @@ class CombatGridSection(arcade.Section):
         self.window.clear()
 
         self.world_sprite_list.draw(pixelated=True)
+        if config.DEBUG:
+            l, r, b, t = self.grid_camera.projection
+            arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
+            arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
 
         if self.combat_menu and self.combat_menu.is_enabled():
             self.combat_menu.draw()
@@ -230,9 +257,10 @@ class CombatGridSection(arcade.Section):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.grid_camera.set_viewport(
-            (0, 0, width, height)
+        self.grid_camera.resize(
+            width, height
         )  # Stretch the sprites with the window resize
+        self.grid_camera.center(self.transform.to_screen(Node(0, 0)))
         self.other_camera.resize(
             viewport_width=width, viewport_height=height
         )  # Resize the camera displaying the combat text
@@ -242,7 +270,7 @@ class CombatGridSection(arcade.Section):
         if encounter_room:
             self.encounter_room = encounter_room
             self.level_to_sprite_list()
-
+            self.world_sprite_list.append(self.mouse_sprite)
             self.prepare_dude_sprites()
             self.update_dudes(event)
 
@@ -314,3 +342,47 @@ class CombatGridSection(arcade.Section):
         """
         dead_dude: Entity = event.get("dying") or event.get("retreat")
         dead_dude.entity_sprite.sprite.remove_from_sprite_lists()
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        self._mouse_coords = Vec2(float(x), float(y))
+
+        if not self.encounter_room:
+            return
+
+        node = self.transform.to_world(self.cam_controls.imaged_px(self._mouse_coords))
+
+        if node not in self.encounter_room.space:
+            return
+
+        if self.mouse_node_has_changed(node):
+            self.set_mouse_node(node)
+
+    def set_mouse_node(self, node: Node):
+        if self.mouse_selection(node):
+            self.last_mouse_nodes = [node, self.last_mouse_nodes[0]]
+            self.mouse_sprite.set_node(node)
+
+    def mouse_node_has_changed(self, new_node: Node) -> bool:
+        return self.last_mouse_nodes[0] != new_node
+
+    def get_mouse_sprite(self) -> BaseSprite:
+        return self.mouse_sprite
+
+    def show_mouse_sprite(self):
+        self.mouse_sprite.visible = True
+
+    def hide_mouse_sprite(self):
+        self.mouse_sprite.visible = False
+
+    def disarm_click(self):
+        self.on_left_clickup = lambda *_: None
+
+    def arm_click(self, on_left_clickup: Callable[[], None]):
+        self.on_left_clickup = call_in_order(
+            (on_left_clickup, lambda: self.disarm_click())
+        )
+
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        match button:
+            case arcade.MOUSE_BUTTON_LEFT:
+                self.on_left_clickup()
