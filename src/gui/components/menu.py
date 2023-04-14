@@ -6,6 +6,7 @@ import arcade
 from arcade.gui import UIAnchorLayout, UIBoxLayout, UIEvent, UIManager, UITextureButton
 from pyglet.math import Vec2
 
+from src.gui.animation.positioning import maintain_position
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.ui_styles import ADVENTURE_STYLE, UIStyle
 from src.gui.window_data import WindowData
@@ -111,23 +112,9 @@ class Menu:
     def is_enabled(self) -> bool:
         return self.manager._enabled
 
-    def position_menu(self, width, height):
-        # Calculate the scale factor of the x and y components of the resized window.
-        current_vec = Vec2(
-            math.sqrt(WindowData.width**2), math.sqrt(WindowData.height**2)
-        )
-        new_vec = Vec2(math.sqrt(width**2), math.sqrt(height**2))
-        scale_factor_x = new_vec.x / current_vec.x
-        scale_factor_y = new_vec.y / current_vec.y
-
-        # Set new (x, y) based on scaled vector
-        self.x = self.anchor.center_x * scale_factor_x
-        self.y = self.anchor.center_y * scale_factor_y
-
-        # Set the new position of the anchor to the scaled vector.
-        self.anchor.center = (
-            self.x,
-            self.y,
+    def maintain_menu_positioning(self, width, height):
+        self.anchor.center = maintain_position(
+            v1=(WindowData.width, WindowData.height), v2=(width, height), thing=self
         )
 
     def build_menu(self, menu: MenuSchema):
