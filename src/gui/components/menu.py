@@ -1,8 +1,10 @@
+import math
 from types import FunctionType
 from typing import Callable, NamedTuple, Self
-import math
+
 import arcade
 from arcade.gui import UIAnchorLayout, UIBoxLayout, UIEvent, UIManager, UITextureButton
+from pyglet.math import Vec2
 
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.ui_styles import ADVENTURE_STYLE, UIStyle
@@ -51,7 +53,6 @@ class Menu:
         pos: tuple[int, int],
         area: tuple[int, int],
         button_style: UIStyle | None = None,
-        should_recenter: bool = False,
     ) -> None:
         self.full_menu_graph = menu_config
         self.current_menu_graph = menu_config
@@ -71,6 +72,7 @@ class Menu:
         else:
             self.manager = UIManager()
 
+        self.sprite_list.clear()
         self.anchor = UIAnchorLayout(
             width=self.width, height=self.height, size_hint=(None, None)
         )
@@ -82,7 +84,6 @@ class Menu:
         )
 
         self.anchor.add(self.main_box)
-        print(self.anchor.rect.position)
         self.build_menu(self.current_menu_graph)
 
     def disable(self):
@@ -110,27 +111,26 @@ class Menu:
     def is_enabled(self) -> bool:
         return self.manager._enabled
 
-    def position(self, width, height):
+    def position_menu(self, width, height):
         # Calculate the scale factor of the x and y components of the resized window.
-        current_vec = (math.sqrt(WindowData.width ** 2), math.sqrt(WindowData.height ** 2))
-        new_vec = (math.sqrt(width**2), math.sqrt(height**2))
-        scale_factor_x = new_vec[0] / current_vec[0]
-        scale_factor_y = new_vec[1] / current_vec[1]
-        
+        current_vec = Vec2(
+            math.sqrt(WindowData.width**2), math.sqrt(WindowData.height**2)
+        )
+        new_vec = Vec2(math.sqrt(width**2), math.sqrt(height**2))
+        scale_factor_x = new_vec.x / current_vec.x
+        scale_factor_y = new_vec.y / current_vec.y
+
         # Set new (x, y) based on scaled vector
         self.x = self.anchor.center_x * scale_factor_x
         self.y = self.anchor.center_y * scale_factor_y
-        
+
         # Set the new position of the anchor to the scaled vector.
         self.anchor.center = (
             self.x,
             self.y,
         )
-    
-    def build_menu(self, menu: MenuSchema):
-        # self.main_box.clear()
-        self.sprite_list.clear()
 
+    def build_menu(self, menu: MenuSchema):
         for label, content, *options in menu:
             if not isinstance(label, str):
                 raise TypeError(f"label must be a string, got {type(label)=}")

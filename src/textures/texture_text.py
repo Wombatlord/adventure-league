@@ -1,23 +1,8 @@
 import functools
 from types import FunctionType
-from typing import Dict, Optional, Self, Union
+from typing import Self
 
 import arcade
-from arcade import Texture
-from arcade.gui import (
-    NinePatchTexture,
-    Property,
-    Surface,
-    UIAnchorLayout,
-    UIInteractiveWidget,
-    UILabel,
-    UIStyleBase,
-    UIStyledWidget,
-    UITextureButton,
-    UITextWidget,
-    UIWidget,
-    bind,
-)
 from arcade.text import FontNameOrNames, Text
 from arcade.types import Color
 
@@ -90,14 +75,6 @@ class TextureText:
         self._has_changed = True
         self.render()
 
-    def __enter__(self):
-        # return self._text.__enter__()
-        pass
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        # self._text.__exit__(exc_type, exc_val, exc_tb)
-        pass
-
     def calculate_size(self):
         return (
             int(self._text.right - self._text.left),
@@ -113,7 +90,6 @@ class TextureText:
         self._has_changed = False
 
     def setup_sprite(self, size):
-        print("SPRITE SETUP")
         center_x = self.center_x or self._text.right - (size[0] / 2)
         center_y = self.center_y or self._text.top
         if not self.sprite:
@@ -243,201 +219,3 @@ class TextureText:
         if self._has_changed:
             self.render()
         self._sprite_list.draw(pixelated=True)
-
-
-class TXUILabel(UILabel):
-    @functools.wraps(UILabel.__init__)
-    def __init__(
-        self,
-        x: float = 0,
-        y: float = 0,
-        width: Optional[float] = None,
-        height: Optional[float] = None,
-        text: str = "",
-        font_name=("Arial",),
-        font_size: float = 12,
-        text_color: Color = (255, 255, 255, 255),
-        bold=False,
-        italic=False,
-        align="left",
-        multiline: bool = False,
-        size_hint=None,
-        size_hint_min=None,
-        size_hint_max=None,
-        **kwargs,
-    ):
-        self.label = TextureText.create(
-            start_x=0,
-            text=text,
-            lines=len(text.split("\n")),
-            font_name=font_name,
-            font_size=font_size,
-            color=text_color,
-            width=width,
-            bold=bold,
-            italic=italic,
-            align=align,
-            anchor_y="bottom",  # position text bottom left, to fit into scissor box
-            multiline=multiline,
-            **kwargs,
-        )
-
-        UIWidget.__init__(
-            self,
-            x=x,
-            y=y,
-            width=width or self.label.content_width,
-            height=height or self.label.content_height,
-            size_hint=size_hint,
-            size_hint_min=size_hint_min,
-            size_hint_max=size_hint_max,
-            **kwargs,
-        )
-
-        # set label size, if the width or height was given
-        # because border and padding can only be applied later, we can avoid `fit_content()`
-        # and set with and height separately
-        if width:
-            self.label.width = int(width)
-        if height:
-            self.label.height = int(height)
-        bind(self, "rect", self._update_layout)
-
-    def fit_content(self):
-        pass
-
-
-class TXUITextWidget(UITextWidget):
-    def __init__(self, text: str = "", multiline: bool = False, **kwargs):
-        UIAnchorLayout.__init__(self, text=text, **kwargs)
-        self._label = TXUILabel(
-            text=text,
-            multiline=multiline,
-            width=1000,
-            font_size=kwargs.get("font_size", 36),
-        )
-        self.add(self._label)
-        self.ui_label.fit_content()
-        bind(self, "rect", self.ui_label.fit_content)
-
-
-class TXUInteractiveWidget(UIInteractiveWidget):
-    """
-    Base class for widgets which use mouse interaction (hover, pressed, clicked)
-
-    :param float x: x coordinate of bottom left
-    :param float y: y coordinate of bottom left
-    :param width: width of widget
-    :param height: height of widget
-    :param size_hint: Tuple of floats (0.0-1.0), how much space of the parent should be requested
-    :param size_hint_min: min width and height in pixel
-    :param size_hint_max: max width and height in pixel:param x: center x of widget
-    :param style: not used
-    """
-
-    # States
-    hovered = Property(False)
-    pressed = Property(False)
-    disabled = Property(False)
-
-    def __init__(
-        self,
-        *,
-        x: float = 0,
-        y: float = 0,
-        width: float,
-        height: float,
-        size_hint=None,
-        size_hint_min=None,
-        size_hint_max=None,
-        **kwargs,
-    ):
-        super().__init__(
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-            size_hint=size_hint,
-            size_hint_min=size_hint_min,
-            size_hint_max=size_hint_max,
-            **kwargs,
-        )
-        self.register_event_type("on_click")
-
-        bind(self, "pressed", self.trigger_render)
-        bind(self, "hovered", self.trigger_render)
-        bind(self, "disabled", self.trigger_render)
-
-
-class TXUITextureButton(
-    UITextureButton,
-    TXUInteractiveWidget,
-    UIStyledWidget["UITextureButton.UIStyle"],
-    TXUITextWidget,
-):
-    def get_current_state(self) -> str:
-        return UITextureButton.get_current_state(self)
-
-    def __init__(
-        self,
-        x: float = 0,
-        y: float = 0,
-        width: Optional[float] = None,
-        height: Optional[float] = None,
-        texture: Union[None, Texture, NinePatchTexture] = None,
-        texture_hovered: Union[None, Texture, NinePatchTexture] = None,
-        texture_pressed: Union[None, Texture, NinePatchTexture] = None,
-        texture_disabled: Union[None, Texture, NinePatchTexture] = None,
-        text: str = "",
-        multiline: bool = False,
-        scale: Optional[float] = None,
-        style: Optional[Dict[str, UIStyleBase]] = None,
-        size_hint=None,
-        size_hint_min=None,
-        size_hint_max=None,
-        **kwargs,
-    ):
-        if width is None and texture is not None:
-            width = texture.size[0]
-
-        if height is None and texture is not None:
-            height = texture.size[1]
-
-        if width is None:
-            raise ValueError("Unable to determine a width.")
-        if height is None:
-            raise ValueError("Unable to determine a height.")
-
-        if scale is not None and texture is not None:
-            width = texture.size[0] * scale
-            height = texture.size[1] * scale
-
-        super().__init__(
-            x=x,
-            y=y,
-            width=width,
-            height=height,
-            style=style or UITextureButton.DEFAULT_STYLE,
-            size_hint=size_hint,
-            size_hint_min=size_hint_min,
-            size_hint_max=size_hint_max,
-            text=text,
-            multiline=multiline,
-            **kwargs,
-        )
-
-        self._textures = {}
-
-        if texture:
-            self._textures["normal"] = texture
-            self._textures["hover"] = texture
-            self._textures["press"] = texture
-            self._textures["disabled"] = texture
-        if texture_hovered:
-            self._textures["hover"] = texture_hovered
-        if texture_pressed:
-            self._textures["press"] = texture_pressed
-        if texture_disabled:
-            self._textures["disabled"] = texture_disabled
-
-        bind(self, "_textures", self.trigger_render)

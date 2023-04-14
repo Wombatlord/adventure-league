@@ -136,7 +136,7 @@ class TitleView(arcade.View):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.menu.position(width=width, height=height)
+        self.menu.position_menu(width=width, height=height)
 
         # self.menu.anchor.center_on_screen()
         self.menu.position_labels()
