@@ -140,6 +140,7 @@ class CombatView(arcade.View):
         )
 
     def on_draw(self):
+        self.clear()
         self.combat_grid_section.combat_menu = self.combat_menu
 
     def reset_input_mode(self):

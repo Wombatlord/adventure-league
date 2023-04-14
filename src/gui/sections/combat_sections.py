@@ -200,7 +200,7 @@ class CombatGridSection(arcade.Section):
 
     def on_draw(self):
         self.grid_camera.use()
-        self.window.clear()
+        
 
         self.world_sprite_list.draw(pixelated=True)
 
