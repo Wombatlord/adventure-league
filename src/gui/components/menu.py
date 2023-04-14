@@ -1,6 +1,6 @@
 from types import FunctionType
 from typing import Callable, NamedTuple, Self
-
+import math
 import arcade
 from arcade.gui import UIAnchorLayout, UIBoxLayout, UIEvent, UIManager, UITextureButton
 
@@ -110,6 +110,23 @@ class Menu:
     def is_enabled(self) -> bool:
         return self.manager._enabled
 
+    def position(self, width, height):
+        # Calculate the scale factor of the x and y components of the resized window.
+        current_vec = (math.sqrt(WindowData.width ** 2), math.sqrt(WindowData.height ** 2))
+        new_vec = (math.sqrt(width**2), math.sqrt(height**2))
+        scale_factor_x = new_vec[0] / current_vec[0]
+        scale_factor_y = new_vec[1] / current_vec[1]
+        
+        # Set new (x, y) based on scaled vector
+        self.x = self.anchor.center_x * scale_factor_x
+        self.y = self.anchor.center_y * scale_factor_y
+        
+        # Set the new position of the anchor to the scaled vector.
+        self.anchor.center = (
+            self.x,
+            self.y,
+        )
+    
     def build_menu(self, menu: MenuSchema):
         # self.main_box.clear()
         self.sprite_list.clear()

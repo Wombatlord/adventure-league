@@ -46,7 +46,6 @@ class CombatGridSection(arcade.Section):
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)
-
         self.encounter_room = None
         self._original_dims = width, height
 

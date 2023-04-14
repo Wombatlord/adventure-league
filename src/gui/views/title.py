@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import math
-
 import arcade
 import arcade.color
 import arcade.key
@@ -138,15 +136,9 @@ class TitleView(arcade.View):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        c = math.sqrt(WindowData.width**2 + WindowData.height**2)
-        n = math.sqrt(width**2 + height**2)
-        n = n / c
-        self.menu.anchor.center = (
-            self.menu.anchor.center_x * n,
-            self.menu.anchor.center_y * n,
-        )
+        self.menu.position(width=width, height=height)
 
-        # # self.menu.anchor.center_on_screen()
+        # self.menu.anchor.center_on_screen()
         self.menu.position_labels()
         self.start_banner_sprite.center_x = width / 2
         WindowData.width = width
