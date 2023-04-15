@@ -38,6 +38,7 @@ class PixelatedNinePatch(NinePatchTexture):
         *,
         position: tuple[float, float] = (0, 0),
         size: tuple[float, float],
+        **kwargs,
     ):
         super().draw_sized(position=position, size=size, pixelated=True)
 

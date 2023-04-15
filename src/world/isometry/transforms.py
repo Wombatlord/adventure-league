@@ -1,3 +1,4 @@
+import math
 from typing import Self
 
 from pyglet.math import Mat3, Mat4, Vec2, Vec3
@@ -91,7 +92,7 @@ class Transform:
 
     def to_world(self, cam_coords: Vec2) -> Node:
         embedded = Vec3(*(cam_coords - self._translation), -1)
-        return Node(*[round(coord) for coord in (self._screen_to_world @ embedded)[:2]])
+        return Node(*[math.ceil(coord) for coord in (self._screen_to_world @ embedded)[:2]])
 
 
 def _embed_mat3_in_mat4(embedded: Mat3) -> Mat4:

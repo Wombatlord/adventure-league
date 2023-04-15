@@ -21,6 +21,7 @@ from src.world.node import Node
 
 class ActionSelectionInputMode(BaseInputMode):
     name: str
+    enabled = False
 
     def __init__(self, view: CombatView, selection: Selection, name: str):
         self.selection = selection
@@ -80,6 +81,7 @@ class GridSelectionMode(ActionSelectionInputMode):
 
 
 class NoSelection:
+    enabled = False
     options = "no options"
 
 
@@ -98,9 +100,9 @@ class CombatView(arcade.View):
 
         self.combat_grid_section = CombatGridSection(
             left=0,
-            bottom=WindowData.height / 2,
+            bottom=0,
             width=WindowData.width,
-            height=WindowData.height / 2,
+            height=WindowData.height,
             prevent_dispatch_view={False},
         )
 
@@ -127,7 +129,7 @@ class CombatView(arcade.View):
         self.confirm_selection = lambda: None
         self.selection = None
         self.add_section(self.command_bar_section)
-        self.add_section(self.combat_grid_section)
+        self.add_section(self.combat_grid_section, at_draw_order=-1)
         self.combat_menu: Menu | None = None
         eng.init_combat()
 
@@ -155,9 +157,15 @@ class CombatView(arcade.View):
         self.selection = GridSelection(
             event["choices"][MoveAction.name], key=lambda o: o["subject"][-1][:2]
         )
+
         self.selection.set_on_change_selection(
-            lambda: self.combat_grid_section.show_path(
-                self.selection.current()["subject"]
+            call_in_order(
+                (
+                    lambda: self.combat_grid_section.show_path(
+                        self.selection.current()["subject"]
+                    ),
+                    lambda: self.combat_grid_section.show_mouse_sprite(),
+                )
             ),
             call_now=False,
         ).set_confirmation(
@@ -167,12 +175,19 @@ class CombatView(arcade.View):
                     (
                         self.selection.current()["on_confirm"],
                         lambda: self.combat_grid_section.hide_path(),
+                        lambda: self.combat_grid_section.hide_mouse_sprite(),
+                        lambda: self.combat_grid_section.reset_mouse_selection(),
+                        lambda: self.combat_grid_section.disarm_click(),
                         lambda: self.reset_input_mode(),
                         lambda: eng.input_received(),
                     )
                 )()
             )
         )
+        self.combat_grid_section.provide_mouse_selection(
+            lambda n: self.input_mode.enabled and self.selection.select(*n[:2])
+        )
+
         self.input_mode = GridSelectionMode(
             self, self.combat_menu, self.selection, "move"
         )
@@ -189,6 +204,10 @@ class CombatView(arcade.View):
                         lambda: self.input_mode.enable(),
                         lambda: self.combat_grid_section.show_path(
                             self.selection.current()["subject"]
+                        ),
+                        lambda: self.combat_grid_section.show_mouse_sprite(),
+                        lambda: self.combat_grid_section.arm_click(
+                            lambda: self.selection.confirm() or None
                         ),
                     )
                 )
