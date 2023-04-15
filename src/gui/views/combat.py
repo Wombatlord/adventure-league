@@ -142,6 +142,7 @@ class CombatView(arcade.View):
         )
 
     def on_draw(self):
+        self.clear()
         self.combat_grid_section.combat_menu = self.combat_menu
 
     def reset_input_mode(self):
@@ -233,5 +234,7 @@ class CombatView(arcade.View):
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
+        self.combat_menu.maintain_menu_positioning(width=width, height=height)
+        self.combat_menu.position_labels()
         WindowData.width = width
         WindowData.height = height

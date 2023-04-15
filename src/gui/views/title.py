@@ -67,7 +67,7 @@ class TitleView(arcade.View):
         ]
         self.menu = Menu(
             menu_config=self.menu_options,
-            pos=((WindowData.width / 2), (WindowData.height * 0.4)),
+            pos=((WindowData.width / 2), (WindowData.height * 0.5)),
             area=(450, 50 * len(self.menu_options)),
         )
         self.menu.enable()
@@ -77,7 +77,11 @@ class TitleView(arcade.View):
         self.animate_title_banner()
         self.animate_start_banner()
 
+    def on_show_view(self):
+        self.menu.enable()
+
     def on_hide_view(self):
+        self.menu.disable()
         self.clear()
 
     def animate_start_banner(self):
@@ -114,6 +118,7 @@ class TitleView(arcade.View):
     def on_draw(self):
         """Draw the title screen"""
         # Draw the background image
+        self.clear()
         arcade.draw_lrwh_rectangle_textured(
             0,
             0,
@@ -127,11 +132,13 @@ class TitleView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
             case arcade.key.G | arcade.key.ENTER:
-                self.window.show_view(GuildView(parent_factory=TitleView))
+                g = GuildView(parent_factory=TitleView)
+                self.window.show_view(g)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
+        self.menu.maintain_menu_positioning(width=width, height=height)
+        self.menu.position_labels()
+        self.start_banner_sprite.center_x = width / 2
         WindowData.width = width
         WindowData.height = height
-        # self.menu.anchor.center = (width / 2, height * 0.40)
-        self.start_banner_sprite.center_x = width / 2

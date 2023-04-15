@@ -31,13 +31,13 @@ def _highlight_selection(
         # Set all entity_label colors to white and text to non-selected string.
         for entity_label in entity_labels:
             entity_label.label.color = arcade.color.WHITE
-            entity_label.label.text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}: {scroll_window.items[entity_labels.index(entity_label)].cost} gp"
+            entity_label.label._text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}: {scroll_window.items[entity_labels.index(entity_label)].cost} gp"
 
         # Set selected entity_label color to gold and text to selection string
         entity_labels[scroll_window.position.pos].label.color = arcade.color.GOLD
         entity_labels[
             scroll_window.position.pos
-        ].label.text = f">> {entity_labels[scroll_window.position.pos].label.text}"
+        ].label._text = f">> {entity_labels[scroll_window.position.pos].label._text}"
 
 
 class RecruitmentPaneSection(arcade.Section):
@@ -199,11 +199,11 @@ def _highlight_selection_text(
     # Set all entity_label colors to white and text to non-selected string.
     for entity_label in entity_labels:
         entity_label.label.color = arcade.color.WHITE
-        entity_label.label.text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}"
+        entity_label.label._text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}"
 
     # Set selected entity_label color to gold and text to selection string
     label.label.color = arcade.color.GOLD
-    label.label.text = f">> {entity_labels[scroll_window.position.pos].label.text}"
+    label.label._text = f">> {entity_labels[scroll_window.position.pos].label._text}"
 
 
 def _normal_selection_text(
@@ -224,7 +224,7 @@ def _normal_selection_text(
     # Set all entity_label colors to white and text to non-selected string.
     for entity_label in entity_labels:
         entity_label.label.color = arcade.color.GRAY
-        entity_label.label.text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}"
+        entity_label.label._text = f"{scroll_window.items[entity_labels.index(entity_label)].name.name_and_title}"
 
 
 class RosterAndTeamPaneSection(arcade.Section):

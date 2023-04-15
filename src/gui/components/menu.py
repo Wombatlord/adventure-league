@@ -1,11 +1,16 @@
+import math
 from types import FunctionType
 from typing import Callable, NamedTuple, Self
 
 import arcade
-from arcade.gui import UIBoxLayout, UIEvent, UIFlatButton, UIManager, UITextureButton
+from arcade.gui import UIAnchorLayout, UIBoxLayout, UIEvent, UIManager, UITextureButton
+from pyglet.math import Vec2
 
+from src.gui.animation.positioning import maintain_position
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.ui_styles import ADVENTURE_STYLE, UIStyle
+from src.gui.window_data import WindowData
+from src.textures.texture_text import TextureText
 
 # DATA STRUCTURES
 ExecutableMenuItem = tuple[str, Callable[[UIEvent], None]]
@@ -34,6 +39,14 @@ ButtonFactory = Callable[[ButtonCallback, str], UITextureButton]
 class Menu:
     manager: UIManager | None
     main_box: UIBoxLayout | None
+    _factory = lambda *_: update_button
+
+    def set_factory(self, factory: ButtonFactory):
+        self._factory = lambda *_: factory
+
+    def button_factory(self, action, label) -> UITextureButton:
+        factory = self._factory()
+        return factory(action, label)
 
     def __init__(
         self,
@@ -47,8 +60,11 @@ class Menu:
         self.x, self.y = pos
         self.width, self.height = area
         self.manager = None
+        self.anchor = None
         self.main_box = None
+        self.anchor = None
         self.button_style = button_style or ADVENTURE_STYLE
+        self.sprite_list = arcade.SpriteList()
         self._setup()
 
     def _setup(self):
@@ -57,14 +73,18 @@ class Menu:
         else:
             self.manager = UIManager()
 
+        self.sprite_list.clear()
+        self.anchor = UIAnchorLayout(
+            width=self.width, height=self.height, size_hint=(None, None)
+        )
+        self.anchor.center = self.x, self.y
+        self.manager.add(self.anchor).with_border(color=arcade.color.RED)
         self.main_box = UIBoxLayout(
-            width=self.width,
-            height=self.height,
-            size_hint=(None, None),
+            size_hint=(1, 1),
             space_between=2,
-        ).with_border(color=arcade.color.RED)
-        self.main_box.center = self.x, self.y
-        self.manager.add(self.main_box)
+        )
+
+        self.anchor.add(self.main_box)
         self.build_menu(self.current_menu_graph)
 
     def disable(self):
@@ -77,21 +97,27 @@ class Menu:
         self.draw()
 
     def show(self):
-        self.main_box.center = self.x, self.y
+        self.anchor.center = self.x, self.y
+        self.position_labels()
 
     def hide(self):
-        self.main_box.center = -self.x, -self.y
+        self.anchor.center = -self.x, -self.y
+        self.position_labels()
 
     def draw(self):
         if self.manager._enabled:
             self.manager.draw()
+            self.sprite_list.draw(pixelated=True)
 
     def is_enabled(self) -> bool:
         return self.manager._enabled
 
-    def build_menu(self, menu: MenuSchema):
-        self.main_box.clear()
+    def maintain_menu_positioning(self, width, height):
+        self.anchor.center = maintain_position(
+            v1=(WindowData.width, WindowData.height), v2=(width, height), thing=self
+        )
 
+    def build_menu(self, menu: MenuSchema):
         for label, content, *options in menu:
             if not isinstance(label, str):
                 raise TypeError(f"label must be a string, got {type(label)=}")
@@ -101,12 +127,29 @@ class Menu:
                 )
 
             action = self.derive_button_action_from_content(content, *options)
-            btn = update_button(action, label)
+            btn = update_button(action, "")
+
+            text = TextureText.create(
+                text=label, start_x=0, lines=1, font_name=WindowData.font, font_size=27
+            )
+            self.sprite_list.append(text.sprite)
 
             btn.size_hint = (1, None)
             btn.resize(height=50)
             btn.style = self.button_style
             self.main_box.add(btn)
+
+        self.position_labels()
+
+    def position_labels(self):
+        incr = 0
+        offset_from_top = 20
+        for sprite in self.sprite_list:
+            sprite.center_x, sprite.center_y = (
+                self.anchor.center_x,
+                (self.anchor.top - offset_from_top) - incr,
+            )
+            incr += 52
 
     def closing_action(self, action: Callable[[], None]) -> Callable[[], None]:
         def _do_then_close():
@@ -148,11 +191,15 @@ class Menu:
     def enter_submenu(self, menu: MenuSchema):
         self.current_menu_graph = menu
         self._setup()
+
+        if self.current_menu_graph == self.full_menu_graph:
+            return
+
         self.add_return_to_top_level_button()
 
     def add_return_to_top_level_button(self):
         btn = update_button(
-            on_click=lambda: self.build_menu(self.full_menu_graph), text="Return"
+            on_click=lambda: self.enter_submenu(self.full_menu_graph), text="Return"
         )
         btn.resize(height=50)
         btn.style = ADVENTURE_STYLE

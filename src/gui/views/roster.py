@@ -59,7 +59,6 @@ def entity_observer_widget(get_entity: Callable[[], Entity | None]):
         multiline=True,
     )
     entity_info_label(entity_info, get_entity())
-
     return entity_info
 
 
