@@ -4,7 +4,7 @@ import arcade
 
 import src.engine.init_engine as _
 from src import config
-from src.gui.views.title import TitleView
+from src.gui.title import TitleView
 from src.gui.window_data import WindowData
 
 

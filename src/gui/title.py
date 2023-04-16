@@ -8,7 +8,7 @@ from arcade import Window
 from src.gui.animation import harmonic
 from src.gui.components.buttons import get_nav_handler
 from src.gui.components.menu import Menu
-from src.gui.views.guild import GuildView
+from src.gui.guild.home import HomeView
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SingleTextureSpecs
 
@@ -38,7 +38,7 @@ class TitleView(arcade.View):
             self.sprite_list.append(sprite)
 
         self.time = 0
-        navigate_to_guild = get_nav_handler(GuildView(parent_factory=TitleView))
+        navigate_to_guild = get_nav_handler(HomeView(parent_factory=TitleView))
         self.menu_options = [
             ("Start", navigate_to_guild),
             (
@@ -132,7 +132,7 @@ class TitleView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
             case arcade.key.G | arcade.key.ENTER:
-                g = GuildView(parent_factory=TitleView)
+                g = HomeView(parent_factory=TitleView)
                 self.window.show_view(g)
 
     def on_resize(self, width: int, height: int):

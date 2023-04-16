@@ -11,20 +11,20 @@ from arcade.gui.widgets.text import UILabel
 from src.config import font_sizes
 from src.engine.init_engine import eng
 from src.gui.components.buttons import nav_button, update_button
-from src.gui.sections.command_bar import CommandBarSection
-from src.gui.sections.info_pane import InfoPaneSection
-from src.gui.views.missions import MissionsView
-from src.gui.views.roster import RosterView
+from src.gui.generic_sections.command_bar import CommandBarSection
+from src.gui.generic_sections.info_pane import InfoPaneSection
+from src.gui.guild.missions import MissionsView
+from src.gui.guild.roster import RosterView
 from src.gui.window_data import WindowData
 
 
-class GuildViewButtons(NamedTuple):
+class HomeViewButtons(NamedTuple):
     missions: UITextureButton
     roster: UITextureButton
     refresh_buttons: UITextureButton
 
 
-class GuildView(arcade.View):
+class HomeView(arcade.View):
     """Draw a view displaying information about a guild"""
 
     def __init__(self, parent_factory: Callable[[], arcade.View]):
@@ -49,16 +49,16 @@ class GuildView(arcade.View):
             texts=[self.guild_label],
         )
         # CommandBar config
-        self.buttons = GuildViewButtons(
+        self.buttons = HomeViewButtons(
             nav_button(
                 lambda: MissionsView(
-                    lambda: GuildView(parent_factory=self.parent_factory)
+                    lambda: HomeView(parent_factory=self.parent_factory)
                 ),
                 "Missions",
             ),
             nav_button(
                 lambda: RosterView(
-                    lambda: GuildView(parent_factory=self.parent_factory)
+                    lambda: HomeView(parent_factory=self.parent_factory)
                 ),
                 "Roster",
             ),
@@ -106,13 +106,13 @@ class GuildView(arcade.View):
 
             case arcade.key.M:
                 missions_view = MissionsView(
-                    parent_factory=lambda: GuildView(parent_factory=self.parent_factory)
+                    parent_factory=lambda: HomeView(parent_factory=self.parent_factory)
                 )
                 self.window.show_view(missions_view)
 
             case arcade.key.R:
                 roster_view = RosterView(
-                    parent_factory=lambda: GuildView(parent_factory=self.parent_factory)
+                    parent_factory=lambda: HomeView(parent_factory=self.parent_factory)
                 )
                 self.window.show_view(roster_view)
 

@@ -8,12 +8,12 @@ import arcade.key
 
 from src.engine.init_engine import eng
 from src.entities.action.actions import MoveAction
-from src.gui.components import combat_menu
+from src.gui.combat import combat_menu
 from src.gui.components.buttons import end_turn_button
 from src.gui.components.input_capture import BaseInputMode, GridSelection, Selection
 from src.gui.components.menu import Menu
-from src.gui.sections.combat_sections import CombatGridSection
-from src.gui.sections.command_bar import CommandBarSection
+from src.gui.combat.combat_sections import CombatGridSection
+from src.gui.generic_sections.command_bar import CommandBarSection
 from src.gui.window_data import WindowData
 from src.utils.functional import call_in_order
 from src.world.node import Node

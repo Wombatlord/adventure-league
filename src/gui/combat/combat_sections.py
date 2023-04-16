@@ -1,21 +1,19 @@
 from typing import Callable
 
 import arcade
-from arcade import get_window
-from pyglet.math import Mat3, Vec2, Vec3, Vec4
+from pyglet.math import Vec2
 
 from src import config
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
-from src.gui.components.combat_components import CombatScreen
+from src.gui.combat.combat_components import CombatScreen
 from src.gui.components.menu import Menu
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
 from src.utils.functional import call_in_order
-from src.utils.rectangle import Rectangle
-from src.world.isometry.transforms import Transform, invert_mat3
+from src.world.isometry.transforms import Transform
 from src.world.level.room import Room
 from src.world.node import Node
 
@@ -258,7 +256,7 @@ class CombatGridSection(arcade.Section):
         super().on_resize(width, height)
         self.grid_camera.resize(
             width, height
-        )  # Stretch the sprites with the window resize
+        )
         self.grid_camera.center(self.transform.to_screen(Node(0, 0)))
         self.other_camera.resize(
             viewport_width=width, viewport_height=height

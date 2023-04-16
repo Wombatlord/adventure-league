@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
-    from src.gui.views.guild import GuildView
+    from src.gui.guild.home import HomeView
 
 import arcade
 import arcade.color
@@ -20,9 +20,9 @@ from src.gui.components.layouts import (
     label_with_observer,
 )
 from src.gui.components.observer import observe
-from src.gui.sections.command_bar import CommandBarSection
-from src.gui.sections.info_pane import InfoPaneSection
-from src.gui.sections.roster_sections import (
+from src.gui.generic_sections.command_bar import CommandBarSection
+from src.gui.generic_sections.info_pane import InfoPaneSection
+from src.gui.guild.roster_sections import (
     RecruitmentPaneSection,
     RosterAndTeamPaneSection,
 )
@@ -187,7 +187,7 @@ class RosterView(arcade.View):
         self.margin = 5
         self.merc = None
         self.color = arcade.color.WHITE
-        self.parent_factory: Callable[[], GuildView] = parent_factory
+        self.parent_factory: Callable[[], HomeView] = parent_factory
         # RosterAndTeamPane Config
         self.roster_and_team_pane_section = RosterAndTeamPaneSection(
             left=2,
