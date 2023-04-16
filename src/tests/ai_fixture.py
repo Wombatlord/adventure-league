@@ -1,7 +1,7 @@
 import operator
 
-from src.entities.actions import EndTurnAction, MoveAction
-from src.entities.fighter import Fighter
+from src.entities.action.actions import EndTurnAction, MoveAction
+from src.entities.combat.fighter import Fighter
 
 
 class TestAI:

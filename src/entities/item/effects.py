@@ -1,7 +1,7 @@
 from typing import Any
 
 from src.entities.entity import Entity
-from src.entities.inventory import Consumable, Inventory, Throwable
+from src.entities.item.inventory import Consumable, Inventory, Throwable
 
 Event = dict[str, Any]
 

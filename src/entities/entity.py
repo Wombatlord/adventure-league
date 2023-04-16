@@ -1,8 +1,8 @@
 from typing import Any, NamedTuple, Optional, Self
 
-from src.entities.ai import AiInterface
-from src.entities.inventory import Inventory, InventoryItem
-from src.entities.locatable import Locatable
+from src.entities.ai.ai import AiInterface
+from src.entities.item.inventory import Inventory, InventoryItem
+from src.entities.properties.locatable import Locatable
 from src.entities.sprites import EntitySprite
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace

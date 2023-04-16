@@ -8,13 +8,13 @@ if TYPE_CHECKING:
 from random import randint
 
 from src.config.constants import guild_names
-from src.entities.ai import CombatAISubscriber
-from src.entities.dungeon import Dungeon
+from src.engine.guild import Guild, Team
+from src.engine.mission_board import MissionBoard
+from src.entities.ai.ai import CombatAISubscriber
+from src.entities.combat.fighter_factory import RecruitmentPool
 from src.entities.entity import Entity
-from src.entities.fighter_factory import RecruitmentPool
-from src.entities.guild import Guild, Team
-from src.entities.mission_board import MissionBoard
 from src.systems.collision_avoidance import SpaceOccupancyHandler
+from src.world.level.dungeon import Dungeon
 
 
 class GameState:

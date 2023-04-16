@@ -7,7 +7,7 @@ import arcade.color
 import arcade.key
 
 from src.engine.init_engine import eng
-from src.entities.actions import MoveAction
+from src.entities.action.actions import MoveAction
 from src.gui.components import combat_menu
 from src.gui.components.buttons import end_turn_button
 from src.gui.components.input_capture import BaseInputMode, GridSelection, Selection

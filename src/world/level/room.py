@@ -1,111 +1,99 @@
-import random
-from functools import lru_cache
+from __future__ import annotations
 
-from src.world.isometry.transforms import draw_priority
+from typing import TYPE_CHECKING, Generator, Self
+
+if TYPE_CHECKING:
+    from src.entities.combat.fighter import Fighter
+
+from src.entities.entity import Entity
+from src.world.level.room_layouts import basic_room
 from src.world.node import Node
+from src.world.pathing.pathing_space import PathingSpace
 
 
-def rectangle(w: int = 1, h: int = 1, offset: Node = Node(0, 0)) -> tuple[Node, ...]:
-    return tuple(Node(x, y) + offset for x in range(w) for y in range(h))
+class Room:
+    def __init__(self, size: tuple[int, int] = (10, 10)) -> None:
+        self.layout = None
+        self.space = None
+        self.set_layout(basic_room(size))
+        self.enemies: list[Entity] = []
+        self.occupants: list[Entity] = []
+        self._cleared = False
+        self.entry_door = Node(x=0, y=5) if size[1] > 5 else Node(0, 0)
 
+    def set_layout(self, layout: tuple[Node, ...]) -> Self:
+        self.layout = layout
+        self.space = PathingSpace.from_level_geometry(self.layout)
+        return self
 
-@lru_cache(maxsize=1)
-def basic_room(dimensions: tuple[int, int], height: int = 0) -> tuple[Node, ...]:
-    floor = [
-        Node(x=x, y=y, z=height - 1)
-        for x in range(dimensions[0])
-        for y in range(dimensions[1])
-    ]
-    walls = (
-        [Node(x=dimensions[0], y=y, z=height) for y in range(dimensions[1])]
-        + [Node(x=x, y=dimensions[1], z=height) for x in range(dimensions[0])]
-        + [
-            Node(x=10, y=10, z=height),
-            Node(x=10, y=10, z=height + 1),
-        ]
-    )
+    def update_pathing_obstacles(self):
+        """
+        Used to synchronise the traversable locations with updated entity locations
+        Returns:
 
-    return tuple(sorted(floor + walls, key=draw_priority))
+        """
+        exclusions = {occupant.locatable.location for occupant in self.occupants}
+        self.space.exclusions = exclusions
 
+    def add_entity(self, entity: Entity):
+        mob_spawns = self.mob_spawns_points()
+        if entity.fighter.is_enemy:
+            spawn_point = next(mob_spawns)
+        else:
+            spawn_point = self.space.choose_next_unoccupied(self.entry_door)
 
-@lru_cache(maxsize=1)
-def side_pillars(dimensions: tuple[int, int], height: int = 0) -> tuple[Node, ...]:
-    min_width = 5
-    room = basic_room(dimensions, height)
-    if min(dimensions[0], dimensions[1]) < min_width:
-        return room
+        entity.make_locatable(self.space, spawn_point=spawn_point)
+        self.occupants.append(entity)  # <- IMPORTANT:
+        self.update_pathing_obstacles()  # <- don't change the order of these two!
 
-    w, h = dimensions
-    pillars = [Node(x, y) for x in range(1, w, 2) for y in (1, h - 2)]
+        if entity.fighter.is_enemy:
+            self.enemies.append(entity)
 
-    return tuple(sorted(pillars + list(room), key=draw_priority))
+        entity.on_death_hooks.extend(
+            [
+                self.remove,
+                Entity.flush_locatable,
+            ]
+        )
+        entity.fighter.on_retreat_hooks.extend(
+            [
+                lambda f: self.remove(f.owner),
+                lambda f: Entity.flush_locatable(f.owner),
+            ]
+        )
 
+        fighter: Fighter = entity.fighter
+        fighter.set_encounter_context(self)
 
-@lru_cache(maxsize=1)
-def alternating_big_pillars(
-    dimensions: tuple[int, int], height: int = 0
-) -> tuple[Node, ...]:
-    min_width = 10
-    room = basic_room(dimensions, height)
-    if min(dimensions[0], dimensions[1]) < min_width:
-        return room
+    def include_party(self, party: list[Entity]) -> list[Entity]:
+        for member in party:
+            self.add_entity(member)
+        return party
 
-    pillars = [
-        *rectangle(2, 2, offset=Node(4, 1)),
-        *rectangle(2, 2, offset=Node(4, 7)),
-        *rectangle(2, 2, offset=Node(1, 4)),
-        *rectangle(2, 2, offset=Node(7, 4)),
-    ]
+    def mob_spawns_points(self) -> Generator[Node, None, None]:
+        while True:
+            yield self.space.choose_random_node(
+                excluding=self.space.exclusions,
+            )
 
-    return tuple(sorted(pillars + list(room), key=draw_priority))
+    def remove(self, entity: Entity):
+        if hasattr(entity, "owner"):
+            entity = entity.owner
+        elif not isinstance(entity, Entity):
+            raise TypeError(
+                f"Can only remove Entities and owned components from the room, got {entity}",
+            )
+        if entity.fighter.is_enemy:
+            self.enemies.pop(self.enemies.index(entity))
+        self.occupants.pop(self.occupants.index(entity))
 
+    @property
+    def cleared(self):
+        return self._cleared
 
-@lru_cache(maxsize=1)
-def one_big_pillar(dimensions: tuple[int, int], height: int = 0) -> tuple[Node, ...]:
-    min_width = 10
-    room = basic_room(dimensions, height)
-    if min(dimensions[0], dimensions[1]) < min_width:
-        return room
+    @cleared.setter
+    def cleared(self, new_value):
+        current_value = self.cleared
 
-    pillars = [
-        *rectangle(4, 4, offset=Node(3, 3)),
-    ]
-
-    return tuple(sorted(pillars + list(room), key=draw_priority))
-
-
-@lru_cache(maxsize=1)
-def one_block_corridor(
-    dimensions: tuple[int, int], height: int = 0
-) -> tuple[Node, ...]:
-    """
-    Used as a stress test for congested pathing scenarios,
-    not included in random room
-    Args:
-        dimensions:
-        height:
-
-    Returns:
-
-    """
-    min_width = 10
-    room = basic_room(dimensions, height)
-    if min(dimensions[0], dimensions[1]) < min_width:
-        return room
-
-    pillars = [
-        *rectangle(10, 4, offset=Node(0, 0)),
-        *rectangle(10, 4, offset=Node(0, 6)),
-    ]
-
-    return tuple(sorted(pillars + list(room), key=draw_priority))
-
-
-def random_room(dimensions: tuple[int, int], height: int = 0) -> tuple[Node]:
-    return random.choice(
-        [
-            basic_room,
-            side_pillars,
-            alternating_big_pillars,
-        ]
-    )(dimensions, height)
+        if new_value != current_value:
+            print("ROOM CLEAR!")

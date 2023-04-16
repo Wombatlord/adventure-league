@@ -2,13 +2,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
-from src.entities.actions import ActionCompendium, ActionMeta, ActionPoints, BaseAction
+from src.entities.action.actions import (
+    ActionCompendium,
+    ActionMeta,
+    ActionPoints,
+    BaseAction,
+)
 from src.entities.entity import Entity
-from src.entities.inventory import Consumable, Inventory, InventoryItem, Throwable
+from src.entities.item.inventory import Consumable, Inventory, InventoryItem, Throwable
 from src.world.node import Node
 
 if TYPE_CHECKING:
-    from src.entities.dungeon import Room
+    from src.world.level.room import Room
 
 Event = dict[str, Any]
 

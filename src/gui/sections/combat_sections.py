@@ -6,7 +6,6 @@ from pyglet.math import Mat3, Vec2, Vec3, Vec4
 
 from src import config
 from src.engine.init_engine import eng
-from src.entities.dungeon import Room
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
 from src.gui.components.combat_components import CombatScreen
@@ -17,6 +16,7 @@ from src.utils.camera_controls import CameraController
 from src.utils.functional import call_in_order
 from src.utils.rectangle import Rectangle
 from src.world.isometry.transforms import Transform, invert_mat3
+from src.world.level.room import Room
 from src.world.node import Node
 
 

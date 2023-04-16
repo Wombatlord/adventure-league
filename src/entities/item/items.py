@@ -1,7 +1,10 @@
 from typing import TYPE_CHECKING
 
-from src.entities.effects import apply_heal_consumption_effect, apply_heal_on_hit_effect
-from src.entities.inventory import Consumable, Exhaustable, Throwable
+from src.entities.item.effects import (
+    apply_heal_consumption_effect,
+    apply_heal_on_hit_effect,
+)
+from src.entities.item.inventory import Consumable, Exhaustable, Throwable
 
 if TYPE_CHECKING:
     from src.entities.entity import Entity

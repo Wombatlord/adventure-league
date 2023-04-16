@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.engine.engine import Engine
 
-from src.entities.dungeon import Room
+from src.world.level.room import Room
 
 
 class SpaceOccupancyHandler:

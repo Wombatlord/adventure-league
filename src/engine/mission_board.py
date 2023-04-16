@@ -1,5 +1,5 @@
-from src.entities.dungeon import Dungeon
-from src.entities.dungeon_factory import create_dungeon_with_boss_room
+from src.world.level.dungeon import Dungeon
+from src.world.level.dungeon_factory import create_dungeon_with_boss_room
 
 
 class MissionBoard:

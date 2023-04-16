@@ -2,10 +2,10 @@ from enum import Enum
 from random import shuffle
 from typing import Any, Callable, Generator, NamedTuple
 
-from src.entities.actions import EndTurnAction
+from src.entities.action.actions import EndTurnAction
+from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity
-from src.entities.fighter import Fighter
-from src.entities.items import HealingPotion
+from src.entities.item.items import HealingPotion
 
 Event = dict[str, Any]
 Hook = Callable[[], None]

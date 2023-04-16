@@ -7,8 +7,8 @@ from pyglet.math import Vec2
 from src.engine.describer import Describer
 from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
 from src.engine.game_state import AwardSpoilsHandler, GameState
-from src.entities.fighter_factory import RecruitmentPool
-from src.entities.mission_board import MissionBoard
+from src.engine.mission_board import MissionBoard
+from src.entities.combat.fighter_factory import RecruitmentPool
 from src.gui.window_data import WindowData
 from src.projection import health
 from src.systems.collision_avoidance import SpaceOccupancyHandler

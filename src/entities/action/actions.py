@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.entities.fighter import Fighter
+    from src.entities.combat.fighter import Fighter
     from src.world.node import Node
-    from src.entities.items import Consumable
+    from src.entities.item.items import Consumable
 
 from typing import Any, Generator
 

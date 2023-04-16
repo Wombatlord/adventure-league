@@ -8,9 +8,9 @@ from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
 
 if TYPE_CHECKING:
-    from src.entities.dungeon import Room
+    from src.entities.combat.fighter import Fighter
     from src.entities.entity import Entity
-    from src.entities.fighter import Fighter
+    from src.world.level.room import Room
 
 
 Path = tuple[Node]

@@ -5,7 +5,7 @@ from typing import Optional
 
 from src.config.constants import team_names
 from src.entities.entity import Entity
-from src.entities.loot import Loot
+from src.entities.item.loot import Loot
 
 
 class Guild:

@@ -1,8 +1,8 @@
-from src.entities.dungeon import Room
+from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
-from src.entities.fighter import Fighter
-from src.entities.inventory import Inventory
-from src.entities.items import HealingPotion
+from src.entities.item.inventory import Inventory
+from src.entities.item.items import HealingPotion
+from src.world.level.room import Room
 from src.world.node import Node
 
 

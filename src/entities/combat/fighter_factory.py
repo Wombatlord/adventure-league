@@ -3,11 +3,11 @@ from random import randint
 from typing import Callable, NamedTuple, Self
 
 from src.config.constants import merc_names
-from src.entities.ai import NoCombatAI
+from src.entities.ai.ai import NoCombatAI
+from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name, Species
-from src.entities.fighter import Fighter
-from src.entities.inventory import Inventory
-from src.entities.items import HealingPotion
+from src.entities.item.inventory import Inventory
+from src.entities.item.items import HealingPotion
 from src.entities.sprites import EntitySprite
 from src.gui.animated_sprite_config import (
     AnimatedSpriteConfig,

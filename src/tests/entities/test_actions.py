@@ -1,20 +1,20 @@
 import unittest
 
-from src.entities.actions import (
+from src.entities.action.actions import (
     ActionCompendium,
     AttackAction,
     ConsumeItemAction,
     EndTurnAction,
     MoveAction,
 )
-from src.entities.dungeon import Room
+from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
-from src.entities.fighter import Fighter
-from src.entities.inventory import Inventory
-from src.entities.items import HealingPotion
+from src.entities.item.inventory import Inventory
+from src.entities.item.items import HealingPotion
 from src.systems.combat import CombatRound
 from src.tests.ai_fixture import TestAI
 from src.tests.fixtures import EncounterFactory, FighterFixtures
+from src.world.level.room import Room
 from src.world.node import Node
 
 
