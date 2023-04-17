@@ -6,8 +6,8 @@ from src.gui.components.layouts import (
     box_containing_horizontal_label_pair,
     create_colored_shadowed_UILabel_header,
 )
-from src.gui.guild.missions_components import mission_boxes
 from src.gui.components.scroll_window import Cycle
+from src.gui.guild.missions_components import mission_boxes
 from src.textures.texture_data import SingleTextureSpecs
 
 

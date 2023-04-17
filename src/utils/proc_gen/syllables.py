@@ -1,5 +1,8 @@
+import hashlib
 import random
 import string
+
+from src.utils.proc_gen.constraints import disallowed
 
 
 def simple_syllable() -> str:
@@ -14,6 +17,15 @@ def syllables(min_syls=1, max_syls=3) -> str:
     word = []
     for _ in range(random.randint(min_syls, max_syls)):
         word += [simple_syllable()]
+
+    for syl in word:
+        if syl := inoffensive(syl):
+            continue
+        else:
+            print("BAD SYLLABLE")
+            word = syllables()
+            return word
+
     return word
 
 
@@ -27,7 +39,17 @@ def maybe_punctuated_name(min_syls=1, max_syls=3) -> str:
     puncts = ["'", "-"] + [""] * 3
     name = ""
     syls = syllables(min_syls, max_syls)
-    for syl in syls[:-1]:
+
+    for syl in syls:
         name += syl + random.choice(puncts)
 
     return name + syls[-1]
+
+
+def inoffensive(name) -> bool:
+    as_bytes = str.encode(name)
+    hashed = hashlib.sha256(as_bytes)
+    if hashed.digest() in disallowed:
+        return False
+    else:
+        return True

@@ -9,12 +9,12 @@ from arcade.gui.widgets.buttons import UIFlatButton
 from arcade.gui.widgets.text import UILabel
 
 from src.engine.init_engine import eng
+from src.gui.combat.combat import CombatView
 from src.gui.components.buttons import nav_button
 from src.gui.components.scroll_window import Cycle
 from src.gui.generic_sections.command_bar import CommandBarSection
 from src.gui.generic_sections.info_pane import InfoPaneSection
 from src.gui.guild.missions_section import MissionsSection
-from src.gui.combat.combat import CombatView
 from src.gui.window_data import WindowData
 
 

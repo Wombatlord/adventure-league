@@ -254,9 +254,7 @@ class CombatGridSection(arcade.Section):
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
-        self.grid_camera.resize(
-            width, height
-        )
+        self.grid_camera.resize(width, height)
         self.grid_camera.center(self.transform.to_screen(Node(0, 0)))
         self.other_camera.resize(
             viewport_width=width, viewport_height=height
