@@ -40,7 +40,7 @@ def maybe_punctuated_name(min_syls=1, max_syls=3) -> str:
     name = ""
     syls = syllables(min_syls, max_syls)
 
-    for syl in syls:
+    for syl in syls[:-1]:
         name += syl + random.choice(puncts)
 
     return name + syls[-1]
