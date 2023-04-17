@@ -1,7 +1,7 @@
 import hashlib
 import random
 import string
-
+from typing import Callable
 from src.utils.proc_gen.constraints import disallowed
 
 
@@ -13,24 +13,26 @@ def simple_syllable() -> str:
     return syllable
 
 
-def syllables(min_syls=1, max_syls=3) -> str:
+def syllables(min_syls=1, max_syls=3, syl_func: Callable[[], str] | None=None) -> str:
+    if not isinstance(syl_func, Callable):
+        raise TypeError(f"No syllable generation function. Expected Callable, got {syl_func=}")
+    
     word = []
     for _ in range(random.randint(min_syls, max_syls)):
-        word += [simple_syllable()]
+        word += [syl_func()]
 
     for syl in word:
         if syl := inoffensive(syl):
             continue
         else:
-            print("BAD SYLLABLE")
-            word = syllables()
+            word = syllables(syl_func=syl_func)
             return word
 
     return word
 
 
 def simple_word(min_syls=1, max_syls=3) -> str:
-    return "".join(syllables(min_syls, max_syls))
+    return "".join(syllables(min_syls, max_syls, syl_func=simple_syllable))
 
 
 def maybe_punctuated_name(min_syls=1, max_syls=3) -> str:
@@ -38,7 +40,7 @@ def maybe_punctuated_name(min_syls=1, max_syls=3) -> str:
         min_syls = 1
     puncts = ["'", "-"] + [""] * 3
     name = ""
-    syls = syllables(min_syls, max_syls)
+    syls = syllables(min_syls, max_syls, syl_func=simple_syllable)
 
     for syl in syls[:-1]:
         name += syl + random.choice(puncts)
