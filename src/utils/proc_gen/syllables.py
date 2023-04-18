@@ -1,9 +1,28 @@
-import hashlib
 import random
+import functools
 import string
 from typing import Callable
+from src.utils.proc_gen.constraints import check
 
-from src.utils.proc_gen.constraints import disallowed
+
+def inoffensive(logging=False, check_func=lambda: True):
+    def decorator(gen_func) -> Callable[[], str]:
+        @functools.wraps(gen_func)
+        def _inoffensive_generator(*args, **kwargs) -> str:
+            offensive = True
+            while offensive:
+                attempt = gen_func(*args, **kwargs)
+                print(attempt)
+                offensive = not check_func(attempt)
+                
+                if logging and offensive:
+                    print("Got disallowed word match. Trying again!")
+            
+            return attempt
+        
+        return _inoffensive_generator
+
+    return decorator
 
 
 def simple_syllable() -> str:
@@ -14,7 +33,8 @@ def simple_syllable() -> str:
     return syllable
 
 
-def syllables(min_syls=1, max_syls=3, syl_func: Callable[[], str] | None = None) -> str:
+@inoffensive(check_func=check)
+def syllables(min_syls=1, max_syls=3, syl_func: Callable[[], str] | None=None) -> str:
     if not isinstance(syl_func, Callable):
         raise TypeError(
             f"No syllable generation function. Expected Callable, got {syl_func=}"
@@ -23,13 +43,6 @@ def syllables(min_syls=1, max_syls=3, syl_func: Callable[[], str] | None = None)
     word = []
     for _ in range(random.randint(min_syls, max_syls)):
         word += [syl_func()]
-
-    for syl in word:
-        if syl := inoffensive(syl):
-            continue
-        else:
-            word = syllables(syl_func=syl_func)
-            return word
 
     return word
 
@@ -49,12 +62,3 @@ def maybe_punctuated_name(min_syls=1, max_syls=3) -> str:
         name += syl + random.choice(puncts)
 
     return name + syls[-1]
-
-
-def inoffensive(name) -> bool:
-    as_bytes = str.encode(name)
-    hashed = hashlib.sha256(as_bytes)
-    if hashed.digest() in disallowed:
-        return False
-    else:
-        return True

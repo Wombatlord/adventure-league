@@ -149,7 +149,7 @@ class SyllablePatches:
             word += [syl_func()]
 
         for syl in word:
-            if syl := inoffensive(syl):
+            if inoffensive(syl):
                 print(f"continuing with {word}")
                 continue
             else:
