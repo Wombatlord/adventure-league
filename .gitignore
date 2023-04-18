@@ -6,4 +6,5 @@ winvenv/
 scratch.py
 .idea/
 assets/sprites/
+assets/wordlists/
 __pycache__/

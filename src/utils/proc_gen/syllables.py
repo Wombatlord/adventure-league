@@ -1,25 +1,26 @@
-import random
 import functools
+import random
 import string
 from typing import Callable
+
 from src.utils.proc_gen.constraints import check
 
 
-def inoffensive(logging=False, check_func=lambda: True):
+def inoffensive(logging=True, check_func=lambda: True):
     def decorator(gen_func) -> Callable[[], str]:
         @functools.wraps(gen_func)
         def _inoffensive_generator(*args, **kwargs) -> str:
             offensive = True
             while offensive:
                 attempt = gen_func(*args, **kwargs)
-                print(attempt)
+
                 offensive = not check_func(attempt)
-                
+
                 if logging and offensive:
                     print("Got disallowed word match. Trying again!")
-            
+
             return attempt
-        
+
         return _inoffensive_generator
 
     return decorator
@@ -34,7 +35,7 @@ def simple_syllable() -> str:
 
 
 @inoffensive(check_func=check)
-def syllables(min_syls=1, max_syls=3, syl_func: Callable[[], str] | None=None) -> str:
+def syllables(min_syls=1, max_syls=3, syl_func: Callable[[], str] | None = None) -> str:
     if not isinstance(syl_func, Callable):
         raise TypeError(
             f"No syllable generation function. Expected Callable, got {syl_func=}"
