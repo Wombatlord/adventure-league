@@ -18,10 +18,29 @@ if TYPE_CHECKING:
 Event = dict[str, Any]
 
 
+class EncounterContext:
+    def __init__(self, fighter: Fighter):
+        self.encounter_context = None
+        self.fighter = fighter
+
+    def set(self, room: Room):
+        self.encounter_context = room
+        self.fighter.on_retreat_hooks.append(lambda f: f.encounter_context.clear())
+        self.fighter.owner.on_death_hooks.append(
+            lambda e: e.fighter.encounter_context.clear()
+        )
+
+    def get(self) -> Room:
+        return self.encounter_context
+
+    def clear(self):
+        self.encounter_context = None
+
+
 # A class attached to any Entity that can fight
 class Fighter:
     _readied_action: BaseAction | None
-    _encounter_context: Room | None
+    _encounter_context: EncounterContext
 
     def __init__(
         self,
@@ -55,7 +74,7 @@ class Fighter:
         self._forfeit_turn = False
         self.action_points = ActionPoints()
         self._readied_action = None
-        self._encounter_context = None
+        self._encounter_context = EncounterContext(self)
 
     def set_owner(self, owner: Entity) -> Self:
         self.owner = owner
@@ -63,21 +82,12 @@ class Fighter:
             self.owner.inventory = Inventory(owner=owner, capacity=1)
         return self
 
-    def set_encounter_context(self, encounter: Room) -> None:
-        self._encounter_context = encounter
-        self.on_retreat_hooks.append(Fighter.clear_encounter_context)
-        self.owner.on_death_hooks.append(
-            lambda e: Fighter.clear_encounter_context(e.fighter)
-        )
-
-    def get_encounter_context(self) -> Room | None:
+    @property
+    def encounter_context(self) -> EncounterContext:
         return self._encounter_context
 
-    def clear_encounter_context(self) -> None:
-        self._encounter_context = None
-
     def is_enemy_of(self, other: Fighter) -> bool:
-        return self.is_enemy != other.is_enemy
+        return self.is_enemy is not other.is_enemy
 
     def get_dict(self) -> dict:
         d = self.__dict__
@@ -89,14 +99,6 @@ class Fighter:
                 result[k] = v
 
         return result
-
-    def from_dict(self, dict) -> None:
-        self.hp = dict.get("hp")
-        self.defence = dict.get("defence")
-        self.power = dict.get("power")
-        self.level = dict.get("level")
-        self.xp_reward = dict.get("xp_reward")
-        self.current_xp = dict.get("current_xp")
 
     def ready_action(self, action: BaseAction) -> bool:
         self._readied_action = action
@@ -134,46 +136,6 @@ class Fighter:
             "choices": choices,
         }
 
-    def request_target(self, targets: list[Fighter]) -> Event:
-        paths = [
-            *filter(
-                lambda p: p is not None,
-                [
-                    self.owner.locatable.path_to_target(t.owner.locatable)
-                    for t in targets
-                ],
-            )
-        ]
-
-        if not paths:
-            self._forfeit_turn = True
-            yield {
-                "forfeit": self,
-                "message": f"{self.owner.name} is biding their time until a target is reachable",
-            }
-            return
-
-        def _on_confirm(idx) -> bool:
-            if not self._current_item:
-                self.provide_item(Consumable())
-            return self.provide_target(targets[idx])
-
-        yield {
-            "message": f"{self.owner.name.name_and_title} readies their attack! Choose a target using the up and down keys.",
-            "await_input": self,
-            "target_selection": {
-                "paths": [
-                    self.owner.locatable.path_to_target(t.owner.locatable)
-                    for t in targets
-                ],
-                "targets": targets,
-                "on_confirm": _on_confirm,
-                "default": targets.index(self.last_target())
-                if self.last_target()
-                else 0,
-            },
-        }
-
     def on_turn_start(self) -> Generator[Event]:
         self.action_points.on_turn_start()
         self._forfeit_turn = False
@@ -182,47 +144,12 @@ class Fighter:
     def on_turn_end(self) -> Generator[Event]:
         yield {"turn_end": self}
 
-    def choose_item(self):
-        self._current_item = Consumable()
-        return {}
-
-    def request_item_use(self):
-        return {
-            "message": f"Use an item from {self.owner.name.name_and_title}'s inventory?",
-            "await_input": self,
-            "item_selection": {
-                "inventory_contents": self.owner.inventory.items,
-                "on_confirm": lambda item_idx: self.provide_item(
-                    self.owner.inventory.items[item_idx]
-                ),
-                "default_item": self.owner.inventory.items[0],
-            },
-        }
-
-    def provide_item(self, item: InventoryItem):
-        self._current_item = item
-        return True
-
-    def current_target(self) -> Fighter | None:
-        self._cleanse_targets()
-        return self._target
-
-    def last_target(self) -> Fighter | None:
-        self._cleanse_targets()
-        return self._prev_target
-
-    def _cleanse_targets(self):
-        if self._prev_target and self._prev_target.incapacitated:
-            self._prev_target = None
-        if self._target and self._target.incapacitated:
-            self._target = None
-
     @property
     def in_combat(self):
         return self._in_combat
 
     @in_combat.setter
-    def set_in_combat(self, state: bool):
+    def in_combat(self, state: bool):
         self._in_combat = state
 
     @property
@@ -238,59 +165,10 @@ class Fighter:
     def is_locatable(self):
         return self.owner.locatable is not None
 
-    def choose_nearest_target(self, targets: list[Fighter]) -> int:
-        if len(targets) < 1:
-            raise ValueError("Supply at least one potential target")
-
-        if self.owner.locatable is None:
-            raise TypeError(
-                f"The attacker is not locateable: {self.owner.name.name_and_title=}"
-            )
-
-        closest = None
-        # bigger than any dungeon room, so the first checked target will always be closer
-        min_distance = 100000
-
-        for target_idx, possible_target in enumerate(targets):
-            if possible_target.owner.locatable is None:
-                raise TypeError(
-                    f"The target is not locateable: {possible_target.owner.name.name_and_title=}"
-                )
-
-            distance = self.owner.locatable.space.get_path_len(
-                self.owner.locatable.location,
-                possible_target.owner.locatable.location,
-            )
-            if distance is None:
-                continue
-
-            # is the possible target the closest so far?
-            if distance < min_distance:
-                min_distance = distance
-                closest = target_idx
-
-            # We can attack already
-            if min_distance <= 1:
-                break
-
-        if closest is None:
-            raise ValueError(
-                f"The fighter {self.owner.name.name_and_title} could not traverse to any of the potential targets"
-            )
-
-        self.provide_target(targets[closest])
-
-        return {"target_chosen": self.current_target()}
-
     @property
     def incapacitated(self) -> bool:
         is_incapacitated = self.owner.is_dead or self.retreating
         return is_incapacitated
-
-    def initial_health(self) -> Event:
-        result = {}
-        result.update(**self.owner.annotate_event({}))
-        return result
 
     def take_damage(self, amount) -> Event:
         result = {}
@@ -351,13 +229,6 @@ class Fighter:
     def consume_item(self, item: Consumable) -> Generator[Event, None, None]:
         yield item.consume(self.owner.inventory)
 
-    def chosen_consumable(self) -> Consumable:
-        return self._current_item or Consumable()
-
-    def throw_item(self, item: Throwable):
-        if item in self.owner.inventory:
-            return item.throw(self.owner.inventory)
-
     def commence_retreat(self):
         self.retreating = True
         hooks = self.on_retreat_hooks
@@ -366,6 +237,3 @@ class Fighter:
 
     def clear_hooks(self):
         self.on_retreat_hooks = []
-
-    def turn_is_forfeit(self) -> bool:
-        return self._forfeit_turn

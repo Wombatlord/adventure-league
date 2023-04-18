@@ -183,7 +183,7 @@ class Locatable:
 
     def nearest_entity(
         self, room: Room, entity_filter: Callable[[Entity], bool] = lambda e: True
-    ) -> Entity:
+    ) -> Entity | None:
         shortest_path = None
         closest_entity = None
         for occupant in room.occupants:
