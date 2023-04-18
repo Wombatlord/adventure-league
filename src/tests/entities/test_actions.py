@@ -74,7 +74,7 @@ class ActionsTest(unittest.TestCase):
         potion = self.get_potion()
         merc.inventory.add_item_to_inventory(potion)
         room = self.set_up_encounter(10, merc, enemy)
-        merc.fighter.set_encounter_context(room)
+        merc.fighter.encounter_context.set(room)
 
         # Action
         event = next(merc.fighter.request_action_choice())

@@ -59,7 +59,7 @@ class TestAI:
 
     def fallback_move_decision(self, options: list[dict]):
         nearest_enemy = self._current_fighter.locatable.nearest_entity(
-            self._current_fighter.get_encounter_context(),
+            self._current_fighter.encounter_context.get(),
             entity_filter=lambda e: self._current_fighter.is_enemy_of(e.fighter),
         )
         ideal_path = self._current_fighter.locatable.path_to_target(

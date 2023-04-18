@@ -2,6 +2,7 @@ import hashlib
 import random
 import string
 from typing import Callable
+
 from src.utils.proc_gen.constraints import disallowed
 
 
@@ -13,10 +14,12 @@ def simple_syllable() -> str:
     return syllable
 
 
-def syllables(min_syls=1, max_syls=3, syl_func: Callable[[], str] | None=None) -> str:
+def syllables(min_syls=1, max_syls=3, syl_func: Callable[[], str] | None = None) -> str:
     if not isinstance(syl_func, Callable):
-        raise TypeError(f"No syllable generation function. Expected Callable, got {syl_func=}")
-    
+        raise TypeError(
+            f"No syllable generation function. Expected Callable, got {syl_func=}"
+        )
+
     word = []
     for _ in range(random.randint(min_syls, max_syls)):
         word += [syl_func()]

@@ -63,7 +63,7 @@ class Room:
         )
 
         fighter: Fighter = entity.fighter
-        fighter.set_encounter_context(self)
+        fighter.encounter_context.set(self)
 
     def include_party(self, party: list[Entity]) -> list[Entity]:
         for member in party:
