@@ -18,6 +18,7 @@ def from_url(url) -> list[bytes]:
 
     return wordlist
 
+
 def merge_lists():
     words: set[bytes] = set()
     for url in urls:
@@ -35,18 +36,20 @@ def to_file(wordlist: list[bytes]):
     )
 
     target_path = pathlib.Path(__file__).parent / "wordlists" / "hashes.bin"
-    
+
     try:
         with open(target_path, "wb") as outfile:
             outfile.write(hashes)
-    
+            outfile.write(hashlib.sha256(str.encode("disallowed_test_string")).digest())
+
     except FileNotFoundError:
         parent = pathlib.Path(__file__).parent
         pathlib.Path(f"{parent}/wordlists").mkdir()
 
         with open(target_path, "wb") as outfile:
             outfile.write(hashes)
-        
+            outfile.write(hashlib.sha256("disallowed_test_string").digest())
+
     print(f"Wrote {len(wordlist)} hashes to hashes.bin")
 
 

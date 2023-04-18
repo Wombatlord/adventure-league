@@ -2,6 +2,7 @@ import hashlib
 
 HashList = list[bytes]
 
+
 def get_hashes() -> HashList:
     target_path = "./assets/wordlists/hashes.bin"
     with open(target_path, "rb") as hashfile:
