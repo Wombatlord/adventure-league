@@ -3,6 +3,7 @@ import string
 
 HashList = list[bytes]
 
+
 def get_hashes() -> HashList:
     target_path = "./assets/wordlists/hashes.bin"
     with open(target_path, "rb") as hashfile:
@@ -12,14 +13,18 @@ def get_hashes() -> HashList:
 
     return hashlist
 
+
 _disallowed_list = []
+
 
 def load():
     global _disallowed_list
     _disallowed_list = get_hashes()
 
+
 def sanitize_char(text: str, char: str) -> bytes:
     return b"".join([substr.encode() for substr in text.split(char)])
+
 
 def keep_allowed(text: bytes, allowed_chars: str) -> bytes:
     text_str = text.decode()

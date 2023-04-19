@@ -1,10 +1,10 @@
 import hashlib
 import pathlib
+import string
 
 import requests
-import string
-import src
 
+import src
 from src.utils.cli import CommandMeta
 from src.utils.proc_gen.constraints import keep_allowed
 
@@ -12,6 +12,7 @@ project_root = pathlib.Path(src.__file__).parent.parent
 urls = [
     "http://www.bannedwordlist.com/lists/swearWords.txt",
 ]
+
 
 def from_url(url) -> list[bytes]:
     response = requests.get(url)
@@ -21,7 +22,6 @@ def from_url(url) -> list[bytes]:
 
     wordlist = response.content.split(b"\n")
     allowed_chars = string.ascii_lowercase + " "
-
 
     return [keep_allowed(w.decode().lower().encode(), allowed_chars) for w in wordlist]
 
@@ -53,12 +53,15 @@ def to_file(wordlist: list[bytes]):
 
     print(f"Wrote {len(wordlist)} hashes to hashes.bin")
 
+
 def write_hashes(hashes, target_path):
     with open(target_path, "wb") as outfile:
         outfile.write(hashes)
 
+
 class Command(metaclass=CommandMeta):
     name = "gen_hashes"
+
     @staticmethod
     def run(*args):
         merge_lists()
