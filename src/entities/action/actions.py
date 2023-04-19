@@ -9,6 +9,8 @@ if TYPE_CHECKING:
 
 from typing import Any, Generator
 
+from src.entities.combat.attack_types import attack
+
 Event = dict[str, Any]
 
 
@@ -84,7 +86,7 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
     @classmethod
     def execute(cls, fighter: Fighter, target: Fighter) -> Generator[Event]:
         fighter.action_points.deduct_cost(cls.cost(fighter))
-        yield fighter.attack(target=target.owner)
+        yield attack(fighter=fighter, target=target.owner)
 
     @classmethod
     def details(cls, fighter: Fighter, target: Fighter) -> dict:
@@ -124,7 +126,7 @@ class ProjectileAttack(BaseAction, metaclass=ActionMeta):
     @classmethod
     def execute(cls, fighter: Fighter, target: Fighter) -> Generator[Event]:
         fighter.action_points.deduct_cost(cls.cost(fighter))
-        yield fighter.projectile_attack(target=target.owner)
+        yield attack(fighter, target=target.owner)
 
     @classmethod
     def details(cls, fighter: Fighter, target: Fighter) -> dict:
@@ -141,7 +143,7 @@ class ProjectileAttack(BaseAction, metaclass=ActionMeta):
             cls.details(fighter, occupant.fighter)
             for occupant in fighter.locatable.entities_in_range(
                 room=fighter.encounter_context.get(),
-                max_range=3,
+                max_range=fighter.max_range,
                 entity_filter=lambda e: fighter.is_enemy_of(e.fighter),
             )
         ]
