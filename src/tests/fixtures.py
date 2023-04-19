@@ -16,8 +16,9 @@ class FighterFixtures:
         return {
             "hp": 100,
             "defence": 10,
-            "power": 10,
             "is_enemy": enemy,
+            "power": 10,
+            "role": "melee",
             "speed": 1,
             "is_boss": boss,
         }
@@ -28,6 +29,7 @@ class FighterFixtures:
             "hp": 1,
             "defence": 0,
             "power": 0,
+            "role": "melee",
             "is_enemy": enemy,
             "speed": 1,
             "is_boss": boss,

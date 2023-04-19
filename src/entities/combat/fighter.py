@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from random import randint
 from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
 from src.entities.action.actions import (
@@ -9,7 +10,7 @@ from src.entities.action.actions import (
     BaseAction,
 )
 from src.entities.entity import Entity
-from src.entities.item.inventory import Consumable, Inventory, InventoryItem, Throwable
+from src.entities.item.inventory import Consumable, Inventory
 from src.world.node import Node
 
 if TYPE_CHECKING:
@@ -44,37 +45,43 @@ class Fighter:
 
     def __init__(
         self,
-        is_enemy: bool,
+        role: str,
         hp: int = 0,
         defence: int = 0,
         power: int = 0,
         level: int = 0,
-        xp_reward: int = 0,
-        current_xp: int = 0,
+        max_range: int = 0,
         speed: int = 0,
+        current_xp: int = 0,
+        is_enemy: bool = False,
         is_boss: bool = False,
     ) -> None:
         self.owner: Optional[Entity] = None
+        # -----Stats-----
+        self.role = role
         self.max_hp = hp
         self.hp = hp
         self.defence = defence
         self.power = power
         self.level = level
-        self.xp_reward = xp_reward
+        self.max_range = max_range
+        self.speed = speed
         self.current_xp = current_xp
-        self.retreating = False
+        self.action_points = ActionPoints()
+        # -----State-----
+        self.action_options = None
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
+        self.retreating = False
         self._target = None
         self._prev_target = None
-        self.speed = speed
         self._in_combat = False
         self._current_item = None
         self._forfeit_turn = False
-        self.action_points = ActionPoints()
         self._readied_action = None
         self._encounter_context = EncounterContext(self)
+        self.set_action_options()
 
     def set_owner(self, owner: Entity) -> Self:
         self.owner = owner
@@ -100,6 +107,17 @@ class Fighter:
 
         return result
 
+    def set_action_options(self):
+        match self.role:
+            case "melee":
+                self.action_options = ["move", "attack", "use item", "end turn"]
+
+            case "ranged":
+                self.action_options = ["move", "ranged attack", "use item", "end turn"]
+
+            case _:
+                self.action_options = ["end turn"]
+
     def ready_action(self, action: BaseAction) -> bool:
         self._readied_action = action
         return True
@@ -116,7 +134,11 @@ class Fighter:
         yield from action
 
     def does(self, action: ActionMeta) -> bool:
-        return action.cost(self) <= self.action_points.current
+        if action.name in self.action_options:
+            return action.cost(self) <= self.action_points.current
+
+        else:
+            return False
 
     def request_action_choice(self):
         action_types = ActionCompendium.all_available_to(self)
@@ -179,50 +201,6 @@ class Fighter:
             self.owner.is_dead = True
 
             result.update(**{"dead": self})
-
-        return result
-
-    def attack(self, target: Entity | None = None) -> Event:
-        result = {}
-        if self.owner.is_dead:
-            raise ValueError(f"{self.owner.name=}: I'm dead jim.")
-
-        if target.is_dead:
-            raise ValueError(f"{target.name=}: He's dead jim.")
-
-        my_name = self.owner.name.name_and_title
-
-        target_name = target.name.name_and_title
-
-        succesful_hit: int = self.power - target.fighter.defence
-        result.update({"attack": self.owner})
-
-        if not self.in_combat:
-            self.set_in_combat = True
-
-        if not target.fighter.in_combat:
-            target.fighter.set_in_combat = True
-
-        if succesful_hit > 0:
-            actual_damage = int(
-                2 * self.power**2 / (self.power + target.fighter.defence)
-            )
-
-            result.update(
-                **{"message": f"{my_name} hits {target_name} for {actual_damage}\n"}
-            )
-
-            if target.fighter.hp - actual_damage <= 0:
-                # If the attack will kill, we will no longer be "in combat" until the next attack.
-                self.set_in_combat = False
-
-            result.update(**target.fighter.take_damage(actual_damage))
-
-        else:
-            result.update(**{"message": f"{my_name} fails to hit {target_name}!"})
-
-            if not self.is_enemy:
-                self.commence_retreat()
 
         return result
 

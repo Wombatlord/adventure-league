@@ -44,7 +44,7 @@ def syllables(min_syls=1, max_syls=3, syl_func: Callable[[], str] | None = None)
     word = []
     for _ in range(random.randint(min_syls, max_syls)):
         word += [syl_func()]
-
+    word = "".join(word)
     return word
 
 

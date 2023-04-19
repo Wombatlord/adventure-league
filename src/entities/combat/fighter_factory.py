@@ -1,3 +1,4 @@
+import random
 from copy import deepcopy
 from random import randint
 from typing import Callable, NamedTuple, Self
@@ -49,6 +50,7 @@ class StatBlock(NamedTuple):
     power: tuple[int, int]
     is_enemy: bool
     speed: int
+    roles: str
     is_boss: bool = False
     species: str = "human"
 
@@ -61,14 +63,24 @@ class StatBlock(NamedTuple):
             "hp": randint(*self.hp),
             "defence": randint(*self.defence),
             "power": randint(*self.power),
+            "max_range": randint(2, 4),
+            "role": random.choice(self.roles),
             "is_enemy": self.is_enemy,
             "speed": self.speed,
             "is_boss": self.is_boss,
         }
 
 
+_roles = ["melee", "ranged"]
+_enemy_roles = ["melee"]
 _mercenary = StatBlock(
-    hp=(25, 25), defence=(1, 3), power=(3, 5), speed=3, is_enemy=False, is_boss=False
+    hp=(25, 25),
+    defence=(1, 3),
+    power=(3, 5),
+    speed=3,
+    roles=_roles,
+    is_enemy=False,
+    is_boss=False,
 )
 _monster = StatBlock(
     species=Species.SLIME,
@@ -76,6 +88,7 @@ _monster = StatBlock(
     defence=(1, 3),
     power=(1, 3),
     speed=1,
+    roles=_enemy_roles,
     is_enemy=True,
     is_boss=False,
 )
@@ -85,11 +98,18 @@ _goblin = StatBlock(
     defence=(1, 3),
     power=(2, 4),
     speed=2,
+    roles=_enemy_roles,
     is_enemy=True,
     is_boss=False,
 )
 _boss = StatBlock(
-    hp=(30, 30), defence=(2, 4), power=(2, 4), speed=1, is_enemy=True, is_boss=True
+    hp=(30, 30),
+    defence=(2, 4),
+    power=(2, 4),
+    speed=1,
+    roles=_enemy_roles,
+    is_enemy=True,
+    is_boss=True,
 )
 
 MOB_TEXTURE_MAPPING = {

@@ -55,7 +55,7 @@ class ActionsTest(unittest.TestCase):
 
     def test_action_compendium_has_registered_all_actions(self):
         # Arrange
-        keys = {"end turn", "attack", "use item", "move"}
+        keys = {"end turn", "attack", "ranged attack", "use item", "move"}
         actions = ActionCompendium.all_actions
 
         # Assert
