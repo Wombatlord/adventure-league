@@ -6,6 +6,7 @@ import src.engine.init_engine as _
 from src import config
 from src.gui.title import TitleView
 from src.gui.window_data import WindowData
+from src.utils.proc_gen import constraints
 
 
 def start_adventure_league():
@@ -22,6 +23,9 @@ def start_adventure_league():
     window.set_minimum_size(1080, 720)
     title_view = TitleView(window=window)
     window.show_view(title_view)
+
+    # load wordlists
+    constraints.load()
     arcade.run()
 
 

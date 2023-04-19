@@ -1,4 +1,5 @@
 import hashlib
+import string
 
 HashList = list[bytes]
 
@@ -13,7 +14,26 @@ def get_hashes() -> HashList:
     return hashlist
 
 
-_disallowed_list = get_hashes()
+_disallowed_list = []
+
+
+def load():
+    global _disallowed_list
+    _disallowed_list = get_hashes()
+
+
+def sanitize_char(text: str, char: str) -> bytes:
+    return b"".join([substr.encode() for substr in text.split(char)])
+
+
+def keep_allowed(text: bytes, allowed_chars: str) -> bytes:
+    text_str = text.decode()
+    to_remove = set(text_str) - set(allowed_chars)
+    result = text
+    for removal in to_remove:
+        result = sanitize_char(result.decode(), removal)
+
+    return result
 
 
 def check(s: str, disallowed_hashes: HashList | None = None) -> bool:
@@ -22,15 +42,13 @@ def check(s: str, disallowed_hashes: HashList | None = None) -> bool:
     if disallowed_hashes is None:
         disallowed_hashes = _disallowed_list
 
-    combined = "".join(s)
-    final = combined.lower()
+    sanitized_token = keep_allowed(s.lower().encode(), string.ascii_lowercase + " ")
 
-    return allowed_token(final, disallowed_hashes)
+    return allowed_token(sanitized_token, disallowed_hashes)
 
 
-def allowed_token(token: str, disallowed_hashes: HashList) -> bool:
-    as_bytes = str.encode(token)
-    hashed = hashlib.sha256(as_bytes)
+def allowed_token(token: bytes, disallowed_hashes: HashList) -> bool:
+    hashed = hashlib.sha256(token)
 
     if hashed.digest() in disallowed_hashes:
         return False
