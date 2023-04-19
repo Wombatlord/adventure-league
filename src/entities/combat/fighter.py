@@ -45,19 +45,20 @@ class Fighter:
 
     def __init__(
         self,
-        is_enemy: bool,
+        role: str,
         hp: int = 0,
         defence: int = 0,
         power: int = 0,
-        max_range: int = 0,
         level: int = 0,
-        action_options: list = ["move", "attack", "ranged attack","use item", "end turn"],
-        xp_reward: int = 0,
-        current_xp: int = 0,
+        max_range: int = 0,
         speed: int = 0,
+        current_xp: int = 0,
+        is_enemy: bool = False,
         is_boss: bool = False,
     ) -> None:
         self.owner: Optional[Entity] = None
+        # -----Stats-----
+        self.role = role
         self.max_hp = hp
         self.hp = hp
         self.defence = defence
@@ -65,21 +66,22 @@ class Fighter:
         self.level = level
         self.max_range = max_range
         self.speed = speed
-        self.action_options = action_options
-        self.xp_reward = xp_reward
         self.current_xp = current_xp
-        self.retreating = False
+        self.action_points = ActionPoints()
+        # -----State-----
+        self.action_options = None
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
+        self.retreating = False
         self._target = None
         self._prev_target = None
         self._in_combat = False
         self._current_item = None
         self._forfeit_turn = False
-        self.action_points = ActionPoints()
         self._readied_action = None
         self._encounter_context = EncounterContext(self)
+        self.set_action_options()
 
     def set_owner(self, owner: Entity) -> Self:
         self.owner = owner
@@ -104,6 +106,18 @@ class Fighter:
                 result[k] = v
 
         return result
+
+    def set_action_options(self):
+        print(self.role)
+        match self.role:
+            case "melee":
+                self.action_options = ["move", "attack", "use item", "end turn"]
+
+            case "ranged":
+                self.action_options = ["move", "ranged attack", "use item", "end turn"]
+
+            case _:
+                self.action_options = ["end turn"]
 
     def ready_action(self, action: BaseAction) -> bool:
         self._readied_action = action
