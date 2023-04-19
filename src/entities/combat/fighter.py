@@ -108,7 +108,6 @@ class Fighter:
         return result
 
     def set_action_options(self):
-        print(self.role)
         match self.role:
             case "melee":
                 self.action_options = ["move", "attack", "use item", "end turn"]
