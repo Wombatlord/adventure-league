@@ -114,6 +114,46 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
         yield from self.execute(self.fighter, self.target)
 
 
+class ProjectileAttack(BaseAction, metaclass=ActionMeta):
+    name = "ranged attack"
+
+    @classmethod
+    def cost(cls, fighter: Fighter) -> int:
+        return fighter.action_points.current
+
+    @classmethod
+    def execute(cls, fighter: Fighter, target: Fighter) -> Generator[Event]:
+        fighter.action_points.deduct_cost(cls.cost(fighter))
+        yield fighter.projectile_attack(target=target.owner)
+
+    @classmethod
+    def details(cls, fighter: Fighter, target: Fighter) -> dict:
+        return {
+            **ActionMeta.details(cls, fighter),
+            "on_confirm": lambda: fighter.ready_action(cls(fighter, target)),
+            "subject": target,
+            "label": f"{target.owner.name}",
+        }
+
+    @classmethod
+    def all_available_to(cls, fighter: Fighter) -> list[dict]:
+        return [
+            cls.details(fighter, occupant.fighter)
+            for occupant in fighter.locatable.entities_in_range(
+                room=fighter.encounter_context.get(),
+                max_range=3,
+                entity_filter=lambda e: fighter.is_enemy_of(e.fighter),
+            )
+        ]
+
+    def __init__(self, fighter: Fighter, target: Fighter) -> None:
+        self.fighter = fighter
+        self.target = target
+
+    def __call__(self) -> Generator[Event]:
+        yield from self.execute(self.fighter, self.target)
+
+
 class MoveAction(BaseAction, metaclass=ActionMeta):
     name = "move"
 

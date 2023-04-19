@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from random import randint
 from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
 from src.entities.action.actions import (
@@ -170,6 +170,9 @@ class Fighter:
         is_incapacitated = self.owner.is_dead or self.retreating
         return is_incapacitated
 
+    def roll_to_hit(self):
+        return randint(0, 20) + self.power
+    
     def take_damage(self, amount) -> Event:
         result = {}
         self.hp -= amount
@@ -182,7 +185,7 @@ class Fighter:
 
         return result
 
-    def attack(self, target: Entity | None = None) -> Event:
+    def attack(self, target: Entity) -> Event:
         result = {}
         if self.owner.is_dead:
             raise ValueError(f"{self.owner.name=}: I'm dead jim.")
@@ -198,7 +201,7 @@ class Fighter:
         result.update({"attack": self.owner})
 
         if not self.in_combat:
-            self.set_in_combat = True
+            self.in_combat = True
 
         if not target.fighter.in_combat:
             target.fighter.set_in_combat = True
@@ -214,7 +217,7 @@ class Fighter:
 
             if target.fighter.hp - actual_damage <= 0:
                 # If the attack will kill, we will no longer be "in combat" until the next attack.
-                self.set_in_combat = False
+                self.in_combat = False
 
             result.update(**target.fighter.take_damage(actual_damage))
 
@@ -226,6 +229,40 @@ class Fighter:
 
         return result
 
+    def projectile_attack(self, target: Entity):
+        result = {}
+        if self.owner.is_dead:
+            raise ValueError(f"{self.owner.name=}: I'm dead jim.")
+
+        if target.is_dead:
+            raise ValueError(f"{target.name=}: He's dead jim.")
+
+        my_name = self.owner.name.name_and_title
+
+        target_name = target.name.name_and_title
+
+        successful_hit = self.roll_to_hit()
+        result.update({"attack": self.owner})
+        
+        if successful_hit > target.fighter.defence:
+            actual_damage = int(
+                2 * self.power**2 / (self.power + target.fighter.defence)
+            )
+
+            result.update(
+                **{"message": f"{my_name} fires at {target_name}! The shot lands for {actual_damage}!\n"}
+            )
+
+            result.update(**target.fighter.take_damage(actual_damage))
+        
+        else:
+            result.update(**{"message": f"{my_name} missed {target_name}!"})
+
+            if not self.is_enemy:
+                self.commence_retreat()
+
+        return result
+        
     def consume_item(self, item: Consumable) -> Generator[Event, None, None]:
         yield item.consume(self.owner.inventory)
 
