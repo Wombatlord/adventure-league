@@ -43,7 +43,7 @@ def check(s: str, disallowed_hashes: HashList | None = None) -> bool:
         disallowed_hashes = _disallowed_list
 
     sanitized_token = keep_allowed(
-        "".join(s).lower().encode(), string.ascii_lowercase + " "
+        s.lower().encode(), string.ascii_lowercase + " "
     )
 
     return allowed_token(sanitized_token, disallowed_hashes)
