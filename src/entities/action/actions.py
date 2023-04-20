@@ -116,7 +116,7 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
         yield from self.execute(self.fighter, self.target)
 
 
-class ProjectileAttack(BaseAction, metaclass=ActionMeta):
+class ProjectileAttackAction(BaseAction, metaclass=ActionMeta):
     name = "ranged attack"
 
     @classmethod
