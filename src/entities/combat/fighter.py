@@ -1,22 +1,16 @@
 from __future__ import annotations
 
+from random import randint
 from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
 from src.entities.action.actions import (
     ActionCompendium,
     ActionMeta,
     ActionPoints,
-    AttackAction,
     BaseAction,
-    ConsumeItemAction,
-    EndTurnAction,
-    MoveAction,
-    ProjectileAttackAction,
 )
-from src.entities.combat.archetypes import FighterArchetype
 from src.entities.entity import Entity
 from src.entities.item.inventory import Consumable, Inventory
-from src.entities.magic.caster import Caster, MagicAction
 from src.world.node import Node
 
 if TYPE_CHECKING:
@@ -59,7 +53,6 @@ class Fighter:
         max_range: int = 0,
         speed: int = 0,
         current_xp: int = 0,
-        caster: Caster = None,
         is_enemy: bool = False,
         is_boss: bool = False,
     ) -> None:
@@ -74,9 +67,8 @@ class Fighter:
         self.max_range = max_range
         self.speed = speed
         self.current_xp = current_xp
-        # -----State-----
         self.action_points = ActionPoints()
-        self.caster = caster
+        # -----State-----
         self.action_options = None
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
@@ -116,22 +108,15 @@ class Fighter:
         return result
 
     def set_action_options(self):
-        defaults = [MoveAction, ConsumeItemAction, EndTurnAction]
-
         match self.role:
-            case FighterArchetype.MELEE:
-                optional = [AttackAction]
+            case "melee":
+                self.action_options = ["move", "attack", "use item", "end turn"]
 
-            case FighterArchetype.RANGED:
-                optional = [ProjectileAttackAction]
-
-            case FighterArchetype.CASTER:
-                optional = [AttackAction, MagicAction]
+            case "ranged":
+                self.action_options = ["move", "ranged attack", "use item", "end turn"]
 
             case _:
-                optional = []
-
-        self.action_options = defaults + optional
+                self.action_options = ["end turn"]
 
     def ready_action(self, action: BaseAction) -> bool:
         self._readied_action = action
@@ -149,7 +134,7 @@ class Fighter:
         yield from action
 
     def does(self, action: ActionMeta) -> bool:
-        if action in self.action_options:
+        if action.name in self.action_options:
             return action.cost(self) <= self.action_points.current
 
         else:
