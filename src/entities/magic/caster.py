@@ -205,10 +205,8 @@ class Caster:
             return False
 
 
-SpellFactory = Callable[[Caster], Spell]
-
-
 # This is what I understood to be the implication of "Factory"
+SpellFactory = Callable[[Caster], Spell]
 class SpellStatBlock(NamedTuple):
     spell: Spell
     name: str
