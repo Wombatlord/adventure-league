@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-import abc
-from typing import TYPE_CHECKING, Any, Callable, Generator, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 from src.entities.action.actions import ActionMeta, BaseAction
+from src.entities.magic.spells import EffectType, Spell
 from src.world.node import Node
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
+    from src.entities.magic.spells import Spell, SpellFactory
+
+Event = dict[str, Any]
 
 
 class MagicAction(BaseAction, metaclass=ActionMeta):
@@ -19,14 +22,22 @@ class MagicAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def execute(
-        cls, fighter: Fighter, target: Fighter, spell: Spell
+        cls, fighter: Fighter, target: Fighter | Node, spell: Spell
     ) -> Generator[Event]:
         if fighter.caster.mp_pool.can_cast(spell) and fighter.caster.mp_pool.can_spend(
             spell.mp_cost
         ):
             fighter.action_points.deduct_cost(cls.cost(fighter))
             fighter.caster.mp_pool.spend(spell.mp_cost)
-            yield spell.cast(fighter, target=target.owner)
+
+            match spell.effect_type:
+                case EffectType.SELF:
+                    yield spell.self_cast()
+                case EffectType.ENTITY:
+                    yield spell.entity_cast(fighter, target=target.owner)
+                case EffectType.AOE:
+                    template = spell.aoe_at_node(target)
+                    yield spell.aoe_cast(targets=template.shape)
 
         else:
             yield {"message": f"Not enough mana to cast {spell.name}!"}
@@ -57,87 +68,6 @@ class MagicAction(BaseAction, metaclass=ActionMeta):
 
     def __call__(self) -> Generator[Event]:
         yield from self.execute(self.fighter, self.target)
-
-
-Event = dict[str, Any]
-
-
-class AoETemplate(NamedTuple):
-    anchor: Node
-    shape: tuple[Node]
-
-
-class Spell(metaclass=abc.ABCMeta):
-    # MAGIC MISSLE
-    # FIREBALL
-    # BUFF
-    mp_cost: int = 0
-    name: str = ""
-    max_range: int = 0
-    _caster: Caster
-
-    def __init__(self, caster: Caster):
-        self._caster = caster
-        self._target = None
-
-    # This seems a duplicate of MagicAction as the point of interaction with the downstream.
-    @abc.abstractmethod
-    def get_details(self) -> dict:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def cast(self) -> Event:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def valid_target(self, target: Node | Fighter) -> bool:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def aoe_at_node(self, node: Node) -> AoETemplate | None:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def is_self_target(self) -> bool:
-        raise NotImplementedError()
-
-
-class MagicMissle(Spell):
-    name: str
-    mp_cost: int
-    base_damage: int
-    max_range: int
-
-    def __init__(self, caster: Caster, name, mp_cost, base_damage, max_range):
-        super().__init__(caster=caster)
-        self.caster = caster
-        self.name = name
-        self.mp_cost = mp_cost
-        self.base_damage = base_damage
-        self.max_range = max_range
-
-    # Is this the intention for this method rather than as in MagicAction?
-    def get_details(self, target) -> dict:
-        return {
-            "on_confirm": lambda: self.cast(target),
-            "subject": target,
-            "label": self.name,
-        }
-
-    def cast(self, target) -> Event:
-        return {"message": "cast magic missile"}
-
-    def valid_target(self, target: Fighter) -> bool:
-        if target.is_enemy_of(self.caster.owner):
-            return True
-        else:
-            return False
-
-    def aoe_at_node(self, node: Node | None = None) -> AoETemplate | None:
-        return None
-
-    def is_self_target(self) -> bool:
-        return False
 
 
 class MpPool:
@@ -205,69 +135,19 @@ class Caster:
             return False
 
 
-SpellFactory = Callable[[Caster], Spell]
-
-
-# This is what I understood to be the implication of "Factory"
-class SpellStatBlock(NamedTuple):
-    spell: Spell
-    name: str
-    mp_cost: int
-    damage: int
-    max_range: int
-
-    @property
-    def factory(self) -> SpellFactory:
-        return get_spell_factory(self)
-
-    def spell_conf(self) -> dict:
-        return {
-            "name": self.name,
-            "mp_cost": self.mp_cost,
-            "damage": self.damage,
-            "max_range": self.max_range,
-        }
-
-
-def get_spell_factory(stats: SpellStatBlock) -> SpellFactory:
-    def _from_conf(spell_conf: dict) -> Spell:
-        spell = stats.spell
-        return spell(**spell_conf)
-
-    def factory(caster):
-        conf = stats.spell_conf()
-        spell = _from_conf(conf)
-        spell.caster = caster
-
-        return spell
-
-    return factory
-
-
-_magic_missile = SpellStatBlock(
-    spell=MagicMissle,
-    name="magic missile",
-    mp_cost=1,
-    damage=5,
-)
-create_magic_missile = _magic_missile.factory
-
-# example
-basic_spell_book = [create_magic_missile]
-
-event = {
-    "choices": {
-        "move": [],
-        "cast spell": {
-            [
-                {
-                    "label": "magic missile",
-                    "mp_cost": 1,
-                    "valid_target": lambda target: False,
-                    "aoe_template": lambda anchor: AoETemplate(anchor, (anchor,)),
-                    "on_confirm": MagicMissle().cast(),
-                }
-            ],
-        },
-    },
-}
+# event = {
+#     "choices": {
+#         "move": [],
+#         "cast spell": {
+#             [
+#                 {
+#                     "label": "magic missile",
+#                     "mp_cost": 1,
+#                     "valid_target": lambda target: False,
+#                     "aoe_template": lambda anchor: "AoETemplate(anchor, (anchor,))",
+#                     "on_confirm": "MagicMissile().cast()",
+#                 }
+#             ],
+#         },
+#     },
+# }

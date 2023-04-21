@@ -9,14 +9,4 @@ class FighterArchetype(Enum):
 
     @classmethod
     def random_archetype(cls):
-        selection = random.randint(0, 1)
-
-        match selection:
-            case 0:
-                return cls.MELEE
-
-            case 1:
-                return cls.RANGED
-
-            case 2:
-                return cls.CASTER
+        return random.choice([*cls])

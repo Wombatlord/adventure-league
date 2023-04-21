@@ -68,6 +68,7 @@ class Fighter:
         self.role = role
         self.max_hp = hp
         self.hp = hp
+        self.bonus_health = 0
         self.defence = defence
         self.power = power
         self.level = level
@@ -209,7 +210,18 @@ class Fighter:
 
     def take_damage(self, amount) -> Event:
         result = {}
-        self.hp -= amount
+
+        if self.bonus_health > 0:
+            delta = self.bonus_health - amount
+            applied = max(delta, self.bonus_health)
+            self.bonus_health -= applied
+            if self.delta < 0:
+                breakthrough = delta - applied
+                self.hp -= abs(breakthrough)
+
+        elif self.bonus_health <= 0:
+            self.hp -= amount
+
         result.update(**self.owner.annotate_event({}))
         if self.hp <= 0:
             self.hp = 0
