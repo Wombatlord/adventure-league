@@ -134,7 +134,7 @@ def select_textures(species: str, fighter: Fighter) -> AnimatedSpriteConfig:
 
 def _setup_fighter_archetypes(fighter: Fighter):
     if not fighter.is_enemy:
-        fighter.role = FighterArchetype.random_archetype()
+        fighter.set_role(FighterArchetype.random_archetype())
 
     match fighter.role:
         case FighterArchetype.MELEE:

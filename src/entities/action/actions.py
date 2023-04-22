@@ -32,11 +32,14 @@ class ActionCompendium:
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> dict[str, ActionMeta]:
-        return {
-            name: action
-            for name, action in cls.all_actions.items()
-            if fighter.does(action)
-        }
+        try:
+            return {
+                name: action
+                for name, action in cls.all_actions.items()
+                if fighter.does(action)
+            }
+        except Exception as e:
+            breakpoint()
 
 
 class ActionMeta(type):

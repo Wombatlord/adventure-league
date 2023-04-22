@@ -51,7 +51,7 @@ class Fighter:
 
     def __init__(
         self,
-        role: str,
+        role: FighterArchetype,
         hp: int = 0,
         defence: int = 0,
         power: int = 0,
@@ -63,9 +63,11 @@ class Fighter:
         is_enemy: bool = False,
         is_boss: bool = False,
     ) -> None:
+        if role is None:
+            raise TypeError("The role cannot be None")
         self.owner: Optional[Entity] = None
         # -----Stats-----
-        self.role = role
+        self.set_role(role)
         self.max_hp = hp
         self.hp = hp
         self.bonus_health = 0
@@ -78,18 +80,17 @@ class Fighter:
         # -----State-----
         self.action_points = ActionPoints()
         self.caster = caster
-        self.action_options = None
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
         self.retreating = False
-        self._target = None
-        self._prev_target = None
         self._in_combat = False
-        self._current_item = None
-        self._forfeit_turn = False
         self._readied_action = None
         self._encounter_context = EncounterContext(self)
+        
+    def set_role(self, role: FighterArchetype):
+        self.role = role
+        self.set_action_options()
 
     def set_owner(self, owner: Entity) -> Self:
         self.owner = owner
@@ -117,7 +118,6 @@ class Fighter:
 
     def set_action_options(self):
         defaults = [MoveAction, AttackAction, ConsumeItemAction, EndTurnAction]
-
         match self.role:
             case FighterArchetype.MELEE:
                 optional = []
