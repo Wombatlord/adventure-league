@@ -165,7 +165,6 @@ class CombatView(arcade.View):
                     lambda: self.combat_grid_section.show_path(
                         self.selection.current()["subject"]
                     ),
-                    lambda: self.combat_grid_section.show_mouse_sprite(),
                 )
             ),
             call_now=False,
@@ -176,7 +175,6 @@ class CombatView(arcade.View):
                     (
                         self.selection.current()["on_confirm"],
                         lambda: self.combat_grid_section.hide_path(),
-                        lambda: self.combat_grid_section.hide_mouse_sprite(),
                         lambda: self.combat_grid_section.reset_mouse_selection(),
                         lambda: self.combat_grid_section.disarm_click(),
                         lambda: self.reset_input_mode(),
@@ -206,7 +204,6 @@ class CombatView(arcade.View):
                         lambda: self.combat_grid_section.show_path(
                             self.selection.current()["subject"]
                         ),
-                        lambda: self.combat_grid_section.show_mouse_sprite(),
                         lambda: self.combat_grid_section.arm_click(
                             lambda: self.selection.confirm() or None
                         ),

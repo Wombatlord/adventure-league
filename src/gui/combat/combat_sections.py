@@ -16,6 +16,7 @@ from src.utils.functional import call_in_order
 from src.world.isometry.transforms import Transform
 from src.world.level.room import Room
 from src.world.node import Node
+from src.gui.combat.highlight import HighlightLayer
 
 
 def do_nothing():
@@ -68,14 +69,32 @@ class CombatGridSection(arcade.Section):
             absolute_scale=self.SPRITE_SCALE,
             translation=Vec2(self.width, self.height) / 2,
         )
-        self.mouse_sprite: BaseSprite | None = None
-        self.all_path_sprites = self.init_path()
         self.debug_text = ""
         self.combat_menu = None
-        self.last_mouse_node = [Node(0, 0), Node(0, 0)]
-        self.world_sprite_list.append(self.mouse_sprite)
-        self.mouse_selection = lambda n: False
+        self.last_mouse_node = Node(0, 0)
 
+        self.mouse_selection = lambda n: False
+        
+        # Selection Highlight Layers
+        self.highlight_layer_gold_edge = HighlightLayer(
+            texture=SpriteSheetSpecs.indicators.loaded[SelectionCursor.GOLD_EDGE],
+            offset=(0, 3.5),
+            scale=self.SPRITE_SCALE,
+            transform=self.transform,
+        ).attach_display(self.world_sprite_list)
+        self.highlight_layer_green = HighlightLayer(
+            texture=SpriteSheetSpecs.indicators.loaded[SelectionCursor.GREEN],
+            offset=(0, 4.5),
+            scale=self.SPRITE_SCALE,
+            transform=self.transform,
+        ).attach_display(self.world_sprite_list)
+        self.highlight_layer_red = HighlightLayer(
+            texture=SpriteSheetSpecs.indicators.loaded[SelectionCursor.RED],
+            offset=(0, 4.5),
+            scale=self.SPRITE_SCALE,
+            transform=self.transform,
+        ).attach_display(self.world_sprite_list)
+        
     def reset_mouse_selection(self):
         self.mouse_selection = lambda n: False
 
@@ -118,70 +137,24 @@ class CombatGridSection(arcade.Section):
             handler=self.clear_retreating_sprites,
         )
 
-    def init_path(self) -> arcade.SpriteList:
-        selected_path_sprites = arcade.SpriteList()
-        start_sprite = BaseSprite(
-            SpriteSheetSpecs.indicators.loaded[SelectionCursor.GREEN],
-            scale=self.SPRITE_SCALE,
-            transform=self.transform,
-            draw_priority_offset=0.1,
-        ).offset_anchor((0, 4.5))
-        selected_path_sprites.append(start_sprite)
-
-        main_path_tex = SpriteSheetSpecs.indicators.loaded[SelectionCursor.GOLD_EDGE]
-        for _ in range(1, 19):
-            sprite = BaseSprite(
-                main_path_tex,
-                scale=self.SPRITE_SCALE,
-                transform=self.transform,
-                draw_priority_offset=0.1,
-            ).offset_anchor((0, 3.5))
-
-            selected_path_sprites.append(sprite)
-
-        end_sprite = BaseSprite(
-            SpriteSheetSpecs.indicators.loaded[SelectionCursor.RED],
-            scale=self.SPRITE_SCALE,
-            transform=self.transform,
-            draw_priority_offset=0.1,
-        ).offset_anchor((0, 4.5))
-        self.mouse_sprite = end_sprite
-
-        selected_path_sprites.append(end_sprite)
-
-        return selected_path_sprites
-
     def show_path(self, current: tuple[Node] | None) -> None:
         if not current:
             return
-        head = (0,)
-        body = tuple(range(1, len(current) - 1))
-        tail = (19,)
-        rest = range(len(current) - 1, 19)
+ 
+        self.highlight_layer_green.set_visible_nodes(current[:1])
+        self.highlight_layer_gold_edge.set_visible_nodes(current[1:-1])
+        self.highlight_layer_red.set_visible_nodes(current[-1:])
 
-        visible = [*head, *body, *tail]
-        invisible = rest
-
-        for i, sprite in enumerate(self.all_path_sprites):
-            if i in visible:
-                node_idx = i if i in head + body else -1
-                node = current[node_idx]
-                sprite.set_node(node)
-                if sprite not in self.world_sprite_list:
-                    self.world_sprite_list.append(sprite)
-
-            elif i in invisible:
-                sprite.visible = True
-                if sprite in self.world_sprite_list:
-                    self.world_sprite_list.remove(sprite)
+        self.highlight_layer_green.show_visible()
+        self.highlight_layer_gold_edge.show_visible()
+        self.highlight_layer_red.show_visible()
 
         self.refresh_draw_order()
 
     def hide_path(self):
-        for sprite in self.all_path_sprites:
-            if sprite in self.world_sprite_list:
-                self.world_sprite_list.remove(sprite)
-
+        self.highlight_layer_green.hide_all()
+        self.highlight_layer_gold_edge.hide_all()
+        self.highlight_layer_red.hide_all()
         self.refresh_draw_order()
 
     def refresh_draw_order(self):
@@ -243,12 +216,6 @@ class CombatGridSection(arcade.Section):
                 width=self.width,
             ).draw()
 
-        # if eng.awaiting_input:
-        #     self.combat_screen.draw_turn_prompt()
-
-        # if not eng.mission_in_progress:
-        #     self.combat_screen.draw_turn_prompt()
-
         self.combat_screen.draw_message()
         self.combat_screen.draw_stats()
 
@@ -265,9 +232,12 @@ class CombatGridSection(arcade.Section):
         if encounter_room:
             self.encounter_room = encounter_room
             self.level_to_sprite_list()
-            self.world_sprite_list.append(self.mouse_sprite)
             self.prepare_dude_sprites()
             self.update_dudes(event)
+
+        self.highlight_layer_red.set_room(self.encounter_room)
+        self.highlight_layer_green.set_room(self.encounter_room)
+        self.highlight_layer_gold_edge.set_room(self.encounter_room)
 
     def level_to_sprite_list(self):
         self.world_sprite_list.clear()
@@ -355,19 +325,9 @@ class CombatGridSection(arcade.Section):
     def set_mouse_node(self, node: Node):
         if self.mouse_selection(node):
             self.last_mouse_node = node
-            self.mouse_sprite.set_node(node)
 
     def mouse_node_has_changed(self, new_node: Node) -> bool:
         return self.last_mouse_node != new_node
-
-    def get_mouse_sprite(self) -> BaseSprite:
-        return self.mouse_sprite
-
-    def show_mouse_sprite(self):
-        self.mouse_sprite.visible = True
-
-    def hide_mouse_sprite(self):
-        self.mouse_sprite.visible = False
 
     def disarm_click(self):
         self.on_left_clickup = lambda *_: None

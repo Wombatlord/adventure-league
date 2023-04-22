@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Self
 
 import arcade
 from pyglet.math import Vec2
@@ -41,7 +41,7 @@ class HighlightLayer:
         self._sprite_refs = {}
         self._visible_nodes = set()
 
-    def attach_display(self, sprite_list: arcade.SpriteList):
+    def attach_display(self, sprite_list: arcade.SpriteList) -> Self:
         """
         This should be invoked once in the lifecycle of a layer during setup
         """
@@ -51,6 +51,8 @@ class HighlightLayer:
         if self._room:
             self._setup_sprites()
 
+        return self
+    
     def set_room(self, room: Room):
         """
         Call this when the room layout changes
@@ -73,7 +75,7 @@ class HighlightLayer:
 
         to_check = {*self._sprite_refs.keys()}
         for node in self._room.space.all_included_nodes(exclude_dynamic=False):
-            to_check.remove(node)
+            to_check -= {node}
             if highlight := self._sprite_refs.get(node, self._build_tile()):
                 if highlight in self._sprite_list:
                     continue
