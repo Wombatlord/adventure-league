@@ -12,6 +12,8 @@ from src.world.pathing.pathing_space import PathingSpace
 
 
 class Room:
+    space: PathingSpace | None
+
     def __init__(self, size: tuple[int, int] = (10, 10)) -> None:
         self.layout = None
         self.space = None
