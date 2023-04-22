@@ -8,6 +8,7 @@ from src.engine.init_engine import eng
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
 from src.gui.combat.combat_components import CombatScreen
+from src.gui.combat.highlight import HighlightLayer
 from src.gui.components.menu import Menu
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs
@@ -16,7 +17,6 @@ from src.utils.functional import call_in_order
 from src.world.isometry.transforms import Transform
 from src.world.level.room import Room
 from src.world.node import Node
-from src.gui.combat.highlight import HighlightLayer
 
 
 def do_nothing():
@@ -74,7 +74,7 @@ class CombatGridSection(arcade.Section):
         self.last_mouse_node = Node(0, 0)
 
         self.mouse_selection = lambda n: False
-        
+
         # Selection Highlight Layers
         self.highlight_layer_gold_edge = HighlightLayer(
             texture=SpriteSheetSpecs.indicators.loaded[SelectionCursor.GOLD_EDGE],
@@ -94,7 +94,7 @@ class CombatGridSection(arcade.Section):
             scale=self.SPRITE_SCALE,
             transform=self.transform,
         ).attach_display(self.world_sprite_list)
-        
+
     def reset_mouse_selection(self):
         self.mouse_selection = lambda n: False
 
@@ -140,10 +140,29 @@ class CombatGridSection(arcade.Section):
     def show_path(self, current: tuple[Node] | None) -> None:
         if not current:
             return
- 
-        self.highlight_layer_green.set_visible_nodes(current[:1])
-        self.highlight_layer_gold_edge.set_visible_nodes(current[1:-1])
-        self.highlight_layer_red.set_visible_nodes(current[-1:])
+
+        self.show_highlight(
+            green=current[:1],
+            gold=current[1:-1],
+            red=current[-1:],
+        )
+
+    def show_spell_template(self, template: list[Node]):
+        self.show_highlight(red=template)
+
+    def show_highlight(
+        self,
+        green: list[Node] | None = None,
+        gold: list[Node] | None = None,
+        red: list[Node] | None = None,
+    ):
+        green = green or []
+        gold = gold or []
+        red = red or []
+
+        self.highlight_layer_green.set_visible_nodes(green)
+        self.highlight_layer_gold_edge.set_visible_nodes(gold)
+        self.highlight_layer_red.set_visible_nodes(red)
 
         self.highlight_layer_green.show_visible()
         self.highlight_layer_gold_edge.show_visible()
@@ -152,6 +171,9 @@ class CombatGridSection(arcade.Section):
         self.refresh_draw_order()
 
     def hide_path(self):
+        self.hide_highlight()
+
+    def hide_highlight(self):
         self.highlight_layer_green.hide_all()
         self.highlight_layer_gold_edge.hide_all()
         self.highlight_layer_red.hide_all()
@@ -322,9 +344,12 @@ class CombatGridSection(arcade.Section):
         if self.mouse_node_has_changed(node):
             self.set_mouse_node(node)
 
+    def get_mouse_node(self) -> Node | None:
+        return self.last_mouse_node
+
     def set_mouse_node(self, node: Node):
-        if self.mouse_selection(node):
-            self.last_mouse_node = node
+        self.last_mouse_node = node
+        self.view.on_hovered_node_change()
 
     def mouse_node_has_changed(self, new_node: Node) -> bool:
         return self.last_mouse_node != new_node

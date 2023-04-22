@@ -52,7 +52,7 @@ class HighlightLayer:
             self._setup_sprites()
 
         return self
-    
+
     def set_room(self, room: Room):
         """
         Call this when the room layout changes
