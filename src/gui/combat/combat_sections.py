@@ -72,7 +72,7 @@ class CombatGridSection(arcade.Section):
         self.all_path_sprites = self.init_path()
         self.debug_text = ""
         self.combat_menu = None
-        self.last_mouse_nodes = [Node(0, 0), Node(0, 0)]
+        self.last_mouse_node = [Node(0, 0), Node(0, 0)]
         self.world_sprite_list.append(self.mouse_sprite)
         self.mouse_selection = lambda n: False
 
@@ -354,11 +354,11 @@ class CombatGridSection(arcade.Section):
 
     def set_mouse_node(self, node: Node):
         if self.mouse_selection(node):
-            self.last_mouse_nodes = [node, self.last_mouse_nodes[0]]
+            self.last_mouse_node = node
             self.mouse_sprite.set_node(node)
 
     def mouse_node_has_changed(self, new_node: Node) -> bool:
-        return self.last_mouse_nodes[0] != new_node
+        return self.last_mouse_node != new_node
 
     def get_mouse_sprite(self) -> BaseSprite:
         return self.mouse_sprite

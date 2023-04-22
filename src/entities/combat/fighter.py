@@ -11,13 +11,13 @@ from src.entities.action.actions import (
     ConsumeItemAction,
     EndTurnAction,
     MoveAction,
-    ProjectileAttackAction,
 )
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.entity import Entity
 from src.entities.item.inventory import Consumable, Inventory
 from src.entities.magic.caster import Caster, MagicAction
 from src.world.node import Node
+from src.world.ray import Ray
 
 if TYPE_CHECKING:
     from src.world.level.room import Room
@@ -37,7 +37,7 @@ class EncounterContext:
             lambda e: e.fighter.encounter_context.clear()
         )
 
-    def get(self) -> Room:
+    def get(self) -> Room | None:
         return self.encounter_context
 
     def clear(self):
@@ -90,7 +90,6 @@ class Fighter:
         self._forfeit_turn = False
         self._readied_action = None
         self._encounter_context = EncounterContext(self)
-        self.set_action_options()
 
     def set_owner(self, owner: Entity) -> Self:
         self.owner = owner
@@ -117,17 +116,17 @@ class Fighter:
         return result
 
     def set_action_options(self):
-        defaults = [MoveAction, ConsumeItemAction, EndTurnAction]
+        defaults = [MoveAction, AttackAction, ConsumeItemAction, EndTurnAction]
 
         match self.role:
             case FighterArchetype.MELEE:
-                optional = [AttackAction]
+                optional = []
 
             case FighterArchetype.RANGED:
-                optional = [ProjectileAttackAction]
+                optional = []
 
             case FighterArchetype.CASTER:
-                optional = [AttackAction, MagicAction]
+                optional = [MagicAction]
 
             case _:
                 optional = []
@@ -160,7 +159,11 @@ class Fighter:
         action_types = ActionCompendium.all_available_to(self)
         choices = {}
         for name, action_type in action_types.items():
-            choices[name] = action_type.all_available_to(self)
+            if not action_type == MagicAction:
+                choices[name] = action_type.all_available_to(self)
+            else:
+                for spell in self.caster.spells:
+                    choices[name] = action_type.all_available_to(self)
 
         event = {}
         if not self.is_enemy:
@@ -208,8 +211,9 @@ class Fighter:
         is_incapacitated = self.owner.is_dead or self.retreating
         return is_incapacitated
 
-    def take_damage(self, amount) -> Event:
+    def take_damage(self, amount: int) -> Event:
         result = {}
+        initial_hp = self.hp + self.bonus_health
 
         if self.bonus_health > 0:
             delta = self.bonus_health - amount
@@ -229,6 +233,16 @@ class Fighter:
 
             result.update(**{"dead": self})
 
+        final_hp = self.hp + self.bonus_health
+        result.update(
+            {
+                "damage_taken": {
+                    "recipient": self,
+                    "hp_after": final_hp,
+                    "amount": initial_hp - final_hp,
+                },
+            }
+        )
         return result
 
     def consume_item(self, item: Consumable) -> Generator[Event, None, None]:
@@ -242,3 +256,17 @@ class Fighter:
 
     def clear_hooks(self):
         self.on_retreat_hooks = []
+
+    def can_see(self, target: Fighter | Node) -> bool:
+        eye = self.location
+
+        if isinstance(target, Fighter):
+            target = target.location
+
+        room = self.encounter_context.get()
+        if not room:
+            return False
+
+        visible_nodes = Ray(eye).line_of_sight(room.space, target)
+
+        return target in visible_nodes

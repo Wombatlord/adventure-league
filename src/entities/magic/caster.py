@@ -30,44 +30,35 @@ class MagicAction(BaseAction, metaclass=ActionMeta):
             fighter.action_points.deduct_cost(cls.cost(fighter))
             fighter.caster.mp_pool.spend(spell.mp_cost)
 
-            match spell.effect_type:
-                case EffectType.SELF:
-                    yield spell.self_cast()
-                case EffectType.ENTITY:
-                    yield spell.entity_cast(fighter, target=target.owner)
-                case EffectType.AOE:
-                    template = spell.aoe_at_node(target)
-                    yield spell.aoe_cast(targets=template.shape)
+            yield from spell.cast(target)
 
         else:
             yield {"message": f"Not enough mana to cast {spell.name}!"}
 
     @classmethod
-    def details(cls, fighter: Fighter, target: Fighter) -> dict:
+    def details(cls, fighter: Fighter, spell: Spell) -> dict:
         return {
             **ActionMeta.details(cls, fighter),
-            "on_confirm": lambda: fighter.ready_action(cls(fighter, target)),
-            "subject": target,
-            "label": f"{target.owner.name}",
+            "on_confirm": lambda target: fighter.ready_action(
+                cls(fighter, spell, target)
+            ),
+            "subject": spell,
+            "label": f"{spell.name}",
         }
 
     @classmethod
-    def all_available_to(cls, fighter: Fighter, spell: Spell) -> list[dict]:
+    def all_available_to(cls, fighter: Fighter) -> list[dict]:
         return [
-            cls.details(fighter, occupant.fighter)
-            for occupant in fighter.locatable.entities_in_range(
-                room=fighter.encounter_context.get(),
-                max_range=spell.max_range,
-                entity_filter=lambda e: fighter.is_enemy_of(e.fighter),
-            )
+            cls.details(fighter, spell) for spell in fighter.caster.available_spells()
         ]
 
-    def __init__(self, fighter: Fighter, target: Fighter) -> None:
+    def __init__(self, fighter: Fighter, target: Fighter, spell: Spell) -> None:
         self.fighter = fighter
         self.target = target
+        self.spell = spell
 
     def __call__(self) -> Generator[Event]:
-        yield from self.execute(self.fighter, self.target)
+        yield from self.execute(self.fighter, self.target, self.spell)
 
 
 class MpPool:
@@ -111,17 +102,7 @@ class Caster:
         return self
 
     def available_spells(self):
-        return [
-            {
-                "label": spell.name,
-                "mp_cost": spell.mp_cost,
-                "self_target": spell.is_self_target(),
-                "valid_target": spell.valid_target,
-                "aoe_template": spell.aoe_at_node,
-                "on_confirm": spell.cast,
-            }
-            for spell in self.spells
-        ]
+        return [spell.details() for spell in self.spells]
 
     @property
     def current_mp(self) -> int:

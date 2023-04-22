@@ -1,6 +1,7 @@
 import random
 from typing import Callable
 
+from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
 from src.entities.item.inventory import Inventory
@@ -18,7 +19,7 @@ class FighterFixtures:
             "defence": 10,
             "is_enemy": enemy,
             "power": 10,
-            "role": "melee",
+            "role": FighterArchetype.MELEE,
             "speed": 1,
             "is_boss": boss,
         }
@@ -29,7 +30,7 @@ class FighterFixtures:
             "hp": 1,
             "defence": 0,
             "power": 0,
-            "role": "melee",
+            "role": FighterArchetype.MELEE,
             "is_enemy": enemy,
             "speed": 1,
             "is_boss": boss,

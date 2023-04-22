@@ -10,7 +10,8 @@ from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name, Species
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
-from src.entities.magic.caster import Caster, basic_spell_book
+from src.entities.magic.caster import Caster
+from src.entities.magic.spells import basic_spell_book
 from src.entities.sprites import EntitySprite
 from src.gui.animated_sprite_config import (
     AnimatedSpriteConfig,
@@ -64,8 +65,8 @@ class StatBlock(NamedTuple):
             "hp": randint(*self.hp),
             "defence": randint(*self.defence),
             "power": randint(*self.power),
-            "max_range": randint(2, 4),
-            "role": FighterArchetype.random_archetype(),
+            "max_range": 1,
+            "role": FighterArchetype.MELEE,
             "is_enemy": self.is_enemy,
             "speed": self.speed,
             "is_boss": self.is_boss,
@@ -131,6 +132,21 @@ def select_textures(species: str, fighter: Fighter) -> AnimatedSpriteConfig:
         return choose_mob_textures()
 
 
+def _setup_fighter_archetypes(fighter: Fighter):
+    if not fighter.is_enemy:
+        fighter.role = FighterArchetype.random_archetype()
+
+    match fighter.role:
+        case FighterArchetype.MELEE:
+            fighter.max_range = 1
+        case FighterArchetype.RANGED:
+            fighter.max_range = randint(2, 4)
+        case FighterArchetype.CASTER:
+            fighter.caster = Caster(max_mp=10, known_spells=basic_spell_book)
+
+    fighter.set_action_options()
+
+
 def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factory:
     def _from_conf(fighter_conf: dict, entity: Entity) -> Fighter:
         return Fighter(**fighter_conf).set_owner(owner=entity)
@@ -161,10 +177,9 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
 
         entity.fighter = _from_conf(conf, entity)
 
-        entity.inventory = Inventory(owner=entity, capacity=1)
+        _setup_fighter_archetypes(entity.fighter)
 
-        if entity.fighter.role == FighterArchetype.CASTER:
-            entity.fighter.caster = Caster(max_mp=10, known_spells=basic_spell_book)
+        entity.inventory = Inventory(owner=entity, capacity=1)
 
         if not entity.fighter.is_enemy:
             entity.inventory.add_item_to_inventory(HealingPotion(owner=entity))

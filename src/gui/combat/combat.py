@@ -8,6 +8,7 @@ import arcade.key
 
 from src.engine.init_engine import eng
 from src.entities.action.actions import MoveAction
+from src.entities.magic.caster import MagicAction
 from src.gui.combat import combat_menu
 from src.gui.combat.combat_sections import CombatGridSection
 from src.gui.components.buttons import end_turn_button
@@ -210,7 +211,7 @@ class CombatView(arcade.View):
                             lambda: self.selection.confirm() or None
                         ),
                     )
-                )
+                ),
             },
         )
         self.combat_menu.enable()
