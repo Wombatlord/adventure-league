@@ -1,17 +1,23 @@
 from __future__ import annotations
 
-from random import randint
 from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
 from src.entities.action.actions import (
     ActionCompendium,
     ActionMeta,
     ActionPoints,
+    AttackAction,
     BaseAction,
+    ConsumeItemAction,
+    EndTurnAction,
+    MoveAction,
 )
+from src.entities.combat.archetypes import FighterArchetype
 from src.entities.entity import Entity
 from src.entities.item.inventory import Consumable, Inventory
+from src.entities.magic.caster import Caster, MagicAction
 from src.world.node import Node
+from src.world.ray import Ray
 
 if TYPE_CHECKING:
     from src.world.level.room import Room
@@ -31,7 +37,7 @@ class EncounterContext:
             lambda e: e.fighter.encounter_context.clear()
         )
 
-    def get(self) -> Room:
+    def get(self) -> Room | None:
         return self.encounter_context
 
     def clear(self):
@@ -45,7 +51,7 @@ class Fighter:
 
     def __init__(
         self,
-        role: str,
+        role: FighterArchetype,
         hp: int = 0,
         defence: int = 0,
         power: int = 0,
@@ -53,34 +59,37 @@ class Fighter:
         max_range: int = 0,
         speed: int = 0,
         current_xp: int = 0,
+        caster: Caster = None,
         is_enemy: bool = False,
         is_boss: bool = False,
     ) -> None:
+        if role is None:
+            raise TypeError("The role cannot be None")
         self.owner: Optional[Entity] = None
         # -----Stats-----
-        self.role = role
+        self.set_role(role)
         self.max_hp = hp
         self.hp = hp
+        self.bonus_health = 0
         self.defence = defence
         self.power = power
         self.level = level
         self.max_range = max_range
         self.speed = speed
         self.current_xp = current_xp
-        self.action_points = ActionPoints()
         # -----State-----
-        self.action_options = None
+        self.action_points = ActionPoints()
+        self.caster = caster
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
         self.retreating = False
-        self._target = None
-        self._prev_target = None
         self._in_combat = False
-        self._current_item = None
-        self._forfeit_turn = False
         self._readied_action = None
         self._encounter_context = EncounterContext(self)
+        
+    def set_role(self, role: FighterArchetype):
+        self.role = role
         self.set_action_options()
 
     def set_owner(self, owner: Entity) -> Self:
@@ -108,15 +117,21 @@ class Fighter:
         return result
 
     def set_action_options(self):
+        defaults = [MoveAction, AttackAction, ConsumeItemAction, EndTurnAction]
         match self.role:
-            case "melee":
-                self.action_options = ["move", "attack", "use item", "end turn"]
+            case FighterArchetype.MELEE:
+                optional = []
 
-            case "ranged":
-                self.action_options = ["move", "ranged attack", "use item", "end turn"]
+            case FighterArchetype.RANGED:
+                optional = []
+
+            case FighterArchetype.CASTER:
+                optional = [MagicAction]
 
             case _:
-                self.action_options = ["end turn"]
+                optional = []
+
+        self.action_options = defaults + optional
 
     def ready_action(self, action: BaseAction) -> bool:
         self._readied_action = action
@@ -134,7 +149,7 @@ class Fighter:
         yield from action
 
     def does(self, action: ActionMeta) -> bool:
-        if action.name in self.action_options:
+        if action in self.action_options:
             return action.cost(self) <= self.action_points.current
 
         else:
@@ -144,7 +159,11 @@ class Fighter:
         action_types = ActionCompendium.all_available_to(self)
         choices = {}
         for name, action_type in action_types.items():
-            choices[name] = action_type.all_available_to(self)
+            if not action_type == MagicAction:
+                choices[name] = action_type.all_available_to(self)
+            else:
+                for spell in self.caster.spells:
+                    choices[name] = action_type.all_available_to(self)
 
         event = {}
         if not self.is_enemy:
@@ -192,9 +211,21 @@ class Fighter:
         is_incapacitated = self.owner.is_dead or self.retreating
         return is_incapacitated
 
-    def take_damage(self, amount) -> Event:
+    def take_damage(self, amount: int) -> Event:
         result = {}
-        self.hp -= amount
+        initial_hp = self.hp + self.bonus_health
+
+        if self.bonus_health > 0:
+            delta = self.bonus_health - amount
+            applied = max(delta, self.bonus_health)
+            self.bonus_health -= applied
+            if self.delta < 0:
+                breakthrough = delta - applied
+                self.hp -= abs(breakthrough)
+
+        elif self.bonus_health <= 0:
+            self.hp -= amount
+
         result.update(**self.owner.annotate_event({}))
         if self.hp <= 0:
             self.hp = 0
@@ -202,6 +233,16 @@ class Fighter:
 
             result.update(**{"dead": self})
 
+        final_hp = self.hp + self.bonus_health
+        result.update(
+            {
+                "damage_taken": {
+                    "recipient": self,
+                    "hp_after": final_hp,
+                    "amount": initial_hp - final_hp,
+                },
+            }
+        )
         return result
 
     def consume_item(self, item: Consumable) -> Generator[Event, None, None]:
@@ -215,3 +256,17 @@ class Fighter:
 
     def clear_hooks(self):
         self.on_retreat_hooks = []
+
+    def can_see(self, target: Fighter | Node) -> bool:
+        eye = self.location
+
+        if isinstance(target, Fighter):
+            target = target.location
+
+        room = self.encounter_context.get()
+        if not room:
+            return False
+
+        visible_nodes = Ray(eye).line_of_sight(room.space, target)
+
+        return target in visible_nodes

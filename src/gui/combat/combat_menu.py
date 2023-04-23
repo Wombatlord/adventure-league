@@ -12,7 +12,7 @@ def build_from_event(
     event: dict,
     position: tuple[int, int],
     on_teardown: Callable[[], None] | None = None,
-    submenu_overrides: dict = None,
+    submenu_overrides: dict[str, Callable | tuple[Callable, bool]] = None,
 ) -> Menu | None:
     if not (choices := event.get("choices")):
         return None
@@ -42,6 +42,9 @@ def build_from_event(
 
                 sub_menu_config.append(sub_menu_item)
 
-        menu_config.append((_title_case(action_type_name), sub_menu_config))
+        if isinstance(sub_menu_config, tuple):
+            menu_config.append((_title_case(action_type_name),) + sub_menu_config)
+        else:
+            menu_config.append((_title_case(action_type_name), sub_menu_config))
 
     return Menu(menu_config=menu_config, pos=position, area=(250, 50))

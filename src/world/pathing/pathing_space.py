@@ -190,12 +190,16 @@ class PathingSpace(AStar):
     def x_range(self) -> Iterable[int]:
         return range(self.minima.x, self.maxima.x)
 
-    def all_included_nodes(self) -> Sequence[Node]:
+    def all_included_nodes(self, exclude_dynamic=True) -> Sequence[Node]:
+        node_check = lambda x, y: Node(x, y) in self
+        if not exclude_dynamic:
+            node_check = lambda x, y: Node(x, y) not in self.static_exclusions
+
         return tuple(
             Node(x, y)
             for x in range(self.minima.x, self.maxima.x)
             for y in range(self.minima.y, self.maxima.y)
-            if Node(x, y) in self
+            if node_check(x, y)
         )
 
 

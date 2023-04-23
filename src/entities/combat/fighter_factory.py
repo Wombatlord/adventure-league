@@ -4,11 +4,14 @@ from random import randint
 from typing import Callable, NamedTuple, Self
 
 from src.config.constants import merc_names
-from src.entities.ai.ai import BasicCombatAi, NoCombatAI
+from src.entities.ai.ai import BasicCombatAi
+from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name, Species
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
+from src.entities.magic.caster import Caster
+from src.entities.magic.spells import basic_spell_book
 from src.entities.sprites import EntitySprite
 from src.gui.animated_sprite_config import (
     AnimatedSpriteConfig,
@@ -50,7 +53,6 @@ class StatBlock(NamedTuple):
     power: tuple[int, int]
     is_enemy: bool
     speed: int
-    roles: str
     is_boss: bool = False
     species: str = "human"
 
@@ -63,22 +65,19 @@ class StatBlock(NamedTuple):
             "hp": randint(*self.hp),
             "defence": randint(*self.defence),
             "power": randint(*self.power),
-            "max_range": randint(2, 4),
-            "role": random.choice(self.roles),
+            "max_range": 1,
+            "role": FighterArchetype.MELEE,
             "is_enemy": self.is_enemy,
             "speed": self.speed,
             "is_boss": self.is_boss,
         }
 
 
-_roles = ["melee", "ranged"]
-_enemy_roles = ["melee"]
 _mercenary = StatBlock(
     hp=(25, 25),
     defence=(1, 3),
     power=(3, 5),
     speed=3,
-    roles=_roles,
     is_enemy=False,
     is_boss=False,
 )
@@ -88,7 +87,6 @@ _monster = StatBlock(
     defence=(1, 3),
     power=(1, 3),
     speed=1,
-    roles=_enemy_roles,
     is_enemy=True,
     is_boss=False,
 )
@@ -98,7 +96,6 @@ _goblin = StatBlock(
     defence=(1, 3),
     power=(2, 4),
     speed=2,
-    roles=_enemy_roles,
     is_enemy=True,
     is_boss=False,
 )
@@ -107,7 +104,6 @@ _boss = StatBlock(
     defence=(2, 4),
     power=(2, 4),
     speed=1,
-    roles=_enemy_roles,
     is_enemy=True,
     is_boss=True,
 )
@@ -134,6 +130,21 @@ def select_textures(species: str, fighter: Fighter) -> AnimatedSpriteConfig:
             raise FactoryConfigurationError.missing_mob_species(species)
 
         return choose_mob_textures()
+
+
+def _setup_fighter_archetypes(fighter: Fighter):
+    if not fighter.is_enemy:
+        fighter.set_role(FighterArchetype.random_archetype())
+
+    match fighter.role:
+        case FighterArchetype.MELEE:
+            fighter.max_range = 1
+        case FighterArchetype.RANGED:
+            fighter.max_range = randint(2, 4)
+        case FighterArchetype.CASTER:
+            fighter.caster = Caster(max_mp=10, known_spells=basic_spell_book)
+
+    fighter.set_action_options()
 
 
 def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factory:
@@ -165,6 +176,8 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         conf = stats.fighter_conf()
 
         entity.fighter = _from_conf(conf, entity)
+
+        _setup_fighter_archetypes(entity.fighter)
 
         entity.inventory = Inventory(owner=entity, capacity=1)
 

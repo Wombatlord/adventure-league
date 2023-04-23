@@ -17,7 +17,10 @@ if TYPE_CHECKING:
 
 class CombatAiState(State, metaclass=abc.ABCMeta):
     def choices_of(self, action: ActionMeta) -> list[dict]:
-        return self.working_set.get("choices", {}).get(action.name, [])
+        co = self.working_set.get("choices", {}).get(action.name, [])
+        if not co:
+            breakpoint()
+        return co
 
     def agent(self) -> Fighter:
         return self.working_set["await_input"]
