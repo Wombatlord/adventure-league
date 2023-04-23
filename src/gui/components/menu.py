@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 from types import FunctionType
 from typing import Callable, NamedTuple, Self
@@ -21,9 +23,44 @@ class MenuNode(NamedTuple):
     content: ExecutableMenuItem | list[Self]
 
 
+class MenuNode:
+    label: str
+
+    def get_click_handler(self, ctx: Menu) -> Callable[[], None]:
+        pass
+
+
+class LeafMenuNode(MenuNode):
+    closes_menu: bool
+
+    def __init__(
+        self, label: str, on_click: Callable[[], None], closes_menu: bool = False
+    ):
+        self.label = label
+        self._on_click = on_click
+        self.closes_menu = closes_menu
+
+    def get_click_handler(self, ctx: Menu) -> Callable[[], None]:
+        if self.closes_menu:
+            return ctx.closing_action(self._on_click)
+
+        return self._on_click
+
+
+class SubMenuNode(MenuNode):
+    on_click: Callable[[], None]
+
+    def __init__(self, label: str, sub_menu: list[MenuNode]) -> None:
+        self.label = label
+        self._sub_menu_config = sub_menu
+
+    def get_click_handler(self, ctx: Menu) -> Callable[[], None]:
+        return ctx.enter_submenu(self._sub_menu_config)
+
+
 SubMenu = list[ExecutableMenuItem]
 MenuWithSubMenu = tuple[str, SubMenu]
-MenuSchema = list[MenuWithSubMenu | ExecutableMenuItem]
+MenuSchema = list[MenuNode]
 
 
 class ButtonRegistry(NamedTuple):
@@ -118,19 +155,19 @@ class Menu:
         )
 
     def build_menu(self, menu: MenuSchema):
-        for label, content, *options in menu:
-            if not isinstance(label, str):
-                raise TypeError(f"label must be a string, got {type(label)=}")
-            if not callable(content) and not isinstance(content, list):
-                raise TypeError(
-                    f"content must either be a list or callable, got {type(content)=}"
-                )
+        for node in menu:
+            if not isinstance(node, MenuNode):
+                raise TypeError(f"node {repr(node)} was not a MenuNode")
 
-            action = self.derive_button_action_from_content(content, *options)
+            action = node.get_click_handler(self)
             btn = update_button(action, "")
 
             text = TextureText.create(
-                text=label, start_x=0, lines=1, font_name=WindowData.font, font_size=27
+                text=node.label,
+                start_x=0,
+                lines=1,
+                font_name=WindowData.font,
+                font_size=27,
             )
             self.sprite_list.append(text.sprite)
 
