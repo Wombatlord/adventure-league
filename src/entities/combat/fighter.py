@@ -13,6 +13,7 @@ from src.entities.action.actions import (
     MoveAction,
 )
 from src.entities.combat.archetypes import FighterArchetype
+from src.entities.combat.stats import FighterStats, HealthPool
 from src.entities.entity import Entity
 from src.entities.item.inventory import Consumable, Inventory
 from src.entities.magic.caster import Caster, MagicAction
@@ -58,7 +59,6 @@ class Fighter:
         level: int = 0,
         max_range: int = 0,
         speed: int = 0,
-        current_xp: int = 0,
         caster: Caster = None,
         is_enemy: bool = False,
         is_boss: bool = False,
@@ -67,16 +67,11 @@ class Fighter:
             raise TypeError("The role cannot be None")
         self.owner: Optional[Entity] = None
         # -----Stats-----
+        self.health = HealthPool(max=hp)
+        self.stats = FighterStats(
+            defence=defence, power=power, level=level, max_range=max_range, speed=speed
+        )
         self.set_role(role)
-        self.max_hp = hp
-        self.hp = hp
-        self.bonus_health = 0
-        self.defence = defence
-        self.power = power
-        self.level = level
-        self.max_range = max_range
-        self.speed = speed
-        self.current_xp = current_xp
         # -----State-----
         self.action_points = ActionPoints()
         self.caster = caster
@@ -87,7 +82,7 @@ class Fighter:
         self._in_combat = False
         self._readied_action = None
         self._encounter_context = EncounterContext(self)
-        
+
     def set_role(self, role: FighterArchetype):
         self.role = role
         self.set_action_options()
@@ -213,27 +208,18 @@ class Fighter:
 
     def take_damage(self, amount: int) -> Event:
         result = {}
-        initial_hp = self.hp + self.bonus_health
+        initial_hp = self.health.current
 
-        if self.bonus_health > 0:
-            delta = self.bonus_health - amount
-            applied = max(delta, self.bonus_health)
-            self.bonus_health -= applied
-            if self.delta < 0:
-                breakthrough = delta - applied
-                self.hp -= abs(breakthrough)
-
-        elif self.bonus_health <= 0:
-            self.hp -= amount
+        self.health.decrease_current(amount)
 
         result.update(**self.owner.annotate_event({}))
-        if self.hp <= 0:
-            self.hp = 0
+        if self.health.current <= 0:
+            self.health.current = 0
             self.owner.is_dead = True
 
             result.update(**{"dead": self})
 
-        final_hp = self.hp + self.bonus_health
+        final_hp = self.health.current
         result.update(
             {
                 "damage_taken": {

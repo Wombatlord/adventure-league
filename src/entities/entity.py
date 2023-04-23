@@ -81,7 +81,7 @@ class Entity:
         self.locatable = Locatable(
             owner=self,
             location=spawn_point,
-            speed=self.fighter.speed,
+            speed=self.fighter.stats.speed,
             space=space,
         )
 
@@ -111,7 +111,7 @@ class Entity:
             **event,
             **{
                 "entity_data": {
-                    "health": self.fighter.hp if self.fighter else None,
+                    "health": self.fighter.health.current if self.fighter else None,
                     "name": self.name.name_and_title,
                     "retreat": self.fighter.retreating,
                     "species": self.species,
