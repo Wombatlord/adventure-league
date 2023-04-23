@@ -15,12 +15,12 @@ class FighterArchetype(Enum):
         match self:
             case self.MELEE:
                 return []
-            
+
             case self.RANGED:
                 return []
-            
+
             case self.CASTER:
                 return []
-            
+
             case _:
                 return []

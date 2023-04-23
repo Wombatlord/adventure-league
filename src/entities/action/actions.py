@@ -167,7 +167,7 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
         available = []
-        for path in fighter.locatable.available_moves(speed=fighter.speed):
+        for path in fighter.locatable.available_moves(speed=fighter.stats.speed):
             available.append(cls.details(fighter, destination=path[-1]))
 
         return available

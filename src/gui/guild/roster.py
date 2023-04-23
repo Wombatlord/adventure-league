@@ -37,10 +37,10 @@ def entity_observer_widget(get_entity: Callable[[], Entity | None]):
 
         ui_label.text = (
             f"{merc.name.name_and_title} "
-            f"| LVL: {merc.fighter.level} "
-            f"|  HP: {merc.fighter.hp} "
-            f"| ATK: {merc.fighter.power} "
-            f"| DEF: {merc.fighter.defence} "
+            f"| LVL: {merc.fighter.stats.level} "
+            f"|  HP: {merc.fighter.health.current} "
+            f"| ATK: {merc.fighter.stats.power} "
+            f"| DEF: {merc.fighter.stats.defence} "
         )
 
     recruit_info_observer = observe(

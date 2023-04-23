@@ -89,7 +89,7 @@ class ChoosingAttack(CombatAiState):
         targets: list[dict] = self.choices_of(AttackAction)
 
         def lowest_health(target_choice: dict) -> int:
-            return target_choice["subject"].hp
+            return target_choice["subject"].health.current
 
         ranked_targets = sorted(targets, key=lowest_health)
 
