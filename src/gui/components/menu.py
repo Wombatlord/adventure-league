@@ -9,6 +9,7 @@ from arcade.gui import UIAnchorLayout, UIBoxLayout, UIEvent, UIManager, UITextur
 from pyglet.math import Vec2
 
 from src.gui.animation.positioning import maintain_position
+from src.gui.combat.node_selection import NodeSelection
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.ui_styles import ADVENTURE_STYLE, UIStyle
 from src.gui.window_data import WindowData
@@ -56,6 +57,16 @@ class SubMenuNode(MenuNode):
 
     def get_click_handler(self, ctx: Menu) -> Callable[[], None]:
         return ctx.enter_submenu(self._sub_menu_config)
+
+
+class NodeSelectionNode(MenuNode):
+    def __init__(self, label: str, node_selection: NodeSelection) -> None:
+        self.label = label
+        self._node_selection = node_selection
+
+    def get_click_handler(self, ctx: Menu) -> Callable[[], None]:
+        self._node_selection.set_enable_parent_menu(ctx.enable)
+        return self._node_selection.enable()
 
 
 SubMenu = list[ExecutableMenuItem]

@@ -54,6 +54,9 @@ class HUD(arcade.Section):
             ),
         )
 
+    def enable_combat_menu(self):
+        self.combat_menu.enable()
+
     def clear_menu(self):
         self.combat_menu = combat_menu.empty()
 

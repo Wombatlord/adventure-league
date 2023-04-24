@@ -1,5 +1,7 @@
 from typing import Callable
 
+import arcade
+
 from src.entities.action.actions import (
     AttackAction,
     ConsumeItemAction,
@@ -8,7 +10,13 @@ from src.entities.action.actions import (
 )
 from src.gui.combat.node_selection import NodeSelection
 from src.gui.combat_v2.types import Highlighter
-from src.gui.components.menu import LeafMenuNode, Menu, MenuNode, SubMenuNode
+from src.gui.components.menu import (
+    LeafMenuNode,
+    Menu,
+    MenuNode,
+    NodeSelectionNode,
+    SubMenuNode,
+)
 from src.world.node import Node
 
 
@@ -60,11 +68,13 @@ def move_choice(
         show_template=show_path,
         clear_templates=highlighter.clear,
         get_current=get_current_node,
-        enable_parent_menu=lambda: None,
+        # This dependency should be inverted
+        # Created setter on the NodeSelection. Is this setter injection now? Has that inverted the dependency?
+        # enable_parent_menu=lambda: None,
         keep_last_valid=True,
     )
 
-    return LeafMenuNode(label="Move", on_click=node_selection.enable)
+    return NodeSelectionNode(label="Move", node_selection=node_selection)
 
 
 def attack_choice(available_targets: list[dict], on_teardown) -> MenuNode:
@@ -123,6 +133,12 @@ def from_event(
 
         if menu_node:
             menu_config.append(menu_node)
+
+    return Menu(
+        menu_config=menu_config,
+        position=(arcade.get_window().width * 0.75, arcade.get_window().height * 0.75),
+        area=(250, 50),
+    )
 
 
 def empty() -> Menu:

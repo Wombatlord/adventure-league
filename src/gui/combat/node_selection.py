@@ -25,19 +25,22 @@ class NodeSelection:
         show_template: ShowTemplate,
         clear_templates: ClearTemplates,
         get_current: GetCurrent,
-        enable_parent_menu: EnableParentMenu,
+        # enable_parent_menu: EnableParentMenu,
         keep_last_valid: bool = False,
     ) -> None:
         self._on_confirm = on_confirm
         self._validate_selection = validate_selection
         self._clear_templates = clear_templates
         self._get_current = get_current
-        self._enable_parent_menu = enable_parent_menu
+        self._enable_parent_menu = None
         self._show_template = show_template
         self._current = None
 
         # Controls whether an invalid current selection should clear any preexisting valid selection.
         self._keep_last_valid = keep_last_valid
+
+    def set_enable_parent_menu(self, enable_parent_menu):
+        self._enable_parent_menu = enable_parent_menu
 
     def enable(self):
         self._clear_templates()
