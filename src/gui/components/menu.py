@@ -56,7 +56,7 @@ class SubMenuNode(MenuNode):
         self._sub_menu_config = sub_menu
 
     def get_click_handler(self, ctx: Menu) -> Callable[[], None]:
-        return ctx.enter_submenu(self._sub_menu_config)
+        return lambda: ctx.enter_submenu(self._sub_menu_config)
 
 
 class NodeSelectionNode(MenuNode):
@@ -66,7 +66,7 @@ class NodeSelectionNode(MenuNode):
 
     def get_click_handler(self, ctx: Menu) -> Callable[[], None]:
         self._node_selection.set_enable_parent_menu(ctx.enable)
-        return self._node_selection.enable()
+        return self._node_selection.enable
 
 
 SubMenu = list[ExecutableMenuItem]
@@ -102,7 +102,9 @@ class Menu:
         pos: tuple[int, int],
         area: tuple[int, int],
         button_style: UIStyle | None = None,
+        align: str = "center",
     ) -> None:
+        self.align = align
         self.full_menu_graph = menu_config
         self.current_menu_graph = menu_config
         self.x, self.y = pos
@@ -113,7 +115,12 @@ class Menu:
         self.anchor = None
         self.button_style = button_style or ADVENTURE_STYLE
         self.sprite_list = arcade.SpriteList()
+        self._buttons = []
         self._setup()
+
+    @property
+    def size(self) -> tuple[int, int]:
+        return self.anchor.width, self.anchor.height
 
     def _setup(self):
         if self.manager:
@@ -130,9 +137,9 @@ class Menu:
         self.main_box = UIBoxLayout(
             size_hint=(1, 1),
             space_between=2,
-        )
+        ).with_border(width=3, color=arcade.color.BLUE)
 
-        self.anchor.add(self.main_box)
+        self.anchor.add(self.main_box, anchor_x=self.align)
         self.build_menu(self.current_menu_graph)
 
     def disable(self):
@@ -152,6 +159,11 @@ class Menu:
         self.anchor.center = -self.x, -self.y
         self.position_labels()
 
+    def update(self):
+        self.anchor.center = self.x, self.y
+        self.manager.on_update(1 / 60)
+        self.position_labels()
+
     def draw(self):
         if self.manager._enabled:
             self.manager.draw()
@@ -166,12 +178,14 @@ class Menu:
         )
 
     def build_menu(self, menu: MenuSchema):
+        self._buttons = []
         for node in menu:
             if not isinstance(node, MenuNode):
                 raise TypeError(f"node {repr(node)} was not a MenuNode")
 
             action = node.get_click_handler(self)
             btn = update_button(action, "")
+            self._buttons.append(btn)
 
             text = TextureText.create(
                 text=node.label,
@@ -182,6 +196,9 @@ class Menu:
             )
             self.sprite_list.append(text.sprite)
 
+            def _on_update(dt: float):
+                text.center_x
+
             btn.size_hint = (1, None)
             btn.resize(height=50)
             btn.style = self.button_style
@@ -190,14 +207,8 @@ class Menu:
         self.position_labels()
 
     def position_labels(self):
-        incr = 0
-        offset_from_top = 20
-        for sprite in self.sprite_list:
-            sprite.center_x, sprite.center_y = (
-                self.anchor.center_x,
-                (self.anchor.top - offset_from_top) - incr,
-            )
-            incr += 52
+        for btn, sprite in zip(self._buttons, self.sprite_list):
+            sprite.center_x, sprite.center_y = btn.center_x, btn.center_y + 10
 
     def closing_action(self, action: Callable[[], None]) -> Callable[[], None]:
         def _do_then_close():

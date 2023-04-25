@@ -17,13 +17,7 @@ class CombatView(arcade.View):
         self.scene = Scene(
             left=0, bottom=0, width=window_dims[0], height=window_dims[1]
         )
-        self.hud = HUD(
-            scene=self.scene,
-            left=0,
-            bottom=0,
-            width=window_dims[0],
-            height=window_dims[1],
-        )
+        self.hud = HUD(scene=self.scene)
 
         self.add_section(self.hud)
         self.add_section(self.scene)
@@ -31,3 +25,8 @@ class CombatView(arcade.View):
 
     def on_draw(self):
         self.clear()
+
+    def on_resize(self, width: int, height: int):
+        super().on_resize(width, height)
+        self.hud.on_resize(width, height)
+        self.scene.on_resize(width, height)

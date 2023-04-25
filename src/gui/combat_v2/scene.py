@@ -127,6 +127,7 @@ class Scene(arcade.Section):
         )
 
     def show_path(self, current: tuple[Node] | None) -> None:
+        breakpoint()
         if not current:
             return
 
@@ -286,6 +287,8 @@ class Scene(arcade.Section):
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         self._mouse_coords = Vec2(float(x), float(y))
 
+    def update_mouse_node(self, x: int, y: int, dx: int, dy: int) -> Node | None:
+        self.on_mouse_motion(x, y, dx, dy)
         if not self.encounter_room:
             return
 
@@ -296,6 +299,7 @@ class Scene(arcade.Section):
 
         if self.mouse_node_has_changed(node):
             self.set_mouse_node(node)
+            return Node
 
     def get_mouse_node(self) -> Node | None:
         return self.last_mouse_node

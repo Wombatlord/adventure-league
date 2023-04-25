@@ -31,6 +31,14 @@ class Rectangle(NamedTuple):
     b: float
     t: float
 
+    @property
+    def x(self) -> float:
+        return self.l
+
+    @property
+    def y(self) -> float:
+        return self.b
+
     @classmethod
     def from_projection(cls, *projection: FourFloatTuple) -> Self:
         if len(projection) != 4 or any(
@@ -55,6 +63,13 @@ class Rectangle(NamedTuple):
         """
         l, b, r, t = lbrt
         return cls(l=l, r=r, b=b, t=t)
+
+    @classmethod
+    def from_xywh(cls, x: float, y: float, w: float, h: float) -> Self:
+        """
+        See above
+        """
+        return cls.from_lbrt((x, y, w, h))
 
     @classmethod
     def from_limits(cls, min_v: Vec2, max_v: Vec2) -> Self:
@@ -158,6 +173,13 @@ class Rectangle(NamedTuple):
 
         """
         return (self.max + self.min) / 2
+
+    @property
+    def bottom_left(self) -> Vec2:
+        """
+        The position vector of the bottom left corner. Equivalent to Rect.min.
+        """
+        return self.min
 
     def scale_isotropic(self, factor: float, fixed_point: Vec2) -> Self:
         """
