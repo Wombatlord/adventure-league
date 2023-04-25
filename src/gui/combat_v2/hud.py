@@ -52,6 +52,7 @@ class HUD(arcade.Section):
             multiline=True,
             width=self.width / 2,
         )
+        self.hud_camera = arcade.Camera()
 
         eng.subscribe(
             topic="await_input",
@@ -130,6 +131,7 @@ class HUD(arcade.Section):
         eng.input_received()
 
     def on_draw(self):
+        self.hud_camera.use()
         self.combat_log.draw()
         self.combat_menu.menu.draw()
         self.debug_text.draw()
@@ -149,6 +151,7 @@ class HUD(arcade.Section):
 
     def on_resize(self, width: int, height: int):
         self.width, self.height = width, height
+        self.hud_camera.resize(width, height)
         self.combat_menu.set_menu_rect(self.get_menu_rect(250, 250))
         self.combat_log.on_resize(width, height)
 

@@ -199,7 +199,7 @@ class Scene(arcade.Section):
             arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
 
     def on_resize(self, width: int, height: int):
-        super().on_resize(width, height)
+        self.width, self.height = width, height
         self.grid_camera.resize(width, height)
         self.grid_camera.center(self.transform.to_screen(Node(0, 0)))
 

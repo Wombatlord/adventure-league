@@ -24,6 +24,7 @@ class CombatLog:
         self._do_update = False
 
     def refresh_ui(self):
+        self.shapes.clear()
         self.make_shapes()
         self.shapes.append(self.panel_bg)
         self.shapes.append(self.panel_border)

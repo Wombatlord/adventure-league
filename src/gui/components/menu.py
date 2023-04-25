@@ -196,9 +196,6 @@ class Menu:
             )
             self.sprite_list.append(text.sprite)
 
-            def _on_update(dt: float):
-                text.center_x
-
             btn.size_hint = (1, None)
             btn.resize(height=50)
             btn.style = self.button_style
