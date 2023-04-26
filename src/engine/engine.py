@@ -4,14 +4,13 @@ from typing import Any, Callable, Generator, NamedTuple
 
 from pyglet.math import Vec2
 
+from src import config
 from src.engine.describer import Describer
 from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
 from src.engine.game_state import AwardSpoilsHandler, GameState
 from src.engine.mission_board import MissionBoard
 from src.entities.combat.fighter_factory import RecruitmentPool
-from src.gui.window_data import WindowData
 from src.projection import health
-from src.systems.collision_avoidance import SpaceOccupancyHandler
 from src.systems.combat import CombatRound
 
 
@@ -134,7 +133,10 @@ class Engine:
 
         if "message" in event:
             self.messages.append(event["message"])
-        print(f"{event=}")
+
+        if config.DEBUG:
+            print(f"{event=}")
+
         self.projection_dispatcher.publish(event)
         self.combat_dispatcher.publish(event)
 
@@ -218,7 +220,6 @@ class Engine:
         This is the source ==Event==> consumer connection
         """
         try:
-            # print(f"{self.__class__}.next_combat_event: trying next(self.combat)")
             event = next(self.combat)
             self.process_one(event)
             return True

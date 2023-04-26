@@ -101,7 +101,7 @@ class BaseSprite(OffsetSprite, Sprite):
         self._node = node
         if self.transform != Transform.trivial():
             self.update_position()
-        
+
         return self
 
     def set_transform(self, transform: Transform) -> Self:
@@ -112,7 +112,7 @@ class BaseSprite(OffsetSprite, Sprite):
         return self
 
     def update_position(self):
-        self.center_x, self.center_y = self.transform.to_screen(self._node)
+        self.center_x, self.center_y = self.transform.project(self._node)
         self._draw_priority = draw_priority(self._node)
 
     def update_animation(self, delta_time: float = 1 / 60) -> None:

@@ -2,6 +2,8 @@ import arcade
 from pyglet.math import Vec2
 
 from src.utils.rectangle import Rectangle
+from src.world.isometry.transforms import Transform
+from src.world.node import Node
 
 
 class CameraController:
@@ -104,13 +106,16 @@ class CameraController:
     def screen_px(self, image_px: Vec2) -> Vec2:
         """Turns the position in terms of the projection coordinates into a position in terms of viewport pixels"""
         return Rectangle.from_viewport(self._camera.viewport).lerp(
-            self.imaged_rect().affine_coords(image_px),
-            translate=True
+            self.imaged_rect().affine_coords(image_px), translate=True
         )
 
     def on_update(self):
         self._camera.zoom *= self.zoom_factor
         self._camera.move(self._camera.position + self.pan_vec * self._pan_speed)
+
+    def look_at_world(self, position: Node, transform: Transform):
+        """Tell the camera controls to center the view on the world position supplied, maintaining the current zoom level"""
+        self._camera.center(transform.project(position))
 
     def __repr__(self):
         cam_pos = f"x={self._camera.position.x:.1f}, y={self._camera.position.y:.1f}"

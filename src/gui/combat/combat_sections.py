@@ -244,7 +244,7 @@ class CombatGridSection(arcade.Section):
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
         self.grid_camera.resize(width, height)
-        self.grid_camera.center(self.transform.to_screen(Node(0, 0)))
+        self.grid_camera.center(self.transform.project(Node(0, 0)))
         self.other_camera.resize(
             viewport_width=width, viewport_height=height
         )  # Resize the camera displaying the combat text
@@ -336,7 +336,7 @@ class CombatGridSection(arcade.Section):
         if not self.encounter_room:
             return
 
-        node = self.transform.to_world(self.cam_controls.image_px(self._mouse_coords))
+        node = self.transform.cast_ray(self.cam_controls.image_px(self._mouse_coords))
 
         if node not in self.encounter_room.space:
             return

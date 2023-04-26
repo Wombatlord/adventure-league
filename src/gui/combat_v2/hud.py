@@ -96,6 +96,7 @@ class HUD(arcade.Section):
 
     def handle_input_request(self, event):
         if requester := event.get("await_input"):
+            self.scene.follow(requester.locatable)
             if requester.owner.ai:
                 return
 

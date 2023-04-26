@@ -6,14 +6,13 @@ from pyglet.math import Vec2
 from src import config
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
+from src.entities.properties.locatable import Locatable
 from src.entities.sprites import BaseSprite
 from src.gui.combat.combat_components import CombatScreen
 from src.gui.combat.highlight import HighlightLayer
 from src.gui.components.menu import Menu
-from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
-from src.utils.functional import call_in_order
 from src.world.isometry.transforms import Transform
 from src.world.level.room import Room
 from src.world.node import Node
@@ -69,6 +68,9 @@ class Scene(arcade.Section):
         )
         self.debug_text = ""
         self.last_mouse_node = Node(0, 0)
+
+        self._focus = Node(4, 4)
+        self._follow = None
 
         # Selection Highlight Layers
         self.highlight_layer_gold_edge = HighlightLayer(
@@ -128,8 +130,7 @@ class Scene(arcade.Section):
 
     @property
     def world_origin(self) -> Vec2:
-        return Vec2(self.width/2, self.height/4)
-
+        return Vec2(self.width / 2, self.height / 4)
 
     def show_path(self, current: tuple[Node] | None) -> None:
         breakpoint()
@@ -177,9 +178,13 @@ class Scene(arcade.Section):
     def refresh_draw_order(self):
         self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
 
-    def on_update(self, delta_time: float):
+    def update_camera(self):
         self.cam_controls.on_update()
+        self.update_focus()
+        self.cam_controls.look_at_world(self.get_focus(), self.transform)
         self.grid_camera.update()
+
+    def on_update(self, delta_time: float):
         eng.update_clock -= delta_time
 
         if not eng.awaiting_input:
@@ -190,9 +195,9 @@ class Scene(arcade.Section):
         self.dudes_sprite_list.update_animation(delta_time=delta_time)
 
         if eng.update_clock < 0:
-            # print(f"{self.__class__}.on_update: TICK")
             eng.reset_update_clock()
             hook()
+        self.update_camera()
 
     def on_draw(self):
         self.grid_camera.use()
@@ -204,16 +209,24 @@ class Scene(arcade.Section):
             arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
 
     def on_resize(self, width: int, height: int):
-        print(f"{(width, height)=}")
         self.width, self.height = width, height
         self.transform.on_resize(self.world_origin)
         self.grid_camera.resize(width, height)
-        self.grid_camera.center(self.transform.to_screen(Node(4, 4)))
+        self.cam_controls.look_at_world(self.get_focus(), self.transform)
         for sprite in self.world_sprite_list:
             if isinstance(sprite, BaseSprite):
                 sprite.update_position()
 
         self.on_update(0)
+
+    def follow(self, locatable: Locatable):
+        self._follow = locatable
+
+    def update_focus(self):
+        self._focus = self._follow.location if self._follow else None
+
+    def get_focus(self) -> Node:
+        return self._focus or Node(4, 4)
 
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
@@ -303,8 +316,8 @@ class Scene(arcade.Section):
         self.on_mouse_motion(x, y, dx, dy)
         if not self.encounter_room:
             return
-        
-        node = self.transform.to_world(self.cam_controls.image_px(self._mouse_coords))
+
+        node = self.transform.cast_ray(self.cam_controls.image_px(self._mouse_coords))
 
         if node not in self.encounter_room.space:
             return
