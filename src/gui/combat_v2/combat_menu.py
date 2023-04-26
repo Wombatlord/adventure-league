@@ -13,6 +13,9 @@ from src.entities.action.actions import (
     EndTurnAction,
     MoveAction,
 )
+
+from src.entities.magic.caster import MagicAction
+
 from src.gui.combat.node_selection import NodeSelection
 from src.gui.components.menu import (
     LeafMenuNode,
@@ -132,6 +135,7 @@ class CombatMenu:
 
         action_types = event.get("choices")
         menu_config: list[MenuNode] = []
+        print(action_types.items())
         for action_name, action_details in action_types.items():
             menu_node = None
             match action_name:
@@ -143,7 +147,10 @@ class CombatMenu:
 
                 case AttackAction.name:
                     menu_node = self.attack_choice(action_details)
-
+                
+                case MagicAction.name:
+                    menu_node = self.magic_choice(action_details)
+                
                 case ConsumeItemAction.name:
                     menu_node = self.consume_item_choice(action_details)
 
@@ -204,6 +211,13 @@ class CombatMenu:
 
         return SubMenuNode("Attack", sub_menu=submenu_config)
 
+    def magic_choice(self, available_spells: list) -> MenuNode:
+        submenu_config = []
+        for spell in available_spells:
+            submenu_config.append(_leaf_from_action_details(spell, self._on_teardown))
+
+        return SubMenuNode("Magic", sub_menu=submenu_config)
+            
     def consume_item_choice(self, available_items: list[dict]) -> MenuNode:
         submenu_config = []
         for item in available_items:

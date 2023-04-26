@@ -76,7 +76,8 @@ class TitleView(arcade.View):
         self.update_angle(delta_time)
         self.animate_title_banner()
         self.animate_start_banner()
-
+        self.menu.update()
+        
     def on_show_view(self):
         self.menu.enable()
 

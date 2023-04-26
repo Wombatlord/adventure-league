@@ -47,7 +47,7 @@ class Scene(arcade.Section):
         height: int,
         **kwargs,
     ):
-        super().__init__(left, bottom, width, height, **kwargs)
+        super().__init__(left, bottom, width, height, prevent_dispatch_view={False}, **kwargs)
         self._mouse_coords = Vec2(0, 0)
 
         self.encounter_room = None

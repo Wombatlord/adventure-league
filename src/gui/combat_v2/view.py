@@ -29,3 +29,10 @@ class CombatView(arcade.View):
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
         self.hud.on_resize(width, height)
+
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
+        match symbol:
+            case arcade.key.G:
+                if eng.mission_in_progress is False:
+                    eng.flush_subscriptions()
+                    self.window.show_view(self.parent_factory())

@@ -38,6 +38,7 @@ class HUD(arcade.Section):
             scene.width,
             scene.height,
             prevent_dispatch={False},
+            prevent_dispatch_view={False},
             draw_order=100,
         )
         self.scene = scene
