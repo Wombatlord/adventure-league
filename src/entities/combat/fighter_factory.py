@@ -142,6 +142,7 @@ def _setup_fighter_archetypes(fighter: Fighter):
         case FighterArchetype.RANGED:
             fighter.max_range = randint(2, 4)
         case FighterArchetype.CASTER:
+            fighter.max_range = 4
             fighter.caster = Caster(max_mp=10, known_spells=basic_spell_book)
 
     fighter.set_action_options()

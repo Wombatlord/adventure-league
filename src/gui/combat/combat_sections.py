@@ -336,7 +336,7 @@ class CombatGridSection(arcade.Section):
         if not self.encounter_room:
             return
 
-        node = self.transform.to_world(self.cam_controls.imaged_px(self._mouse_coords))
+        node = self.transform.to_world(self.cam_controls.image_px(self._mouse_coords))
 
         if node not in self.encounter_room.space:
             return

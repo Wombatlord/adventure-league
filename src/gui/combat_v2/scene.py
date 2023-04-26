@@ -65,7 +65,7 @@ class Scene(arcade.Section):
         self.transform = Transform.isometric(
             block_dimensions=(16, 8, 8),
             absolute_scale=self.SPRITE_SCALE,
-            translation=Vec2(self.width / 2, self.height / 4),
+            translation=self.world_origin,
         )
         self.debug_text = ""
         self.last_mouse_node = Node(0, 0)
@@ -125,6 +125,11 @@ class Scene(arcade.Section):
             handler_id="CombatGrid.clear_retreating_sprites",
             handler=self.clear_retreating_sprites,
         )
+
+    @property
+    def world_origin(self) -> Vec2:
+        return Vec2(self.width/2, self.height/4)
+
 
     def show_path(self, current: tuple[Node] | None) -> None:
         breakpoint()
@@ -199,9 +204,16 @@ class Scene(arcade.Section):
             arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
 
     def on_resize(self, width: int, height: int):
+        print(f"{(width, height)=}")
         self.width, self.height = width, height
+        self.transform.on_resize(self.world_origin)
         self.grid_camera.resize(width, height)
-        self.grid_camera.center(self.transform.to_screen(Node(0, 0)))
+        self.grid_camera.center(self.transform.to_screen(Node(4, 4)))
+        for sprite in self.world_sprite_list:
+            if isinstance(sprite, BaseSprite):
+                sprite.update_position()
+
+        self.on_update(0)
 
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
@@ -291,8 +303,8 @@ class Scene(arcade.Section):
         self.on_mouse_motion(x, y, dx, dy)
         if not self.encounter_room:
             return
-
-        node = self.transform.to_world(self.cam_controls.imaged_px(self._mouse_coords))
+        
+        node = self.transform.to_world(self.cam_controls.image_px(self._mouse_coords))
 
         if node not in self.encounter_room.space:
             return

@@ -29,4 +29,3 @@ class CombatView(arcade.View):
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
         self.hud.on_resize(width, height)
-        self.scene.on_resize(width, height)

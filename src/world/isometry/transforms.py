@@ -20,6 +20,9 @@ class Transform:
         self._world_to_screen = world_to_screen
         self._screen_to_world = invert_mat3(world_to_screen)
 
+    def on_resize(self, translation: Vec2):
+        self._translation = translation
+
     @classmethod
     def isometric(cls, block_dimensions: tuple[int, int, int] | Vec3, absolute_scale: float, translation: Vec2 = Vec2()):
         """
@@ -94,6 +97,17 @@ class Transform:
         embedded = Vec3(*(cam_coords - self._translation), -1)
         return Node(*[math.ceil(coord) for coord in (self._screen_to_world @ embedded)[:2]])
 
+    def __eq__(self, other: Self) -> bool:
+        if not isinstance(other, Transform):
+            return False
+
+        same_translation = self._translation == other._translation
+        same_projection = self._world_to_screen == other._world_to_screen
+
+        return same_translation and same_projection
+
+    def is_trivial(self):
+        return self == Transform.trivial()
 
 def _embed_mat3_in_mat4(embedded: Mat3) -> Mat4:
     return Mat4([

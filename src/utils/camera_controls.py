@@ -94,10 +94,18 @@ class CameraController:
             .scale_isotropic(self._camera.zoom, fixed_point=self._camera.position)
         )
 
-    def imaged_px(self, px: Vec2) -> Vec2:
+    def image_px(self, screen_px: Vec2) -> Vec2:
+        """Turns the position in terms of viewport pixels into a position in terms of the pixels of the projection"""
         return self.imaged_rect().lerp(
-            Rectangle.from_viewport(self._camera.viewport).affine_coords(px),
+            Rectangle.from_viewport(self._camera.viewport).affine_coords(screen_px),
             translate=True,
+        )
+
+    def screen_px(self, image_px: Vec2) -> Vec2:
+        """Turns the position in terms of the projection coordinates into a position in terms of viewport pixels"""
+        return Rectangle.from_viewport(self._camera.viewport).lerp(
+            self.imaged_rect().affine_coords(image_px),
+            translate=True
         )
 
     def on_update(self):
