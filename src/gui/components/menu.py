@@ -252,6 +252,7 @@ class Menu:
             return
 
         self.add_return_to_top_level_button()
+
     def add_return_to_top_level_button(self):
         btn = update_button(
             on_click=lambda: self.enter_submenu(self.full_menu_graph), text="Return"

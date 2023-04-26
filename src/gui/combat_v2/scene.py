@@ -47,7 +47,9 @@ class Scene(arcade.Section):
         height: int,
         **kwargs,
     ):
-        super().__init__(left, bottom, width, height, prevent_dispatch_view={False}, **kwargs)
+        super().__init__(
+            left, bottom, width, height, prevent_dispatch_view={False}, **kwargs
+        )
         self._mouse_coords = Vec2(0, 0)
 
         self.encounter_room = None
@@ -181,7 +183,9 @@ class Scene(arcade.Section):
     def update_camera(self):
         self.cam_controls.on_update()
         self.update_focus()
-        self.cam_controls.look_at_world(self.get_focus(), self.transform)
+        self.cam_controls.look_at_world(
+            self.get_focus(), self.transform, distance_per_frame=0.2
+        )
         self.grid_camera.update()
 
     def on_update(self, delta_time: float):

@@ -71,7 +71,7 @@ class HealingPotionTest(unittest.TestCase):
     def test_potion_in_inventory_is_drinkable_by_owning_entity_with_inventory(self):
         # Arrange
         merc = self.get_entity_with_inventory(inventory_capacity=1)
-        merc.fighter.hp -= 5
+        merc.fighter.health.current -= 5
 
         potion_1 = self.get_potion()
 
@@ -82,8 +82,8 @@ class HealingPotionTest(unittest.TestCase):
         # Assert
         assert potion_1 not in merc.inventory, f"{merc.inventory.items}"
         assert (
-            merc.fighter.hp == merc.fighter.max_hp
-        ), f"expected {merc.fighter.hp=} {merc.fighter.max_hp=}"
+            merc.fighter.health.current == merc.fighter.health.max_hp
+        ), f"expected {merc.fighter.health.current=} {merc.fighter.health.max_hp=}"
         expected = merc.annotate_event(
             {
                 "message": f"{potion_1.get_name()} used by {merc.inventory.owner.name}",

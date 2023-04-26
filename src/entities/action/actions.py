@@ -106,7 +106,7 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
             cls.details(fighter, occupant.fighter)
             for occupant in fighter.locatable.entities_in_range(
                 room=fighter.encounter_context.get(),
-                max_range=fighter.max_range,
+                max_range=fighter.stats.max_range,
                 entity_filter=lambda e: fighter.is_enemy_of(e.fighter),
             )
         ]

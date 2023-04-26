@@ -113,9 +113,11 @@ class CameraController:
         self._camera.zoom *= self.zoom_factor
         self._camera.move(self._camera.position + self.pan_vec * self._pan_speed)
 
-    def look_at_world(self, position: Node, transform: Transform):
+    def look_at_world(
+        self, position: Node, transform: Transform, distance_per_frame: float = 1
+    ):
         """Tell the camera controls to center the view on the world position supplied, maintaining the current zoom level"""
-        self._camera.center(transform.project(position))
+        self._camera.center(transform.project(position), speed=distance_per_frame)
 
     def __repr__(self):
         cam_pos = f"x={self._camera.position.x:.1f}, y={self._camera.position.y:.1f}"
