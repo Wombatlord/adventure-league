@@ -8,8 +8,8 @@ class TextureButtonNinePatchConfig:
     boundaries = {
         "left": 32,
         "right": 32,
-        "bottom": 6,
-        "top": 9,
+        "bottom": 16,
+        "top": 16,
     }
 
     gold = lambda: {
@@ -38,7 +38,7 @@ def load_nine_patch(config: dict) -> PixelatedNinePatch:
         "texture": tex_loader(),  # <---- at this point we access the TextureData
         **config,
     }
-
+    print(kwargs)
     return PixelatedNinePatch(**kwargs)
 
 
