@@ -1,7 +1,7 @@
 import operator
 from typing import Any, NamedTuple, Self, Tuple
 
-from arcade.camera import FourFloatTuple
+from arcade.camera import FourFloatTuple, FourIntTuple
 from pyglet.math import Vec2
 
 Real = int | float
@@ -69,7 +69,7 @@ class Rectangle(NamedTuple):
         """
         See above
         """
-        return cls.from_lbrt((x, y, w, h))
+        return cls.from_lbrt((x, y, w + x, h + y))
 
     @classmethod
     def from_limits(cls, min_v: Vec2, max_v: Vec2) -> Self:
@@ -118,6 +118,14 @@ class Rectangle(NamedTuple):
 
         """
         return cls.from_lbwh(viewport)
+
+    def as_viewport(self) -> FourIntTuple:
+        """Returns a FourFloatTuple with the ordering: left, bottom, width, height"""
+        return (int(self.l), int(self.b), int(self.w), int(self.h))
+
+    def as_projection(self) -> FourFloatTuple:
+        """Returns a FourFloatTuple with the ordering: left, right, bottom, top"""
+        return self
 
     @property
     def w(self) -> float:
@@ -180,6 +188,16 @@ class Rectangle(NamedTuple):
         The position vector of the bottom left corner. Equivalent to Rect.min.
         """
         return self.min
+
+    @property
+    def corners(self) -> tuple[Vec2, Vec2, Vec2, Vec2]:
+        """Returns the positions of the corners of the rectangle clockwise from the bottom left"""
+        return (
+            Vec2(self.l, self.b),
+            Vec2(self.l, self.t),
+            Vec2(self.r, self.t),
+            Vec2(self.r, self.b),
+        )
 
     def scale_isotropic(self, factor: float, fixed_point: Vec2) -> Self:
         """
@@ -252,3 +270,14 @@ class Rectangle(NamedTuple):
 
         """
         return self.from_limits(self.min + displacement, self.max + displacement)
+
+    def __contains__(self, other):
+        if not isinstance(other, Rectangle):
+            return False
+
+        return (
+            other.l >= self.l
+            and other.r < self.r
+            and other.b >= self.b
+            and other.t < self.t
+        )

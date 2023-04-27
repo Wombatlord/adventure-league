@@ -66,7 +66,7 @@ class FighterStats:
     @defence.setter
     def defence(self, value):
         self._defence = value
-    
+
     @property
     def power(self):
         return self._power
@@ -82,7 +82,7 @@ class FighterStats:
     @max_range.setter
     def max_range(self, value):
         self._max_range = value
-    
+
     @property
     def speed(self):
         return self._speed
