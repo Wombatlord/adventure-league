@@ -7,13 +7,13 @@ from arcade.gui import Rect
 from pyglet.math import Vec2
 
 from src.engine.init_engine import eng
-from src.gui.combat_v2.combat_log import CombatLog
-from src.gui.combat_v2.combat_menu import CombatMenu, empty
-from src.gui.combat_v2.portrait import Pin, Portrait
+from src.gui.combat.combat_log import CombatLog
+from src.gui.combat.combat_menu import CombatMenu, empty
+from src.gui.combat.portrait import Pin, Portrait
 from src.utils.rectangle import Rectangle
 
 if TYPE_CHECKING:
-    from src.gui.combat_v2.scene import Scene
+    from src.gui.combat.scene import Scene
 
 
 def _subdivision(axis_split: int, size: tuple[int, int], tile: tuple[int, int]) -> Rect:

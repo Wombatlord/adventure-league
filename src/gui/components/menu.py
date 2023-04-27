@@ -9,7 +9,7 @@ from arcade.gui import UIAnchorLayout, UIBoxLayout, UIEvent, UIManager, UITextur
 from pyglet.math import Vec2
 
 from src.gui.animation.positioning import maintain_position
-from src.gui.combat_v2.node_selection import NodeSelection
+from src.gui.combat.node_selection import NodeSelection
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.ui_styles import ADVENTURE_STYLE, UIStyle
 from src.gui.window_data import WindowData
@@ -133,11 +133,11 @@ class Menu:
             width=self.width, height=self.height, size_hint=(None, None)
         )
         self.anchor.center = self.x, self.y
-        self.manager.add(self.anchor).with_border(color=arcade.color.RED)
+        self.manager.add(self.anchor)
         self.main_box = UIBoxLayout(
             size_hint=(1, 1),
             space_between=2,
-        ).with_border(width=3, color=arcade.color.BLUE)
+        )
 
         self.anchor.add(self.main_box, anchor_x=self.align)
         self.build_menu(self.current_menu_graph)

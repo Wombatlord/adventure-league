@@ -4,8 +4,8 @@ import arcade
 from arcade.gui import UIManager
 
 from src.engine.init_engine import eng
-from src.gui.combat_v2.hud import HUD
-from src.gui.combat_v2.scene import Scene
+from src.gui.combat.hud import HUD
+from src.gui.combat.scene import Scene
 
 
 class CombatView(arcade.View):
