@@ -92,18 +92,28 @@ class BaseSprite(OffsetSprite, Sprite):
         self.transform = kwargs.get("transform", Transform.trivial())
         self._draw_priority = 0
         self._draw_priority_offset = kwargs.get("draw_priority_offset", 0)
+        self._node = None
 
     def get_draw_priority(self) -> float:
         return self._draw_priority - self._draw_priority_offset
 
     def set_node(self, node: Node) -> Self:
-        self.center_x, self.center_y = self.transform.to_screen(node)
-        self._draw_priority = draw_priority(node)
+        self._node = node
+        if self.transform != Transform.trivial():
+            self.update_position()
+
         return self
 
     def set_transform(self, transform: Transform) -> Self:
         self.transform = transform
+        if self._node:
+            self.update_position()
+
         return self
+
+    def update_position(self):
+        self.center_x, self.center_y = self.transform.project(self._node)
+        self._draw_priority = draw_priority(self._node)
 
     def update_animation(self, delta_time: float = 1 / 60) -> None:
         self.animation_cycle -= delta_time

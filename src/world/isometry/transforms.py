@@ -20,6 +20,9 @@ class Transform:
         self._world_to_screen = world_to_screen
         self._screen_to_world = invert_mat3(world_to_screen)
 
+    def on_resize(self, translation: Vec2):
+        self._translation = translation
+
     @classmethod
     def isometric(cls, block_dimensions: tuple[int, int, int] | Vec3, absolute_scale: float, translation: Vec2 = Vec2()):
         """
@@ -79,7 +82,7 @@ class Transform:
         # Mat4 to make use of their implementation of Mat4.__invert__
         return cls(world_to_screen, translation=translation)
 
-    def to_screen(self, node: Node) -> Vec2:
+    def project(self, node: Node) -> Vec2:
         # Make sure the input has enough axes and is compatible with matmul (@)
         world_xyz = Vec3(*node)
 
@@ -90,10 +93,22 @@ class Transform:
         screen_xy_projection = screen_xyz[:2]
         return Vec2(*screen_xy_projection) + self._translation
 
-    def to_world(self, cam_coords: Vec2) -> Node:
+    def cast_ray(self, cam_coords: Vec2) -> Node:
+        """We cast a ray"""
         embedded = Vec3(*(cam_coords - self._translation), -1)
         return Node(*[math.ceil(coord) for coord in (self._screen_to_world @ embedded)[:2]])
 
+    def __eq__(self, other: Self) -> bool:
+        if not isinstance(other, Transform):
+            return False
+
+        same_translation = self._translation == other._translation
+        same_projection = self._world_to_screen == other._world_to_screen
+
+        return same_translation and same_projection
+
+    def is_trivial(self):
+        return self == Transform.trivial()
 
 def _embed_mat3_in_mat4(embedded: Mat3) -> Mat4:
     return Mat4([

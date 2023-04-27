@@ -102,7 +102,7 @@ class Caster:
         return self
 
     def available_spells(self):
-        return [spell.details() for spell in self.spells]
+        return self.spells
 
     @property
     def current_mp(self) -> int:

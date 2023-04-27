@@ -138,10 +138,11 @@ def _setup_fighter_archetypes(fighter: Fighter):
 
     match fighter.role:
         case FighterArchetype.MELEE:
-            fighter.max_range = 1
+            fighter.stats.max_range = 1
         case FighterArchetype.RANGED:
-            fighter.max_range = randint(2, 4)
+            fighter.stats.max_range = randint(2, 4)
         case FighterArchetype.CASTER:
+            fighter.stats.max_range = 1
             fighter.caster = Caster(max_mp=10, known_spells=basic_spell_book)
 
     fighter.set_action_options()
@@ -231,4 +232,4 @@ class RecruitmentPool:
         # Sanity check function
         print(self.pool)
         for i in self.pool:
-            print(i.fighter.hp)
+            print(i.fighter.health.current)

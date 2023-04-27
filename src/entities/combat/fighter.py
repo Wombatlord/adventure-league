@@ -49,6 +49,7 @@ class EncounterContext:
 class Fighter:
     _readied_action: BaseAction | None
     _encounter_context: EncounterContext
+    health: HealthPool
 
     def __init__(
         self,

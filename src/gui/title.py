@@ -7,7 +7,7 @@ from arcade import Window
 
 from src.gui.animation import harmonic
 from src.gui.components.buttons import get_nav_handler
-from src.gui.components.menu import Menu
+from src.gui.components.menu import LeafMenuNode, Menu, SubMenuNode
 from src.gui.guild.home import HomeView
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SingleTextureSpecs
@@ -40,30 +40,30 @@ class TitleView(arcade.View):
         self.time = 0
         navigate_to_guild = get_nav_handler(HomeView(parent_factory=TitleView))
         self.menu_options = [
-            ("Start", navigate_to_guild),
-            (
+            LeafMenuNode("Start", navigate_to_guild),
+            SubMenuNode(
                 "first",
-                [
-                    ("x", lambda: print("a")),
-                    ("y", lambda: print("b")),
-                    ("z", lambda: print("c")),
+                sub_menu=[
+                    LeafMenuNode("x", lambda: print("a")),
+                    LeafMenuNode("y", lambda: print("b")),
+                    LeafMenuNode("z", lambda: print("c")),
                 ],
             ),
-            (
+            SubMenuNode(
                 "second",
-                [
-                    ("a", lambda: None),
-                    ("1", lambda: print("1")),
-                    ("2", lambda: print("2")),
-                    (
+                sub_menu=[
+                    LeafMenuNode("a", lambda: None),
+                    LeafMenuNode("1", lambda: print("1")),
+                    LeafMenuNode("2", lambda: print("2")),
+                    SubMenuNode(
                         "3",
-                        [
-                            ("4", lambda: print("4")),
+                        sub_menu=[
+                            LeafMenuNode("4", lambda: print("4")),
                         ],
                     ),
                 ],
             ),
-            ("Quit", arcade.exit),
+            LeafMenuNode("Quit", arcade.exit, closes_menu=True),
         ]
         self.menu = Menu(
             menu_config=self.menu_options,
@@ -76,6 +76,7 @@ class TitleView(arcade.View):
         self.update_angle(delta_time)
         self.animate_title_banner()
         self.animate_start_banner()
+        self.menu.update()
 
     def on_show_view(self):
         self.menu.enable()

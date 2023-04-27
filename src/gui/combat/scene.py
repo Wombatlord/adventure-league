@@ -6,14 +6,12 @@ from pyglet.math import Vec2
 from src import config
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
+from src.entities.properties.locatable import Locatable
 from src.entities.sprites import BaseSprite
-from src.gui.combat.combat_components import CombatScreen
 from src.gui.combat.highlight import HighlightLayer
 from src.gui.components.menu import Menu
-from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
-from src.utils.functional import call_in_order
 from src.world.isometry.transforms import Transform
 from src.world.level.room import Room
 from src.world.node import Node
@@ -32,7 +30,7 @@ class SelectionCursor:
     GOLD_EDGE = 5
 
 
-class CombatGridSection(arcade.Section):
+class Scene(arcade.Section):
     TILE_BASE_DIMS = (16, 17)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
     SPRITE_SCALE = 5
@@ -48,32 +46,31 @@ class CombatGridSection(arcade.Section):
         height: int,
         **kwargs,
     ):
-        super().__init__(left, bottom, width, height, **kwargs)
+        super().__init__(
+            left, bottom, width, height, prevent_dispatch_view={False}, **kwargs
+        )
         self._mouse_coords = Vec2(0, 0)
 
-        self.on_left_clickup: Callable[[], None] = lambda *_: None
         self.encounter_room = None
         self._original_dims = width, height
 
         self.world_sprite_list = arcade.SpriteList()
         self.dudes_sprite_list = arcade.SpriteList()
-        self.combat_screen = CombatScreen()
         self.grid_camera = arcade.Camera()
         self.grid_camera.zoom = 1.0
-        self.other_camera = arcade.Camera()
         self._subscribe_to_events()
         self.cam_controls = CameraController(self.grid_camera)
 
         self.transform = Transform.isometric(
             block_dimensions=(16, 8, 8),
             absolute_scale=self.SPRITE_SCALE,
-            translation=Vec2(self.width, self.height) / 2,
+            translation=self.world_origin,
         )
         self.debug_text = ""
-        self.combat_menu = None
         self.last_mouse_node = Node(0, 0)
 
-        self.mouse_selection = lambda n: False
+        self._focus = Node(4, 4)
+        self._follow = None
 
         # Selection Highlight Layers
         self.highlight_layer_gold_edge = HighlightLayer(
@@ -94,12 +91,6 @@ class CombatGridSection(arcade.Section):
             scale=self.SPRITE_SCALE,
             transform=self.transform,
         ).attach_display(self.world_sprite_list)
-
-    def reset_mouse_selection(self):
-        self.mouse_selection = lambda n: False
-
-    def provide_mouse_selection(self, selection: Callable[[Node], bool]):
-        self.mouse_selection = selection
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -137,7 +128,12 @@ class CombatGridSection(arcade.Section):
             handler=self.clear_retreating_sprites,
         )
 
+    @property
+    def world_origin(self) -> Vec2:
+        return Vec2(self.width / 2, self.height / 4)
+
     def show_path(self, current: tuple[Node] | None) -> None:
+        breakpoint()
         if not current:
             return
 
@@ -171,9 +167,9 @@ class CombatGridSection(arcade.Section):
         self.refresh_draw_order()
 
     def hide_path(self):
-        self.hide_highlight()
+        self.clear_highlight()
 
-    def hide_highlight(self):
+    def clear_highlight(self):
         self.highlight_layer_green.hide_all()
         self.highlight_layer_gold_edge.hide_all()
         self.highlight_layer_red.hide_all()
@@ -182,10 +178,15 @@ class CombatGridSection(arcade.Section):
     def refresh_draw_order(self):
         self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
 
-    def on_update(self, delta_time: float):
+    def update_camera(self):
         self.cam_controls.on_update()
+        self.update_focus()
+        self.cam_controls.look_at_world(
+            self.get_focus(), self.transform, distance_per_frame=0.2
+        )
         self.grid_camera.update()
-        self.update_debug_text()
+
+    def on_update(self, delta_time: float):
         eng.update_clock -= delta_time
 
         if not eng.awaiting_input:
@@ -196,23 +197,9 @@ class CombatGridSection(arcade.Section):
         self.dudes_sprite_list.update_animation(delta_time=delta_time)
 
         if eng.update_clock < 0:
-            # print(f"{self.__class__}.on_update: TICK")
             eng.reset_update_clock()
             hook()
-
-    def update_debug_text(self):
-        self.debug_text = "\n".join(
-            [
-                repr(self.cam_controls),
-                f"{self.cam_controls.imaged_rect()}",
-                f"{self.cam_controls.imaged_rect().w=}",
-                f"{self.grid_camera.projection}",
-                f"{self.grid_camera.viewport}",
-                f"{self._mouse_coords=}",
-                self.view.input_mode.name,
-                repr(self.view.input_mode.selection.options)[:50],
-            ]
-        )
+        self.update_camera()
 
     def on_draw(self):
         self.grid_camera.use()
@@ -223,31 +210,25 @@ class CombatGridSection(arcade.Section):
             arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
             arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
 
-        if self.combat_menu and self.combat_menu.is_enabled():
-            self.combat_menu.draw()
-        elif self.combat_menu and not self.combat_menu.is_enabled():
-            self.combat_menu = None
-
-        self.other_camera.use()
-        if config.DEBUG:
-            arcade.Text(
-                self.debug_text,
-                10,
-                WindowData.height - 20,
-                multiline=True,
-                width=self.width,
-            ).draw()
-
-        self.combat_screen.draw_message()
-        self.combat_screen.draw_stats()
-
     def on_resize(self, width: int, height: int):
-        super().on_resize(width, height)
+        self.width, self.height = width, height
+        self.transform.on_resize(self.world_origin)
         self.grid_camera.resize(width, height)
-        self.grid_camera.center(self.transform.to_screen(Node(0, 0)))
-        self.other_camera.resize(
-            viewport_width=width, viewport_height=height
-        )  # Resize the camera displaying the combat text
+        self.cam_controls.look_at_world(self.get_focus(), self.transform)
+        for sprite in self.world_sprite_list:
+            if isinstance(sprite, BaseSprite):
+                sprite.update_position()
+
+        self.on_update(0)
+
+    def follow(self, locatable: Locatable):
+        self._follow = locatable
+
+    def update_focus(self):
+        self._focus = self._follow.location if self._follow else None
+
+    def get_focus(self) -> Node:
+        return self._focus or Node(4, 4)
 
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
@@ -333,36 +314,25 @@ class CombatGridSection(arcade.Section):
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         self._mouse_coords = Vec2(float(x), float(y))
 
+    def update_mouse_node(self, x: int, y: int, dx: int, dy: int) -> Node | None:
+        self.on_mouse_motion(x, y, dx, dy)
         if not self.encounter_room:
             return
 
-        node = self.transform.to_world(self.cam_controls.imaged_px(self._mouse_coords))
+        node = self.transform.cast_ray(self.cam_controls.image_px(self._mouse_coords))
 
         if node not in self.encounter_room.space:
             return
 
         if self.mouse_node_has_changed(node):
             self.set_mouse_node(node)
+            return Node
 
     def get_mouse_node(self) -> Node | None:
         return self.last_mouse_node
 
     def set_mouse_node(self, node: Node):
         self.last_mouse_node = node
-        self.view.on_hovered_node_change()
 
     def mouse_node_has_changed(self, new_node: Node) -> bool:
         return self.last_mouse_node != new_node
-
-    def disarm_click(self):
-        self.on_left_clickup = lambda *_: None
-
-    def arm_click(self, on_left_clickup: Callable[[], None]):
-        self.on_left_clickup = call_in_order(
-            (on_left_clickup, lambda: self.disarm_click())
-        )
-
-    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        match button:
-            case arcade.MOUSE_BUTTON_LEFT:
-                self.on_left_clickup()

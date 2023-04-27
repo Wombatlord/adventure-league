@@ -16,8 +16,22 @@ class HealthPool:
     def current(self, value):
         self._current_hp = value
 
+    def decrease_bonus_hp(self, amount) -> int:
+        if self._bonus_hp - amount < 0:
+            breakthrough = self._bonus_hp - amount
+            self._bonus_hp = 0
+            return abs(breakthrough)
+
+        else:
+            self._bonus_hp -= amount
+            return 0
+
     def decrease_current(self, amount: int):
-        if self._current_hp - amount < 0:
+        if self._bonus_hp > 0:
+            breakthrough = self.decrease_bonus_hp(amount)
+            self._current_hp -= breakthrough
+
+        elif self._current_hp - amount < 0:
             self._current_hp = 0
 
         else:
@@ -49,6 +63,10 @@ class FighterStats:
     def defence(self):
         return self._defence
 
+    @defence.setter
+    def defence(self, value):
+        self._defence = value
+
     @property
     def power(self):
         return self._power
@@ -60,6 +78,10 @@ class FighterStats:
     @property
     def max_range(self):
         return self._max_range
+
+    @max_range.setter
+    def max_range(self, value):
+        self._max_range = value
 
     @property
     def speed(self):
