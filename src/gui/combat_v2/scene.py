@@ -8,7 +8,6 @@ from src.engine.init_engine import eng
 from src.entities.entity import Entity
 from src.entities.properties.locatable import Locatable
 from src.entities.sprites import BaseSprite
-from src.gui.combat.combat_components import CombatScreen
 from src.gui.combat.highlight import HighlightLayer
 from src.gui.components.menu import Menu
 from src.textures.texture_data import SpriteSheetSpecs
@@ -57,7 +56,6 @@ class Scene(arcade.Section):
 
         self.world_sprite_list = arcade.SpriteList()
         self.dudes_sprite_list = arcade.SpriteList()
-        self.combat_screen = CombatScreen()
         self.grid_camera = arcade.Camera()
         self.grid_camera.zoom = 1.0
         self._subscribe_to_events()

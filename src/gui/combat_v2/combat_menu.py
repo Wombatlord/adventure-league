@@ -133,7 +133,6 @@ class CombatMenu:
 
         action_types = event.get("choices")
         menu_config: list[MenuNode] = []
-        print(action_types.items())
         for action_name, action_details in action_types.items():
             menu_node = None
             match action_name:

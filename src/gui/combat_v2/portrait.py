@@ -85,7 +85,6 @@ class Portrait:
     def on_resize(self):
         if self._pin:
             self._translate = self._pin.get_translation()
-        print(self._translate)
         self.update(force=True)
 
     @property
@@ -146,7 +145,6 @@ class Portrait:
         return scale
 
     def update_sprite(self):
-        print("update sprite called")
         if self._base_sprite is None:
             return
 

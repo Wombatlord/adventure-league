@@ -34,8 +34,10 @@ class CombatLog:
         self.make_shapes()
         self.shapes.append(self.panel_bg)
         self.shapes.append(self.panel_border)
-        self.update_text_positions()
+        self.messages = []
+        self.update_text()
 
+        
     def make_shapes(self):
         rect = self.rect
         self.panel_bg = arcade.shape_list.create_rectangle_filled(
@@ -83,7 +85,6 @@ class CombatLog:
         for i, current_message in enumerate(self.logs):
             height = next(heights)
             if i == len(self.logs) - 1:
-                print(self.alphas)
                 paint = (218, 165, 32, self.alphas[-1])
             else:
                 paint = (255, 255, 255, self.alphas[i])
@@ -117,11 +118,3 @@ class CombatLog:
             spacing=2,
             max_height=WindowData.height,
         )
-
-    def update_text_positions(self):
-        heights = self.msg_height()
-
-        for message in self.messages:
-            height = next(heights)
-            message.y = height
-            message.x = self.rect.center_x
