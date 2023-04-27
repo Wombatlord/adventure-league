@@ -5,8 +5,10 @@ from typing import Callable
 import arcade
 from pyglet.math import Vec2
 
+from src import config
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
+from src.gui.combat.health_bar import HealthBar
 from src.utils.rectangle import Rectangle
 
 
@@ -43,14 +45,24 @@ class Portrait:
         self.sprite = None
         self.rect = rect
         self.pictured = None
+        self._health_bar = HealthBar(scale=4)
 
         top_text_start = self.text_start_above()
         self._top_text = arcade.Text(
-            text="", start_x=top_text_start.x, start_y=top_text_start.y, font_size=18
+            text="",
+            start_x=top_text_start.x,
+            start_y=top_text_start.y,
+            font_size=16,
+            anchor_x="center",
         )
         btm_text_start = self.text_start_below()
         self._bottom_text = arcade.Text(
-            text="", start_x=btm_text_start.x, start_y=btm_text_start.y, font_size=18
+            text="",
+            start_x=btm_text_start.x,
+            start_y=btm_text_start.y,
+            font_size=10,
+            anchor_y="center",
+            anchor_x="right",
         )
 
     def _check_base_tex(self) -> arcade.Texture | None:
@@ -102,7 +114,10 @@ class Portrait:
             self.clear()
             return
 
-        self.pictured = sprite.owner.owner
+        if self.pictured is not sprite.owner.owner:
+            self.pictured = sprite.owner.owner
+            self._health_bar.set_watched_health(self.pictured.fighter.health)
+
         self._base_texture = sprite.texture
         self._base_sprite = sprite
 
@@ -117,6 +132,7 @@ class Portrait:
         self._top_text.text = ""
         self._bottom_text.text = ""
         self._sprites.clear()
+        self._health_bar.set_watched_health(None)
         self.update(force=True)
 
     @property
@@ -154,8 +170,16 @@ class Portrait:
         # do the crop
         src = self._base_sprite.texture
 
-        # pillow style (whoopsie!)
-        cropped = src.crop(0, 0, src.width, src.height // 2 + 2)
+        # hitbox height
+        ys = [pt[1] for pt in src.hit_box_points]
+        height = int(max(ys) - min(ys))
+        empty_px_above = src.height - height
+
+        # pillow style cropping with increasing y from top to btm (whoopsie!)
+        # the crop_start_y allows sprites when most of the top of the sprite is empty to
+        # effectively move up in the frame so they aren't completely cut off
+        crop_start_y = max(empty_px_above - 2, 0)
+        cropped = src.crop(0, crop_start_y, src.width, 8)
         if self._flip:
             cropped = cropped.flip_left_right()
 
@@ -171,34 +195,41 @@ class Portrait:
         self.sprite.center_y = self.sprite_slot.center.y
 
     def update_top(self):
-        self._top_text.position = (
-            self.top_slot.center - Vec2(self._top_text.content_width, 0) / 2
-        )
+        self._top_text.position = self.text_start_above()
         if self.pictured is not None:
-            self._top_text.text = f"{self.pictured.name}"
+            self._top_text.text = f"{self.pictured.name.name_and_title}"
         else:
             self._top_text.text = ""
 
     def update_btm(self):
-        self._bottom_text.position = (
-            self.bottom_slot.center - Vec2(self._bottom_text.content_width, 0) / 2
-        )
+        self._bottom_text.position = self.text_start_below()
+
+        # self._health_bar.v_align(self.bottom_slot.center.y)
+        self._health_bar.update()
         if self.pictured is not None:
             current = self.pictured.fighter.health.current
             max_h = self.pictured.fighter.health.max_hp
-            missing = max_h - current
-            self._bottom_text.text = (
-                f"HP: {self.pictured.fighter.health.current} "
-                + "-" * round(10 * missing / max_h)
-                + "#" * round(10 * current / max_h)
-            )
+            self._bottom_text.text = f"HP: {current}/{max_h}"
         else:
             self._bottom_text.text = ""
+        health_bar_pos = self.bottom_slot.lerp(
+            Vec2(0.5, 0.5) + Vec2(1 / 6, 0), translate=True
+        )
+        self._health_bar.set_position(health_bar_pos)
 
     def draw(self):
         self._sprites.draw(pixelated=True)
         self._bottom_text.draw()
         self._top_text.draw()
+        self._health_bar.draw()
+        if not config.DEBUG:
+            return
+
+        for c in self.rect.corners:
+            arcade.draw_point(c.x, c.y, arcade.color.RED, 5)
+
+        for sprite in self._sprites:
+            sprite.draw_hit_box(color=arcade.color.BLUE, line_thickness=1)
 
     @property
     def top_slot(self) -> Rectangle:
@@ -209,7 +240,7 @@ class Portrait:
 
     @property
     def sprite_slot(self) -> Rectangle:
-        *_, max_v, _ = self.top_slot.corners
+        *_, max_v = self.top_slot.corners
         _, min_v, *_ = self.bottom_slot.corners
         return Rectangle.from_limits(min_v, max_v)
 
@@ -221,7 +252,9 @@ class Portrait:
         )
 
     def text_start_below(self) -> Vec2:
-        return self.bottom_slot.min + Vec2(0, self.bottom_slot.h) / 2
+        return Vec2(*self._health_bar.sprite.position) + Vec2(
+            -(self._health_bar.sprite.width / 2 + 4), 3
+        )
 
     def text_start_above(self) -> Vec2:
-        return self.top_slot.min + Vec2(0, self.top_slot.h) / 2
+        return self.top_slot.lerp(Vec2(0.5, 0.6), translate=True)

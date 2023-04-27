@@ -6,6 +6,7 @@ import arcade
 from arcade.gui import Rect
 from pyglet.math import Vec2
 
+from src import config
 from src.engine.init_engine import eng
 from src.gui.combat.combat_log import CombatLog
 from src.gui.combat.combat_menu import CombatMenu, empty
@@ -51,7 +52,7 @@ class HUD(arcade.Section):
             width=self.width // 2,
         )
         self.hud_camera = arcade.Camera()
-        portrait_height, portrait_width = 150, 200
+        portrait_height, portrait_width = 200, 200
 
         self.setup_player_portrait(portrait_height, portrait_width)
         self.setup_enemy_portrait(portrait_height, portrait_width)
@@ -84,7 +85,7 @@ class HUD(arcade.Section):
         bl_pin = Pin(self.get_anchor_bottom_left(bl_margins), enemy_portrait_pinned_pt)
         self.enemy_portrait.pin_rect(bl_pin)
 
-    def setup_player_portrait(self, portrait_width, portrait_height):
+    def setup_player_portrait(self, portrait_height, portrait_width):
         window_l_to_r = Vec2(*(arcade.get_window().size[0], 0))
         br_margins = Vec2(-50, 0)
         self.player_character_portrait = Portrait(
@@ -180,9 +181,11 @@ class HUD(arcade.Section):
         self.hud_camera.use()
         self.combat_log.draw()
         self.combat_menu.menu.draw()
-        self.debug_text.draw()
         self.player_character_portrait.draw()
         self.enemy_portrait.draw()
+        if not config.DEBUG:
+            return
+        self.debug_text.draw()
 
     def on_update(self, delta_time: float):
         self.player_character_portrait.update()

@@ -47,6 +47,7 @@ class SingleTextureSpecs:
     mercenaries_banner = TextureSpec("./assets/sprites/mercenaries_banner.png")
     mission_banner = TextureSpec("./assets/sprites/mission_banner.png")
     mission_banner_dark = TextureSpec("./assets/sprites/mission_banner.png")
+    health_bar = TextureSpec("./assets/sprites/health_bar.png")
 
 
 class SpriteSheetSpecs:
