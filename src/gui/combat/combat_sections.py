@@ -8,7 +8,7 @@ from src.engine.init_engine import eng
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
 from src.gui.combat.combat_components import CombatScreen
-from src.gui.combat.highlight import HighlightLayer
+from src.gui.combat_v2.highlight import HighlightLayer
 from src.gui.components.menu import Menu
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SpriteSheetSpecs

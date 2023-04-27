@@ -9,7 +9,7 @@ from arcade.gui import UIAnchorLayout, UIBoxLayout, UIEvent, UIManager, UITextur
 from pyglet.math import Vec2
 
 from src.gui.animation.positioning import maintain_position
-from src.gui.combat.node_selection import NodeSelection
+from src.gui.combat_v2.node_selection import NodeSelection
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.ui_styles import ADVENTURE_STYLE, UIStyle
 from src.gui.window_data import WindowData

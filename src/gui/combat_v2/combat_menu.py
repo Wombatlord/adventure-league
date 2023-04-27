@@ -14,7 +14,7 @@ from src.entities.action.actions import (
     MoveAction,
 )
 from src.entities.magic.caster import MagicAction
-from src.gui.combat.node_selection import NodeSelection
+from src.gui.combat_v2.node_selection import NodeSelection
 from src.gui.components.menu import (
     LeafMenuNode,
     Menu,

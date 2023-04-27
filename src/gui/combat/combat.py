@@ -12,7 +12,7 @@ from src.entities.action.actions import MoveAction
 from src.entities.magic.caster import MagicAction
 from src.gui.combat import combat_menu
 from src.gui.combat.combat_sections import CombatGridSection
-from src.gui.combat.node_selection import NodeSelection
+from src.gui.combat_v2.node_selection import NodeSelection
 from src.gui.components.buttons import end_turn_button
 from src.gui.components.input_capture import BaseInputMode, GridSelection, Selection
 from src.gui.components.menu import Menu

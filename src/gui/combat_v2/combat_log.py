@@ -37,7 +37,6 @@ class CombatLog:
         self.messages = []
         self.update_text()
 
-        
     def make_shapes(self):
         rect = self.rect
         self.panel_bg = arcade.shape_list.create_rectangle_filled(
