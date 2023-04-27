@@ -51,7 +51,7 @@ class HUD(arcade.Section):
             width=self.width // 2,
         )
         self.hud_camera = arcade.Camera()
-        portrait_height, portrait_width = 150, 200
+        portrait_height, portrait_width = 200, 200
 
         self.setup_player_portrait(portrait_height, portrait_width)
         self.setup_enemy_portrait(portrait_height, portrait_width)
@@ -84,7 +84,7 @@ class HUD(arcade.Section):
         bl_pin = Pin(self.get_anchor_bottom_left(bl_margins), enemy_portrait_pinned_pt)
         self.enemy_portrait.pin_rect(bl_pin)
 
-    def setup_player_portrait(self, portrait_width, portrait_height):
+    def setup_player_portrait(self, portrait_height, portrait_width):
         window_l_to_r = Vec2(*(arcade.get_window().size[0], 0))
         br_margins = Vec2(-50, 0)
         self.player_character_portrait = Portrait(
