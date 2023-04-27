@@ -10,7 +10,6 @@ from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
 from src.engine.game_state import AwardSpoilsHandler, GameState
 from src.engine.mission_board import MissionBoard
 from src.entities.combat.fighter_factory import RecruitmentPool
-from src.projection import health
 from src.systems.combat import CombatRound
 
 
@@ -48,16 +47,6 @@ class Engine:
         self.subscriptions: dict[str, dict[str, Handler]] = {}
         self.combat_dispatcher = VolatileDispatcher(self)
         self.projection_dispatcher = StaticDispatcher(self)
-        self.projection_dispatcher.static_subscribe(
-            topic="entity_data",
-            handler_id="health_projection",
-            handler=health.consume,
-        )
-        self.projection_dispatcher.static_subscribe(
-            topic="flush",
-            handler_id="health_projection",
-            handler=health.flush_handler,
-        )
 
     def static_subscribe(self, topic: str, handler_id: str, handler: Handler):
         self.projection_dispatcher.subscribe(topic, handler_id, handler)
@@ -148,19 +137,6 @@ class Engine:
 
     def increase_update_clock_by_delay(self, delay):
         self.update_clock += delay
-
-    def last_n_messages(self, n: int) -> list[str]:
-        return self.messages[-n:]
-
-    def last_n_messages_with_alphas(self, n: int) -> MessagesWithAlphas:
-        if (
-            len(self.message_alphas) < len(self.messages)
-            and len(self.message_alphas) < n
-        ):
-            self.message_alphas.insert(0, self.alpha_max)
-            self.alpha_max -= 50
-
-        return MessagesWithAlphas(self.messages[-n:], self.message_alphas)
 
     def await_input(self) -> None:
         self.awaiting_input = True
