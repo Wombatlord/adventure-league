@@ -185,7 +185,6 @@ class HUD(arcade.Section):
         self.enemy_portrait.draw()
 
     def on_update(self, delta_time: float):
-        self.combat_log.on_update()
         self.player_character_portrait.update()
         self.enemy_portrait.update()
         if self.combat_menu.menu.is_enabled():
