@@ -128,6 +128,16 @@ class Scene(arcade.Section):
             handler=self.clear_retreating_sprites,
         )
 
+    def entity_at_node(self, node: Node) -> Entity | None:
+        if node not in self.encounter_room:
+            return None
+        
+        for occupant in self.encounter_room.occupants:
+            if occupant.locatable.location == node:
+                return occupant
+        
+        return None
+        
     @property
     def world_origin(self) -> Vec2:
         return Vec2(self.width / 2, self.height / 4)

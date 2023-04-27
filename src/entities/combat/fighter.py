@@ -50,7 +50,8 @@ class Fighter:
     _readied_action: BaseAction | None
     _encounter_context: EncounterContext
     health: HealthPool
-
+    _caster: Caster | None
+    
     def __init__(
         self,
         role: FighterArchetype,
@@ -75,6 +76,7 @@ class Fighter:
         self.set_role(role)
         # -----State-----
         self.action_points = ActionPoints()
+        self._caster = None
         self.caster = caster
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
@@ -84,6 +86,16 @@ class Fighter:
         self._readied_action = None
         self._encounter_context = EncounterContext(self)
 
+    @property
+    def caster(self) -> Caster | None:
+        return self._caster
+    
+    @caster.setter
+    def caster(self, value: Caster | None):
+        self._caster = value
+        if value is not None:
+            self._caster.set_owner(self)
+        
     def set_role(self, role: FighterArchetype):
         self.role = role
         self.set_action_options()

@@ -49,11 +49,6 @@ class Spell(metaclass=abc.ABCMeta):
     _caster: Caster
     effect_type: EffectType
 
-    def __init__(self, caster: Caster):
-        self._caster = caster
-        self._target = None
-        self.effect_type = None
-
     def cast(self, target: Fighter | Node) -> Generator[Event]:
         match self.effect_type:
             case EffectType.SELF:
@@ -62,7 +57,7 @@ class Spell(metaclass=abc.ABCMeta):
                 yield from self.entity_cast(target=target.owner)
             case EffectType.AOE:
                 yield from self.aoe_cast(target=target)
-
+    
     def self_cast(self) -> Generator[Event]:
         raise NotImplementedError(
             f"Effect type is {self.effect_type}. This spell does not have a self_cast."
@@ -98,11 +93,13 @@ class MagicMissile(Spell):
     effect_type = EffectType.ENTITY
 
     def __init__(self, caster: Caster):
-        super().__init__(caster=caster)
         self._damage: int = 1
         self._caster = caster
 
-    def entity_cast(self, target: Fighter) -> Generator[Event, None, None]:
+    def entity_cast(self, target: Fighter | None) -> Generator[Event, None, None]:
+        if target is None:
+            return
+        
         target.hp -= self._damage
         return {
             "message": f"{self._caster.owner.owner.name} cast {self.name} at {target.owner.name}"
@@ -118,7 +115,7 @@ class MagicMissile(Spell):
         return self._caster.owner.can_see(target)
 
     def aoe_at_node(self, node: Node | None = None) -> AoETemplate | None:
-        return None
+        return AoETemplate(anchor=node, shape=(Node(0,0,0),))
 
     def is_self_target(self) -> bool:
         return False
@@ -131,13 +128,12 @@ class Shield(Spell):
     effect_type = EffectType.SELF
 
     def __init__(self, caster: Caster):
-        super().__init__(caster=caster)
-        self._bonus_hp: int = 1
+        self._shield_value: int = 1
         self._caster = caster
-
+    
     def self_cast(self) -> Generator[Event]:
-        self._caster.owner.bonus_health += self._bonus_hp
-        return {"message": f"{self._caster.owner.owner.name} shielded themselves."}
+        self._caster.owner.health.set_shield(self._shield_value)
+        yield {"message": f"{self._caster.owner.owner.name} shielded themselves."}
 
     def valid_target(self, target: Fighter | Node) -> bool:
         if not isinstance(target, Fighter):
@@ -179,7 +175,6 @@ class Fireball(Spell):
     )
 
     def __init__(self, caster: Caster):
-        super().__init__(caster=caster)
         self._caster = caster
         self._damage: int = 1
 

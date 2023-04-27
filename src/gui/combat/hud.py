@@ -149,9 +149,7 @@ class HUD(arcade.Section):
 
         menu_rect = self.get_menu_rect(250, 250)
         self.combat_menu = (
-            CombatMenu(
-                scene=self.scene,
-            )
+            CombatMenu(scene=self.scene, hud=self)
             .set_on_teardown(self.clear_menu)
             .set_highlight(self.scene.show_highlight)
             .set_menu_rect(menu_rect)
@@ -211,6 +209,9 @@ class HUD(arcade.Section):
 
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
+            case arcade.key.P:
+                breakpoint()
+
             case arcade.key.ESCAPE:
                 self.combat_menu.move_selection.disable()
             case _:
