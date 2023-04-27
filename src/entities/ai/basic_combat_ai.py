@@ -67,6 +67,10 @@ class ApproachingTarget(CombatAiState):
 
         def ends_closest(option) -> int:
             _path = option["subject"]
+            
+            if target.locatable.path_to_destination(_path[-1]) is None:
+                return 1000
+            
             return len(target.locatable.path_to_destination(_path[-1]))
 
         ranked_moves = sorted(moves, key=ends_closest)

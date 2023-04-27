@@ -38,7 +38,6 @@ def load_nine_patch(config: dict) -> PixelatedNinePatch:
         "texture": tex_loader(),  # <---- at this point we access the TextureData
         **config,
     }
-    print(kwargs)
     return PixelatedNinePatch(**kwargs)
 
 
