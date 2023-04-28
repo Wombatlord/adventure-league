@@ -258,6 +258,8 @@ class Fighter:
 
     def can_see(self, target: Fighter | Node) -> bool:
         eye = self.location
+        if target == eye:
+            return False
 
         if isinstance(target, Fighter):
             target = target.location
@@ -269,3 +271,11 @@ class Fighter:
         visible_nodes = Ray(eye).line_of_sight(room.space, target)
 
         return target in visible_nodes
+
+    def line_of_sight_to(self, node: Node) -> tuple[Node]:
+        room = self.encounter_context.get()
+        if not room:
+            return tuple()
+
+        visible_nodes = Ray(self.location).line_of_sight(room.space, node)
+        return tuple(visible_nodes[: visible_nodes.index(node) + 1])

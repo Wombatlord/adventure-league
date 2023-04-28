@@ -143,7 +143,6 @@ class Scene(arcade.Section):
         return Vec2(self.width / 2, self.height / 4)
 
     def show_path(self, current: tuple[Node] | None) -> None:
-        breakpoint()
         if not current:
             return
 
@@ -331,12 +330,12 @@ class Scene(arcade.Section):
 
         node = self.transform.cast_ray(self.cam_controls.image_px(self._mouse_coords))
 
-        if node not in self.encounter_room.space:
+        if not self.encounter_room.space.is_pathable(node):
             return
 
         if self.mouse_node_has_changed(node):
             self.set_mouse_node(node)
-            return Node
+            return node
 
     def get_mouse_node(self) -> Node | None:
         return self.last_mouse_node

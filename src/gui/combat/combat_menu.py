@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Self
+from typing import TYPE_CHECKING, Callable, Self, Sequence
 
 import arcade
+
+from src.world.ray import Ray
 
 if TYPE_CHECKING:
     from src.gui.combat.scene import Scene
@@ -58,9 +60,7 @@ class CombatMenu:
     _spell_selection: NodeSelection | None
     _on_teardown: Callable[[], None]
     _highlight: Callable[
-        [
-            list[Node],
-        ],
+        [Sequence[Node] | None, Sequence[Node] | None, Sequence[Node] | None],
         None,
     ]
     _menu_rect: Rectangle | None
@@ -106,10 +106,9 @@ class CombatMenu:
         return self._move_selection.enabled
 
     def is_selecting_spell_target(self) -> bool:
-        if not self.menu._current_spell_selection:
+        if not self.menu.current_node_selection:
             return False
-        print(self.menu._current_spell_selection)
-        return self.menu._current_spell_selection.enabled
+        return self.menu.current_node_selection.enabled
 
     def set_on_teardown(self, on_teardown: Callable) -> Self:
         self._on_teardown = on_teardown
@@ -210,6 +209,7 @@ class CombatMenu:
             )
 
         self._move_selection = NodeSelection(
+            name="Move",
             on_confirm=choose_move,
             validate_selection=validate_move,
             show_template=show_path,
@@ -256,19 +256,21 @@ class CombatMenu:
             elif spell.effect_type == EffectType.AOE:
                 get_current = self._scene.get_mouse_node
 
-            def show_path(node) -> None:
-                current = spell.aoe_at_node(node)
-                template = current.get_shape()
+            def show_template(node) -> None:
+                aoe = spell.aoe_at_node(node)
+                los = spell.caster.owner.line_of_sight_to(node)
                 self._highlight(
-                    red=template,
+                    red=aoe,
+                    green=los,
                 )
 
             selection = NodeSelection(
+                name=magic_action_details.get("label", "No label"),
                 on_confirm=magic_action_details.get("on_confirm", lambda *_: None),
                 on_enter=self._hud.allow_dispatch_mouse,
                 validate_selection=spell.valid_target,
                 get_current=get_current,
-                show_template=show_path,
+                show_template=show_template,
                 keep_last_valid=True,
                 clear_templates=self._scene.clear_highlight,
                 on_teardown=self._on_teardown,
