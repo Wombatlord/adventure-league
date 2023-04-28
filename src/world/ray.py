@@ -14,6 +14,7 @@ class Ray(NamedTuple):
 
         curr_vec = Vec3(0, 0, 0)
         step = Vec3(1, rect.y / rect.x, rect.z / rect.x)
+        #       Division by zero ^^^^    ^^^^
 
         while True:
             next_node = Node(

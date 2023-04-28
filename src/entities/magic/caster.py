@@ -39,9 +39,7 @@ class MagicAction(BaseAction, metaclass=ActionMeta):
     def details(cls, fighter: Fighter, spell: Spell) -> dict:
         if spell.effect_type == EffectType.SELF:
             # for a self cast, we know the target is the caster
-            on_confirm = lambda: fighter.ready_action(
-                cls(fighter, fighter, spell)
-            )
+            on_confirm = lambda: fighter.ready_action(cls(fighter, fighter, spell))
         else:
             # otherwise we need targeting input
             on_confirm = lambda target: fighter.ready_action(

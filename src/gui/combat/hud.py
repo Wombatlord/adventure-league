@@ -123,9 +123,15 @@ class HUD(arcade.Section):
         if node and self.combat_menu.is_selecting_move():
             self.combat_menu.move_selection.on_selection_changed()
 
+        elif node and self.combat_menu.is_selecting_spell_target():
+            self.combat_menu.menu._current_spell_selection.on_selection_changed()
+
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         if self.combat_menu.is_selecting_move():
             self.combat_menu.move_selection.on_selection_confirmed()
+
+        elif self.combat_menu.is_selecting_spell_target():
+            self.combat_menu.menu._current_spell_selection.on_selection_confirmed()
 
     def get_menu_rect(self, menu_w: float, menu_h: float) -> Rectangle:
         return Rectangle.from_xywh(

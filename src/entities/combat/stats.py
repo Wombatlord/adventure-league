@@ -37,11 +37,12 @@ class HealthPool:
         else:
             self._current_hp -= amount
 
-    def increase_current(self, amount: int):        
-        self._current_hp = min(self._current_hp+amount, self._max_hp)
-    
+    def increase_current(self, amount: int):
+        self._current_hp = min(self._current_hp + amount, self._max_hp)
+
     def set_shield(self, amount: int):
         self._bonus_hp = amount
+
 
 class FighterStats:
     defence: int

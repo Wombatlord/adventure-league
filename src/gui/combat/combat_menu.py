@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from src.entities.magic.spells import Spell
     from src.gui.combat.hud import HUD
 
-from src.entities.magic.spells import EffectType
 from src.entities.action.actions import (
     AttackAction,
     ConsumeItemAction,
@@ -17,6 +16,7 @@ from src.entities.action.actions import (
     MoveAction,
 )
 from src.entities.magic.caster import MagicAction
+from src.entities.magic.spells import EffectType
 from src.gui.combat.node_selection import NodeSelection
 from src.gui.components.menu import (
     LeafMenuNode,
@@ -55,6 +55,7 @@ class CombatMenu:
     _scene: Scene
     _hud: HUD
     _move_selection: NodeSelection | None
+    _spell_selection: NodeSelection | None
     _on_teardown: Callable[[], None]
     _highlight: Callable[
         [
@@ -87,6 +88,7 @@ class CombatMenu:
         self._on_teardown = _TRIVIAL_TEARDOWN
         self._highlight = _TRIVIAL_HIGHLIGHT
         self._move_selection = None
+        self._spell_selection = None
         self._menu_rect = None
 
     @property
@@ -102,6 +104,12 @@ class CombatMenu:
             return False
 
         return self._move_selection.enabled
+
+    def is_selecting_spell_target(self) -> bool:
+        if not self.menu._current_spell_selection:
+            return False
+        print(self.menu._current_spell_selection)
+        return self.menu._current_spell_selection.enabled
 
     def set_on_teardown(self, on_teardown: Callable) -> Self:
         self._on_teardown = on_teardown
@@ -226,14 +234,12 @@ class CombatMenu:
                 continue
 
             if spell.effect_type == EffectType.SELF:
-                
-                
                 submenu_config.append(
                     SubMenuNode(
                         label=spell.name,
                         sub_menu=[
                             _leaf_from_action_details(
-                                details=magic_action_details,
+                                details={**magic_action_details, "label": "Confirm"},
                                 on_teardown=self._on_teardown,
                             )
                         ],
@@ -250,12 +256,19 @@ class CombatMenu:
             elif spell.effect_type == EffectType.AOE:
                 get_current = self._scene.get_mouse_node
 
-            spell_targeting = NodeSelection(
+            def show_path(node) -> None:
+                current = spell.aoe_at_node(node)
+                template = current.get_shape()
+                self._highlight(
+                    red=template,
+                )
+
+            selection = NodeSelection(
                 on_confirm=magic_action_details.get("on_confirm", lambda *_: None),
                 on_enter=self._hud.allow_dispatch_mouse,
                 validate_selection=spell.valid_target,
                 get_current=get_current,
-                show_template=spell.aoe_at_node,
+                show_template=show_path,
                 keep_last_valid=True,
                 clear_templates=self._scene.clear_highlight,
                 on_teardown=self._on_teardown,
@@ -264,10 +277,10 @@ class CombatMenu:
             submenu_config.append(
                 NodeSelectionNode(
                     label=magic_action_details.get("label", ""),
-                    node_selection=spell_targeting,
+                    node_selection=selection,
                 )
             )
- 
+
         return SubMenuNode("Magic", sub_menu=submenu_config)
 
     def consume_item_choice(self, available_items: list[dict]) -> MenuNode:

@@ -51,7 +51,7 @@ class Fighter:
     _encounter_context: EncounterContext
     health: HealthPool
     _caster: Caster | None
-    
+
     def __init__(
         self,
         role: FighterArchetype,
@@ -89,13 +89,13 @@ class Fighter:
     @property
     def caster(self) -> Caster | None:
         return self._caster
-    
+
     @caster.setter
     def caster(self, value: Caster | None):
         self._caster = value
         if value is not None:
             self._caster.set_owner(self)
-        
+
     def set_role(self, role: FighterArchetype):
         self.role = role
         self.set_action_options()

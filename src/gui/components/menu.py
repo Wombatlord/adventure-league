@@ -66,7 +66,11 @@ class NodeSelectionNode(MenuNode):
 
     def get_click_handler(self, ctx: Menu) -> Callable[[], None]:
         self._node_selection.set_enable_parent_menu(ctx.enable)
+        ctx._current_spell_selection = self._node_selection
         return self._node_selection.enable
+
+    def selected(self):
+        return self.label
 
 
 SubMenu = list[ExecutableMenuItem]
@@ -109,6 +113,7 @@ class Menu:
         self.current_menu_graph = menu_config
         self.x, self.y = pos
         self.width, self.height = area
+        self._current_spell_selection = None
         self.manager = None
         self.anchor = None
         self.main_box = None

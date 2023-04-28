@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 from enum import Enum
+from random import randint
 from typing import TYPE_CHECKING, Any, Callable, Generator, NamedTuple
 
 if TYPE_CHECKING:
@@ -57,7 +58,7 @@ class Spell(metaclass=abc.ABCMeta):
                 yield from self.entity_cast(target=target.owner)
             case EffectType.AOE:
                 yield from self.aoe_cast(target=target)
-    
+
     def self_cast(self) -> Generator[Event]:
         raise NotImplementedError(
             f"Effect type is {self.effect_type}. This spell does not have a self_cast."
@@ -99,9 +100,9 @@ class MagicMissile(Spell):
     def entity_cast(self, target: Fighter | None) -> Generator[Event, None, None]:
         if target is None:
             return
-        
+
         target.hp -= self._damage
-        return {
+        yield {
             "message": f"{self._caster.owner.owner.name} cast {self.name} at {target.owner.name}"
         }
 
@@ -112,10 +113,11 @@ class MagicMissile(Spell):
         if not target.is_enemy_of(self._caster.owner):
             return False
 
-        return self._caster.owner.can_see(target)
+        # return self._caster.owner.can_see(target)
+        return True
 
     def aoe_at_node(self, node: Node | None = None) -> AoETemplate | None:
-        return AoETemplate(anchor=node, shape=(Node(0,0,0),))
+        return AoETemplate(anchor=node, shape=(Node(0, 0, 0),))
 
     def is_self_target(self) -> bool:
         return False
@@ -130,7 +132,7 @@ class Shield(Spell):
     def __init__(self, caster: Caster):
         self._shield_value: int = 1
         self._caster = caster
-    
+
     def self_cast(self) -> Generator[Event]:
         self._caster.owner.health.set_shield(self._shield_value)
         yield {"message": f"{self._caster.owner.owner.name} shielded themselves."}
@@ -153,7 +155,7 @@ class Shield(Spell):
 
 class Fireball(Spell):
     name: str = "fireball"
-    mp_cost: int = 1
+    mp_cost: int = 4
     max_range: int = 4
     effect_type = EffectType.AOE
 
@@ -176,25 +178,49 @@ class Fireball(Spell):
 
     def __init__(self, caster: Caster):
         self._caster = caster
-        self._damage: int = 1
+        self._max_damage: int = 8
+        self._min_damage: int = 4
 
     def aoe_cast(self, target: Node) -> Generator[Event]:
-        template = self.aoe_at_node(target)
+        template = self.aoe_at_node(target).get_shape()
         room = self._caster.owner.encounter_context.get()
 
         yield {"message": f"{self._caster.owner.owner.name} cast {self.name}."}
 
         for entity in room.occupants:
             if entity.locatable.location in template:
-                yield from entity.fighter.take_damage(self._damage)
+                damage = randint(self._min_damage, self._max_damage)
+                yield entity.fighter.take_damage(damage)
+                yield {"message": f"{self.name} scorches {entity.name} for {damage}!\n"}
 
     def valid_target(self, target: Fighter | Node):
         if not isinstance(target, Node):
             return False
 
-        return self._caster.owner.can_see(target)
+        # Causing Divide by Zero
+        # return self._caster.owner.can_see(target)
+        return True
+
+    def update_template_position(self, node):
+        _n = node
+        self.template = (
+            _n.north.north,
+            _n.north.east,
+            _n.north,
+            _n.north.west,
+            _n.east.east,
+            _n.east,
+            _n,
+            _n.west,
+            _n.west.west,
+            _n.south.east,
+            _n.south,
+            _n.south.west,
+            _n.south.south,
+        )
 
     def aoe_at_node(self, node: Node | None = None) -> AoETemplate | None:
+        self.update_template_position(node)
         return AoETemplate(anchor=node, shape=self.template)
 
     def is_self_target(self) -> bool:

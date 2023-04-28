@@ -81,10 +81,10 @@ class NodeSelection:
         self._enabled = False
 
     def on_selection_changed(self):
+        print("a")
         if not self.enabled:
             return
         self._current = self._get_current()
-
         if self._validate_selection(self._current):
             self._show_template(self._current)
 
