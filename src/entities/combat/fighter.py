@@ -50,6 +50,7 @@ class Fighter:
     _readied_action: BaseAction | None
     _encounter_context: EncounterContext
     health: HealthPool
+    _caster: Caster | None
 
     def __init__(
         self,
@@ -75,6 +76,7 @@ class Fighter:
         self.set_role(role)
         # -----State-----
         self.action_points = ActionPoints()
+        self._caster = None
         self.caster = caster
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
@@ -83,6 +85,16 @@ class Fighter:
         self._in_combat = False
         self._readied_action = None
         self._encounter_context = EncounterContext(self)
+
+    @property
+    def caster(self) -> Caster | None:
+        return self._caster
+
+    @caster.setter
+    def caster(self, value: Caster | None):
+        self._caster = value
+        if value is not None:
+            self._caster.set_owner(self)
 
     def set_role(self, role: FighterArchetype):
         self.role = role
@@ -245,10 +257,12 @@ class Fighter:
         self.on_retreat_hooks = []
 
     def can_see(self, target: Fighter | Node) -> bool:
-        eye = self.location
-
         if isinstance(target, Fighter):
             target = target.location
+
+        eye = self.location
+        if target == eye:
+            return False
 
         room = self.encounter_context.get()
         if not room:
@@ -257,3 +271,11 @@ class Fighter:
         visible_nodes = Ray(eye).line_of_sight(room.space, target)
 
         return target in visible_nodes
+
+    def line_of_sight_to(self, node: Node) -> tuple[Node]:
+        room = self.encounter_context.get()
+        if not room:
+            return tuple()
+
+        visible_nodes = Ray(self.location).line_of_sight(room.space, node)
+        return tuple(visible_nodes[: visible_nodes.index(node) + 1])

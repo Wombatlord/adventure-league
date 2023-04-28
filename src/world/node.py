@@ -79,10 +79,17 @@ class Node(NamedTuple):
             )
 
     def __eq__(self, other: Node) -> bool:
+        if not isinstance(other, Node):
+            return False
+
         return self.x == other.x and self.y == other.y and self.z == other.z
 
     def __sub__(self, other: Node) -> Node:
+        if not isinstance(other, Node):
+            raise TypeError(f"Expected a node, got: {other=}")
         return Node(self.x - other.x, self.y - other.y, self.z - other.z)
 
     def __add__(self, other: Node) -> Node:
+        if not isinstance(other, Node):
+            raise TypeError(f"Expected a node, got: {other=}")
         return Node(self.x + other.x, self.y + other.y, self.z + other.z)

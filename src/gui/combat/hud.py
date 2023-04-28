@@ -123,9 +123,15 @@ class HUD(arcade.Section):
         if node and self.combat_menu.is_selecting_move():
             self.combat_menu.move_selection.on_selection_changed()
 
+        elif node and self.combat_menu.is_selecting_spell_target():
+            self.combat_menu.menu.current_node_selection.on_selection_changed()
+
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
         if self.combat_menu.is_selecting_move():
             self.combat_menu.move_selection.on_selection_confirmed()
+
+        elif self.combat_menu.is_selecting_spell_target():
+            self.combat_menu.menu.current_node_selection.on_selection_confirmed()
 
     def get_menu_rect(self, menu_w: float, menu_h: float) -> Rectangle:
         return Rectangle.from_xywh(
@@ -149,9 +155,7 @@ class HUD(arcade.Section):
 
         menu_rect = self.get_menu_rect(250, 250)
         self.combat_menu = (
-            CombatMenu(
-                scene=self.scene,
-            )
+            CombatMenu(scene=self.scene, hud=self)
             .set_on_teardown(self.clear_menu)
             .set_highlight(self.scene.show_highlight)
             .set_menu_rect(menu_rect)
@@ -211,6 +215,9 @@ class HUD(arcade.Section):
 
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
+            case arcade.key.P:
+                breakpoint()
+
             case arcade.key.ESCAPE:
                 self.combat_menu.move_selection.disable()
             case _:

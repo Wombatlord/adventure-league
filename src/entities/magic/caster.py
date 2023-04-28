@@ -37,11 +37,18 @@ class MagicAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def details(cls, fighter: Fighter, spell: Spell) -> dict:
+        if spell.effect_type == EffectType.SELF:
+            # for a self cast, we know the target is the caster
+            on_confirm = lambda: fighter.ready_action(cls(fighter, fighter, spell))
+        else:
+            # otherwise we need targeting input
+            on_confirm = lambda target: fighter.ready_action(
+                cls(fighter, target, spell)
+            )
+
         return {
             **ActionMeta.details(cls, fighter),
-            "on_confirm": lambda target: fighter.ready_action(
-                cls(fighter, spell, target)
-            ),
+            "on_confirm": on_confirm,
             "subject": spell,
             "label": f"{spell.name}",
         }
@@ -70,7 +77,7 @@ class MpPool:
         self._current -= amount
 
     def can_cast(self, spell: Spell) -> bool:
-        return self.can_spend(spell.cost)
+        return self.can_spend(spell.mp_cost)
 
     def can_spend(self, amount: int) -> bool:
         return self._current >= amount

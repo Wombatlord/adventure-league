@@ -202,6 +202,9 @@ class PathingSpace(AStar):
             if node_check(x, y)
         )
 
+    def is_pathable(self, node: Node) -> bool:
+        return self.in_bounds(node) and node not in self.static_exclusions
+
 
 def pretty_path(space: PathingSpace, start: Node, end: Node) -> str:
     row = [" "] * space.width

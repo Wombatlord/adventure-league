@@ -18,8 +18,6 @@ if TYPE_CHECKING:
 class CombatAiState(State, metaclass=abc.ABCMeta):
     def choices_of(self, action: ActionMeta) -> list[dict]:
         co = self.working_set.get("choices", {}).get(action.name, [])
-        if not co:
-            breakpoint()
         return co
 
     def agent(self) -> Fighter:

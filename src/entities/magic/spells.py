@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import abc
 from enum import Enum
+from random import randint
 from typing import TYPE_CHECKING, Any, Callable, Generator, NamedTuple
 
 if TYPE_CHECKING:
-    from src.entities.combat.fighter import Fighter
     from src.entities.magic.caster import Caster
+    from src.entities.combat.fighter import Fighter
 
 from src.world.node import Node
 
@@ -34,12 +35,12 @@ class AoETemplate(AoE):
     anchor: Node
     shape: tuple[Node]
 
-    def __init__(self, anchor: Node, shape: tuple[Node]):
+    def __init__(self, anchor: Node, shape: tuple[Node, ...]):
         self.anchor = anchor
         self.shape = shape
 
     def get_shape(self) -> tuple[Node]:
-        return self.shape
+        return tuple(self.anchor + n for n in self.shape)
 
 
 class Spell(metaclass=abc.ABCMeta):
@@ -49,17 +50,12 @@ class Spell(metaclass=abc.ABCMeta):
     _caster: Caster
     effect_type: EffectType
 
-    def __init__(self, caster: Caster):
-        self._caster = caster
-        self._target = None
-        self.effect_type = None
-
     def cast(self, target: Fighter | Node) -> Generator[Event]:
         match self.effect_type:
             case EffectType.SELF:
                 yield from self.self_cast()
             case EffectType.ENTITY:
-                yield from self.entity_cast(target=target.owner)
+                yield from self.entity_cast(target=target)
             case EffectType.AOE:
                 yield from self.aoe_cast(target=target)
 
@@ -83,12 +79,16 @@ class Spell(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def aoe_at_node(self, node: Node) -> AoETemplate | None:
+    def aoe_at_node(self, node: Node) -> tuple[Node, ...] | None:
         raise NotImplementedError()
 
     @abc.abstractmethod
     def is_self_target(self) -> bool:
         raise NotImplementedError()
+
+    @property
+    def caster(self):
+        return self._caster
 
 
 class MagicMissile(Spell):
@@ -98,18 +98,23 @@ class MagicMissile(Spell):
     effect_type = EffectType.ENTITY
 
     def __init__(self, caster: Caster):
-        super().__init__(caster=caster)
         self._damage: int = 1
         self._caster = caster
 
-    def entity_cast(self, target: Fighter) -> Generator[Event, None, None]:
-        target.hp -= self._damage
-        return {
+    def entity_cast(self, target: Fighter | None) -> Generator[Event, None, None]:
+        if target is None:
+            return
+
+        target.health.decrease_current(self._damage)
+        yield {
             "message": f"{self._caster.owner.owner.name} cast {self.name} at {target.owner.name}"
         }
 
     def valid_target(self, target: Fighter | Node) -> bool:
-        if not isinstance(target, Fighter):
+        if not hasattr(target, "location"):
+            return False
+
+        if target.location is None:
             return False
 
         if not target.is_enemy_of(self._caster.owner):
@@ -117,8 +122,14 @@ class MagicMissile(Spell):
 
         return self._caster.owner.can_see(target)
 
-    def aoe_at_node(self, node: Node | None = None) -> AoETemplate | None:
-        return None
+    def aoe_at_node(self, node: Node | None = None) -> tuple[Node, ...] | None:
+        # return AoETemplate(anchor=node, shape=(Node(0, 0, 0),))
+        if node is None:
+            return tuple()
+        if not isinstance(node, Node):
+            raise TypeError(f"Expected a Node, got {node=}")
+
+        return (node,)
 
     def is_self_target(self) -> bool:
         return False
@@ -131,13 +142,12 @@ class Shield(Spell):
     effect_type = EffectType.SELF
 
     def __init__(self, caster: Caster):
-        super().__init__(caster=caster)
-        self._bonus_hp: int = 1
+        self._shield_value: int = 1
         self._caster = caster
 
     def self_cast(self) -> Generator[Event]:
-        self._caster.owner.bonus_health += self._bonus_hp
-        return {"message": f"{self._caster.owner.owner.name} shielded themselves."}
+        self._caster.owner.health.set_shield(self._shield_value)
+        yield {"message": f"{self._caster.owner.owner.name} shielded themselves."}
 
     def valid_target(self, target: Fighter | Node) -> bool:
         if not isinstance(target, Fighter):
@@ -157,12 +167,12 @@ class Shield(Spell):
 
 class Fireball(Spell):
     name: str = "fireball"
-    mp_cost: int = 1
+    mp_cost: int = 4
     max_range: int = 4
     effect_type = EffectType.AOE
 
     _n = Node(0, 0)
-    template = (
+    template_shape = (
         _n.north.north,
         _n.north.east,
         _n.north,
@@ -179,9 +189,10 @@ class Fireball(Spell):
     )
 
     def __init__(self, caster: Caster):
-        super().__init__(caster=caster)
         self._caster = caster
-        self._damage: int = 1
+        self._max_damage: int = 8
+        self._min_damage: int = 4
+        self._template = AoETemplate(anchor=Node(0, 0), shape=self.template_shape)
 
     def aoe_cast(self, target: Node) -> Generator[Event]:
         template = self.aoe_at_node(target)
@@ -191,16 +202,25 @@ class Fireball(Spell):
 
         for entity in room.occupants:
             if entity.locatable.location in template:
-                yield from entity.fighter.take_damage(self._damage)
+                damage = randint(self._min_damage, self._max_damage)
+                yield entity.fighter.take_damage(damage)
+                yield {"message": f"{self.name} scorches {entity.name} for {damage}!\n"}
 
     def valid_target(self, target: Fighter | Node):
+        if hasattr(target, "location"):
+            target = target.location
         if not isinstance(target, Node):
             return False
 
-        return self._caster.owner.can_see(target)
+        # Causing Divide by Zero
+        can_see = self._caster.owner.can_see(target)
+        return can_see
 
-    def aoe_at_node(self, node: Node | None = None) -> AoETemplate | None:
-        return AoETemplate(anchor=node, shape=self.template)
+    def aoe_at_node(self, node: Node | None = None) -> tuple[Node, ...]:
+        if node is None:
+            return tuple()
+        self._template.anchor = node
+        return self._template.get_shape()
 
     def is_self_target(self) -> bool:
         return False

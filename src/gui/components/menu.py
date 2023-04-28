@@ -66,7 +66,15 @@ class NodeSelectionNode(MenuNode):
 
     def get_click_handler(self, ctx: Menu) -> Callable[[], None]:
         self._node_selection.set_enable_parent_menu(ctx.enable)
-        return self._node_selection.enable
+
+        def _on_click():
+            ctx.current_node_selection = self._node_selection
+            self._node_selection.enable()
+
+        return _on_click
+
+    def selected(self):
+        return self.label
 
 
 SubMenu = list[ExecutableMenuItem]
@@ -109,6 +117,7 @@ class Menu:
         self.current_menu_graph = menu_config
         self.x, self.y = pos
         self.width, self.height = area
+        self.current_node_selection = None
         self.manager = None
         self.anchor = None
         self.main_box = None
@@ -254,9 +263,13 @@ class Menu:
         self.add_return_to_top_level_button()
 
     def add_return_to_top_level_button(self):
-        btn = update_button(
-            on_click=lambda: self.enter_submenu(self.full_menu_graph), text="Return"
-        )
+        def _on_click():
+            if self.current_node_selection:
+                self.current_node_selection.disable()
+                self.current_node_selection = None
+            self.enter_submenu(self.full_menu_graph)
+
+        btn = update_button(on_click=_on_click, text="Return")
         btn.resize(height=50)
         btn.style = ADVENTURE_STYLE
         btn.size_hint = (1, None)

@@ -10,11 +10,23 @@ class Ray(NamedTuple):
     start: Node
 
     def cast(self, look_at: Node) -> Generator[Node, None, None]:
+        if self.start == look_at:
+            raise ValueError(
+                f"The target for the ray {look_at=} is the same as the start point {self.start=}. "
+                f"Two distinct points are required"
+            )
+
         rect = look_at - self.start
 
-        curr_vec = Vec3(0, 0, 0)
-        step = Vec3(1, rect.y / rect.x, rect.z / rect.x)
+        # We want to step in increments of 1 along the longest side of the
+        # region that bounds the ray, this means we will always increment
+        # the other components by less than 1
+        divisor = max(abs(component) for component in rect)
+        if divisor == 0:
+            return
 
+        step = Vec3(*rect) / divisor
+        curr_vec = Vec3(0, 0, 0)
         while True:
             next_node = Node(
                 x=round(curr_vec.x),
@@ -38,7 +50,7 @@ class Ray(NamedTuple):
     def line_of_sight(self, space: PathingSpace, look_at: Node) -> list[Node]:
         los = []
         for point in self.cast(look_at):
-            if point in space.static_exclusions:
+            if not space.is_pathable(point):
                 break
             los.append(point)
 

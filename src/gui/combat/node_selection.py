@@ -1,5 +1,6 @@
 from typing import Callable
 
+from src import config
 from src.world.node import Node
 
 OnConfirm = Callable[[Node | None], None]
@@ -26,6 +27,7 @@ class NodeSelection:
 
     def __init__(
         self,
+        name: str,
         on_confirm: OnConfirm,
         validate_selection: ValidateSelection,
         get_current: GetCurrent,
@@ -35,6 +37,7 @@ class NodeSelection:
         on_teardown: OnTeardown | None = None,
         keep_last_valid: bool = False,
     ) -> None:
+        self._name = name
         self._on_confirm = on_confirm
         self._validate_selection = validate_selection
         self._clear_templates = clear_templates or (lambda: None)
@@ -71,6 +74,8 @@ class NodeSelection:
         self.on_selection_changed()
         self._on_enter()
         self._enabled = True
+        if config.DEBUG:
+            print(f"ENABLED: {self}")
 
     def disable(self):
         if not self._enabled:
@@ -79,15 +84,15 @@ class NodeSelection:
         self._clear_templates()
         self._enable_parent_menu()
         self._enabled = False
+        if config.DEBUG:
+            print(f"DISABLED: {self}")
 
     def on_selection_changed(self):
         if not self.enabled:
             return
         self._current = self._get_current()
-
         if self._validate_selection(self._current):
             self._show_template(self._current)
-
         elif not self._keep_last_valid:
             self._current = None
             self._clear_templates()
@@ -107,3 +112,6 @@ class NodeSelection:
         self._current = None
         self._clear_templates()
         self._on_teardown()
+
+    def __repr__(self):
+        return f"{object.__repr__(self)} Name: {self._name}"

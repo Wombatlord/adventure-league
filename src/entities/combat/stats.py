@@ -16,7 +16,7 @@ class HealthPool:
     def current(self, value):
         self._current_hp = value
 
-    def decrease_bonus_hp(self, amount) -> int:
+    def _decrease_bonus_hp(self, amount) -> int:
         if self._bonus_hp - amount < 0:
             breakthrough = self._bonus_hp - amount
             self._bonus_hp = 0
@@ -28,7 +28,7 @@ class HealthPool:
 
     def decrease_current(self, amount: int):
         if self._bonus_hp > 0:
-            breakthrough = self.decrease_bonus_hp(amount)
+            breakthrough = self._decrease_bonus_hp(amount)
             self._current_hp -= breakthrough
 
         elif self._current_hp - amount < 0:
@@ -38,11 +38,10 @@ class HealthPool:
             self._current_hp -= amount
 
     def increase_current(self, amount: int):
-        if self._current_hp + amount > self._max_hp:
-            self._current_hp = self._max_hp
+        self._current_hp = min(self._current_hp + amount, self._max_hp)
 
-        else:
-            self._current_hp += amount
+    def set_shield(self, amount: int):
+        self._bonus_hp = amount
 
 
 class FighterStats:
