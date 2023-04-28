@@ -17,6 +17,7 @@ from src.entities.action.actions import (
     EndTurnAction,
     MoveAction,
 )
+from src.entities.combat.fighter import Fighter
 from src.entities.magic.caster import MagicAction
 from src.entities.magic.spells import EffectType
 from src.gui.combat.node_selection import NodeSelection
@@ -228,7 +229,7 @@ class CombatMenu:
 
     def magic_choice(self, available_spells: list) -> MenuNode:
         submenu_config = []
-        for magic_action_details in available_spells:
+        for i, magic_action_details in enumerate(available_spells):
             spell: Spell = magic_action_details.get("subject", {})
             if not spell:
                 continue
@@ -248,21 +249,15 @@ class CombatMenu:
                 continue
 
             get_current = lambda: None
+            get_spell = lambda: available_spells[i].get("subject")
             if spell.effect_type == EffectType.ENTITY:
-                get_current = lambda: self._scene.entity_at_node(
-                    self._scene.get_mouse_node()
-                ).fighter
+
+                def get_current():
+                    current = self._scene.entity_at_node(self._scene.get_mouse_node())
+                    return current.fighter if current else None
 
             elif spell.effect_type == EffectType.AOE:
                 get_current = self._scene.get_mouse_node
-
-            def show_template(node) -> None:
-                aoe = spell.aoe_at_node(node)
-                los = spell.caster.owner.line_of_sight_to(node)
-                self._highlight(
-                    red=aoe,
-                    green=los,
-                )
 
             selection = NodeSelection(
                 name=magic_action_details.get("label", "No label"),
@@ -270,7 +265,7 @@ class CombatMenu:
                 on_enter=self._hud.allow_dispatch_mouse,
                 validate_selection=spell.valid_target,
                 get_current=get_current,
-                show_template=show_template,
+                show_template=self._create_show_template_callback(spell),
                 keep_last_valid=True,
                 clear_templates=self._scene.clear_highlight,
                 on_teardown=self._on_teardown,
@@ -284,6 +279,19 @@ class CombatMenu:
             )
 
         return SubMenuNode("Magic", sub_menu=submenu_config)
+
+    def _create_show_template_callback(self, spell: Spell) -> Callable[[Node], None]:
+        def show_template(target: Node):
+            if isinstance(target, Fighter):
+                target = target.location
+            aoe = spell.aoe_at_node(target)
+            los = spell.caster.owner.line_of_sight_to(target)
+            self._highlight(
+                red=aoe,
+                green=los,
+            )
+
+        return show_template
 
     def consume_item_choice(self, available_items: list[dict]) -> MenuNode:
         submenu_config = []

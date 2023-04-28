@@ -55,7 +55,7 @@ class Spell(metaclass=abc.ABCMeta):
             case EffectType.SELF:
                 yield from self.self_cast()
             case EffectType.ENTITY:
-                yield from self.entity_cast(target=target.owner)
+                yield from self.entity_cast(target=target)
             case EffectType.AOE:
                 yield from self.aoe_cast(target=target)
 
@@ -79,7 +79,7 @@ class Spell(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def aoe_at_node(self, node: Node) -> AoETemplate | None:
+    def aoe_at_node(self, node: Node) -> tuple[Node, ...] | None:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -105,23 +105,31 @@ class MagicMissile(Spell):
         if target is None:
             return
 
-        target.hp -= self._damage
+        target.health.decrease_current(self._damage)
         yield {
             "message": f"{self._caster.owner.owner.name} cast {self.name} at {target.owner.name}"
         }
 
     def valid_target(self, target: Fighter | Node) -> bool:
-        if not isinstance(target, Fighter):
+        if not hasattr(target, "location"):
+            return False
+
+        if target.location is None:
             return False
 
         if not target.is_enemy_of(self._caster.owner):
             return False
 
-        # return self._caster.owner.can_see(target)
-        return True
+        return self._caster.owner.can_see(target)
 
-    def aoe_at_node(self, node: Node | None = None) -> AoETemplate | None:
-        return AoETemplate(anchor=node, shape=(Node(0, 0, 0),))
+    def aoe_at_node(self, node: Node | None = None) -> tuple[Node, ...] | None:
+        # return AoETemplate(anchor=node, shape=(Node(0, 0, 0),))
+        if node is None:
+            return tuple()
+        if not isinstance(node, Node):
+            raise TypeError(f"Expected a Node, got {node=}")
+
+        return (node,)
 
     def is_self_target(self) -> bool:
         return False

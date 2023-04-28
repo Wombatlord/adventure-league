@@ -257,12 +257,12 @@ class Fighter:
         self.on_retreat_hooks = []
 
     def can_see(self, target: Fighter | Node) -> bool:
+        if isinstance(target, Fighter):
+            target = target.location
+
         eye = self.location
         if target == eye:
             return False
-
-        if isinstance(target, Fighter):
-            target = target.location
 
         room = self.encounter_context.get()
         if not room:

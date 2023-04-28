@@ -90,6 +90,7 @@ class Scene(arcade.Section):
             offset=(0, 4.5),
             scale=self.SPRITE_SCALE,
             transform=self.transform,
+            draw_priority_bias=-0.01,
         ).attach_display(self.world_sprite_list)
 
     def _subscribe_to_events(self):
@@ -129,7 +130,9 @@ class Scene(arcade.Section):
         )
 
     def entity_at_node(self, node: Node) -> Entity | None:
-        if node not in self.encounter_room:
+        if node not in self.encounter_room.space.all_included_nodes(
+            exclude_dynamic=False
+        ):
             return None
 
         for occupant in self.encounter_room.occupants:

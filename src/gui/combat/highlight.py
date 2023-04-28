@@ -31,6 +31,7 @@ class HighlightLayer:
         offset: Vec2 | tuple[float, float],
         scale: float,
         transform: Transform,
+        draw_priority_bias: int = 0,
     ):
         self._sprite_list = None
         self._texture = texture
@@ -40,6 +41,7 @@ class HighlightLayer:
         self._transform = transform
         self._sprite_refs = {}
         self._visible_nodes = set()
+        self._draw_priority_bias = draw_priority_bias
 
     def attach_display(self, sprite_list: arcade.SpriteList) -> Self:
         """
@@ -96,7 +98,7 @@ class HighlightLayer:
             self._texture,
             scale=self._scale,
             transform=self._transform,
-            draw_priority_offset=0.1,
+            draw_priority_offset=0.1 + self._draw_priority_bias,
         ).offset_anchor(tuple(self._sprite_offset))
 
     def _include_in_display(self, sprite: BaseSprite, node: Node):
