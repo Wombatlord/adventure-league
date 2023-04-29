@@ -3,6 +3,7 @@ import sys
 from src.utils.cli import commands
 from src.utils.proc_gen.commands.generate_hashes import Command as _
 from src.utils.sprites.commands.archive_assets import Command as _
+from src.utils.sprites.commands.archive_assets import GetAssetsCommand as _
 
 if __name__ == "__main__":
     cmd = commands.get(sys.argv[1])
