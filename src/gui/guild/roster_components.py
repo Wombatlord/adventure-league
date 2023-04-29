@@ -17,7 +17,7 @@ def entity_labels_names_only(scroll_window: ScrollWindow) -> tuple[UIWidget, ...
     return tuple(
         map(
             lambda entity: UILabel(
-                text=f"{entity.name.name_and_title}: {entity.fighter.role}",
+                text=f"{entity.name.name_and_title}: {entity.fighter.role.value.capitalize()}",
                 width=WindowData.width,
                 height=40,
                 font_size=font_sizes.BODY,

@@ -3,6 +3,7 @@ from typing import NamedTuple, Sequence
 
 from arcade import Texture
 
+from src.entities.combat.archetypes import FighterArchetype
 from src.textures.texture_data import SpriteSheetSpecs
 
 
@@ -39,8 +40,17 @@ MERC_TEXTURE_OPTS = (
 )
 
 
-def choose_merc_textures() -> AnimatedSpriteConfig:
-    return random.choice(MERC_TEXTURE_OPTS)
+def choose_merc_textures(fighter) -> AnimatedSpriteConfig:
+    match fighter.role:
+        case FighterArchetype.MELEE:
+            melee_opts = (MERC_TEXTURE_OPTS[0], MERC_TEXTURE_OPTS[3])
+            return random.choice(melee_opts)
+
+        case FighterArchetype.RANGED:
+            return MERC_TEXTURE_OPTS[2]
+
+        case FighterArchetype.CASTER:
+            return MERC_TEXTURE_OPTS[1]
 
 
 GOBLIN_TEXTURE_OPTS = [
