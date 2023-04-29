@@ -19,7 +19,7 @@ class Ray(NamedTuple):
         rect = look_at - self.start
 
         # We want to step in increments of 1 along the longest side of the
-        # region that bounds the ray, this means we will always increment
+        # area that bounds the ray, this means we will always increment
         # the other components by less than 1
         divisor = max(abs(component) for component in rect)
         if divisor == 0:

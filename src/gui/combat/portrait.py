@@ -9,6 +9,7 @@ from src import config
 from src.entities.entity import Entity
 from src.entities.sprites import BaseSprite
 from src.gui.combat.health_bar import HealthBar
+from src.gui.window_data import WindowData
 from src.utils.rectangle import Rectangle
 
 
@@ -52,8 +53,9 @@ class Portrait:
             text="",
             start_x=top_text_start.x,
             start_y=top_text_start.y,
-            font_size=16,
+            font_size=18,
             anchor_x="center",
+            font_name=WindowData.font,
         )
         btm_text_start = self.text_start_below()
         self._bottom_text = arcade.Text(

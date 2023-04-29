@@ -14,7 +14,7 @@ class Name(NamedTuple):
     last_name: Optional[str] = None
 
     def __str__(self) -> str:
-        return " ".join(filter(lambda x: (x is not None), self))
+        return " ".join(filter(lambda x: (x is not None), self)).capitalize()
 
     @property
     def name_and_title(self) -> str:
