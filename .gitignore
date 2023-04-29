@@ -8,3 +8,8 @@ scratch.py
 assets/sprites/
 assets/wordlists/
 __pycache__/
+
+settings.yaml
+*.zip
+client_secrets.json
+credentials.json
