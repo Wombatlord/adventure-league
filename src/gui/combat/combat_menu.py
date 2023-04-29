@@ -229,7 +229,7 @@ class CombatMenu:
 
     def magic_choice(self, available_spells: list) -> MenuNode:
         submenu_config = []
-        for i, magic_action_details in enumerate(available_spells):
+        for magic_action_details in available_spells:
             spell: Spell = magic_action_details.get("subject", {})
             if not spell:
                 continue
@@ -249,7 +249,6 @@ class CombatMenu:
                 continue
 
             get_current = lambda: None
-            get_spell = lambda: available_spells[i].get("subject")
             if spell.effect_type == EffectType.ENTITY:
 
                 def get_current():

@@ -120,7 +120,7 @@ def select_textures(species: str, fighter: Fighter) -> AnimatedSpriteConfig:
     As we have the name already, use that to determine particular enemy textures for hostile fighters.
     """
     if not fighter.is_enemy:
-        return choose_merc_textures()
+        return choose_merc_textures(fighter)
 
     elif fighter.is_boss:
         return choose_boss_texture()

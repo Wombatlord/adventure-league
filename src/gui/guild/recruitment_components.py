@@ -17,7 +17,7 @@ def entity_labels_with_cost(scroll_window: ScrollWindow) -> tuple[UIWidget, ...]
     return tuple(
         map(
             lambda entity: UILabel(
-                text=f"{entity.name.name_and_title}: {entity.fighter.role}: {entity.cost} gp",
+                text=f"{entity.name.name_and_title}: {entity.fighter.role.value.capitalize()}: {entity.cost} gp",
                 width=WindowData.width,
                 height=22,
                 font_size=font_sizes.BODY,
