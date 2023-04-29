@@ -92,7 +92,7 @@ class Spell(metaclass=abc.ABCMeta):
 
 
 class MagicMissile(Spell):
-    name: str = "magic missile"
+    name: str = "Magic Missile"
     mp_cost: int = 1
     max_range: int = 1
     effect_type = EffectType.ENTITY
@@ -105,9 +105,12 @@ class MagicMissile(Spell):
         if target is None:
             return
 
-        target.health.decrease_current(self._damage)
+        yield target.take_damage(self._damage)
         yield {
             "message": f"{self._caster.owner.owner.name} cast {self.name} at {target.owner.name}"
+        }
+        yield {
+            "message": f"{self.name} strikes {target.owner.name} for {self._damage}!"
         }
 
     def valid_target(self, target: Fighter | Node) -> bool:
@@ -136,7 +139,7 @@ class MagicMissile(Spell):
 
 
 class Shield(Spell):
-    name: str = "shield"
+    name: str = "Shield"
     mp_cost: int = 1
     max_range: int = 0
     effect_type = EffectType.SELF
@@ -166,7 +169,7 @@ class Shield(Spell):
 
 
 class Fireball(Spell):
-    name: str = "fireball"
+    name: str = "Fireball"
     mp_cost: int = 4
     max_range: int = 4
     effect_type = EffectType.AOE
@@ -212,7 +215,6 @@ class Fireball(Spell):
         if not isinstance(target, Node):
             return False
 
-        # Causing Divide by Zero
         can_see = self._caster.owner.can_see(target)
         return can_see
 
