@@ -56,6 +56,7 @@ class Fighter:
     def __init__(
         self,
         role: FighterArchetype,
+        # available_attacks,
         hp: int = 0,
         defence: int = 0,
         power: int = 0,
@@ -65,7 +66,6 @@ class Fighter:
         caster: Caster = None,
         is_enemy: bool = False,
         is_boss: bool = False,
-        available_attacks=[],
     ) -> None:
         if role is None:
             raise TypeError("The role cannot be None")
@@ -80,7 +80,7 @@ class Fighter:
         self.action_points = ActionPoints()
         self._caster = None
         self.caster = caster
-        self.available_attacks = [attack(self) for attack in available_attacks]
+        self.available_attacks = None
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
@@ -134,7 +134,7 @@ class Fighter:
                 optional = [WeaponAttackAction]
 
             case FighterArchetype.RANGED:
-                optional = []
+                optional = [WeaponAttackAction]
 
             case FighterArchetype.CASTER:
                 optional = [MagicAction]

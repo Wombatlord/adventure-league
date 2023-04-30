@@ -140,10 +140,10 @@ def _setup_fighter_archetypes(fighter: Fighter):
     match fighter.role:
         case FighterArchetype.MELEE:
             fighter.stats.max_range = 1
-            fighter.available_attacks = attack_types
+            fighter.available_attacks = [attack(fighter) for attack in attack_types]
         case FighterArchetype.RANGED:
             fighter.stats.max_range = randint(2, 4)
-            fighter.available_attacks = attack_types
+            fighter.available_attacks = [attack(fighter) for attack in attack_types]
         case FighterArchetype.CASTER:
             fighter.stats.max_range = 1
             fighter.caster = Caster(max_mp=10, known_spells=basic_spell_book)
