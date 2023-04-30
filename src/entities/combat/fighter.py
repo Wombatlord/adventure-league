@@ -12,6 +12,7 @@ from src.entities.action.actions import (
     EndTurnAction,
     MoveAction,
 )
+from src.entities.action.attack_action_experiment import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.stats import FighterStats, HealthPool
 from src.entities.entity import Entity
@@ -64,6 +65,7 @@ class Fighter:
         caster: Caster = None,
         is_enemy: bool = False,
         is_boss: bool = False,
+        available_attacks=[],
     ) -> None:
         if role is None:
             raise TypeError("The role cannot be None")
@@ -78,6 +80,7 @@ class Fighter:
         self.action_points = ActionPoints()
         self._caster = None
         self.caster = caster
+        self.available_attacks = [attack(self) for attack in available_attacks]
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
@@ -128,7 +131,7 @@ class Fighter:
         defaults = [MoveAction, AttackAction, ConsumeItemAction, EndTurnAction]
         match self.role:
             case FighterArchetype.MELEE:
-                optional = []
+                optional = [WeaponAttackAction]
 
             case FighterArchetype.RANGED:
                 optional = []
@@ -158,7 +161,11 @@ class Fighter:
 
     def does(self, action: ActionMeta) -> bool:
         if action in self.action_options:
-            return action.cost(self) <= self.action_points.current
+            match action.name:
+                case WeaponAttackAction.name:
+                    return action.cost(self) <= self.action_points.current
+                case _:
+                    return action.cost(self) <= self.action_points.current
 
         else:
             return False
@@ -167,8 +174,13 @@ class Fighter:
         action_types = ActionCompendium.all_available_to(self)
         choices = {}
         for name, action_type in action_types.items():
-            if not action_type == MagicAction:
+            if action_type == WeaponAttackAction:
+                for atk in self.available_attacks:
+                    choices[name] = action_type.all_available_to(self)
+
+            elif not action_type == MagicAction:
                 choices[name] = action_type.all_available_to(self)
+
             else:
                 for spell in self.caster.spells:
                     choices[name] = action_type.all_available_to(self)

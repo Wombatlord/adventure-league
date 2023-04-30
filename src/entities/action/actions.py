@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 from typing import Any, Generator
 
-from src.entities.combat.attack_types import attack
+from src.entities.combat.attack_types import WeaponAttack, attack
 
 Event = dict[str, Any]
 

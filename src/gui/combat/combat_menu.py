@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from src.gui.combat.scene import Scene
     from src.entities.magic.spells import Spell
     from src.gui.combat.hud import HUD
+    from src.entities.combat.attack_types import WeaponAttack
 
 from src.entities.action.actions import (
     AttackAction,
@@ -17,6 +18,7 @@ from src.entities.action.actions import (
     EndTurnAction,
     MoveAction,
 )
+from src.entities.action.attack_action_experiment import WeaponAttackAction
 from src.entities.combat.fighter import Fighter
 from src.entities.magic.caster import MagicAction
 from src.entities.magic.spells import EffectType
@@ -106,7 +108,7 @@ class CombatMenu:
 
         return self._move_selection.enabled
 
-    def is_selecting_spell_target(self) -> bool:
+    def is_selecting_attack_target(self) -> bool:
         if not self.menu.current_node_selection:
             return False
         return self.menu.current_node_selection.enabled
@@ -151,6 +153,7 @@ class CombatMenu:
 
         action_types = event.get("choices")
         menu_config: list[MenuNode] = []
+        print(action_types.items())
         for action_name, action_details in action_types.items():
             menu_node = None
             match action_name:
@@ -160,8 +163,11 @@ class CombatMenu:
                         self._scene.get_mouse_node,
                     )
 
-                case AttackAction.name:
-                    menu_node = self.attack_choice(action_details)
+                # case AttackAction.name:
+                #     menu_node = self.attack_choice(action_details)
+
+                case WeaponAttackAction.name:
+                    menu_node = self.attack_choice2(action_details)
 
                 case MagicAction.name:
                     menu_node = self.magic_choice(action_details)
@@ -227,6 +233,38 @@ class CombatMenu:
 
         return SubMenuNode("Attack", sub_menu=submenu_config)
 
+    def attack_choice2(self, available_attacks: list) -> MenuNode:
+        submenu_config = []
+        for attack_action_details in available_attacks:
+            attack: WeaponAttack = attack_action_details.get("subject", {})
+            if not attack:
+                continue
+
+            def get_current():
+                current = self._scene.entity_at_node(self._scene.get_mouse_node())
+                return current.fighter if current else None
+
+            selection = NodeSelection(
+                name=attack_action_details.get("label", "No label"),
+                on_confirm=attack_action_details.get("on_confirm", lambda *_: None),
+                on_enter=self._hud.allow_dispatch_mouse,
+                validate_selection=attack.valid_target,
+                get_current=get_current,
+                show_template=self._create_show_template_callback(attack),
+                keep_last_valid=True,
+                clear_templates=self._scene.clear_highlight,
+                on_teardown=self._on_teardown,
+            )
+            # breakpoint()
+            submenu_config.append(
+                NodeSelectionNode(
+                    label=attack_action_details.get("label", ""),
+                    node_selection=selection,
+                )
+            )
+
+        return SubMenuNode("Attack2", sub_menu=submenu_config)
+
     def magic_choice(self, available_spells: list) -> MenuNode:
         submenu_config = []
         for magic_action_details in available_spells:
@@ -269,7 +307,6 @@ class CombatMenu:
                 clear_templates=self._scene.clear_highlight,
                 on_teardown=self._on_teardown,
             )
-
             submenu_config.append(
                 NodeSelectionNode(
                     label=magic_action_details.get("label", ""),
@@ -279,16 +316,27 @@ class CombatMenu:
 
         return SubMenuNode("Magic", sub_menu=submenu_config)
 
-    def _create_show_template_callback(self, spell: Spell) -> Callable[[Node], None]:
+    def _create_show_template_callback(
+        self, action: Spell | WeaponAttack
+    ) -> Callable[[Node], None]:
         def show_template(target: Node):
             if isinstance(target, Fighter):
                 target = target.location
-            aoe = spell.aoe_at_node(target)
-            los = spell.caster.owner.line_of_sight_to(target)
-            self._highlight(
-                red=aoe,
-                green=los,
-            )
+
+            aoe = action.aoe_at_node(target)
+            if hasattr(action, "mp_cost"):
+                los = action.caster.owner.line_of_sight_to(target)
+                self._highlight(
+                    red=aoe,
+                    green=los,
+                )
+
+            if hasattr(action, "ap_cost"):
+                los = action.fighter.line_of_sight_to(target)
+                self._highlight(
+                    red=aoe,
+                    green=los,
+                )
 
         return show_template
 
