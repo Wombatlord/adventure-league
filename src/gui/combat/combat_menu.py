@@ -153,7 +153,6 @@ class CombatMenu:
 
         action_types = event.get("choices")
         menu_config: list[MenuNode] = []
-        print(action_types.items())
         for action_name, action_details in action_types.items():
             menu_node = None
             match action_name:
@@ -163,11 +162,8 @@ class CombatMenu:
                         self._scene.get_mouse_node,
                     )
 
-                # case AttackAction.name:
-                #     menu_node = self.attack_choice(action_details)
-
                 case WeaponAttackAction.name:
-                    menu_node = self.attack_choice2(action_details)
+                    menu_node = self.attack_choice(action_details)
 
                 case MagicAction.name:
                     menu_node = self.magic_choice(action_details)
@@ -226,14 +222,7 @@ class CombatMenu:
 
         return NodeSelectionNode(label="Move", node_selection=self._move_selection)
 
-    def attack_choice(self, available_targets: list[dict]) -> MenuNode:
-        submenu_config = []
-        for target in available_targets:
-            submenu_config.append(_leaf_from_action_details(target, self._on_teardown))
-
-        return SubMenuNode("Attack", sub_menu=submenu_config)
-
-    def attack_choice2(self, available_attacks: list) -> MenuNode:
+    def attack_choice(self, available_attacks: list) -> MenuNode:
         submenu_config = []
         for attack_action_details in available_attacks:
             attack: WeaponAttack = attack_action_details.get("subject", {})
@@ -255,7 +244,7 @@ class CombatMenu:
                 clear_templates=self._scene.clear_highlight,
                 on_teardown=self._on_teardown,
             )
-            # breakpoint()
+            
             submenu_config.append(
                 NodeSelectionNode(
                     label=attack_action_details.get("label", ""),
@@ -263,7 +252,7 @@ class CombatMenu:
                 )
             )
 
-        return SubMenuNode("Attack2", sub_menu=submenu_config)
+        return SubMenuNode("Attack", sub_menu=submenu_config)
 
     def magic_choice(self, available_spells: list) -> MenuNode:
         submenu_config = []
