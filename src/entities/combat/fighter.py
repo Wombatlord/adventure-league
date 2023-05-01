@@ -6,21 +6,23 @@ from src.entities.action.actions import (
     ActionCompendium,
     ActionMeta,
     ActionPoints,
-    AttackAction,
     BaseAction,
     ConsumeItemAction,
     EndTurnAction,
     MoveAction,
 )
+from src.entities.action.magic_action import MagicAction
+from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.stats import FighterStats, HealthPool
 from src.entities.entity import Entity
 from src.entities.item.inventory import Consumable, Inventory
-from src.entities.magic.caster import Caster, MagicAction
+from src.entities.magic.caster import Caster
 from src.world.node import Node
 from src.world.ray import Ray
 
 if TYPE_CHECKING:
+    from src.entities.combat.attack_types import WeaponAttack
     from src.world.level.room import Room
 
 Event = dict[str, Any]
@@ -78,6 +80,7 @@ class Fighter:
         self.action_points = ActionPoints()
         self._caster = None
         self.caster = caster
+        self._available_attacks: list[WeaponAttack] | None = None
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
@@ -95,6 +98,14 @@ class Fighter:
         self._caster = value
         if value is not None:
             self._caster.set_owner(self)
+
+    @property
+    def available_attacks(self):
+        return self._available_attacks
+
+    @available_attacks.setter
+    def available_attacks(self, attack_types):
+        self._available_attacks = [attack_type(self) for attack_type in attack_types]
 
     def set_role(self, role: FighterArchetype):
         self.role = role
@@ -125,13 +136,13 @@ class Fighter:
         return result
 
     def set_action_options(self):
-        defaults = [MoveAction, AttackAction, ConsumeItemAction, EndTurnAction]
+        defaults = [MoveAction, ConsumeItemAction, EndTurnAction]
         match self.role:
             case FighterArchetype.MELEE:
-                optional = []
+                optional = [WeaponAttackAction]
 
             case FighterArchetype.RANGED:
-                optional = []
+                optional = [WeaponAttackAction]
 
             case FighterArchetype.CASTER:
                 optional = [MagicAction]
@@ -158,7 +169,11 @@ class Fighter:
 
     def does(self, action: ActionMeta) -> bool:
         if action in self.action_options:
-            return action.cost(self) <= self.action_points.current
+            match action.name:
+                case WeaponAttackAction.name:
+                    return action.cost(self) <= self.action_points.current
+                case _:
+                    return action.cost(self) <= self.action_points.current
 
         else:
             return False
@@ -167,8 +182,13 @@ class Fighter:
         action_types = ActionCompendium.all_available_to(self)
         choices = {}
         for name, action_type in action_types.items():
-            if not action_type == MagicAction:
+            if action_type == WeaponAttackAction:
+                for atk in self._available_attacks:
+                    choices[name] = action_type.all_available_to(self)
+
+            elif not action_type == MagicAction:
                 choices[name] = action_type.all_available_to(self)
+
             else:
                 for spell in self.caster.spells:
                     choices[name] = action_type.all_available_to(self)

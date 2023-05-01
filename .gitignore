@@ -9,6 +9,8 @@ assets/sprites/
 assets/wordlists/
 __pycache__/
 
+docs/dev
+
 settings.yaml
 *.zip
 client_secrets.json

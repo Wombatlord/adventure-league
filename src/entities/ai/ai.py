@@ -75,9 +75,6 @@ def _copy(d: dict | list) -> dict | list:
 
 
 class BasicCombatAi(AiInterface):
-    def __init__(self, owner):
-        self.owner = owner
-
     def choose(self, event: dict):
         callback = basic_combat_ai.decide(_copy(event))
         callback()

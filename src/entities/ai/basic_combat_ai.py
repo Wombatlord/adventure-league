@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import abc
+import random
 from typing import TYPE_CHECKING
 
-from src.entities.action.actions import (
-    ActionMeta,
-    AttackAction,
-    EndTurnAction,
-    MoveAction,
-)
+from src.entities.action.actions import ActionMeta, EndTurnAction, MoveAction
+from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.ai.finite_state_machine import Callback, Machine, State
+from src.entities.combat.attack_types import WeaponAttack
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -62,6 +60,12 @@ class ApproachingTarget(CombatAiState):
     def next_state(self) -> State | None:
         target: Fighter = self.working_set["target"]
         moves = self.choices_of(MoveAction)
+        fighter = self.agent()
+        enemies_in_range = fighter.locatable.entities_in_range(
+            room=fighter.encounter_context.get(),
+            max_range=fighter.stats.max_range,
+            entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
+        )
 
         def ends_closest(option) -> int:
             _path = option["subject"]
@@ -73,9 +77,8 @@ class ApproachingTarget(CombatAiState):
 
         ranked_moves = sorted(moves, key=ends_closest)
         best = ranked_moves[0]
-        if AttackAction.all_available_to(self.agent()):
-            if "target" in self.working_set:
-                del self.working_set["target"]
+        if enemies_in_range:
+            self.working_set["in_range"] = enemies_in_range
             return ChoosingAttack(self.working_set)
         else:
             self.working_set["output"] = best["on_confirm"]
@@ -88,14 +91,23 @@ class ChoosingAttack(CombatAiState):
     """
 
     def next_state(self) -> State | None:
-        targets: list[dict] = self.choices_of(AttackAction)
+        fighter: Fighter = self.agent()
+
+        targets_in_range = self.working_set["in_range"]
 
         def lowest_health(target_choice: dict) -> int:
-            return target_choice["subject"].health.current
+            return target_choice.fighter.health.current
 
-        ranked_targets = sorted(targets, key=lowest_health)
+        def choose_attack() -> WeaponAttack:
+            atk_id = random.randint(0, len(fighter._available_attacks) - 1)
+            return fighter._available_attacks[atk_id]
 
-        self.working_set["output"] = ranked_targets[0]["on_confirm"]
+        ranked_targets = sorted(targets_in_range, key=lowest_health)
+        attack_details = WeaponAttackAction.details(fighter, choose_attack())
+
+        self.working_set["output"] = lambda: attack_details["on_confirm"](
+            ranked_targets[0].fighter
+        )
         return ActionChosen(self.working_set)
 
 

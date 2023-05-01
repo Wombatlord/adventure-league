@@ -6,6 +6,7 @@ from typing import Callable, NamedTuple, Self
 from src.config.constants import merc_names
 from src.entities.ai.ai import BasicCombatAi
 from src.entities.combat.archetypes import FighterArchetype
+from src.entities.combat.attack_types import attack_types
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name, Species
 from src.entities.item.inventory import Inventory
@@ -66,8 +67,8 @@ class StatBlock(NamedTuple):
             "defence": randint(*self.defence),
             "power": randint(*self.power),
             "max_range": 1,
-            "role": FighterArchetype.MELEE,
             "is_enemy": self.is_enemy,
+            "role": FighterArchetype.MELEE,
             "speed": self.speed,
             "is_boss": self.is_boss,
         }
@@ -139,8 +140,10 @@ def _setup_fighter_archetypes(fighter: Fighter):
     match fighter.role:
         case FighterArchetype.MELEE:
             fighter.stats.max_range = 1
+            fighter.available_attacks = attack_types
         case FighterArchetype.RANGED:
             fighter.stats.max_range = randint(2, 4)
+            fighter.available_attacks = attack_types
         case FighterArchetype.CASTER:
             fighter.stats.max_range = 1
             fighter.caster = Caster(max_mp=10, known_spells=basic_spell_book)
@@ -185,7 +188,7 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         if not entity.fighter.is_enemy:
             entity.inventory.add_item_to_inventory(HealingPotion(owner=entity))
         else:
-            entity.ai = BasicCombatAi(owner=entity)
+            entity.ai = BasicCombatAi()
 
         if attach_sprites:
             entity = _attach_sprites(entity)
