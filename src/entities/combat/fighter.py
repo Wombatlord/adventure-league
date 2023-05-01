@@ -12,12 +12,13 @@ from src.entities.action.actions import (
     EndTurnAction,
     MoveAction,
 )
-from src.entities.action.attack_action_experiment import WeaponAttackAction
+from src.entities.action.magic_action import MagicAction
+from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.stats import FighterStats, HealthPool
 from src.entities.entity import Entity
 from src.entities.item.inventory import Consumable, Inventory
-from src.entities.magic.caster import Caster, MagicAction
+from src.entities.magic.caster import Caster
 from src.world.node import Node
 from src.world.ray import Ray
 
@@ -128,7 +129,7 @@ class Fighter:
         return result
 
     def set_action_options(self):
-        defaults = [MoveAction, AttackAction, ConsumeItemAction, EndTurnAction]
+        defaults = [MoveAction, ConsumeItemAction, EndTurnAction]
         match self.role:
             case FighterArchetype.MELEE:
                 optional = [WeaponAttackAction]

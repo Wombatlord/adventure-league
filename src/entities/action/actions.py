@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 from typing import Any, Generator
 
-from src.entities.combat.attack_types import WeaponAttack, attack
+from src.entities.combat.attack_types import attack
 
 Event = dict[str, Any]
 
@@ -32,11 +32,17 @@ class ActionCompendium:
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> dict[str, ActionMeta]:
-        return {
+        action_dict = {
             name: action
             for name, action in cls.all_actions.items()
             if fighter.does(action)
         }
+
+        def order_by_menu_pos(d: dict):
+            return d[1].menu_pos
+
+        ordered = dict(sorted(action_dict.items(), key=order_by_menu_pos))
+        return ordered
 
 
 class ActionMeta(type):
@@ -118,6 +124,7 @@ class AttackAction(BaseAction, metaclass=ActionMeta):
 
 class MoveAction(BaseAction, metaclass=ActionMeta):
     name = "move"
+    menu_pos = 2
 
     @classmethod
     def cost(cls, fighter: Fighter, destination: Node | None = None) -> int:
@@ -179,6 +186,7 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
 class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
     name = "use item"
+    menu_pos = 3
 
     @classmethod
     def cost(cls, fighter: Fighter) -> int:
@@ -215,6 +223,7 @@ class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
 
 class EndTurnAction(BaseAction, metaclass=ActionMeta):
     name = "end turn"
+    menu_pos = 500
 
     @classmethod
     def cost(cls, fighter: Fighter) -> int:

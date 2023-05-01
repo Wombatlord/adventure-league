@@ -16,6 +16,7 @@ Event = dict[str, Any]
 
 class WeaponAttackAction(BaseAction, metaclass=ActionMeta):
     name = "weapon attack"
+    menu_pos = 0
 
     @classmethod
     def cost(cls, fighter) -> int:

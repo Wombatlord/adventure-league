@@ -12,15 +12,10 @@ if TYPE_CHECKING:
     from src.gui.combat.hud import HUD
     from src.entities.combat.attack_types import WeaponAttack
 
-from src.entities.action.actions import (
-    AttackAction,
-    ConsumeItemAction,
-    EndTurnAction,
-    MoveAction,
-)
-from src.entities.action.attack_action_experiment import WeaponAttackAction
+from src.entities.action.actions import ConsumeItemAction, EndTurnAction, MoveAction
+from src.entities.action.magic_action import MagicAction
+from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.fighter import Fighter
-from src.entities.magic.caster import MagicAction
 from src.entities.magic.spells import EffectType
 from src.gui.combat.node_selection import NodeSelection
 from src.gui.components.menu import (
@@ -244,7 +239,7 @@ class CombatMenu:
                 clear_templates=self._scene.clear_highlight,
                 on_teardown=self._on_teardown,
             )
-            
+
             submenu_config.append(
                 NodeSelectionNode(
                     label=attack_action_details.get("label", ""),
