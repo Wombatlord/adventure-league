@@ -80,7 +80,7 @@ class Fighter:
         self.action_points = ActionPoints()
         self._caster = None
         self.caster = caster
-        self.available_attacks: list[WeaponAttack] | None = None
+        self._available_attacks: list[WeaponAttack] | None = None
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
@@ -98,6 +98,14 @@ class Fighter:
         self._caster = value
         if value is not None:
             self._caster.set_owner(self)
+
+    @property
+    def available_attacks(self):
+        return self._available_attacks
+
+    @available_attacks.setter
+    def available_attacks(self, attack_types):
+        self._available_attacks = [attack_type(self) for attack_type in attack_types]
 
     def set_role(self, role: FighterArchetype):
         self.role = role
@@ -175,7 +183,7 @@ class Fighter:
         choices = {}
         for name, action_type in action_types.items():
             if action_type == WeaponAttackAction:
-                for atk in self.available_attacks:
+                for atk in self._available_attacks:
                     choices[name] = action_type.all_available_to(self)
 
             elif not action_type == MagicAction:

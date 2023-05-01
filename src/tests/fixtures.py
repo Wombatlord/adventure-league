@@ -2,6 +2,7 @@ import random
 from typing import Callable
 
 from src.entities.combat.archetypes import FighterArchetype
+from src.entities.combat.attack_types import attack_types
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
 from src.entities.item.inventory import Inventory
@@ -53,21 +54,25 @@ def _nth(n):
 class EncounterFactory:
     @classmethod
     def _make_strong(cls, enemy: bool, count=1) -> Entity:
-        return Entity(
+        e = Entity(
             name=Name(
                 first_name="strong", last_name="tactical", title=f"the {_nth(count)}"
             ),
             fighter=Fighter(**FighterFixtures.strong(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
+        e.fighter.available_attacks = attack_types
+        return e
 
     @classmethod
     def _make_baby(cls, enemy: bool, count=1) -> Entity:
-        return Entity(
+        e = Entity(
             name=Name(
                 first_name="baby", last_name="feeble", title=f"the {_nth(count)}"
             ),
             fighter=Fighter(**FighterFixtures.baby(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
+        e.fighter.available_attacks = attack_types
+        return e
 
     @classmethod
     def _make_team(cls, strong_count=0, baby_count=0, enemy=False) -> list[Entity]:

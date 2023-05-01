@@ -99,8 +99,8 @@ class ChoosingAttack(CombatAiState):
             return target_choice.fighter.health.current
 
         def choose_attack() -> WeaponAttack:
-            atk_id = random.randint(0, len(fighter.available_attacks) - 1)
-            return fighter.available_attacks[atk_id]
+            atk_id = random.randint(0, len(fighter._available_attacks) - 1)
+            return fighter._available_attacks[atk_id]
 
         ranked_targets = sorted(targets_in_range, key=lowest_health)
         attack_details = WeaponAttackAction.details(fighter, choose_attack())

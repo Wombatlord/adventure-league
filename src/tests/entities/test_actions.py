@@ -2,11 +2,13 @@ import unittest
 
 from src.entities.action.actions import (
     ActionCompendium,
-    AttackAction,
     ConsumeItemAction,
     EndTurnAction,
     MoveAction,
 )
+from src.entities.action.weapon_action import WeaponAttackAction
+from src.entities.ai.ai import BasicCombatAi
+from src.entities.combat.attack_types import attack_types
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
 from src.entities.item.inventory import Inventory
@@ -25,12 +27,13 @@ class ActionsTest(unittest.TestCase):
             name=Name(first_name="strong", last_name="very", title="the tactical"),
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
+        merc.fighter.available_attacks = attack_types
         merc.inventory = Inventory(owner=merc, capacity=1)
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
-
+        enemy.fighter.available_attacks = attack_types
         return merc, enemy
 
     @classmethod
@@ -55,7 +58,7 @@ class ActionsTest(unittest.TestCase):
 
     def test_action_compendium_has_registered_all_actions(self):
         # Arrange
-        keys = {"end turn", "attack", "cast spell", "use item", "move"}
+        keys = {"end turn", "weapon attack", "cast spell", "use item", "move"}
         actions = ActionCompendium.all_actions
 
         # Assert
@@ -64,7 +67,7 @@ class ActionsTest(unittest.TestCase):
 
         # Check each key contains the correct ActionMeta
         assert actions.get("end turn") is EndTurnAction
-        assert actions.get("attack") is AttackAction
+        assert actions.get("weapon attack") is WeaponAttackAction
         assert actions.get("use item") is ConsumeItemAction
         assert actions.get("move") is MoveAction
 
@@ -122,9 +125,8 @@ class EndTurnActionTest(unittest.TestCase):
         # Arrange
         room, mercs, enemies = self.fixtures.one_vs_one_enemies_lose(room_size=10)
         combat_round = CombatRound(mercs, enemies)
-        ai = TestAI(preferred_choice=EndTurnAction.name)
         current_fighter: Fighter | None = None
-
+        ai = TestAI(preferred_choice=EndTurnAction.name)
         # Action
         turn = combat_round.do_turn()
         for event in turn:
