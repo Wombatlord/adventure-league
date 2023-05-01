@@ -6,7 +6,6 @@ from src.entities.action.actions import (
     ActionCompendium,
     ActionMeta,
     ActionPoints,
-    AttackAction,
     BaseAction,
     ConsumeItemAction,
     EndTurnAction,
@@ -23,6 +22,7 @@ from src.world.node import Node
 from src.world.ray import Ray
 
 if TYPE_CHECKING:
+    from src.entities.combat.attack_types import WeaponAttack
     from src.world.level.room import Room
 
 Event = dict[str, Any]
@@ -57,7 +57,6 @@ class Fighter:
     def __init__(
         self,
         role: FighterArchetype,
-        # available_attacks,
         hp: int = 0,
         defence: int = 0,
         power: int = 0,
@@ -81,7 +80,7 @@ class Fighter:
         self.action_points = ActionPoints()
         self._caster = None
         self.caster = caster
-        self.available_attacks = None
+        self.available_attacks: list[WeaponAttack] | None = None
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss

@@ -97,7 +97,7 @@ class AttackRules:
         return actual_damage
 
 
-def attack(fighter: Fighter, target: Entity) -> Event:
+def attack_details(fighter: Fighter, target: Entity) -> Event:
     result = {}
     if fighter.owner.is_dead:
         raise ValueError(f"{fighter.owner.name=}: I'm dead jim.")
