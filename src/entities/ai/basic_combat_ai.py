@@ -78,8 +78,6 @@ class ApproachingTarget(CombatAiState):
         ranked_moves = sorted(moves, key=ends_closest)
         best = ranked_moves[0]
         if enemies_in_range:
-            if "target" in self.working_set:
-                del self.working_set["target"]
             self.working_set["in_range"] = enemies_in_range
             return ChoosingAttack(self.working_set)
         else:
