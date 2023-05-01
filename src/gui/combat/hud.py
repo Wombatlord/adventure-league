@@ -16,6 +16,8 @@ from src.utils.rectangle import Rectangle
 if TYPE_CHECKING:
     from src.gui.combat.scene import Scene
 
+from src.world.node import Node
+
 
 def _subdivision(axis_split: int, size: tuple[int, int], tile: tuple[int, int]) -> Rect:
     region = Vec2(*size) / axis_split
@@ -25,6 +27,7 @@ def _subdivision(axis_split: int, size: tuple[int, int], tile: tuple[int, int]) 
 class HUD(arcade.Section):
     scene: Scene
     combat_menu: CombatMenu
+    dispatch_mouse: Callable[[int, int, int, int], Node | None]
 
     def __init__(
         self,
@@ -42,7 +45,7 @@ class HUD(arcade.Section):
         self.scene = scene
         self.combat_log = CombatLog(_subdivision(3, (self.width, self.height), (2, 2)))
         self.combat_menu = empty()
-        self.dispatch_mouse = lambda *_: False
+        self.dispatch_mouse = lambda *_: None
         self.debug_text = arcade.Text(
             text="",
             font_size=12,
@@ -55,7 +58,8 @@ class HUD(arcade.Section):
         portrait_height, portrait_width = 200, 200
 
         self.setup_player_portrait(portrait_height, portrait_width)
-        self.setup_enemy_portrait(portrait_height, portrait_width)
+        self.setup_hover_portrait(portrait_height, portrait_width)
+        self.allow_dispatch_mouse()
 
         eng.subscribe(
             topic="await_input",
@@ -67,23 +71,19 @@ class HUD(arcade.Section):
             handler_id="Portrait.clear.player",
             handler=self.player_character_portrait.clear,
         )
-        eng.subscribe(
-            topic="turn_end",
-            handler_id="Portrait.clear.enemy",
-            handler=self.enemy_portrait.clear,
-        )
+        self.health_bars_visible = False
 
-    def setup_enemy_portrait(self, portrait_height, portrait_width):
+    def setup_hover_portrait(self, portrait_height, portrait_width):
         bl_margins = Vec2(50, 0)
-        self.enemy_portrait = Portrait(
+        self.hover_portrait = Portrait(
             Rectangle.from_lbwh((0, 0, portrait_width, portrait_height)).translate(
                 bl_margins
             ),
             flip=False,
         )
-        enemy_portrait_pinned_pt = lambda: self.enemy_portrait.rect.corners[0]
+        enemy_portrait_pinned_pt = lambda: self.hover_portrait.rect.corners[0]
         bl_pin = Pin(self.get_anchor_bottom_left(bl_margins), enemy_portrait_pinned_pt)
-        self.enemy_portrait.pin_rect(bl_pin)
+        self.hover_portrait.pin_rect(bl_pin)
 
     def setup_player_portrait(self, portrait_height, portrait_width):
         window_l_to_r = Vec2(*(arcade.get_window().size[0], 0))
@@ -116,14 +116,22 @@ class HUD(arcade.Section):
         self.dispatch_mouse = self.scene.update_mouse_node
 
     def prevent_dispatch_mouse(self):
-        self.dispatch_mouse = lambda *_: False
+        self.dispatch_mouse = lambda *_: None
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         node = self.dispatch_mouse(x, y, dx, dy)
-        if node and self.combat_menu.is_selecting_move():
+        if node is None:
+            return
+
+        if hovered := self.scene.entity_at_node(node):
+            self.hover_portrait.set_sprite(hovered.entity_sprite.sprite)
+        else:
+            self.hover_portrait.clear()
+
+        if self.combat_menu.is_selecting_move():
             self.combat_menu.move_selection.on_selection_changed()
 
-        elif node and self.combat_menu.is_selecting_spell_target():
+        elif self.combat_menu.is_selecting_spell_target():
             self.combat_menu.menu.current_node_selection.on_selection_changed()
 
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
@@ -147,7 +155,6 @@ class HUD(arcade.Section):
         if requester := event.get("await_input"):
             self.scene.follow(requester.locatable)
             if requester.owner.ai:
-                self.enemy_portrait.set_sprite(requester.owner.entity_sprite.sprite)
                 return
 
         eng.await_input()
@@ -186,14 +193,14 @@ class HUD(arcade.Section):
         self.combat_log.draw()
         self.combat_menu.menu.draw()
         self.player_character_portrait.draw()
-        self.enemy_portrait.draw()
+        self.hover_portrait.draw()
         if not config.DEBUG:
             return
         self.debug_text.draw()
 
     def on_update(self, delta_time: float):
         self.player_character_portrait.update()
-        self.enemy_portrait.update()
+        self.hover_portrait.update()
         if self.combat_menu.menu.is_enabled():
             self.combat_menu.menu.update()
 
@@ -211,7 +218,7 @@ class HUD(arcade.Section):
         self.combat_menu.set_menu_rect(self.get_menu_rect(250, 250))
         self.combat_log.on_resize(width, height)
         self.player_character_portrait.on_resize()
-        self.enemy_portrait.on_resize()
+        self.hover_portrait.on_resize()
 
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
@@ -220,5 +227,9 @@ class HUD(arcade.Section):
 
             case arcade.key.ESCAPE:
                 self.combat_menu.move_selection.disable()
+            case arcade.key.H:
+                self.health_bars_visible = (
+                    self.scene.floating_health_bars.toggle_visible()
+                )
             case _:
                 pass
