@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 from typing import Any, Generator
 
-from src.entities.combat.attack_types import attack
+from src.entities.combat.attack_types import attack_details
 
 Event = dict[str, Any]
 
@@ -32,11 +32,17 @@ class ActionCompendium:
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> dict[str, ActionMeta]:
-        return {
+        action_dict = {
             name: action
             for name, action in cls.all_actions.items()
             if fighter.does(action)
         }
+
+        def order_by_menu_pos(d: dict):
+            return d[1].menu_pos
+
+        ordered = dict(sorted(action_dict.items(), key=order_by_menu_pos))
+        return ordered
 
 
 class ActionMeta(type):
@@ -76,48 +82,9 @@ class BaseAction:
         raise NotImplementedError()
 
 
-class AttackAction(BaseAction, metaclass=ActionMeta):
-    name = "attack"
-
-    @classmethod
-    def cost(cls, fighter: Fighter) -> int:
-        return fighter.action_points.current
-
-    @classmethod
-    def execute(cls, fighter: Fighter, target: Fighter) -> Generator[Event]:
-        fighter.action_points.deduct_cost(cls.cost(fighter))
-        yield attack(fighter=fighter, target=target.owner)
-
-    @classmethod
-    def details(cls, fighter: Fighter, target: Fighter) -> dict:
-        return {
-            **ActionMeta.details(cls, fighter),
-            "on_confirm": lambda: fighter.ready_action(cls(fighter, target)),
-            "subject": target,
-            "label": f"{target.owner.name}",
-        }
-
-    @classmethod
-    def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        return [
-            cls.details(fighter, occupant.fighter)
-            for occupant in fighter.locatable.entities_in_range(
-                room=fighter.encounter_context.get(),
-                max_range=fighter.stats.max_range,
-                entity_filter=lambda e: fighter.is_enemy_of(e.fighter),
-            )
-        ]
-
-    def __init__(self, fighter: Fighter, target: Fighter) -> None:
-        self.fighter = fighter
-        self.target = target
-
-    def __call__(self) -> Generator[Event]:
-        yield from self.execute(self.fighter, self.target)
-
-
 class MoveAction(BaseAction, metaclass=ActionMeta):
     name = "move"
+    menu_pos = 2
 
     @classmethod
     def cost(cls, fighter: Fighter, destination: Node | None = None) -> int:
@@ -179,6 +146,7 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
 class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
     name = "use item"
+    menu_pos = 3
 
     @classmethod
     def cost(cls, fighter: Fighter) -> int:
@@ -215,6 +183,7 @@ class ConsumeItemAction(BaseAction, metaclass=ActionMeta):
 
 class EndTurnAction(BaseAction, metaclass=ActionMeta):
     name = "end turn"
+    menu_pos = 500
 
     @classmethod
     def cost(cls, fighter: Fighter) -> int:

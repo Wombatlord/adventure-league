@@ -4,4 +4,4 @@ isort
 parameterized
 ptpython
 requests
-pydrive
+pydrive2

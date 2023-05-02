@@ -51,11 +51,20 @@ class TestAI:
 
         choice = options[0]
         callback = choice.get("on_confirm")
+
         if not callable(callback):
             raise TypeError(f"The callback {choice.get('on_confirm')=} is not callable")
         self.decision_log.append(choice)
         callback()
         self.count_decision()
+
+    def potential_targets(self):
+        in_range = self._current_fighter.locatable.entities_in_range(
+            self._current_fighter.encounter_context.get(),
+            max_range=self._current_fighter.stats.max_range,
+            entity_filter=lambda e: self._current_fighter.is_enemy_of(e.fighter),
+        )
+        return in_range
 
     def fallback_move_decision(self, options: list[dict]):
         nearest_enemy = self._current_fighter.locatable.nearest_entity(

@@ -1,6 +1,9 @@
 from unittest import TestCase
 
-from src.entities.action.actions import AttackAction, MoveAction
+from src.entities.action.actions import MoveAction
+from src.entities.action.weapon_action import WeaponAttackAction
+from src.entities.ai.ai import BasicCombatAi
+from src.entities.combat.attack_types import attack_types
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
 from src.entities.item.inventory import Inventory
@@ -15,24 +18,20 @@ class CombatRoundTest(TestCase):
     fixtures = EncounterFactory
 
     @classmethod
-    def get_aggressive_ai(self, max_decisions: int) -> TestAI:
-        return TestAI(
-            AttackAction.name,
-            fallback_choices=(MoveAction.name,),
-            max_decisions=max_decisions,
-        )
-
-    @classmethod
     def get_entities(cls) -> tuple[Entity, Entity]:
         merc = Entity(
             name=Name(first_name="strong", last_name="very", title="the tactical"),
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
+        merc.fighter.available_attacks = attack_types
+        merc.fighter.stats.max_range = 10
         merc.inventory = Inventory(owner=merc, capacity=1)
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
+        enemy.fighter.available_attacks = attack_types
+        enemy.fighter.stats.max_range = 10
         enemy.inventory = Inventory(owner=enemy, capacity=1)
         return merc, enemy
 
@@ -55,7 +54,7 @@ class CombatRoundTest(TestCase):
         # Arrange
         # =======
         merc, enemy = self.get_entities()
-        ai = self.get_aggressive_ai(max_decisions=100)
+        ai = BasicCombatAi()
         merc.fighter.speed = 4
 
         # A fight in a phone booth

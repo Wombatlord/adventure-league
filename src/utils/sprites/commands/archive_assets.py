@@ -3,8 +3,8 @@ from datetime import date
 from os import path, remove
 from shutil import make_archive
 
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
 
 import src
 from src.utils.cli import CommandMeta
@@ -35,7 +35,7 @@ class GetAssetsCommand(metaclass=CommandMeta):
 def get_assets():
     gauth = GoogleAuth()
     drive = GoogleDrive(gauth)
-
+    
     file_list = drive.ListFile(
         {
             "q": "'{}' in parents and trashed=false".format(
