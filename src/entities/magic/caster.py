@@ -6,7 +6,7 @@ from src.entities.magic.spells import Spell
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
-    from src.entities.magic.spells import Spell, SpellFactory
+    from src.entities.magic.spells import Spell
 
 Event = dict[str, Any]
 
@@ -42,25 +42,14 @@ class MpPool:
 
 
 class Caster:
-    def __init__(self, max_mp: int, known_spells: list[SpellFactory]):
+    def __init__(self, max_mp: int):
         self.owner: Fighter | None = None
         self.mp_pool = MpPool(max=max_mp)
-        self.spells = [spell(self) for spell in known_spells]
 
     def set_owner(self, owner: Caster) -> Caster:
         self.owner = owner
         return self
 
-    def available_spells(self):
-        return self.spells
-
     @property
     def current_mp(self) -> int:
         return self.mp_pool.current
-
-    def learn_spell(self, spell: SpellFactory) -> bool:
-        if spell not in self.spells:
-            self.spells.append(spell(self))
-            return True
-        else:
-            return False

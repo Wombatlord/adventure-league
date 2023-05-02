@@ -226,10 +226,3 @@ class Fireball(Spell):
 
     def is_self_target(self) -> bool:
         return False
-
-
-if TYPE_CHECKING:
-    SpellFactory = Callable[[Caster], Spell]
-
-
-basic_spell_book = [MagicMissile, Shield, Fireball]

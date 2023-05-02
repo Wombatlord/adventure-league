@@ -7,12 +7,12 @@ from src.entities.action.actions import (
     MoveAction,
 )
 from src.entities.action.weapon_action import WeaponAttackAction
-from src.entities.ai.ai import BasicCombatAi
-from src.entities.combat.attack_types import attack_types
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
+from src.entities.item.equipment import Equipment
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
+from src.entities.item.wieldables import Sword, Wieldable
 from src.systems.combat import CombatRound
 from src.tests.ai_fixture import TestAI
 from src.tests.fixtures import EncounterFactory, FighterFixtures
@@ -27,13 +27,17 @@ class ActionsTest(unittest.TestCase):
             name=Name(first_name="strong", last_name="very", title="the tactical"),
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
-        merc.fighter.available_attacks = attack_types
+        merc.fighter.equipment = Equipment(
+            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword()).on_equip()
+        )
         merc.inventory = Inventory(owner=merc, capacity=1)
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
-        enemy.fighter.available_attacks = attack_types
+        enemy.fighter.equipment = Equipment(
+            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword()).on_equip()
+        )
         return merc, enemy
 
     @classmethod

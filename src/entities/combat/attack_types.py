@@ -176,7 +176,11 @@ class NormalAttack(WeaponAttack):
                 message = f"{self._fighter.owner.name} fails to hit {target.name}!"
             case _:
                 actual_damage = AttackRules.damage_amount(self._fighter, target)
-                message = f"{self._fighter.owner.name} hits {target.name} for {actual_damage}\n"
+                if self._fighter.equipment.weapon.weapon_type == "melee":
+                    message = f"{self._fighter.owner.name} hits {target.name} with their {self._fighter.equipment.weapon.name} for {actual_damage}\n"
+                elif self._fighter.equipment.weapon.weapon_type == "ranged":
+                    message = f"{self._fighter.owner.name} shoots {target.name} with their {self._fighter.equipment.weapon.name} for {actual_damage}\n"
+
                 damage_details = target.fighter.take_damage(actual_damage)
 
                 result.update(**damage_details)
@@ -193,7 +197,7 @@ class NormalAttack(WeaponAttack):
 
         range = self._fighter.locatable.entities_in_range(
             room=self._fighter.encounter_context.get(),
-            max_range=self._fighter.stats.max_range,
+            max_range=self._fighter.equipment.weapon._range,
             entity_filter=lambda e: self._fighter.is_enemy_of(e.fighter),
         )
 
@@ -207,6 +211,3 @@ class NormalAttack(WeaponAttack):
             raise TypeError(f"Expected a Node, got {node=}")
 
         return (node,)
-
-
-attack_types = [NormalAttack]

@@ -2,12 +2,11 @@ import random
 from typing import Callable
 
 from src.entities.combat.archetypes import FighterArchetype
-from src.entities.combat.attack_types import attack_types
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
-from src.entities.item.inventory import Inventory
+from src.entities.item.equipment import Equipment
 from src.entities.item.items import HealingPotion
-from src.utils.proc_gen.syllables import inoffensive
+from src.entities.item.wieldables import Sword, Wieldable
 from src.world.level.room import Room
 from src.world.node import Node
 
@@ -60,7 +59,9 @@ class EncounterFactory:
             ),
             fighter=Fighter(**FighterFixtures.strong(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
-        e.fighter.available_attacks = attack_types
+        e.fighter.equipment = Equipment(
+            e.fighter, weapon=Wieldable(owner=e.fighter, item=Sword()).on_equip()
+        )
         return e
 
     @classmethod
@@ -71,7 +72,9 @@ class EncounterFactory:
             ),
             fighter=Fighter(**FighterFixtures.baby(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
-        e.fighter.available_attacks = attack_types
+        e.fighter.equipment = Equipment(
+            e.fighter, weapon=Wieldable(owner=e.fighter, item=Sword()).on_equip()
+        )
         return e
 
     @classmethod

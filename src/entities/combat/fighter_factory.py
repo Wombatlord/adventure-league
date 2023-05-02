@@ -6,13 +6,12 @@ from typing import Callable, NamedTuple, Self
 from src.config.constants import merc_names
 from src.entities.ai.ai import BasicCombatAi
 from src.entities.combat.archetypes import FighterArchetype
-from src.entities.combat.attack_types import attack_types
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name, Species
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
+from src.entities.item.wieldables import Bow, SpellBook, Sword, Wieldable
 from src.entities.magic.caster import Caster
-from src.entities.magic.spells import basic_spell_book
 from src.entities.sprites import EntitySprite
 from src.gui.animated_sprite_config import (
     AnimatedSpriteConfig,
@@ -139,14 +138,20 @@ def _setup_fighter_archetypes(fighter: Fighter):
 
     match fighter.role:
         case FighterArchetype.MELEE:
-            fighter.stats.max_range = 1
-            fighter.available_attacks = attack_types
+            fighter.equipment.equip_item(
+                Wieldable(owner=fighter, item=Sword()).on_equip()
+            )
+
         case FighterArchetype.RANGED:
-            fighter.stats.max_range = randint(2, 4)
-            fighter.available_attacks = attack_types
+            fighter.equipment.equip_item(
+                Wieldable(owner=fighter, item=Bow()).on_equip()
+            )
         case FighterArchetype.CASTER:
             fighter.stats.max_range = 1
-            fighter.caster = Caster(max_mp=10, known_spells=basic_spell_book)
+            fighter.caster = Caster(max_mp=10)
+            fighter.equipment.equip_item(
+                Wieldable(owner=fighter, item=SpellBook()).on_equip()
+            )
 
     fighter.set_action_options()
 
