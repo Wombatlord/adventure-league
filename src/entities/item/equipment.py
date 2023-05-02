@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class Equipment:
     weapon: Wieldable
-    __slots__ = ("owner", "weapon", "helmet", "body")
+    __slots__ = ("owner", "weapon", "helmet", "body",)
 
     def __init__(self, owner: Fighter, weapon=None, helmet=None, body=None) -> None:
         self.owner = owner
@@ -25,6 +25,9 @@ class Equipment:
         if not isinstance(item, Equippable):
             return False
 
+        if item.slot not in self.__slots__:
+            raise TypeError(f"{item.slot=} not in {Equipment.__slots__=} for {item=}")
+        
         match item.slot:
             case "weapon":
                 if self.weapon is None:
@@ -58,7 +61,7 @@ class Equipment:
                 self.body = None
 
         item.unequip()
-        storage.move_to(item)
+        storage.store(item)
 
 
 class Equippable(metaclass=abc.ABCMeta):

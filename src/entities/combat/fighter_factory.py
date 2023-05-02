@@ -65,7 +65,6 @@ class StatBlock(NamedTuple):
             "hp": randint(*self.hp),
             "defence": randint(*self.defence),
             "power": randint(*self.power),
-            "max_range": 1,
             "is_enemy": self.is_enemy,
             "role": FighterArchetype.MELEE,
             "speed": self.speed,
@@ -147,7 +146,6 @@ def _setup_fighter_archetypes(fighter: Fighter):
                 Wieldable(owner=fighter, item=Bow()).on_equip()
             )
         case FighterArchetype.CASTER:
-            fighter.stats.max_range = 1
             fighter.caster = Caster(max_mp=10)
             fighter.equipment.equip_item(
                 Wieldable(owner=fighter, item=SpellBook()).on_equip()

@@ -48,14 +48,12 @@ class FighterStats:
     defence: int
     power: int
     level: int
-    max_range: int
     speed: int
 
-    def __init__(self, defence, power, level, max_range, speed) -> None:
+    def __init__(self, defence, power, level, speed) -> None:
         self._defence = defence
         self._power = power
         self._level = level
-        self._max_range = max_range
         self._speed = speed
 
     @property
@@ -73,14 +71,6 @@ class FighterStats:
     @property
     def level(self):
         return self._level
-
-    @property
-    def max_range(self):
-        return self._max_range
-
-    @max_range.setter
-    def max_range(self, value):
-        self._max_range = value
 
     @property
     def speed(self):

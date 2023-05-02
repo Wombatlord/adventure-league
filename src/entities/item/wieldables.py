@@ -72,7 +72,7 @@ class Wieldable(Equippable):
         prepared = []
         for attack in self._attacks:
             match attack:
-                case "NormalAttack":
+                case NormalAttack.name:
                     prepared.append(NormalAttack)
 
         return prepared
@@ -81,11 +81,11 @@ class Wieldable(Equippable):
         prepared = []
         for spell in self._spells:
             match spell:
-                case "MagicMissile":
+                case MagicMissile.name:
                     prepared.append(MagicMissile)
-                case "Shield":
+                case Shield.name:
                     prepared.append(Shield)
-                case "Fireball":
+                case Fireball.name:
                     prepared.append(Fireball)
 
         return prepared
@@ -110,7 +110,7 @@ class Sword(WieldableConfig):
     slot = "weapon"
     weapon_type = "melee"
     range = 1
-    attacks = ["NormalAttack"]
+    attacks = [NormalAttack.name]
     spells = None
 
 
@@ -119,7 +119,7 @@ class Bow(WieldableConfig):
     slot = "weapon"
     weapon_type = "ranged"
     range = 5
-    attacks = ["NormalAttack"]
+    attacks = [NormalAttack.name]
     spells = None
 
 
@@ -128,5 +128,5 @@ class SpellBook(WieldableConfig):
     slot = "weapon"
     weapon_type = "melee"
     range = 1
-    attacks = ["NormalAttack"]
-    spells = ["MagicMissile", "Shield", "Fireball"]
+    attacks = [NormalAttack.name]
+    spells = [MagicMissile.name, Shield.name, Fireball.name]

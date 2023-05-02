@@ -61,7 +61,6 @@ class Fighter:
         defence: int = 0,
         power: int = 0,
         level: int = 0,
-        max_range: int = 0,
         speed: int = 0,
         caster: Caster = None,
         is_enemy: bool = False,
@@ -73,7 +72,7 @@ class Fighter:
         # -----Stats-----
         self.health = HealthPool(max=hp)
         self.stats = FighterStats(
-            defence=defence, power=power, level=level, max_range=max_range, speed=speed
+            defence=defence, power=power, level=level, speed=speed
         )
         self.equipment = Equipment(owner=self)
         self.set_role(role)
