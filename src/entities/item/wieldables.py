@@ -24,37 +24,37 @@ class Wieldable(Equippable):
         self, owner: Fighter | None, item: WieldableConfig | None = None
     ) -> None:
         self._owner = owner
-        self._name = item.name
         self._slot = item.slot
-        self._weapon_type = item.weapon_type
+        self._name = item.name
         self._range = item.range
+        self._weapon_type = item.weapon_type
         self._attacks = item.attacks
         self._spells = item.spells
         self._available_attacks = None
         self._available_spells = None
 
     @property
-    def name(self):
+    def slot(self) -> str:
+        return self._slot
+    
+    @property
+    def name(self) -> str:
         return self._name
 
     @property
-    def range(self):
+    def range(self) -> int:
         return self._range
 
     @property
-    def slot(self):
-        return self._slot
-
-    @property
-    def available_attacks(self):
+    def available_attacks(self) -> list[WeaponAttack]:
         return self._available_attacks
 
     @property
-    def available_spells(self):
+    def available_spells(self) -> list[Spell]:
         return self._available_spells
 
     @property
-    def weapon_type(self):
+    def weapon_type(self) -> str:
         return self._weapon_type
 
     def on_equip(self) -> Self:
@@ -68,7 +68,7 @@ class Wieldable(Equippable):
         )
         return self
 
-    def _prepare_attacks(self):
+    def _prepare_attacks(self) -> list[WeaponAttack]:
         prepared = []
         for attack in self._attacks:
             match attack:
@@ -77,7 +77,7 @@ class Wieldable(Equippable):
 
         return prepared
     
-    def _prepare_spells(self):
+    def _prepare_spells(self) -> list[Spell]:
         prepared = []
         for spell in self._spells:
             match spell:
