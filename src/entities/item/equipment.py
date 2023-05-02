@@ -1,6 +1,10 @@
 from __future__ import annotations
+import abc
 
 from typing import TYPE_CHECKING, Self
+
+from src.entities.combat.attack_types import WeaponAttack
+from src.entities.magic.spells import Spell
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -57,14 +61,19 @@ class Equipment:
         storage.move_to(item)
 
 
-class Equippable:
-    name = ""
-
-    def get_name(self) -> str:
-        return self.name or "no name"
-
+class Equippable(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
     def on_equip(self) -> Self:
-        pass
-
+        raise NotImplementedError()
+    
+    @abc.abstractmethod
     def unequip(self):
-        pass
+        raise NotImplementedError()
+    
+    @abc.abstractmethod
+    def _prepare_attacks(self) -> list[WeaponAttack]:
+        raise NotImplementedError()
+    
+    @abc.abstractmethod
+    def _prepare_spells(self) -> list[Spell]:
+        raise NotImplementedError()
