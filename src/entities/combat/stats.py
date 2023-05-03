@@ -60,7 +60,7 @@ class FighterStats:
         self._power = power
         self._level = level
         self._speed = speed
-        self.modifiers: tuple[StatAffix, int] = []
+        self.modifiers: list[tuple[StatAffix, int]] = []
 
     @property
     def defence(self):
@@ -83,8 +83,8 @@ class FighterStats:
         return self._speed
 
     def sort_modifiers(self):
-        def sorting(m):
-            return m.application_order
+        def sorting(m: tuple[StatAffix, int]):
+            return m[0].application_order
 
         self.modifiers = sorted(self.modifiers, key=sorting)
 
@@ -92,12 +92,12 @@ class FighterStats:
         self.sort_modifiers()
         new_power = 0
         new_defence = 0
-        for i, mod in enumerate(self.modifiers):
-            match mod[i].target_stat:
+        for mod in self.modifiers:
+            match mod[0].target_stat:
                 case "power":
-                    new_power += mod[i].effect(mod[1])
+                    new_power += mod[0].effect(mod[1])
                 case "defence":
-                    new_defence += mod[i].effect(mod[1])
+                    new_defence += mod[0].effect(mod[1])
 
         return {"new_power": new_power, "new_defence": new_defence}
 
