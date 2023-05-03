@@ -176,9 +176,9 @@ class NormalAttack(WeaponAttack):
                 message = f"{self._fighter.owner.name} fails to hit {target.name}!"
             case _:
                 actual_damage = AttackRules.damage_amount(self._fighter, target)
-                if self._fighter.equipment.weapon.weapon_type == "melee":
+                if self._fighter.equipment.weapon.attack_verb == "melee":
                     message = f"{self._fighter.owner.name} hits {target.name} with their {self._fighter.equipment.weapon.name} for {actual_damage}\n"
-                elif self._fighter.equipment.weapon.weapon_type == "ranged":
+                elif self._fighter.equipment.weapon.attack_verb == "ranged":
                     message = f"{self._fighter.owner.name} shoots {target.name} with their {self._fighter.equipment.weapon.name} for {actual_damage}\n"
 
                 damage_details = target.fighter.take_damage(actual_damage)

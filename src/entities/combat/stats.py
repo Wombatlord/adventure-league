@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import Callable, NamedTuple
+
+
 class HealthPool:
     def __init__(self, max: int) -> None:
         self._max_hp = max
@@ -55,6 +60,7 @@ class FighterStats:
         self._power = power
         self._level = level
         self._speed = speed
+        self.modifiers: tuple[StatAffix, int] = []
 
     @property
     def defence(self):
@@ -75,3 +81,65 @@ class FighterStats:
     @property
     def speed(self):
         return self._speed
+
+    def sort_modifiers(self):
+        def sorting(m):
+            return m.application_order
+
+        self.modifiers = sorted(self.modifiers, key=sorting)
+
+    def calculate_modifiers(self) -> dict[str, int]:
+        self.sort_modifiers()
+        new_power = 0
+        new_defence = 0
+        for i, mod in enumerate(self.modifiers):
+            match mod[i].target_stat:
+                case "power":
+                    new_power += mod[i].effect(mod[1])
+                case "defence":
+                    new_defence += mod[i].effect(mod[1])
+
+        return {"new_power": new_power, "new_defence": new_defence}
+
+
+class StatAffix(NamedTuple):
+    name: str
+    target_stat: str
+    effect: Callable[[int], int]
+    application_order: int
+
+
+class Modifiers:
+    @staticmethod
+    def percent_increase(stat, mod) -> int:
+        return stat + (mod // stat) * 100
+
+    @staticmethod
+    def raw_increase(stat, mod):
+        return stat + mod
+
+
+RawPowerIncrease = StatAffix(
+    name="bear",
+    target_stat="power",
+    effect=Modifiers.raw_increase,
+    application_order=0,
+)
+PercentPowerIncrease = StatAffix(
+    name="tiger",
+    target_stat="power",
+    effect=Modifiers.percent_increase,
+    application_order=1,
+)
+RawDefenceIncrease = StatAffix(
+    name="bull",
+    target_stat="defence",
+    effect=Modifiers.raw_increase,
+    application_order=0,
+)
+PercentDefenceIncrease = StatAffix(
+    name="jaguar",
+    target_stat="defence",
+    effect=Modifiers.percent_increase,
+    application_order=1,
+)

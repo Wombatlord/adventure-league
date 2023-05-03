@@ -138,17 +138,15 @@ def _setup_fighter_archetypes(fighter: Fighter):
     match fighter.role:
         case FighterArchetype.MELEE:
             fighter.equipment.equip_item(
-                Wieldable(owner=fighter, item=Sword()).on_equip()
+                Wieldable(owner=fighter, item=Sword).on_equip()
             )
 
         case FighterArchetype.RANGED:
-            fighter.equipment.equip_item(
-                Wieldable(owner=fighter, item=Bow()).on_equip()
-            )
+            fighter.equipment.equip_item(Wieldable(owner=fighter, item=Bow).on_equip())
         case FighterArchetype.CASTER:
             fighter.caster = Caster(max_mp=10)
             fighter.equipment.equip_item(
-                Wieldable(owner=fighter, item=SpellBook()).on_equip()
+                Wieldable(owner=fighter, item=SpellBook).on_equip()
             )
 
     fighter.set_action_options()

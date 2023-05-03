@@ -28,7 +28,7 @@ class ActionsTest(unittest.TestCase):
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
         merc.fighter.equipment = Equipment(
-            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword()).on_equip()
+            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword).on_equip()
         )
         merc.inventory = Inventory(owner=merc, capacity=1)
         enemy = Entity(
@@ -36,7 +36,7 @@ class ActionsTest(unittest.TestCase):
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
         enemy.fighter.equipment = Equipment(
-            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword()).on_equip()
+            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword).on_equip()
         )
         return merc, enemy
 

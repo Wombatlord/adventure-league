@@ -60,7 +60,7 @@ class EncounterFactory:
             fighter=Fighter(**FighterFixtures.strong(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
         e.fighter.equipment = Equipment(
-            e.fighter, weapon=Wieldable(owner=e.fighter, item=Sword()).on_equip()
+            e.fighter, weapon=Wieldable(owner=e.fighter, item=Sword).on_equip()
         )
         return e
 
@@ -73,7 +73,7 @@ class EncounterFactory:
             fighter=Fighter(**FighterFixtures.baby(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
         e.fighter.equipment = Equipment(
-            e.fighter, weapon=Wieldable(owner=e.fighter, item=Sword()).on_equip()
+            e.fighter, weapon=Wieldable(owner=e.fighter, item=Sword).on_equip()
         )
         return e
 

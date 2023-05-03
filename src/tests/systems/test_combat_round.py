@@ -24,14 +24,14 @@ class CombatRoundTest(TestCase):
         merc.fighter.stats.max_range = 10
         merc.inventory = Inventory(owner=merc, capacity=1)
         merc.fighter.equipment = Equipment(
-            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword()).on_equip()
+            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword).on_equip()
         )
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
         enemy.fighter.equipment = Equipment(
-            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword()).on_equip()
+            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword).on_equip()
         )
         enemy.fighter.stats.max_range = 10
         enemy.inventory = Inventory(owner=enemy, capacity=1)

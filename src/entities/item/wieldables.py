@@ -16,7 +16,7 @@ class Wieldable(Equippable):
     _available_spells: list[Spell] | None
     _attacks: list[WeaponAttack] | None
     _spells: list[Spell] | None
-    _weapon_type: str
+    _attack_verb: str
     _name: str
     _slot: str
 
@@ -24,10 +24,11 @@ class Wieldable(Equippable):
         self, owner: Fighter | None, item: WieldableConfig | None = None
     ) -> None:
         self._owner = owner
+        self._config = item
         self._slot = item.slot
         self._name = item.name
         self._range = item.range
-        self._weapon_type = item.weapon_type
+        self._attack_verb = item.attack_verb
         self._attacks = item.attacks
         self._spells = item.spells
         self._available_attacks = None
@@ -36,7 +37,7 @@ class Wieldable(Equippable):
     @property
     def slot(self) -> str:
         return self._slot
-    
+
     @property
     def name(self) -> str:
         return self._name
@@ -54,8 +55,8 @@ class Wieldable(Equippable):
         return self._available_spells
 
     @property
-    def weapon_type(self) -> str:
-        return self._weapon_type
+    def attack_verb(self) -> str:
+        return self._attack_verb
 
     def on_equip(self) -> Self:
         self._available_attacks = [
@@ -76,7 +77,7 @@ class Wieldable(Equippable):
                     prepared.append(NormalAttack)
 
         return prepared
-    
+
     def _prepare_spells(self) -> list[Spell]:
         prepared = []
         for spell in self._spells:
@@ -99,34 +100,36 @@ class Wieldable(Equippable):
 class WieldableConfig(NamedTuple):
     name: str = ""
     slot: str = ""
-    weapon_type: str = ""
+    attack_verb: str = ""
     range: int = 0
     attacks: list[str] | None = None
     spells: list[str] | None = None
 
 
-class Sword(WieldableConfig):
-    name = "sword"
-    slot = "weapon"
-    weapon_type = "melee"
-    range = 1
-    attacks = [NormalAttack.name]
-    spells = None
+Sword = WieldableConfig(
+    name="sword",
+    slot="weapon",
+    attack_verb="melee",
+    range=1,
+    attacks=[NormalAttack.name],
+    spells=None,
+)
 
 
-class Bow(WieldableConfig):
-    name = "bow"
-    slot = "weapon"
-    weapon_type = "ranged"
-    range = 5
-    attacks = [NormalAttack.name]
-    spells = None
+Bow = WieldableConfig(
+    name="bow",
+    slot="weapon",
+    attack_verb="ranged",
+    range=5,
+    attacks=[NormalAttack.name],
+    spells=None,
+)
 
-
-class SpellBook(WieldableConfig):
-    name = "grimoire"
-    slot = "weapon"
-    weapon_type = "melee"
-    range = 1
-    attacks = [NormalAttack.name]
-    spells = [MagicMissile.name, Shield.name, Fireball.name]
+SpellBook = WieldableConfig(
+    name="grimoire",
+    slot="weapon",
+    attack_verb="melee",
+    range=1,
+    attacks=[NormalAttack.name],
+    spells=[MagicMissile.name, Shield.name, Fireball.name],
+)

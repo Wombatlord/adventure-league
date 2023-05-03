@@ -1,6 +1,6 @@
 from __future__ import annotations
-import abc
 
+import abc
 from typing import TYPE_CHECKING, Self
 
 from src.entities.combat.attack_types import WeaponAttack
@@ -8,12 +8,21 @@ from src.entities.magic.spells import Spell
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
+    from src.entities.item.wearables import Wearable
     from src.entities.item.wieldables import Wieldable
 
 
 class Equipment:
     weapon: Wieldable
-    __slots__ = ("owner", "weapon", "helmet", "body",)
+    helmet: Wearable
+    body: Wearable
+
+    __slots__ = (
+        "owner",
+        "weapon",
+        "helmet",
+        "body",
+    )
 
     def __init__(self, owner: Fighter, weapon=None, helmet=None, body=None) -> None:
         self.owner = owner
@@ -21,13 +30,22 @@ class Equipment:
         self.helmet = helmet
         self.body = body
 
+    def slot_filled(self, slot: str) -> bool:
+        if slot not in self.__slots__:
+            raise ValueError(f"{slot} not found in {self.__slots__=}")
+
+        if self.__getattribute__(slot):
+            return True
+
+        return False
+
     def can_equip(self, item: Equippable) -> bool:
         if not isinstance(item, Equippable):
             return False
 
         if item.slot not in self.__slots__:
             raise TypeError(f"{item.slot=} not in {Equipment.__slots__=} for {item=}")
-        
+
         match item.slot:
             case "weapon":
                 if self.weapon is None:
@@ -68,15 +86,15 @@ class Equippable(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def on_equip(self) -> Self:
         raise NotImplementedError()
-    
+
     @abc.abstractmethod
     def unequip(self):
         raise NotImplementedError()
-    
+
     @abc.abstractmethod
     def _prepare_attacks(self) -> list[WeaponAttack]:
         raise NotImplementedError()
-    
+
     @abc.abstractmethod
     def _prepare_spells(self) -> list[Spell]:
         raise NotImplementedError()
