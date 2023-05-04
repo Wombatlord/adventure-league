@@ -1,6 +1,6 @@
 from __future__ import annotations
-
-from typing import TYPE_CHECKING, NamedTuple, Self
+import abc
+from typing import TYPE_CHECKING, Callable, NamedTuple, Self
 
 from src.entities.combat.attack_types import NormalAttack, WeaponAttack
 from src.entities.combat.modifiable_stats import Modifier
@@ -11,13 +11,35 @@ from src.entities.combat.stats import (
     RawPowerIncrease,
     StatAffix,
 )
-from src.entities.magic.spells import Fireball, MagicMissile, Shield, Spell
+from src.entities.magic.spells import Fireball, MagicMissile, Shield, Spell, SpellCompendium
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
 
 
-class Equippable:
+class EquippableABC(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def on_equip(self) -> Self:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def unequip(self):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _prepare_attacks(self) -> list[WeaponAttack]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _prepare_spells(self) -> list[Spell]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def modifiers(self) -> list[Modifier[FighterStats]]:
+        raise NotImplementedError()
+
+
+class Equippable(EquippableABC):
     _slot: str
     _name: str
     _range: int
@@ -29,17 +51,17 @@ class Equippable:
     _available_spells_cache: list[Spell]
 
     def __init__(
-        self, owner: Fighter | None, item: EquippableConfig | None = None
+        self, owner: Fighter | None, config: EquippableConfig | None = None
     ) -> None:
         self._owner = owner
-        self._config = item
-        self._slot = item.slot
-        self._name = item.name
-        self._range = item.range
-        self._attack_verb = item.attack_verb
-        self._attacks = item.attacks
-        self._spells = item.spells
-        self._affixes = item.affixes
+        self._config = config
+        self._slot = config.slot
+        self._name = config.name
+        self._range = config.range
+        self._attack_verb = config.attack_verb
+        self._attacks = config.attacks
+        self._spells = config.spells
+        self._affixes = config.affixes
         self._available_attacks_cache = []
         self._available_spells_cache = []
 
@@ -81,7 +103,8 @@ class Equippable:
             else []
         )
 
-    def on_equip(self) -> Self:
+    def on_equip(self, owner) -> Self:
+        self._owner = owner
         self._owner.modifiable_stats.set_modifiers(self.modifiers())
         self._atk_cache_warmup()
         self._spell_cache_warmup()
@@ -99,14 +122,10 @@ class Equippable:
 
     def _prepare_spells(self) -> list[Spell]:
         prepared = []
+        
         for spell in self._spells:
-            match spell:
-                case MagicMissile.name:
-                    prepared.append(MagicMissile)
-                case Shield.name:
-                    prepared.append(Shield)
-                case Fireball.name:
-                    prepared.append(Fireball)
+            if spell in SpellCompendium.all_available_to():
+                prepared.append(SpellCompendium.all_spells[spell])
 
         return prepared
 
@@ -128,7 +147,23 @@ class Equippable:
         self._available_spells_cache = None
 
     def modifiers(self) -> list[Modifier[FighterStats]]:
-        return [affix.modifier() for affix in self._affixes]
+        return [affix for affix in self._affixes]
+
+    def _init_affixes(self) -> Self:
+        self._affixes = [affix.modifier() for affix in self._affixes]
+
+        return self
+
+    @classmethod
+    def init_affixes(cls, owner: Fighter | None, config: EquippableConfig):
+        return cls(owner, config)._init_affixes()
+
+
+def equippable_factory(config: EquippableConfig) -> Callable[[None], Equippable]:
+    def factory():
+        return Equippable(owner=None, config=config)._init_affixes()
+
+    return factory
 
 
 class EquippableConfig(NamedTuple):

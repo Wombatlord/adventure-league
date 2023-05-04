@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
-from src.entities.combat.attack_types import WeaponAttack
-from src.entities.combat.modifiable_stats import Modifier
-from src.entities.combat.stats import FighterStats
-from src.entities.magic.spells import Spell
+from src.entities.item.equippable import Equippable
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -45,38 +42,16 @@ class Equipment:
             return None
         return getattr(self, slot, None)
 
-    def equip_item(self, item: Equippable, storage: Storage):
+    def equip_item(self, item: Equippable, storage: Storage = None):
         slot = item.slot
         if slot not in self._equippable_slots:
             raise ValueError(f"Cannot equip item {item} in slot {slot}")
 
         self.unequip(slot, storage)
-        item.on_equip()
+        item.on_equip(self.owner)
         setattr(self, slot, item)
 
     def unequip(self, slot: str, storage: Storage):
         if prev_item := self.item_in_slot(slot):
             prev_item.unequip()
             storage.store(prev_item)
-
-
-class Equippable(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def on_equip(self) -> Self:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def unequip(self):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _prepare_attacks(self) -> list[WeaponAttack]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def _prepare_spells(self) -> list[Spell]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def modifiers(self) -> list[Modifier[FighterStats]]:
-        raise NotImplementedError()

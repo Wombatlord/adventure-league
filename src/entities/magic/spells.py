@@ -42,8 +42,38 @@ class AoETemplate(AoE):
     def get_shape(self) -> tuple[Node]:
         return tuple(self.anchor + n for n in self.shape)
 
+class SpellCompendium:
+    all_spells: dict[str, Spell] = {}
 
-class Spell(metaclass=abc.ABCMeta):
+    @classmethod
+    def all_available_to(cls) -> dict[str, Spell]:
+        return {
+            name: spell
+            for name, spell in cls.all_spells.items()
+        }
+
+
+class SpellMeta(type, metaclass=abc.ABCMeta):
+    def __new__(cls, *args, **kwargs):
+        spell_class = super().__new__(cls, *args, **kwargs)
+        SpellCompendium.all_spells[spell_class.name] = spell_class
+
+        return spell_class
+
+    @abc.abstractmethod
+    def valid_target(self, target: Node | Fighter) -> bool:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def aoe_at_node(self, node: Node) -> tuple[Node, ...] | None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def is_self_target(self) -> bool:
+        raise NotImplementedError()
+    
+    
+class Spell(metaclass=SpellMeta):
     mp_cost: int = 0
     name: str = ""
     max_range: int = 0
@@ -73,18 +103,6 @@ class Spell(metaclass=abc.ABCMeta):
         raise NotImplementedError(
             f"Effect type is {self.effect_type}. This spell does not have an aoe_cast"
         )
-
-    @abc.abstractmethod
-    def valid_target(self, target: Node | Fighter) -> bool:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def aoe_at_node(self, node: Node) -> tuple[Node, ...] | None:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def is_self_target(self) -> bool:
-        raise NotImplementedError()
 
     @property
     def caster(self):

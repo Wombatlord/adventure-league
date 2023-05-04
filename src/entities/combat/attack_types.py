@@ -75,7 +75,6 @@ def make_probability_func(
 class AttackRules:
     @staticmethod
     def chance_to_hit(attacker: Fighter, target: Entity) -> PercentChance:
-        breakpoint()
         p = attacker.modifiable_stats.current.power
         d = target.fighter.modifiable_stats.current.defence
 
