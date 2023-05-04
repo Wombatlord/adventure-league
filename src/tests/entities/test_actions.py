@@ -10,9 +10,9 @@ from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
 from src.entities.item.equipment import Equipment
+from src.entities.item.equippable import Equippable, Sword
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
-from src.entities.item.wieldables import Sword, Wieldable
 from src.systems.combat import CombatRound
 from src.tests.ai_fixture import TestAI
 from src.tests.fixtures import EncounterFactory, FighterFixtures
@@ -28,7 +28,7 @@ class ActionsTest(unittest.TestCase):
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
         merc.fighter.equipment = Equipment(
-            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword).on_equip()
+            merc.fighter, weapon=Equippable(owner=merc.fighter, item=Sword).on_equip()
         )
         merc.inventory = Inventory(owner=merc, capacity=1)
         enemy = Entity(
@@ -36,7 +36,7 @@ class ActionsTest(unittest.TestCase):
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
         enemy.fighter.equipment = Equipment(
-            merc.fighter, weapon=Wieldable(owner=merc.fighter, item=Sword).on_equip()
+            merc.fighter, weapon=Equippable(owner=merc.fighter, item=Sword).on_equip()
         )
         return merc, enemy
 

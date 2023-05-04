@@ -1,6 +1,13 @@
 from __future__ import annotations
 
+import random
 from typing import Callable, NamedTuple
+
+from src.entities.combat.modifiable_stats import (
+    ModifiableStats,
+    Modifier,
+    namedtuple_add,
+)
 
 
 class HealthPool:
@@ -49,97 +56,45 @@ class HealthPool:
         self._bonus_hp = amount
 
 
-class FighterStats:
-    defence: int
-    power: int
-    level: int
-    speed: int
+class FighterStats(NamedTuple):
+    defence: int = 0
+    power: int = 0
+    level: int = 0
+    speed: int = 0
 
-    def __init__(self, defence, power, level, speed) -> None:
-        self._defence = defence
-        self._power = power
-        self._level = level
-        self._speed = speed
-        self.modifiers: list[tuple[StatAffix, int]] = []
-
-    @property
-    def defence(self):
-        return self._defence
-
-    @defence.setter
-    def defence(self, value):
-        self._defence = value
-
-    @property
-    def power(self):
-        return self._power
-
-    @property
-    def level(self):
-        return self._level
-
-    @property
-    def speed(self):
-        return self._speed
-
-    def sort_modifiers(self):
-        def sorting(m: tuple[StatAffix, int]):
-            return m[0].application_order
-
-        self.modifiers = sorted(self.modifiers, key=sorting)
-
-    def calculate_modifiers(self) -> dict[str, int]:
-        self.sort_modifiers()
-        new_power = 0
-        new_defence = 0
-        for mod in self.modifiers:
-            match mod[0].target_stat:
-                case "power":
-                    new_power += mod[0].effect(mod[1])
-                case "defence":
-                    new_defence += mod[0].effect(mod[1])
-
-        return {"new_power": new_power, "new_defence": new_defence}
+    def __add__(self, other):
+        return namedtuple_add(self.__class__, self, other)
 
 
 class StatAffix(NamedTuple):
     name: str
-    target_stat: str
-    effect: Callable[[int], int]
-    application_order: int
+    modifier: Modifier[FighterStats]
 
 
-class Modifiers:
-    @staticmethod
-    def percent_increase(stat, mod) -> int:
-        return stat + (mod // stat) * 100
+modifiers = {
+    "bear": lambda: Modifier(
+        FighterStats, base=FighterStats(power=random.randint(1, 13))
+    ),
+    "tiger": lambda: Modifier(
+        FighterStats, percent=FighterStats(power=random.randint(20, 60))
+    ),
+    "bull": lambda: Modifier(
+        FighterStats, base=FighterStats(defence=random.randint(1, 3))
+    ),
+    "jaguar": lambda: Modifier(
+        FighterStats, percent=FighterStats(defence=random.randint(20, 60))
+    ),
+}
 
-    @staticmethod
-    def raw_increase(stat, mod):
-        return stat + mod
+
+def affix_from_modifier(name: str) -> StatAffix:
+    return StatAffix(
+        name=name,
+        modifier=modifiers.get(name, Modifier(FighterStats)),
+    )
 
 
-RawPowerIncrease = StatAffix(
-    name="bear",
-    target_stat="power",
-    effect=Modifiers.raw_increase,
-    application_order=0,
-)
-PercentPowerIncrease = StatAffix(
-    name="tiger",
-    target_stat="power",
-    effect=Modifiers.percent_increase,
-    application_order=1,
-)
-RawDefenceIncrease = StatAffix(
-    name="bull",
-    target_stat="defence",
-    effect=Modifiers.raw_increase,
-    application_order=0,
-)
-PercentDefenceIncrease = StatAffix(
-    name="jaguar",
-    target_stat="defence",
-    effect=Modifiers.percent_increase,
-    application_order=1,
-)
+RawPowerIncrease = affix_from_modifier("bear")
+PercentPowerIncrease = affix_from_modifier("tiger")
+RawDefenceIncrease = affix_from_modifier("bull")
+PercentDefenceIncrease = affix_from_modifier("jaguar")

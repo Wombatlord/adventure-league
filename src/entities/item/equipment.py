@@ -4,24 +4,34 @@ import abc
 from typing import TYPE_CHECKING, Self
 
 from src.entities.combat.attack_types import WeaponAttack
+from src.entities.combat.modifiable_stats import Modifier
+from src.entities.combat.stats import FighterStats
 from src.entities.magic.spells import Spell
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
-    from src.entities.item.wearables import Wearable
-    from src.entities.item.wieldables import Wieldable
+
+
+class Storage(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def store(self, item: Equippable) -> None:
+        ...
 
 
 class Equipment:
-    weapon: Wieldable
-    helmet: Wearable
-    body: Wearable
+    weapon: Equippable
+    helmet: Equippable
+    body: Equippable
 
-    __slots__ = (
-        "owner",
+    _equippable_slots = (
         "weapon",
         "helmet",
         "body",
+    )
+
+    __slots__ = (
+        "owner",
+        *_equippable_slots,
     )
 
     def __init__(self, owner: Fighter, weapon=None, helmet=None, body=None) -> None:
@@ -30,56 +40,24 @@ class Equipment:
         self.helmet = helmet
         self.body = body
 
-    def slot_filled(self, slot: str) -> bool:
-        if slot not in self.__slots__:
-            raise ValueError(f"{slot} not found in {self.__slots__=}")
+    def item_in_slot(self, slot) -> Equippable | None:
+        if slot not in self._equippable_slots:
+            return None
+        return getattr(self, slot, None)
 
-        if self.__getattribute__(slot):
-            return True
+    def equip_item(self, item: Equippable, storage: Storage):
+        slot = item.slot
+        if slot not in self._equippable_slots:
+            raise ValueError(f"Cannot equip item {item} in slot {slot}")
 
-        return False
+        self.unequip(slot, storage)
+        item.on_equip()
+        setattr(self, slot, item)
 
-    def can_equip(self, item: Equippable) -> bool:
-        if not isinstance(item, Equippable):
-            return False
-
-        if item.slot not in self.__slots__:
-            raise TypeError(f"{item.slot=} not in {Equipment.__slots__=} for {item=}")
-
-        match item.slot:
-            case "weapon":
-                if self.weapon is None:
-                    return True
-            case "helmet":
-                if self.helmet is None:
-                    return True
-            case "body":
-                if self.body is None:
-                    return True
-
-        return False
-
-    def equip_item(self, item: Equippable):
-        if self.can_equip(item):
-            match item.slot:
-                case "weapon":
-                    self.weapon = item
-                case "helmet":
-                    self.helmet = item
-                case "body":
-                    self.body = item
-
-    def unequip_item(self, item, storage):
-        match item.slot:
-            case "weapon":
-                self.weapon = None
-            case "helmet":
-                self.helmet = None
-            case "body":
-                self.body = None
-
-        item.unequip()
-        storage.store(item)
+    def unequip(self, slot: str, storage: Storage):
+        if prev_item := self.item_in_slot(slot):
+            prev_item.unequip()
+            storage.store(prev_item)
 
 
 class Equippable(metaclass=abc.ABCMeta):
@@ -97,4 +75,8 @@ class Equippable(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def _prepare_spells(self) -> list[Spell]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def modifiers(self) -> list[Modifier[FighterStats]]:
         raise NotImplementedError()

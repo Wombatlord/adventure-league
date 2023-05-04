@@ -14,6 +14,7 @@ from src.entities.action.actions import (
 from src.entities.action.magic_action import MagicAction
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
+from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import FighterStats, HealthPool
 from src.entities.entity import Entity
 from src.entities.item.equipment import Equipment
@@ -52,6 +53,7 @@ class Fighter:
     _readied_action: BaseAction | None
     _encounter_context: EncounterContext
     health: HealthPool
+    modifiable_stats: ModifiableStats
     _caster: Caster | None
 
     def __init__(
@@ -74,6 +76,7 @@ class Fighter:
         self.stats = FighterStats(
             defence=defence, power=power, level=level, speed=speed
         )
+        self.modifiable_stats = ModifiableStats(FighterStats, base_stats=self.stats)
         self.equipment = Equipment(owner=self)
         self.set_role(role)
         # -----State-----
@@ -174,7 +177,7 @@ class Fighter:
         choices = {}
         for name, action_type in action_types.items():
             if action_type == WeaponAttackAction:
-                for atk in self.equipment.weapon._available_attacks:
+                for atk in self.equipment.weapon.available_attacks:
                     choices[name] = action_type.all_available_to(self)
 
             elif not action_type == MagicAction:

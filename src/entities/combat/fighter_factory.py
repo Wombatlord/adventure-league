@@ -8,9 +8,9 @@ from src.entities.ai.ai import BasicCombatAi
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name, Species
+from src.entities.item.equippable import Bow, Equippable, SpellBook, Sword
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
-from src.entities.item.wieldables import Bow, SpellBook, Sword, Wieldable
 from src.entities.magic.caster import Caster
 from src.entities.sprites import EntitySprite
 from src.gui.animated_sprite_config import (
@@ -138,15 +138,15 @@ def _setup_fighter_archetypes(fighter: Fighter):
     match fighter.role:
         case FighterArchetype.MELEE:
             fighter.equipment.equip_item(
-                Wieldable(owner=fighter, item=Sword).on_equip()
+                Equippable(owner=fighter, item=Sword).on_equip()
             )
 
         case FighterArchetype.RANGED:
-            fighter.equipment.equip_item(Wieldable(owner=fighter, item=Bow).on_equip())
+            fighter.equipment.equip_item(Equippable(owner=fighter, item=Bow).on_equip())
         case FighterArchetype.CASTER:
             fighter.caster = Caster(max_mp=10)
             fighter.equipment.equip_item(
-                Wieldable(owner=fighter, item=SpellBook).on_equip()
+                Equippable(owner=fighter, item=SpellBook).on_equip()
             )
 
     fighter.set_action_options()

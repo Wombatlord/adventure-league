@@ -75,8 +75,9 @@ def make_probability_func(
 class AttackRules:
     @staticmethod
     def chance_to_hit(attacker: Fighter, target: Entity) -> PercentChance:
-        p = attacker.stats.power
-        d = target.fighter.stats.defence
+        breakpoint()
+        p = attacker.modifiable_stats.current.power
+        d = target.fighter.modifiable_stats.current.defence
 
         to_hit = make_probability_func(sensitivity=5)
 
@@ -84,11 +85,9 @@ class AttackRules:
 
     @staticmethod
     def damage_amount(attacker: Fighter, target: Entity) -> int:
-        actual_damage = int(
-            2
-            * attacker.stats.power**2
-            / (attacker.stats.power + target.fighter.stats.defence)
-        )
+        p = attacker.modifiable_stats.current.power
+        d = target.fighter.modifiable_stats.current.defence
+        actual_damage = 2 * int(p**2 / (p + d))
 
         if target.fighter.health.current - actual_damage <= 0:
             # If the attack will kill, we will no longer be "in combat" until the next attack.
