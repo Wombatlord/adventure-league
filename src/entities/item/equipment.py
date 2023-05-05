@@ -50,7 +50,8 @@ class Equipment:
         item.on_equip(self.owner)
         setattr(self, slot, item)
 
-    def unequip(self, slot: str, storage: Storage):
+    def unequip(self, slot: str, storage: Storage | None = None):
         if prev_item := self.item_in_slot(slot):
             prev_item.unequip()
-            storage.store(prev_item)
+            if storage is not None:
+                storage.store(prev_item)

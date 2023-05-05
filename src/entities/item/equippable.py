@@ -14,7 +14,7 @@ from src.entities.combat.stats import (
     StatAffix,
 )
 from src.entities.combat.weapon_attacks import NormalAttack, WeaponAttackMeta
-from src.entities.magic.spells import Fireball, MagicMissile, Shield, Spell
+from src.entities.magic.spells import Fireball, MagicMissile, Shield, Spell, SpellMeta
 from src.entities.properties.meta_compendium import MetaCompendium
 
 if TYPE_CHECKING:
@@ -123,7 +123,7 @@ class Equippable(EquippableABC):
 
         return prepared
 
-    def _prepare_spells(self) -> list[Spell]:
+    def _prepare_spells(self) -> list[SpellMeta]:
         prepared = []
 
         for spell in self._spell_names:
