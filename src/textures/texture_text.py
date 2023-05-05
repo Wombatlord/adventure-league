@@ -207,10 +207,10 @@ class TextureText:
     def draw_into_tex(self, size):
         if not self.texture:
             self.texture = arcade.Texture.create_empty(self._text.text, size)
-        texture_atlas = arcade.get_window().ctx.default_atlas
-        texture_atlas.add(self.texture)
+            texture_atlas = arcade.get_window().ctx.default_atlas
+            texture_atlas.add(self.texture)
 
-        with texture_atlas.render_into(self.texture) as fbo:
+        with self._sprite_list.atlas.render_into(self.texture) as fbo:
             fbo.clear((155, 155, 0, 0))
             self._text.draw()
 

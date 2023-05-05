@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from functools import lru_cache
 from typing import Sequence
 
 import arcade
@@ -12,10 +13,37 @@ from src.entities.sprites import BaseSprite
 from src.textures.texture_data import SingleTextureSpecs
 from src.world.isometry.transforms import Transform
 
+_BAR_INCREMENTS = 32
+
+# This is not intended as a public variable, it just can't have an underscore prefix
+# without causing the gc to choke and occasionally crash because of order of operations
+# on garbage collection
+full_bar: arcade.Texture | None = None
+
+
+def _lazy_health_bar() -> arcade.Texture:
+    global full_bar
+    _full_bar = full_bar
+    if _full_bar is None:
+        _full_bar = SingleTextureSpecs.health_bar.loaded
+
+    return _full_bar
+
+
+@lru_cache(maxsize=_BAR_INCREMENTS)
+def _crop_by_offset(offset: int):
+    crop_start_x = _BAR_INCREMENTS + offset
+    bar = _lazy_health_bar()
+    return bar.crop(crop_start_x, 0, _BAR_INCREMENTS, bar.height)
+
+
+def _get_crop(current: int, max_hp: int) -> arcade.Texture:
+    offset: int = -round(math.floor((_BAR_INCREMENTS * current) / max_hp))
+    return _crop_by_offset(offset)
+
 
 class HealthBar:
     _full_bar: arcade.Texture
-    BAR_INCREMENTS = 32
     _watched_health: HealthPool | None
     _state: tuple[int, int]
     _do_update: bool
@@ -36,18 +64,12 @@ class HealthBar:
 
     def _update_sprite(self):
         if not self.sprite:
-            self.sprite = arcade.Sprite(self._get_crop(*self._state), scale=self._scale)
+            self.sprite = arcade.Sprite(_get_crop(*self._state), scale=self._scale)
         else:
-            self.sprite.texture = self._get_crop(*self._state)
+            self.sprite.texture = _get_crop(*self._state)
         self.sprite_list.clear()
         self.sprite_list.append(self.sprite)
         self.sprite.position = self._position
-
-    def _get_crop(self, current: int, max_hp: int) -> arcade.Texture:
-        bar = self._full_bar
-        offset = -round(math.floor((self.BAR_INCREMENTS * current) / max_hp))
-        crop_start_x = self.BAR_INCREMENTS + offset
-        return bar.crop(crop_start_x, 0, self.BAR_INCREMENTS, bar.height)
 
     def set_watched_health(self, health: HealthPool | None):
         self._watched_health = health
@@ -113,6 +135,7 @@ class FloatingHealthBar:
     _fighter: Fighter
     _sprite: BaseSprite
     _world_sprites: arcade.SpriteList
+    _hidden: bool
 
     def __init__(
         self, fighter: Fighter, world_sprites: arcade.SpriteList, transform: Transform
@@ -121,6 +144,7 @@ class FloatingHealthBar:
         self._health_bar = HealthBar(fighter.owner.entity_sprite.sprite.scale / 2)
         self._health_bar.set_watched_health(self._fighter.health)
         self._world_sprites = world_sprites
+        self._hidden = True
 
         self._sprite = (
             BaseSprite(
@@ -135,12 +159,11 @@ class FloatingHealthBar:
         self._world_sprites.append(self._sprite)
 
     def update(self):
-        if self._fighter.incapacitated:
+        if self._fighter.incapacitated or self._hidden:
             self._sprite.visible = False
-
-            if self._sprite in self._world_sprites:
-                self._world_sprites.remove(self._sprite)
             return
+        elif not self._hidden:
+            self._sprite.visible = True
 
         self._health_bar.update()
         self._sprite.texture = self._health_bar.sprite.texture
@@ -155,10 +178,12 @@ class FloatingHealthBar:
         return self._fighter
 
     def show(self):
-        self._sprite.visible = True
+        if self._fighter.incapacitated:
+            return
+        self._hidden = False
 
     def hide(self):
-        self._sprite.visible = False
+        self._hidden = True
 
 
 class FloatingHealthBars:

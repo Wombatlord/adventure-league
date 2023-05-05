@@ -22,6 +22,9 @@ class Pin:
         return self.get_pin() - self.get_pinned_pt()
 
 
+_crop_cache: dict[int, arcade.Texture] = {}
+
+
 class Portrait:
     TEXT_SLOT_HEIGHT = 50
 
@@ -127,13 +130,15 @@ class Portrait:
         self._sprites.append(self.sprite)
 
     def clear(self, _=None):
-        self.sprite = None
         self._base_sprite = None
         self._base_texture = None
         self.pictured = None
         self._top_text.text = ""
         self._bottom_text.text = ""
-        self._sprites.clear()
+
+        if self.sprite and self.sprite in self._sprites:
+            self._sprites.remove(self.sprite)
+
         self._health_bar.set_watched_health(None)
         self.update(force=True)
 
@@ -172,16 +177,7 @@ class Portrait:
         # do the crop
         src = self._base_sprite.texture
 
-        # hitbox height
-        ys = [pt[1] for pt in src.hit_box_points]
-        height = int(max(ys) - min(ys))
-        empty_px_above = src.height - height
-
-        # pillow style cropping with increasing y from top to btm (whoopsie!)
-        # the crop_start_y allows sprites when most of the top of the sprite is empty to
-        # effectively move up in the frame so they aren't completely cut off
-        crop_start_y = max(empty_px_above - 2, 0)
-        cropped = src.crop(0, crop_start_y, src.width, 8)
+        cropped = self._get_cropped(src)
         if self._flip:
             cropped = cropped.flip_left_right()
 
@@ -195,6 +191,24 @@ class Portrait:
         # Position the sprite
         self.sprite.center_x = self.sprite_slot.center.x
         self.sprite.center_y = self.sprite_slot.center.y
+
+    def _get_cropped(self, src: arcade.Texture):
+        global _crop_cache
+        if cropped := _crop_cache.get(hash(src)):
+            return cropped
+
+        # hitbox height
+        ys = [pt[1] for pt in src.hit_box_points]
+        height = int(max(ys) - min(ys))
+        empty_px_above = src.height - height
+        # pillow style cropping with increasing y from top to btm (whoopsie!)
+        # the crop_start_y allows sprites when most of the top of the sprite is empty to
+        # effectively move up in the frame so they aren't completely cut off
+        crop_start_y = max(empty_px_above - 2, 0)
+        cropped = src.crop(0, crop_start_y, src.width, 8)
+
+        _crop_cache[hash(src)] = cropped
+        return cropped
 
     def update_top(self):
         self._top_text.position = self.text_start_above()
