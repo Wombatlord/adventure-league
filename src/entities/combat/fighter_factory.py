@@ -7,12 +7,7 @@ from src.entities.ai.ai import BasicCombatAi
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name, Species
-from src.entities.item.equippable import (
-    Bow,
-    Equippable,
-    SpellBook,
-    Sword,
-)
+from src.entities.item.equippable import Bow, Equippable, SpellBook, Sword
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
 from src.entities.magic.caster import Caster
@@ -147,11 +142,11 @@ def _setup_fighter_archetypes(fighter: Fighter):
         case FighterArchetype.RANGED:
             weapon = Equippable.init_affixes(owner=None, config=Bow)
             fighter.equipment.equip_item(weapon)
-            
+
         case FighterArchetype.CASTER:
+            fighter.caster = Caster(max_mp=10)
             weapon = Equippable.init_affixes(owner=None, config=SpellBook)
             fighter.equipment.equip_item(weapon)
-            fighter.caster = Caster(max_mp=10)
 
     fighter.set_action_options()
 

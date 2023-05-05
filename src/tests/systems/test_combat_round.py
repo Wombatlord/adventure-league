@@ -23,17 +23,13 @@ class CombatRoundTest(TestCase):
         )
         merc.inventory = Inventory(owner=merc, capacity=1)
         weapon = Equippable.init_affixes(None, Sword)
-        merc.fighter.equipment = Equipment(
-            merc.fighter
-        )
+        merc.fighter.equipment = Equipment(merc.fighter)
         merc.fighter.equipment.equip_item(weapon)
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
-        enemy.fighter.equipment = Equipment(
-            enemy.fighter
-        )
+        enemy.fighter.equipment = Equipment(enemy.fighter)
         enemy.fighter.equipment.equip_item(weapon)
         enemy.inventory = Inventory(owner=enemy, capacity=1)
         return merc, enemy

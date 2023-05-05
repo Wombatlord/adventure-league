@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
 from src.entities.action.actions import (
-    ActionCompendium,
     ActionMeta,
     ActionPoints,
     BaseAction,
@@ -20,6 +19,7 @@ from src.entities.entity import Entity
 from src.entities.item.equipment import Equipment
 from src.entities.item.inventory import Consumable, Inventory
 from src.entities.magic.caster import Caster
+from src.entities.properties.meta_compendium import MetaCompendium
 from src.world.node import Node
 from src.world.ray import Ray
 
@@ -173,7 +173,7 @@ class Fighter:
             return False
 
     def request_action_choice(self):
-        action_types = ActionCompendium.all_available_to(self)
+        action_types = MetaCompendium.all_actions_available_to(self)
         choices = {}
         for name, action_type in action_types.items():
             if action_type == WeaponAttackAction:

@@ -5,6 +5,8 @@ from enum import Enum
 from random import randint
 from typing import TYPE_CHECKING, Any, Callable, Generator, NamedTuple
 
+from src.entities.properties.meta_compendium import MetaCompendium
+
 if TYPE_CHECKING:
     from src.entities.magic.caster import Caster
     from src.entities.combat.fighter import Fighter
@@ -42,22 +44,11 @@ class AoETemplate(AoE):
     def get_shape(self) -> tuple[Node]:
         return tuple(self.anchor + n for n in self.shape)
 
-class SpellCompendium:
-    all_spells: dict[str, Spell] = {}
-
-    @classmethod
-    def all_available_to(cls) -> dict[str, Spell]:
-        return {
-            name: spell
-            for name, spell in cls.all_spells.items()
-        }
-
 
 class SpellMeta(type, metaclass=abc.ABCMeta):
     def __new__(cls, *args, **kwargs):
         spell_class = super().__new__(cls, *args, **kwargs)
-        SpellCompendium.all_spells[spell_class.name] = spell_class
-
+        MetaCompendium.all_spells[spell_class.name] = spell_class
         return spell_class
 
     @abc.abstractmethod
@@ -71,9 +62,9 @@ class SpellMeta(type, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def is_self_target(self) -> bool:
         raise NotImplementedError()
-    
-    
-class Spell(metaclass=SpellMeta):
+
+
+class Spell:
     mp_cost: int = 0
     name: str = ""
     max_range: int = 0
@@ -109,7 +100,7 @@ class Spell(metaclass=SpellMeta):
         return self._caster
 
 
-class MagicMissile(Spell):
+class MagicMissile(Spell, metaclass=SpellMeta):
     name: str = "Magic Missile"
     mp_cost: int = 1
     max_range: int = 1
@@ -156,7 +147,7 @@ class MagicMissile(Spell):
         return False
 
 
-class Shield(Spell):
+class Shield(Spell, metaclass=SpellMeta):
     name: str = "Shield"
     mp_cost: int = 1
     max_range: int = 0
@@ -186,7 +177,7 @@ class Shield(Spell):
         return True
 
 
-class Fireball(Spell):
+class Fireball(Spell, metaclass=SpellMeta):
     name: str = "Fireball"
     mp_cost: int = 4
     max_range: int = 4

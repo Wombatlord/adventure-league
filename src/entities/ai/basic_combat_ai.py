@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from src.entities.action.actions import ActionMeta, EndTurnAction, MoveAction
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.ai.finite_state_machine import Callback, Machine, State
-from src.entities.combat.attack_types import WeaponAttack
+from src.entities.combat.weapon_attacks import WeaponAttackMeta
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -98,7 +98,7 @@ class ChoosingAttack(CombatAiState):
         def lowest_health(target_choice: dict) -> int:
             return target_choice.fighter.health.current
 
-        def choose_attack() -> WeaponAttack:
+        def choose_attack() -> WeaponAttackMeta:
             atk_id = random.randint(
                 0, len(fighter.equipment.weapon.available_attacks) - 1
             )

@@ -1,8 +1,8 @@
 from __future__ import annotations
+
 import abc
 from typing import TYPE_CHECKING, Callable, NamedTuple, Self
 
-from src.entities.combat.attack_types import NormalAttack, WeaponAttack
 from src.entities.combat.modifiable_stats import Modifier
 from src.entities.combat.stats import (
     FighterStats,
@@ -11,7 +11,9 @@ from src.entities.combat.stats import (
     RawPowerIncrease,
     StatAffix,
 )
-from src.entities.magic.spells import Fireball, MagicMissile, Shield, Spell, SpellCompendium
+from src.entities.combat.weapon_attacks import NormalAttack, WeaponAttackMeta
+from src.entities.magic.spells import Fireball, MagicMissile, Shield, Spell
+from src.entities.properties.meta_compendium import MetaCompendium
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -27,7 +29,7 @@ class EquippableABC(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def _prepare_attacks(self) -> list[WeaponAttack]:
+    def _prepare_attacks(self) -> list[WeaponAttackMeta]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -44,10 +46,10 @@ class Equippable(EquippableABC):
     _name: str
     _range: int
     _attack_verb: str
-    _attacks: list[WeaponAttack]
+    _attacks: list[WeaponAttackMeta]
     _spells: list[Spell]
     _affixes: list[StatAffix]
-    _available_attacks_cache: list[WeaponAttack]
+    _available_attacks_cache: list[WeaponAttackMeta]
     _available_spells_cache: list[Spell]
 
     def __init__(
@@ -78,7 +80,7 @@ class Equippable(EquippableABC):
         return self._range
 
     @property
-    def available_attacks(self) -> list[WeaponAttack]:
+    def available_attacks(self) -> list[WeaponAttackMeta]:
         return self._available_attacks_cache
 
     @property
@@ -111,26 +113,29 @@ class Equippable(EquippableABC):
 
         return self
 
-    def _prepare_attacks(self) -> list[WeaponAttack]:
+    def _prepare_attacks(self) -> list[WeaponAttackMeta]:
         prepared = []
         for attack in self._attacks:
-            match attack:
-                case NormalAttack.name:
-                    prepared.append(NormalAttack)
+            # breakpoint()
+            if attack in MetaCompendium.all_registered_attacks():
+                prepared.append(MetaCompendium.all_attacks[attack])
+            # match attack:
+            #     case NormalAttack.name:
+            #         prepared.append(NormalAttack)
 
         return prepared
 
     def _prepare_spells(self) -> list[Spell]:
         prepared = []
-        
+
         for spell in self._spells:
-            if spell in SpellCompendium.all_available_to():
-                prepared.append(SpellCompendium.all_spells[spell])
+            if spell in MetaCompendium.all_registered_spells():
+                prepared.append(MetaCompendium.all_spells[spell])
 
         return prepared
 
     @property
-    def available_attacks(self) -> list[WeaponAttack]:
+    def available_attacks(self) -> list[WeaponAttackMeta]:
         if not self._available_attacks_cache:
             self._atk_cache_warmup()
         return self._available_attacks_cache
