@@ -3,10 +3,7 @@ from __future__ import annotations
 import random
 from typing import NamedTuple
 
-from src.entities.combat.modifiable_stats import (
-    Modifier,
-    namedtuple_add,
-)
+from src.entities.combat.modifiable_stats import Modifier, namedtuple_add
 
 
 class HealthPool:
@@ -95,7 +92,7 @@ modifiers = {
 def affix_from_modifier(name: str) -> StatAffix:
     return StatAffix(
         name=name,
-        modifier=modifiers.get(name, Modifier(FighterStats)),
+        modifier=modifiers.get(name, lambda: Modifier(FighterStats))(),
     )
 
 

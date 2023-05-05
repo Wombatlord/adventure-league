@@ -7,7 +7,14 @@ from src.entities.ai.ai import BasicCombatAi
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name, Species
-from src.entities.item.equippable import Bow, Equippable, Helmet, SpellBook, Sword, default_equippable_factory
+from src.entities.item.equippable import (
+    Bow,
+    Equippable,
+    Helmet,
+    SpellBook,
+    Sword,
+    default_equippable_factory,
+)
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
 from src.entities.magic.caster import Caster
@@ -130,29 +137,30 @@ def select_textures(species: str, fighter: Fighter) -> AnimatedSpriteConfig:
         return choose_mob_textures()
 
 
-def _setup_fighter_archetypes(fighter: Fighter, gear_factory: Callable[[FighterArchetype], dict]):
+def _setup_fighter_archetypes(
+    fighter: Fighter, gear_factory: Callable[[FighterArchetype], dict]
+):
     if not fighter.is_enemy:
         fighter.set_role(FighterArchetype.random_archetype())
+
+    def default_equip(fighter):
+        nonlocal gear
+        for slot in fighter.equipment._equippable_slots:
+            fighter.equipment.equip_item(gear.get(slot))
 
     match fighter.role:
         case FighterArchetype.MELEE:
             gear = gear_factory(FighterArchetype.MELEE)
-            fighter.equipment.equip_item(gear.get("weapon"))
-            fighter.equipment.equip_item(gear.get("helmet"))
-            fighter.equipment.equip_item(gear.get("body"))
-            
+            default_equip(fighter)
+
         case FighterArchetype.RANGED:
             gear = gear_factory(FighterArchetype.RANGED)
-            fighter.equipment.equip_item(gear.get("weapon"))
-            fighter.equipment.equip_item(gear.get("helmet"))
-            fighter.equipment.equip_item(gear.get("body"))
+            default_equip(fighter)
 
         case FighterArchetype.CASTER:
             fighter.caster = Caster(max_mp=10)
             gear = gear_factory(FighterArchetype.CASTER)
-            fighter.equipment.equip_item(gear.get("weapon"))
-            fighter.equipment.equip_item(gear.get("helmet"))
-            fighter.equipment.equip_item(gear.get("body"))
+            default_equip(fighter)
 
     fighter.set_action_options()
 

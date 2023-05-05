@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class MetaCompendium:
     all_actions: dict[str, ActionMeta] = {}
     all_spells: dict[str, SpellMeta] = {}
-    all_attacks: dict[str:WeaponAttackMeta] = {}
+    all_attacks: dict[str, WeaponAttackMeta] = {}
 
     @classmethod
     def all_registered_spells(cls) -> dict[str, SpellMeta]:

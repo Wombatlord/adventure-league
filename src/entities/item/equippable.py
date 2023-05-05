@@ -3,8 +3,8 @@ from __future__ import annotations
 import abc
 import random
 from typing import TYPE_CHECKING, Callable, NamedTuple, Self
-from src.entities.combat.archetypes import FighterArchetype
 
+from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.modifiable_stats import Modifier
 from src.entities.combat.stats import (
     FighterStats,
@@ -48,8 +48,8 @@ class Equippable(EquippableABC):
     _name: str
     _range: int
     _attack_verb: str
-    _attacks: list[WeaponAttackMeta]
-    _spells: list[Spell]
+    _attack_names: list[str]
+    _spell_names: list[str]
     _affixes: list[StatAffix]
     _available_attacks_cache: list[WeaponAttackMeta]
     _available_spells_cache: list[Spell]
@@ -63,8 +63,8 @@ class Equippable(EquippableABC):
         self._name = config.name
         self._range = config.range
         self._attack_verb = config.attack_verb
-        self._attacks = config.attacks
-        self._spells = config.spells
+        self._attack_names = config.attacks
+        self._spell_names = config.spells
         self._affixes = config.affixes
         self._available_attacks_cache = []
         self._available_spells_cache = []
@@ -96,14 +96,14 @@ class Equippable(EquippableABC):
     def _atk_cache_warmup(self):
         self._available_attacks_cache = (
             [attack(self._owner) for attack in self._prepare_attacks()]
-            if self._attacks
+            if self._attack_names
             else []
         )
 
     def _spell_cache_warmup(self):
         self._available_spells_cache = (
             [spell(self._owner.caster) for spell in self._prepare_spells()]
-            if self._spells
+            if self._spell_names
             else []
         )
 
@@ -117,7 +117,7 @@ class Equippable(EquippableABC):
 
     def _prepare_attacks(self) -> list[WeaponAttackMeta]:
         prepared = []
-        for attack in self._attacks:
+        for attack in self._attack_names:
             if attack in MetaCompendium.all_registered_attacks():
                 prepared.append(MetaCompendium.all_attacks[attack])
 
@@ -126,7 +126,7 @@ class Equippable(EquippableABC):
     def _prepare_spells(self) -> list[Spell]:
         prepared = []
 
-        for spell in self._spells:
+        for spell in self._spell_names:
             if spell in MetaCompendium.all_registered_spells():
                 prepared.append(MetaCompendium.all_spells[spell])
 
@@ -150,20 +150,13 @@ class Equippable(EquippableABC):
         self._available_spells_cache = None
 
     def modifiers(self) -> list[Modifier[FighterStats]]:
-        return [affix for affix in self._affixes]
-
-    def _init_affixes(self) -> Self:
-        self._affixes = [affix.modifier() for affix in self._affixes]
-
-        return self
-
-    @classmethod
-    def init_affixes(cls, owner: Fighter | None, config: EquippableConfig):
-        return cls(owner, config)._init_affixes()
+        return [affix.modifier for affix in self._affixes]
 
 
-def default_equippable_factory() -> Callable[[FighterArchetype], dict[str, Equippable]]:
-    gearset_config = {
+def default_equippable_factory(
+    gearset_config: dict | None = None,
+) -> Callable[[FighterArchetype], dict[str, Equippable]]:
+    gearset_config = gearset_config or {
         "weapon": {"melee": (Sword,), "ranged": (Bow,), "caster": (SpellBook,)},
         "helmet": {"melee": (Helmet,), "ranged": (Helmet,), "caster": (Helmet,)},
         "body": {
@@ -174,33 +167,15 @@ def default_equippable_factory() -> Callable[[FighterArchetype], dict[str, Equip
     }
 
     def factory(role: FighterArchetype) -> dict[str, Equippable]:
-        weapons = gearset_config.get("weapon", "")
-        helmets = gearset_config.get("helmet", "")
-        bodies = gearset_config.get("body", "")
+        weapons = gearset_config.get("weapon", {})
+        helmets = gearset_config.get("helmet", {})
+        bodies = gearset_config.get("body", {})
 
-        gear = {}
-        def by_role(role):
-            gear["weapon"] = Equippable(
-                    owner=None, config=random.choice(weapons[role])
-                )._init_affixes()
-            gear["helmet"] = Equippable(
-                owner=None, config=random.choice(helmets[role])
-            )._init_affixes()
-            gear["body"] = Equippable(
-                owner=None, config=random.choice(bodies[role])
-            )._init_affixes()
-        
-        match role:
-            case role.MELEE:
-                by_role(role.MELEE.value)
-
-            case role.RANGED:
-                by_role(role.RANGED.value)
-
-            case role.CASTER:
-                by_role(role.CASTER.value)
-                
-        return gear
+        return {
+            "weapon": Equippable(owner=None, config=random.choice(weapons[role.value])),
+            "helmet": Equippable(owner=None, config=random.choice(helmets[role.value])),
+            "body": Equippable(owner=None, config=random.choice(bodies[role.value])),
+        }
 
     return factory
 

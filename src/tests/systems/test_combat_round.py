@@ -22,7 +22,7 @@ class CombatRoundTest(TestCase):
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
         merc.inventory = Inventory(owner=merc, capacity=1)
-        weapon = Equippable.init_affixes(None, Sword)
+        weapon = Equippable(owner=None, config=Sword)
         merc.fighter.equipment = Equipment(merc.fighter)
         merc.fighter.equipment.equip_item(weapon)
         enemy = Entity(

@@ -23,7 +23,7 @@ class ActionsTest(unittest.TestCase):
             name=Name(first_name="strong", last_name="very", title="the tactical"),
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
-        weapon = Equippable.init_affixes(None, Sword)
+        weapon = Equippable(None, Sword)
         merc.fighter.equipment = Equipment(merc.fighter)
         merc.fighter.equipment.equip_item(weapon)
         merc.inventory = Inventory(owner=merc, capacity=1)

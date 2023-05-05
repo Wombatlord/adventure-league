@@ -59,7 +59,7 @@ class EncounterFactory:
             ),
             fighter=Fighter(**FighterFixtures.strong(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
-        weapon = Equippable.init_affixes(None, Sword)
+        weapon = Equippable(None, Sword)
         e.fighter.equipment = Equipment(e.fighter)
         e.fighter.equipment.equip_item(weapon)
         return e
@@ -72,7 +72,7 @@ class EncounterFactory:
             ),
             fighter=Fighter(**FighterFixtures.baby(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
-        weapon = Equippable.init_affixes(None, Sword)
+        weapon = Equippable(None, Sword)
         e.fighter.equipment = Equipment(e.fighter)
         e.fighter.equipment.equip_item(weapon)
         return e
