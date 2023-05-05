@@ -35,7 +35,7 @@ class GetAssetsCommand(metaclass=CommandMeta):
 def get_assets():
     gauth = GoogleAuth()
     drive = GoogleDrive(gauth)
-    
+
     file_list = drive.ListFile(
         {
             "q": "'{}' in parents and trashed=false".format(
