@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import abc
+import random
 from typing import TYPE_CHECKING, Callable, NamedTuple, Self
+from src.entities.combat.archetypes import FighterArchetype
 
 from src.entities.combat.modifiable_stats import Modifier
 from src.entities.combat.stats import (
@@ -160,9 +162,45 @@ class Equippable(EquippableABC):
         return cls(owner, config)._init_affixes()
 
 
-def equippable_factory(config: EquippableConfig) -> Callable[[None], Equippable]:
-    def factory():
-        return Equippable(owner=None, config=config)._init_affixes()
+def default_equippable_factory() -> Callable[[FighterArchetype], dict[str, Equippable]]:
+    gearset_config = {
+        "weapon": {"melee": (Sword,), "ranged": (Bow,), "caster": (SpellBook,)},
+        "helmet": {"melee": (Helmet,), "ranged": (Helmet,), "caster": (Helmet,)},
+        "body": {
+            "melee": (Breastplate,),
+            "ranged": (Breastplate,),
+            "caster": (Breastplate,),
+        },
+    }
+
+    def factory(role: FighterArchetype) -> dict[str, Equippable]:
+        weapons = gearset_config.get("weapon", "")
+        helmets = gearset_config.get("helmet", "")
+        bodies = gearset_config.get("body", "")
+
+        gear = {}
+        def by_role(role):
+            gear["weapon"] = Equippable(
+                    owner=None, config=random.choice(weapons[role])
+                )._init_affixes()
+            gear["helmet"] = Equippable(
+                owner=None, config=random.choice(helmets[role])
+            )._init_affixes()
+            gear["body"] = Equippable(
+                owner=None, config=random.choice(bodies[role])
+            )._init_affixes()
+        
+        match role:
+            case role.MELEE:
+                by_role(role.MELEE.value)
+
+            case role.RANGED:
+                by_role(role.RANGED.value)
+
+            case role.CASTER:
+                by_role(role.CASTER.value)
+                
+        return gear
 
     return factory
 

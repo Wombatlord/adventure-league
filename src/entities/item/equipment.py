@@ -3,9 +3,9 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
-from src.entities.item.equippable import Equippable
 
 if TYPE_CHECKING:
+    from src.entities.item.equippable import Equippable
     from src.entities.combat.fighter import Fighter
 
 

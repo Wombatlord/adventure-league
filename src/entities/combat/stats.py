@@ -65,6 +65,12 @@ class FighterStats(NamedTuple):
         return namedtuple_add(self.__class__, self, other)
 
 
+class EquippableStats(NamedTuple):
+    attack: int = 0
+    block: int = 0
+    evasion: int = 0
+
+
 class StatAffix(NamedTuple):
     name: str
     modifier: Modifier[FighterStats]

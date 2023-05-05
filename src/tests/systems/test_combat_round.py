@@ -4,7 +4,7 @@ from src.entities.ai.ai import BasicCombatAi
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
 from src.entities.item.equipment import Equipment
-from src.entities.item.equippable import Equippable, Sword, equippable_factory
+from src.entities.item.equippable import Equippable, Sword, default_equippable_factory
 from src.entities.item.inventory import Inventory
 from src.systems.combat import CombatRound
 from src.tests.fixtures import EncounterFactory, FighterFixtures
