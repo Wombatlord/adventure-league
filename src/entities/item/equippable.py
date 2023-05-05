@@ -116,12 +116,8 @@ class Equippable(EquippableABC):
     def _prepare_attacks(self) -> list[WeaponAttackMeta]:
         prepared = []
         for attack in self._attacks:
-            # breakpoint()
             if attack in MetaCompendium.all_registered_attacks():
                 prepared.append(MetaCompendium.all_attacks[attack])
-            # match attack:
-            #     case NormalAttack.name:
-            #         prepared.append(NormalAttack)
 
         return prepared
 

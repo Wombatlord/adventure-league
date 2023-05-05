@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
-    from src.world.node import Node
 
 from typing import Any, Generator
 

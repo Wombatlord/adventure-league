@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 from enum import Enum
 from random import randint
-from typing import TYPE_CHECKING, Any, Callable, Generator, NamedTuple
+from typing import TYPE_CHECKING, Any, Generator
 
 from src.entities.properties.meta_compendium import MetaCompendium
 

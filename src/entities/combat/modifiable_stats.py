@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Collection, Generic, NamedTuple, Self, Type, TypeVar
+from typing import Collection, Generic, NamedTuple, Self, TypeVar
 
 
 class Stats(NamedTuple):
