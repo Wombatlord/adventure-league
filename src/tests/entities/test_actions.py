@@ -1,18 +1,14 @@
 import unittest
 
-from src.entities.action.actions import (
-    ActionCompendium,
-    ConsumeItemAction,
-    EndTurnAction,
-    MoveAction,
-)
+from src.entities.action.actions import ConsumeItemAction, EndTurnAction, MoveAction
 from src.entities.action.weapon_action import WeaponAttackAction
-from src.entities.ai.ai import BasicCombatAi
-from src.entities.combat.attack_types import attack_types
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
+from src.entities.item.equipment import Equipment
+from src.entities.item.equippable import Equippable, Sword
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
+from src.entities.properties.meta_compendium import MetaCompendium
 from src.systems.combat import CombatRound
 from src.tests.ai_fixture import TestAI
 from src.tests.fixtures import EncounterFactory, FighterFixtures
@@ -27,13 +23,16 @@ class ActionsTest(unittest.TestCase):
             name=Name(first_name="strong", last_name="very", title="the tactical"),
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
-        merc.fighter.available_attacks = attack_types
+        weapon = Equippable(None, Sword)
+        merc.fighter.equipment = Equipment(merc.fighter)
+        merc.fighter.equipment.equip_item(weapon)
         merc.inventory = Inventory(owner=merc, capacity=1)
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
-        enemy.fighter.available_attacks = attack_types
+        enemy.fighter.equipment = Equipment(merc.fighter)
+        enemy.fighter.equipment.equip_item(weapon)
         return merc, enemy
 
     @classmethod
@@ -59,7 +58,7 @@ class ActionsTest(unittest.TestCase):
     def test_action_compendium_has_registered_all_actions(self):
         # Arrange
         keys = {"end turn", "weapon attack", "cast spell", "use item", "move"}
-        actions = ActionCompendium.all_actions
+        actions = MetaCompendium.all_actions
 
         # Assert
         actual = {*actions.keys()}

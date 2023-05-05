@@ -1,14 +1,12 @@
 from unittest import TestCase
 
-from src.entities.action.actions import MoveAction
-from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.ai.ai import BasicCombatAi
-from src.entities.combat.attack_types import attack_types
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
+from src.entities.item.equipment import Equipment
+from src.entities.item.equippable import Equippable, Sword, default_equippable_factory
 from src.entities.item.inventory import Inventory
 from src.systems.combat import CombatRound
-from src.tests.ai_fixture import TestAI
 from src.tests.fixtures import EncounterFactory, FighterFixtures
 from src.world.level.room import Room
 from src.world.node import Node
@@ -23,15 +21,16 @@ class CombatRoundTest(TestCase):
             name=Name(first_name="strong", last_name="very", title="the tactical"),
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
-        merc.fighter.available_attacks = attack_types
-        merc.fighter.stats.max_range = 10
         merc.inventory = Inventory(owner=merc, capacity=1)
+        weapon = Equippable(owner=None, config=Sword)
+        merc.fighter.equipment = Equipment(merc.fighter)
+        merc.fighter.equipment.equip_item(weapon)
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
-        enemy.fighter.available_attacks = attack_types
-        enemy.fighter.stats.max_range = 10
+        enemy.fighter.equipment = Equipment(enemy.fighter)
+        enemy.fighter.equipment.equip_item(weapon)
         enemy.inventory = Inventory(owner=enemy, capacity=1)
         return merc, enemy
 

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from src.entities.action.actions import ActionMeta, EndTurnAction, MoveAction
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.ai.finite_state_machine import Callback, Machine, State
-from src.entities.combat.attack_types import WeaponAttack
+from src.entities.combat.weapon_attacks import WeaponAttackMeta
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -63,7 +63,7 @@ class ApproachingTarget(CombatAiState):
         fighter = self.agent()
         enemies_in_range = fighter.locatable.entities_in_range(
             room=fighter.encounter_context.get(),
-            max_range=fighter.stats.max_range,
+            max_range=fighter.equipment.weapon._range,
             entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
         )
 
@@ -98,9 +98,11 @@ class ChoosingAttack(CombatAiState):
         def lowest_health(target_choice: dict) -> int:
             return target_choice.fighter.health.current
 
-        def choose_attack() -> WeaponAttack:
-            atk_id = random.randint(0, len(fighter._available_attacks) - 1)
-            return fighter._available_attacks[atk_id]
+        def choose_attack() -> WeaponAttackMeta:
+            atk_id = random.randint(
+                0, len(fighter.equipment.weapon.available_attacks) - 1
+            )
+            return fighter.equipment.weapon.available_attacks[atk_id]
 
         ranked_targets = sorted(targets_in_range, key=lowest_health)
         attack_details = WeaponAttackAction.details(fighter, choose_attack())

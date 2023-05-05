@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
-    from src.world.node import Node
 
 from typing import Any, Generator
 
 from src.entities.action.actions import ActionMeta, BaseAction
-from src.entities.combat.attack_types import WeaponAttack
+from src.entities.combat.weapon_attacks import WeaponAttackMeta
 
 Event = dict[str, Any]
 
@@ -24,7 +23,7 @@ class WeaponAttackAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def execute(
-        cls, fighter: Fighter, target: Fighter, attack: WeaponAttack
+        cls, fighter: Fighter, target: Fighter, attack: WeaponAttackMeta
     ) -> Generator[Event]:
         if fighter.action_points.current >= attack.ap_cost:
             fighter.action_points.deduct_cost(cls.cost(fighter))
@@ -34,7 +33,7 @@ class WeaponAttackAction(BaseAction, metaclass=ActionMeta):
             yield {"message": f"Not enough AP for {attack.name}"}
 
     @classmethod
-    def details(cls, fighter: Fighter, attack: WeaponAttack) -> dict:
+    def details(cls, fighter: Fighter, attack: WeaponAttackMeta) -> dict:
         on_confirm = lambda target: fighter.ready_action(cls(fighter, target, attack))
 
         return {
@@ -46,9 +45,14 @@ class WeaponAttackAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        return [cls.details(fighter, attack) for attack in fighter._available_attacks]
+        return [
+            cls.details(fighter, attack)
+            for attack in fighter.equipment.weapon.available_attacks
+        ]
 
-    def __init__(self, fighter: Fighter, target: Fighter, attack: WeaponAttack) -> None:
+    def __init__(
+        self, fighter: Fighter, target: Fighter, attack: WeaponAttackMeta
+    ) -> None:
         self.fighter = fighter
         self.target = target
         self.attack = attack

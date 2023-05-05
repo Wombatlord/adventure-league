@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
 from src.entities.action.actions import (
-    ActionCompendium,
     ActionMeta,
     ActionPoints,
     BaseAction,
@@ -14,15 +13,17 @@ from src.entities.action.actions import (
 from src.entities.action.magic_action import MagicAction
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
+from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import FighterStats, HealthPool
 from src.entities.entity import Entity
+from src.entities.item.equipment import Equipment
 from src.entities.item.inventory import Consumable, Inventory
 from src.entities.magic.caster import Caster
+from src.entities.properties.meta_compendium import MetaCompendium
 from src.world.node import Node
 from src.world.ray import Ray
 
 if TYPE_CHECKING:
-    from src.entities.combat.attack_types import WeaponAttack
     from src.world.level.room import Room
 
 Event = dict[str, Any]
@@ -52,6 +53,7 @@ class Fighter:
     _readied_action: BaseAction | None
     _encounter_context: EncounterContext
     health: HealthPool
+    modifiable_stats: ModifiableStats
     _caster: Caster | None
 
     def __init__(
@@ -61,7 +63,6 @@ class Fighter:
         defence: int = 0,
         power: int = 0,
         level: int = 0,
-        max_range: int = 0,
         speed: int = 0,
         caster: Caster = None,
         is_enemy: bool = False,
@@ -73,14 +74,15 @@ class Fighter:
         # -----Stats-----
         self.health = HealthPool(max=hp)
         self.stats = FighterStats(
-            defence=defence, power=power, level=level, max_range=max_range, speed=speed
+            defence=defence, power=power, level=level, speed=speed
         )
+        self.modifiable_stats = ModifiableStats(FighterStats, base_stats=self.stats)
+        self.equipment = Equipment(owner=self)
         self.set_role(role)
         # -----State-----
         self.action_points = ActionPoints()
         self._caster = None
         self.caster = caster
-        self._available_attacks: list[WeaponAttack] | None = None
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
@@ -98,14 +100,6 @@ class Fighter:
         self._caster = value
         if value is not None:
             self._caster.set_owner(self)
-
-    @property
-    def available_attacks(self):
-        return self._available_attacks
-
-    @available_attacks.setter
-    def available_attacks(self, attack_types):
-        self._available_attacks = [attack_type(self) for attack_type in attack_types]
 
     def set_role(self, role: FighterArchetype):
         self.role = role
@@ -136,13 +130,13 @@ class Fighter:
         return result
 
     def set_action_options(self):
-        defaults = [MoveAction, ConsumeItemAction, EndTurnAction]
+        defaults = [WeaponAttackAction, MoveAction, ConsumeItemAction, EndTurnAction]
         match self.role:
             case FighterArchetype.MELEE:
-                optional = [WeaponAttackAction]
+                optional = []
 
             case FighterArchetype.RANGED:
-                optional = [WeaponAttackAction]
+                optional = []
 
             case FighterArchetype.CASTER:
                 optional = [MagicAction]
@@ -179,18 +173,18 @@ class Fighter:
             return False
 
     def request_action_choice(self):
-        action_types = ActionCompendium.all_available_to(self)
+        action_types = MetaCompendium.all_actions_available_to(self)
         choices = {}
         for name, action_type in action_types.items():
             if action_type == WeaponAttackAction:
-                for atk in self._available_attacks:
+                for atk in self.equipment.weapon.available_attacks:
                     choices[name] = action_type.all_available_to(self)
 
             elif not action_type == MagicAction:
                 choices[name] = action_type.all_available_to(self)
 
             else:
-                for spell in self.caster.spells:
+                for spell in self.equipment.weapon.available_spells:
                     choices[name] = action_type.all_available_to(self)
 
         event = {}

@@ -1,4 +1,4 @@
-from typing import Callable, Sequence
+from typing import Sequence
 
 import arcade
 from pyglet.math import Vec2

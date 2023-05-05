@@ -1,4 +1,3 @@
-import random
 from copy import deepcopy
 from random import randint
 from typing import Callable, NamedTuple, Self
@@ -6,13 +5,19 @@ from typing import Callable, NamedTuple, Self
 from src.config.constants import merc_names
 from src.entities.ai.ai import BasicCombatAi
 from src.entities.combat.archetypes import FighterArchetype
-from src.entities.combat.attack_types import attack_types
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name, Species
+from src.entities.item.equippable import (
+    Bow,
+    Equippable,
+    Helmet,
+    SpellBook,
+    Sword,
+    default_equippable_factory,
+)
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
 from src.entities.magic.caster import Caster
-from src.entities.magic.spells import basic_spell_book
 from src.entities.sprites import EntitySprite
 from src.gui.animated_sprite_config import (
     AnimatedSpriteConfig,
@@ -66,7 +71,6 @@ class StatBlock(NamedTuple):
             "hp": randint(*self.hp),
             "defence": randint(*self.defence),
             "power": randint(*self.power),
-            "max_range": 1,
             "is_enemy": self.is_enemy,
             "role": FighterArchetype.MELEE,
             "speed": self.speed,
@@ -133,20 +137,30 @@ def select_textures(species: str, fighter: Fighter) -> AnimatedSpriteConfig:
         return choose_mob_textures()
 
 
-def _setup_fighter_archetypes(fighter: Fighter):
+def _setup_fighter_archetypes(
+    fighter: Fighter, gear_factory: Callable[[FighterArchetype], dict]
+):
     if not fighter.is_enemy:
         fighter.set_role(FighterArchetype.random_archetype())
 
+    def default_equip(fighter):
+        nonlocal gear
+        for slot in fighter.equipment._equippable_slots:
+            fighter.equipment.equip_item(gear.get(slot))
+
     match fighter.role:
         case FighterArchetype.MELEE:
-            fighter.stats.max_range = 1
-            fighter.available_attacks = attack_types
+            gear = gear_factory(FighterArchetype.MELEE)
+            default_equip(fighter)
+
         case FighterArchetype.RANGED:
-            fighter.stats.max_range = randint(2, 4)
-            fighter.available_attacks = attack_types
+            gear = gear_factory(FighterArchetype.RANGED)
+            default_equip(fighter)
+
         case FighterArchetype.CASTER:
-            fighter.stats.max_range = 1
-            fighter.caster = Caster(max_mp=10, known_spells=basic_spell_book)
+            fighter.caster = Caster(max_mp=10)
+            gear = gear_factory(FighterArchetype.CASTER)
+            default_equip(fighter)
 
     fighter.set_action_options()
 
@@ -180,8 +194,8 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         conf = stats.fighter_conf()
 
         entity.fighter = _from_conf(conf, entity)
-
-        _setup_fighter_archetypes(entity.fighter)
+        gear_factory = default_equippable_factory()
+        _setup_fighter_archetypes(entity.fighter, gear_factory)
 
         entity.inventory = Inventory(owner=entity, capacity=1)
 

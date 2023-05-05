@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from src.entities.properties.meta_compendium import MetaCompendium
+
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
     from src.world.node import Node
     from src.entities.item.items import Consumable
 
 from typing import Any, Generator
-
-from src.entities.combat.attack_types import attack_details
 
 Event = dict[str, Any]
 
@@ -27,30 +27,12 @@ class ActionPoints:
         return self.current
 
 
-class ActionCompendium:
-    all_actions: dict[str, ActionMeta] = {}
-
-    @classmethod
-    def all_available_to(cls, fighter: Fighter) -> dict[str, ActionMeta]:
-        action_dict = {
-            name: action
-            for name, action in cls.all_actions.items()
-            if fighter.does(action)
-        }
-
-        def order_by_menu_pos(d: dict):
-            return d[1].menu_pos
-
-        ordered = dict(sorted(action_dict.items(), key=order_by_menu_pos))
-        return ordered
-
-
 class ActionMeta(type):
     name: str
 
     def __new__(cls, *args, **kwargs):
         action_class = super().__new__(cls, *args, **kwargs)
-        ActionCompendium.all_actions[action_class.name] = action_class
+        MetaCompendium.all_actions[action_class.name] = action_class
 
         return action_class
 

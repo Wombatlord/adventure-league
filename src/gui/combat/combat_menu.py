@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from src.gui.combat.scene import Scene
     from src.entities.magic.spells import Spell
     from src.gui.combat.hud import HUD
-    from src.entities.combat.attack_types import WeaponAttack
+    from src.entities.combat.weapon_attacks import WeaponAttackMeta
 
 from src.entities.action.actions import ConsumeItemAction, EndTurnAction, MoveAction
 from src.entities.action.magic_action import MagicAction
@@ -220,7 +220,7 @@ class CombatMenu:
     def attack_choice(self, available_attacks: list) -> MenuNode:
         submenu_config = []
         for attack_action_details in available_attacks:
-            attack: WeaponAttack = attack_action_details.get("subject", {})
+            attack: WeaponAttackMeta = attack_action_details.get("subject", {})
             if not attack:
                 continue
 
@@ -301,7 +301,7 @@ class CombatMenu:
         return SubMenuNode("Magic", sub_menu=submenu_config)
 
     def _create_show_template_callback(
-        self, action: Spell | WeaponAttack
+        self, action: Spell | WeaponAttackMeta
     ) -> Callable[[Node], None]:
         def show_template(target: Node):
             if isinstance(target, Fighter):
