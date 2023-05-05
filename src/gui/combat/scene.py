@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Sequence
 
 import arcade
 from pyglet.math import Vec2
@@ -8,6 +8,7 @@ from src.engine.init_engine import eng
 from src.entities.entity import Entity
 from src.entities.properties.locatable import Locatable
 from src.entities.sprites import BaseSprite
+from src.gui.combat.health_bar import FloatingHealthBars
 from src.gui.combat.highlight import HighlightLayer
 from src.gui.components.menu import Menu
 from src.textures.texture_data import SpriteSheetSpecs
@@ -93,6 +94,10 @@ class Scene(arcade.Section):
             draw_priority_bias=-0.01,
         ).attach_display(self.world_sprite_list)
 
+        self.floating_health_bars = FloatingHealthBars(
+            self.world_sprite_list, self.transform
+        )
+
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
             topic="new_encounter",
@@ -160,9 +165,9 @@ class Scene(arcade.Section):
 
     def show_highlight(
         self,
-        green: list[Node] | None = None,
-        gold: list[Node] | None = None,
-        red: list[Node] | None = None,
+        green: Sequence[Node] | None = None,
+        gold: Sequence[Node] | None = None,
+        red: Sequence[Node] | None = None,
     ):
         green = green or []
         gold = gold or []
@@ -207,6 +212,7 @@ class Scene(arcade.Section):
             hook = do_nothing
 
         self.dudes_sprite_list.update_animation(delta_time=delta_time)
+        self.floating_health_bars.update()
 
         if eng.update_clock < 0:
             eng.reset_update_clock()
@@ -245,6 +251,7 @@ class Scene(arcade.Section):
     def set_encounter(self, event: dict) -> None:
         encounter_room = event.get("new_encounter", None)
         if encounter_room:
+            self.floating_health_bars.flush()
             self.encounter_room = encounter_room
             self.level_to_sprite_list()
             self.prepare_dude_sprites()
@@ -284,6 +291,7 @@ class Scene(arcade.Section):
             dude.entity_sprite.orient(dude.locatable.orientation)
             self.world_sprite_list.append(dude.entity_sprite.sprite)
             self.dudes_sprite_list.append(dude.entity_sprite.sprite)
+            self.floating_health_bars.attach(dude.fighter)
 
     def update_dudes(self, _: dict) -> None:
         self._update_dudes()
@@ -301,6 +309,8 @@ class Scene(arcade.Section):
         for dude in self.encounter_room.occupants:
             dude.entity_sprite.sprite.set_node(dude.locatable.location)
             dude.entity_sprite.orient(dude.locatable.orientation)
+
+        self.floating_health_bars.update()
 
         self.refresh_draw_order()
 
