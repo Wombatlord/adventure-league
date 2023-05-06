@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
+import yaml
+
 from src.entities.action.actions import (
     ActionMeta,
     ActionPoints,
@@ -15,16 +17,17 @@ from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import FighterStats, HealthPool
-from src.entities.entity import Entity
 from src.entities.item.equipment import Equipment
 from src.entities.item.inventory import Consumable, Inventory
 from src.entities.magic.caster import Caster
 from src.entities.properties.meta_compendium import MetaCompendium
+from src.entities.sprites import EntitySprite
 from src.world.node import Node
 from src.world.ray import Ray
 
 if TYPE_CHECKING:
     from src.world.level.room import Room
+    from src.entities.entity import Entity
 
 Event = dict[str, Any]
 
@@ -55,6 +58,45 @@ class Fighter:
     health: HealthPool
     modifiable_stats: ModifiableStats
     _caster: Caster | None
+
+    @classmethod
+    def from_dict(cls, data: dict | None, owner: Entity) -> Self | None:
+        if data is None:
+            return None
+        instance = object.__new__(cls)
+        instance.owner = owner
+        instance.__dict__ = {
+            **data,
+            "health": HealthPool.from_dict(data.get("health")),
+            "stats": FighterStats(**data.get("stats")),
+            "action_points": ActionPoints.from_dict(data.get("action_points")),
+            "equipment": Equipment.from_dict(data.get("equipment"), owner=instance),
+            "encounter_context": EncounterContext(fighter=instance),
+        }
+
+        if data.get("caster") is not None:
+            instance.__dict__["caster"] = Caster.from_dict(
+                data.get("caster"), owner=instance
+            )
+
+        
+        instance.set_role(data.get("role"))
+        instance.modifiable_stats = ModifiableStats(
+            FighterStats, base_stats=instance.stats
+        )
+        
+
+        return instance
+
+    def to_dict(self) -> dict:
+        return {
+            "role": self.role.name,
+            "health": self.health.to_dict(),
+            "stats": self.stats._asdict(),
+            "action_points": self.action_points.to_dict(),
+            "equipment": self.equipment.to_dict(),
+            "caster": self.caster.to_dict() if self.caster else None,
+        }
 
     def __init__(
         self,
@@ -90,6 +132,28 @@ class Fighter:
         self._in_combat = False
         self._readied_action = None
         self._encounter_context = EncounterContext(self)
+
+    @classmethod
+    def from_yaml(cls, loader: yaml.Loader, node=None) -> Self:
+        f_gen: Generator[Fighter, None, None] = loader.construct_yaml_object(node, cls)
+        f = next(f_gen)
+        try:
+            next(f_gen)
+        except StopIteration:
+            pass
+
+        breakpoint()
+        from src.entities.combat.fighter_factory import select_textures
+
+        sprite_config = select_textures(f.owner.species, f)
+
+        f.owner.set_entity_sprite(
+            EntitySprite(
+                idle_textures=sprite_config.idle_textures,
+                attack_textures=sprite_config.attack_textures,
+            )
+        )
+        return f
 
     @property
     def caster(self) -> Caster | None:
@@ -132,13 +196,13 @@ class Fighter:
     def set_action_options(self):
         defaults = [WeaponAttackAction, MoveAction, ConsumeItemAction, EndTurnAction]
         match self.role:
-            case FighterArchetype.MELEE:
+            case FighterArchetype.MELEE | "MELEE":
                 optional = []
 
-            case FighterArchetype.RANGED:
+            case FighterArchetype.RANGED | "RANGED":
                 optional = []
 
-            case FighterArchetype.CASTER:
+            case FighterArchetype.CASTER | "CASTER":
                 optional = [MagicAction]
 
             case _:

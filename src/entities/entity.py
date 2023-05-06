@@ -1,11 +1,13 @@
-from typing import Any, NamedTuple, Optional, Self
+from typing import Any, NamedTuple, Optional, Self, Generator
 
 from src.entities.ai.ai import AiInterface
+from src.entities.combat.fighter import Fighter
 from src.entities.item.inventory import Inventory, InventoryItem
 from src.entities.properties.locatable import Locatable
 from src.entities.sprites import EntitySprite
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
+import yaml
 
 
 class Name(NamedTuple):
@@ -33,10 +35,32 @@ class Species:
     HUMAN = "human"
 
 
-class Entity:
+class Entity(yaml.YAMLObject):
     entity_sprite: EntitySprite | None
+    fighter: Fighter | None
     inventory: Inventory | None
     ai: AiInterface | None
+
+    @classmethod
+    def from_dict(cls, data: dict | None) -> Self | None:
+        if data is None:
+            return None
+        instance = object.__new__(cls)
+        instance.__dict__ = {
+            **data,
+            "fighter": Fighter.from_dict(data.get("fighter"), owner=instance),
+            # "inventory": Inventory.from_dict(data.get("inventory"), owner=instance),
+        }
+
+        return instance
+        
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "fighter": self.fighter.to_dict(),
+            # "inventory": self.inventory.to_dict(),
+            "species": self.species,
+        }
 
     def __init__(
         self,

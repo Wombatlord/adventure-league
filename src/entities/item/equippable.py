@@ -54,6 +54,39 @@ class Equippable(EquippableABC):
     _available_attacks_cache: list[WeaponAttackMeta]
     _available_spells_cache: list[Spell]
 
+    @classmethod
+    def from_dict(cls, data: dict) -> Self:
+        mods = []
+        for affix in data.get("affixes"):
+            if affix.get("modifier").get("stat_class") == "FighterStats":
+                percent = [*affix["modifier"]["percent"]]
+                base = [*affix["modifier"]["base"]]
+
+                mods.append(
+                    Modifier(
+                        FighterStats,
+                        percent=FighterStats(*percent),
+                        base=FighterStats(*base),
+                    )
+                )
+        breakpoint()
+        data["affixes"] = mods
+        instance = object.__new__(cls)
+        instance.__dict__ = data
+        return instance
+
+    def to_dict(self) -> dict:
+        return {
+            "config": self._config.to_dict(),
+            "slot": self.slot,
+            "name": self.name,
+            "range": self.range,
+            "attack_verb": self.attack_verb,
+            "attack_names": [*self._attack_names] if self._attack_names else None,
+            "spell_names": [*self._spell_names] if self._spell_names else None,
+            "affixes": [affix.to_dict() for affix in self._affixes],
+        }
+
     def __init__(
         self, owner: Fighter | None, config: EquippableConfig | None = None
     ) -> None:
@@ -189,6 +222,16 @@ class EquippableConfig(NamedTuple):
     spells: list[str] | None = None
     affixes: list = []
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "slot": self.slot,
+            "attack_verb": self.attack_verb,
+            "range": self.range,
+            "attacks": self.attacks,
+            "spells": self.spells,
+            "affixes": [affix.to_dict() for affix in self.affixes]
+        }
 
 # Example Configs
 Helmet = EquippableConfig(name="helmet", slot="helmet", affixes=[PercentPowerIncrease])

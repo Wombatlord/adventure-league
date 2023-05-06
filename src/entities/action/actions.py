@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from src.entities.properties.meta_compendium import MetaCompendium
 
@@ -15,6 +15,13 @@ Event = dict[str, Any]
 
 
 class ActionPoints:
+    @classmethod
+    def from_dict(cls, data: dict) -> Self | None:
+        return cls(data.get("per_turn"))
+    
+    def to_dict(self) -> dict:
+        return {"per_turn": self.per_turn}
+    
     def __init__(self, per_turn=2):
         self.per_turn = per_turn
         self.current = self.per_turn

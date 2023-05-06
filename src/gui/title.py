@@ -4,6 +4,7 @@ import arcade
 import arcade.color
 import arcade.key
 from arcade import Window
+from src.engine.persistence.game_state_repository import GameStateRepository
 
 from src.gui.animation import harmonic
 from src.gui.components.buttons import get_nav_handler
@@ -11,7 +12,7 @@ from src.gui.components.menu import LeafMenuNode, Menu, SubMenuNode
 from src.gui.guild.home import HomeView
 from src.gui.window_data import WindowData
 from src.textures.texture_data import SingleTextureSpecs
-
+from src.engine.init_engine import eng
 
 class TitleView(arcade.View):
     def __init__(self, window: Window | None = None):
@@ -135,6 +136,9 @@ class TitleView(arcade.View):
             case arcade.key.G | arcade.key.ENTER:
                 g = HomeView(parent_factory=TitleView)
                 self.window.show_view(g)
+                
+            case arcade.key.L:
+                eng.game_state.guild = GameStateRepository.load(0)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)

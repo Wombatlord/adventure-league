@@ -1,2 +1,3 @@
 arcade @ https://github.com/pythonarcade/arcade/archive/refs/heads/development.zip
 astar
+pyyaml

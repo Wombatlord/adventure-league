@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
+from src.entities.combat.modifiable_stats import Modifier
+from src.entities.combat.stats import FighterStats, StatAffix
+
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
-    from src.entities.item.equippable import Equippable
+
+from src.entities.item.equippable import Equippable, EquippableConfig
 
 
 class Storage(metaclass=abc.ABCMeta):
@@ -29,6 +33,52 @@ class Equipment:
         "owner",
         *_equippable_slots,
     )
+
+    @classmethod
+    def from_dict(cls, data: dict, owner: Fighter) -> Self | None:
+        instance = object.__new__(cls)
+
+        instance.owner = owner
+        instance.weapon = None
+        instance.helmet = None
+        instance.body = None
+        for slot in cls._equippable_slots:
+            # if item := data.get(slot):
+            #     ec = EquippableConfig(**item.get("config"))
+            #     equippable = Equippable(owner, config=ec)
+
+            #     instance.item = equippable
+
+            # breakpoint()
+            
+            match data.get(slot).get("slot"):
+                case "weapon":
+                    ec = EquippableConfig(**data.get(slot).get("config"))
+                    equippable = Equippable(owner, config=ec)
+                    affix = dict(*data.get(slot).get("affixes"))
+                    breakpoint()
+                    equippable._affixes = StatAffix(
+                        name=affix.get("name"),
+                        modifier=Modifier(FighterStats, affix.get("percent"), affix.get("base")),
+                    )
+                    instance.weapon = equippable
+                case "helmet":
+                    ec = EquippableConfig(**data.get(slot).get("config"))
+                    equippable = Equippable(owner, config=ec)
+                    instance.helmet = equippable
+                case "body":
+                    ec = EquippableConfig(**data.get(slot).get("config"))
+                    equippable = Equippable(owner, config=ec)
+                    instance.body = equippable
+
+        return instance
+
+    def to_dict(self) -> dict:
+        return {
+            "weapon": self.weapon.to_dict() if self.weapon else None,
+            "helmet": self.helmet.to_dict() if self.helmet else None,
+            "body": self.body.to_dict() if self.body else None,
+        }
 
     def __init__(self, owner: Fighter, weapon=None, helmet=None, body=None) -> None:
         self.owner = owner

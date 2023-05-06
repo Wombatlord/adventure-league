@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 
 from typing import Callable, NamedTuple
 
@@ -10,6 +11,8 @@ from arcade.gui.widgets.text import UILabel
 
 from src.config import font_sizes
 from src.engine.init_engine import eng
+from src.engine.persistence.game_state_repository import GameStateRepository
+from src.entities.entity import Entity
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.generic_sections.command_bar import CommandBarSection
 from src.gui.generic_sections.info_pane import InfoPaneSection
@@ -94,6 +97,15 @@ class HomeView(arcade.View):
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
+            case arcade.key.S:
+                slot = 0
+                # GameStateRepository.save(slot)
+                ed = eng.game_state.guild.roster[0].to_dict()
+                print(json.dumps(ed, indent=2))
+                e = Entity.from_dict(ed)
+                breakpoint()
+                
+            
             case arcade.key.G:
                 self.window.show_view(self.parent_factory())
 
