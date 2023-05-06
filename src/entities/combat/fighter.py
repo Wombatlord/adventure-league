@@ -26,8 +26,8 @@ from src.world.node import Node
 from src.world.ray import Ray
 
 if TYPE_CHECKING:
-    from src.world.level.room import Room
     from src.entities.entity import Entity
+    from src.world.level.room import Room
 
 Event = dict[str, Any]
 
@@ -79,12 +79,15 @@ class Fighter:
                 data.get("caster"), owner=instance
             )
 
-        
         instance.set_role(data.get("role"))
         instance.modifiable_stats = ModifiableStats(
             FighterStats, base_stats=instance.stats
         )
-        
+
+        # Warmup the caches. We do it here because this is when the Fighter has ModifiableStats
+        instance.equipment.equip_item(instance.equipment.weapon)
+        instance.equipment.equip_item(instance.equipment.helmet)
+        instance.equipment.equip_item(instance.equipment.body)
 
         return instance
 

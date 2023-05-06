@@ -1,4 +1,6 @@
-from typing import Any, NamedTuple, Optional, Self, Generator
+from typing import Any, Generator, NamedTuple, Optional, Self
+
+import yaml
 
 from src.entities.ai.ai import AiInterface
 from src.entities.combat.fighter import Fighter
@@ -7,7 +9,6 @@ from src.entities.properties.locatable import Locatable
 from src.entities.sprites import EntitySprite
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
-import yaml
 
 
 class Name(NamedTuple):
@@ -53,7 +54,7 @@ class Entity(yaml.YAMLObject):
         }
 
         return instance
-        
+
     def to_dict(self):
         return {
             "name": self.name,

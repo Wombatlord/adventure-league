@@ -29,14 +29,14 @@ class Modifier(Generic[_StatType]):
     @classmethod
     def from_dict(cls, data) -> Self:
         pass
-    
+
     def to_dict(self) -> dict:
         return {
             "stat_class": self._stat_class.name,
             "percent": self.percent,
-            "base": self.base
+            "base": self.base,
         }
-    
+
     def __init__(
         self,
         stat_class: type[_StatType],

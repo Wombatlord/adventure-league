@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import abc
 from typing import TYPE_CHECKING, Self
+
 from src.entities.combat.modifiable_stats import Modifier
 from src.entities.combat.stats import FighterStats, StatAffix
-
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -36,12 +36,51 @@ class Equipment:
 
     @classmethod
     def from_dict(cls, data: dict, owner: Fighter) -> Self | None:
+        """Here we recreate the equipment of a Fighter.
+        First we assign values to the __slots__ so that they exist.
+        We use a closure to instantiate the equippable and prepare the affixes.
+        Then assign the equippable to an equipment slot.
+        We call equip_item outside this scope to warmup the caches.
+        """
         instance = object.__new__(cls)
 
         instance.owner = owner
         instance.weapon = None
         instance.helmet = None
         instance.body = None
+
+        def equips(owner):
+            """
+            Here we instantiate the equippable from the config dicts.
+            As the config is all in dict forms, the affixes will initially be a dict rather than StatAffixes.
+            Build an array of actual StatAffixes based on this config
+            Then clear the affixes and _affixes arrays on both the equippable itself and the EquippableConfig
+            Replace them with the affixes array containing actual StatAffixes build from those dict representations.
+            """
+            nonlocal slot
+            affixes = []
+            for afx in data[slot]["affixes"]:
+                affixes.append(
+                    StatAffix(
+                        name=afx.get("name"),
+                        modifier=Modifier(
+                            FighterStats,
+                            afx["modifier"]["percent"],
+                            afx["modifier"]["percent"],
+                        ),
+                    )
+                )
+
+            ec = EquippableConfig(**data.get(slot).get("config"))
+            equippable = Equippable(owner, config=ec)
+
+            ec.affixes.clear()
+            ec.affixes.extend(affixes)
+            equippable._affixes.clear()
+            equippable._affixes.extend(affixes)
+
+            return equippable
+
         for slot in cls._equippable_slots:
             # if item := data.get(slot):
             #     ec = EquippableConfig(**item.get("config"))
@@ -50,26 +89,14 @@ class Equipment:
             #     instance.item = equippable
 
             # breakpoint()
-            
+
             match data.get(slot).get("slot"):
                 case "weapon":
-                    ec = EquippableConfig(**data.get(slot).get("config"))
-                    equippable = Equippable(owner, config=ec)
-                    affix = dict(*data.get(slot).get("affixes"))
-                    breakpoint()
-                    equippable._affixes = StatAffix(
-                        name=affix.get("name"),
-                        modifier=Modifier(FighterStats, affix.get("percent"), affix.get("base")),
-                    )
-                    instance.weapon = equippable
+                    instance.weapon = equips(instance)
                 case "helmet":
-                    ec = EquippableConfig(**data.get(slot).get("config"))
-                    equippable = Equippable(owner, config=ec)
-                    instance.helmet = equippable
+                    instance.helmet = equips(instance)
                 case "body":
-                    ec = EquippableConfig(**data.get(slot).get("config"))
-                    equippable = Equippable(owner, config=ec)
-                    instance.body = equippable
+                    instance.body = equips(instance)
 
         return instance
 

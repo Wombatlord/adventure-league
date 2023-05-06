@@ -230,8 +230,9 @@ class EquippableConfig(NamedTuple):
             "range": self.range,
             "attacks": self.attacks,
             "spells": self.spells,
-            "affixes": [affix.to_dict() for affix in self.affixes]
+            "affixes": [affix.to_dict() for affix in self.affixes],
         }
+
 
 # Example Configs
 Helmet = EquippableConfig(name="helmet", slot="helmet", affixes=[PercentPowerIncrease])

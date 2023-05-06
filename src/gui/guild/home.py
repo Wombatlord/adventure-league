@@ -1,6 +1,6 @@
 from __future__ import annotations
-import json
 
+import json
 from typing import Callable, NamedTuple
 
 import arcade
@@ -104,8 +104,7 @@ class HomeView(arcade.View):
                 print(json.dumps(ed, indent=2))
                 e = Entity.from_dict(ed)
                 breakpoint()
-                
-            
+
             case arcade.key.G:
                 self.window.show_view(self.parent_factory())
 

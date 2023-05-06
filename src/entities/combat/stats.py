@@ -14,7 +14,7 @@ class HealthPool:
     def to_dict(self):
         return {"max": self.max_hp, "current": self.current, "bonus": self.bonus}
 
-    def __init__(self, max: int, current: int = None, bonus:int = 0) -> None:
+    def __init__(self, max: int, current: int = None, bonus: int = 0) -> None:
         self._max_hp = max
         self._current_hp = current or max
         self._bonus_hp = bonus
@@ -89,11 +89,9 @@ class StatAffix(NamedTuple):
     modifier: Modifier[FighterStats]
 
     def to_dict(self):
-        return {
-            "name": self.name,
-            "modifier": self.modifier.to_dict()
-        }
-    
+        return {"name": self.name, "modifier": self.modifier.to_dict()}
+
+
 modifiers = {
     "bear": lambda: Modifier(
         FighterStats, base=FighterStats(power=random.randint(1, 13))
