@@ -17,7 +17,6 @@ class MpPool:
 
     @classmethod
     def from_dict(cls, data) -> Self:
-        breakpoint()
         return cls(**data["mp_pool"])
 
     def __init__(self, max, current: int | None = None):
@@ -59,7 +58,6 @@ class Caster:
 
     @classmethod
     def from_dict(cls, data, owner) -> Self:
-        breakpoint()
         mp = MpPool.from_dict(data)
 
         instance = object.__new__(cls)

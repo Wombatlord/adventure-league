@@ -101,17 +101,23 @@ class HomeView(arcade.View):
             case arcade.key.S:
                 slot = 0
                 # GameStateRepository.save(slot)
-                ed = eng.game_state.guild.roster[0].to_dict()
-                print(json.dumps(ed, indent=2))
-                e = Entity.from_dict(ed)
+                entity_dict = {}
+                for e in eng.game_state.guild.roster:
+                    entity_dict[hash(e)] = e.to_dict()
+                print(json.dumps(entity_dict, indent=2))
+
+                entities = []
+                for _, entity in entity_dict.items():
+                    entities.append(Entity.from_dict(entity))
+
                 with open("testing.yaml", "w+") as file:
-                    yaml.dump(ed, file)
+                    yaml.dump(entity_dict, file)
                 with open("testing.json", "w+") as file:
-                    json.dump(ed, file)
+                    json.dump(entity_dict, file)
                 import pickle
 
                 with open("testing.pikl", "wb+") as file:
-                    pickle.dump(ed, file)
+                    pickle.dump(entity_dict, file)
                 breakpoint()
 
             case arcade.key.G:
