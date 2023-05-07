@@ -1,4 +1,5 @@
 from typing import Any, Generator, NamedTuple, Optional, Self
+from uuid import uuid4
 
 import yaml
 
@@ -59,6 +60,7 @@ class Entity(yaml.YAMLObject):
 
     def to_dict(self):
         return {
+            "entity_id": self.id,
             "name": self.name._asdict(),
             "fighter": self.fighter.to_dict(),
             "inventory": self.inventory.to_dict(),
@@ -77,6 +79,7 @@ class Entity(yaml.YAMLObject):
         species: str = Species.HUMAN,
         ai: AiInterface | None = None,
     ) -> None:
+        self.id = uuid4().hex[:10].upper()
         self.name = name
         self.cost = cost
         self.inventory = inventory
