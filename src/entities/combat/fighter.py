@@ -18,7 +18,8 @@ from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import FighterStats, HealthPool
 from src.entities.item.equipment import Equipment
-from src.entities.item.inventory import Consumable, Inventory
+from src.entities.item.inventory import Inventory
+from src.entities.item.inventory_item import Consumable
 from src.entities.magic.caster import Caster
 from src.entities.properties.meta_compendium import MetaCompendium
 from src.entities.sprites import EntitySprite

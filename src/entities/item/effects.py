@@ -1,7 +1,10 @@
-from typing import Any
+from __future__ import annotations
 
-from src.entities.entity import Entity
-from src.entities.item.inventory import Consumable, Inventory, Throwable
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from src.entities.entity import Entity
+    from src.entities.item.inventory import Consumable, Inventory, Throwable
 
 Event = dict[str, Any]
 

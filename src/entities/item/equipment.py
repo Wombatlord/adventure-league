@@ -45,6 +45,7 @@ class Equipment:
         """
 
         affixes = []
+        breakpoint()
         for afx in item_data[slot]["affixes"]:
             afx["modifier"].pop("stat_class")
             affixes.append(

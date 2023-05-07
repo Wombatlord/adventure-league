@@ -4,7 +4,8 @@ import yaml
 
 from src.entities.ai.ai import AiInterface
 from src.entities.combat.fighter import Fighter
-from src.entities.item.inventory import Inventory, InventoryItem
+from src.entities.item.inventory import Inventory
+from src.entities.item.inventory_item import InventoryItem
 from src.entities.properties.locatable import Locatable
 from src.entities.sprites import EntitySprite
 from src.world.node import Node
@@ -49,17 +50,18 @@ class Entity(yaml.YAMLObject):
         instance = object.__new__(cls)
         instance.__dict__ = {
             **data,
+            "name": Name(**data["name"]),
             "fighter": Fighter.from_dict(data.get("fighter"), owner=instance),
-            # "inventory": Inventory.from_dict(data.get("inventory"), owner=instance),
+            "inventory": Inventory.from_dict(data.get("inventory"), owner=instance),
         }
 
         return instance
 
     def to_dict(self):
         return {
-            "name": self.name,
+            "name": self.name._asdict(),
             "fighter": self.fighter.to_dict(),
-            # "inventory": self.inventory.to_dict(),
+            "inventory": self.inventory.to_dict(),
             "species": self.species,
         }
 
