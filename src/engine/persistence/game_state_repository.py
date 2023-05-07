@@ -11,12 +11,12 @@ class GameStateRepository:
         return str(SAVE_FILE_DIRECTORY / f"save_{slot}.yml")
 
     @classmethod
-    def save(cls, slot: int):
+    def save(cls, slot: int, data: dict):
         if eng.current_room:
             raise RuntimeError("Cannot save game while in combat")
 
         with open(cls.save_file_path(slot), "w+") as save_file:
-            dump(eng.game_state.guild, save_file)
+            dump(data, save_file)
 
     @classmethod
     def load(cls, slot: int) -> Guild:

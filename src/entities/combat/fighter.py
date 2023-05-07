@@ -73,6 +73,7 @@ class Fighter:
             "action_points": ActionPoints.from_dict(data.get("action_points")),
             "equipment": Equipment.from_dict(data.get("equipment"), owner=instance),
             "encounter_context": EncounterContext(fighter=instance),
+            "on_retreat_hooks": [],
         }
 
         if data.get("caster") is not None:

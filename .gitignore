@@ -5,10 +5,11 @@ venv/
 winvenv/
 scratch.py
 .idea/
+saves
+testing.*
 assets/sprites/
 assets/wordlists/
 __pycache__/
-
 docs/dev
 
 settings.yaml

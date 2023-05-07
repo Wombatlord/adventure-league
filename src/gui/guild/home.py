@@ -11,6 +11,7 @@ from arcade.gui import UITextureButton
 from arcade.gui.widgets.text import UILabel
 
 from src.config import font_sizes
+from src.engine.guild import Guild
 from src.engine.init_engine import eng
 from src.engine.persistence.game_state_repository import GameStateRepository
 from src.entities.entity import Entity
@@ -100,24 +101,16 @@ class HomeView(arcade.View):
         match symbol:
             case arcade.key.S:
                 slot = 0
-                # GameStateRepository.save(slot)
-                entity_dict = {}
-                for e in eng.game_state.guild.roster:
-                    entity_dict[hash(e)] = e.to_dict()
-                print(json.dumps(entity_dict, indent=2))
 
-                entities = []
-                for _, entity in entity_dict.items():
-                    entities.append(Entity.from_dict(entity))
+                guild_dict = eng.game_state.guild.to_dict()
+                GameStateRepository.save(slot, guild_dict)
+                
+                g = Guild.from_dict(guild_dict)
 
-                with open("testing.yaml", "w+") as file:
-                    yaml.dump(entity_dict, file)
-                with open("testing.json", "w+") as file:
-                    json.dump(entity_dict, file)
                 import pickle
 
                 with open("testing.pikl", "wb+") as file:
-                    pickle.dump(entity_dict, file)
+                    pickle.dump(guild_dict, file)
                 breakpoint()
 
             case arcade.key.G:
