@@ -18,7 +18,7 @@ from src.entities.item.equippable import (
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
 from src.entities.magic.caster import Caster
-from src.entities.sprites import EntitySprite
+from src.entities.sprite_assignment import attach_sprites
 from src.gui.animated_sprite_config import (
     AnimatedSpriteConfig,
     choose_boss_texture,
@@ -27,16 +27,6 @@ from src.gui.animated_sprite_config import (
     choose_slime_textures,
 )
 from src.utils.proc_gen import syllables
-
-
-class FactoryConfigurationError(ValueError):
-    @classmethod
-    def missing_mob_species(cls, species: str) -> Self:
-        return cls(
-            f"Could not choose sprite animation frames for character {species=}. Available species are "
-            f"{', '.join([*MOB_TEXTURE_MAPPING.keys()])}"
-        )
-
 
 NAME_GENS: dict[str, Callable[[], str]] = {
     Species.GOBLIN: lambda: (
@@ -113,29 +103,6 @@ _boss = StatBlock(
     is_boss=True,
 )
 
-MOB_TEXTURE_MAPPING = {
-    Species.GOBLIN: choose_goblin_textures,
-    Species.SLIME: choose_slime_textures,
-}
-
-
-def select_textures(species: str, fighter: Fighter) -> AnimatedSpriteConfig:
-    """
-    Set up textures for the fighter.
-    As we have the name already, use that to determine particular enemy textures for hostile fighters.
-    """
-    if not fighter.is_enemy:
-        return choose_merc_textures(fighter)
-
-    elif fighter.is_boss:
-        return choose_boss_texture()
-    else:
-        choose_mob_textures = MOB_TEXTURE_MAPPING.get(species)
-        if choose_mob_textures is None:
-            raise FactoryConfigurationError.missing_mob_species(species)
-
-        return choose_mob_textures()
-
 
 def _setup_fighter_archetypes(
     fighter: Fighter, gear_factory: Callable[[FighterArchetype], dict]
@@ -165,7 +132,9 @@ def _setup_fighter_archetypes(
     fighter.set_action_options()
 
 
-def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factory:
+def get_fighter_factory(
+    stats: StatBlock, should_attach_sprites: bool = True
+) -> Factory:
     def _from_conf(fighter_conf: dict, entity: Entity) -> Fighter:
         return Fighter(**fighter_conf).set_owner(owner=entity)
 
@@ -175,17 +144,6 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
             cost=randint(1, 5),
             species=stats.species,
         )
-
-    def _attach_sprites(entity: Entity) -> Entity:
-        sprite_config = select_textures(entity.species, entity.fighter)
-        entity.set_entity_sprite(
-            EntitySprite(
-                idle_textures=sprite_config.idle_textures,
-                attack_textures=sprite_config.attack_textures,
-            )
-        )
-
-        return entity
 
     def factory(name=None, title=None, last_name=None):
         name = name or gen_name(stats.species)
@@ -204,8 +162,8 @@ def get_fighter_factory(stats: StatBlock, attach_sprites: bool = True) -> Factor
         else:
             entity.ai = BasicCombatAi()
 
-        if attach_sprites:
-            entity = _attach_sprites(entity)
+        if should_attach_sprites:
+            entity = attach_sprites(entity)
 
         return entity
 

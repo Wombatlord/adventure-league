@@ -6,7 +6,7 @@ from src.entities.item.items import HealingPotion
 
 if TYPE_CHECKING:
     from src.entities.entity import Entity
-    from src.entities.item.inventory_item import Consumable, InventoryItem
+from src.entities.item.inventory_item import Consumable, InventoryItem
 
 Event = dict[str, Any]
 

@@ -8,6 +8,7 @@ from src.entities.combat.fighter import Fighter
 from src.entities.item.inventory import Inventory
 from src.entities.item.inventory_item import InventoryItem
 from src.entities.properties.locatable import Locatable
+from src.entities.sprite_assignment import Species, attach_sprites
 from src.entities.sprites import EntitySprite
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
@@ -32,12 +33,6 @@ class Name(NamedTuple):
         return self.title is not None
 
 
-class Species:
-    GOBLIN = "goblin"
-    SLIME = "slime"
-    HUMAN = "human"
-
-
 class Entity(yaml.YAMLObject):
     entity_sprite: EntitySprite | None
     fighter: Fighter | None
@@ -54,7 +49,15 @@ class Entity(yaml.YAMLObject):
             "name": Name(**data["name"]),
             "fighter": Fighter.from_dict(data.get("fighter"), owner=instance),
             "inventory": Inventory.from_dict(data.get("inventory"), owner=instance),
+            "is_dead": False,
+            "locatable": None,
+            "item": None,
+            "ai": None,
+            "on_death_hooks": [],
+            "species": Species.HUMAN,
+            "entity_sprite": None,
         }
+        instance = attach_sprites(instance)
 
         return instance
 

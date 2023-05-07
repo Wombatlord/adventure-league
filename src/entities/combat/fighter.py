@@ -65,23 +65,36 @@ class Fighter:
         if data is None:
             return None
         instance = object.__new__(cls)
-        instance.owner = owner
         instance.__dict__ = {
             **data,
+            "owner": owner,
             "health": HealthPool.from_dict(data.get("health")),
             "stats": FighterStats(**data.get("stats")),
             "action_points": ActionPoints.from_dict(data.get("action_points")),
             "equipment": Equipment.from_dict(data.get("equipment"), owner=instance),
-            "encounter_context": EncounterContext(fighter=instance),
+            "_encounter_context": EncounterContext(fighter=instance),
             "on_retreat_hooks": [],
+            "_in_combat": False,
+            "retreating": False,
+            "is_enemy": False,
+            "is_boss": False,
+            "_readied_action": None,
         }
 
         if data.get("caster") is not None:
             instance.__dict__["_caster"] = Caster.from_dict(
                 data=data.get("caster"), owner=instance
             )
+        instance.role = data.get("role")
+        match instance.role:
+            case "MELEE":
+                instance.set_role(FighterArchetype.MELEE)
+            case "RANGED":
+                instance.set_role(FighterArchetype.RANGED)
+            case "CASTER":
+                instance.set_role(FighterArchetype.CASTER)
 
-        instance.set_role(data.get("role"))
+        instance.set_role(instance.role)
         instance.modifiable_stats = ModifiableStats(
             FighterStats, base_stats=instance.stats
         )

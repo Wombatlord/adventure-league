@@ -11,6 +11,7 @@ from arcade.gui import UITextureButton
 from arcade.gui.widgets.text import UILabel
 
 from src.config import font_sizes
+from src.engine.game_state import GameState
 from src.engine.guild import Guild
 from src.engine.init_engine import eng
 from src.engine.persistence.game_state_repository import GameStateRepository
@@ -104,14 +105,24 @@ class HomeView(arcade.View):
 
                 guild_dict = eng.game_state.guild.to_dict()
                 GameStateRepository.save(slot, guild_dict)
-                
+
                 g = Guild.from_dict(guild_dict)
 
                 import pickle
 
                 with open("testing.pikl", "wb+") as file:
                     pickle.dump(guild_dict, file)
-                breakpoint()
+
+            case arcade.key.L:
+                try:
+                    guild_dict = GameStateRepository.load(0)
+                    loaded_guild = Guild.from_dict(guild_dict)
+
+                    eng.game_state.set_guild(loaded_guild)
+                    eng.game_state.set_team()
+
+                except Exception as e:
+                    print(f"{e}")
 
             case arcade.key.G:
                 self.window.show_view(self.parent_factory())

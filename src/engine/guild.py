@@ -37,7 +37,7 @@ class Guild:
     def from_dict(cls, dict):
         scalar = dict.pop("roster_scalar")
         team = dict.pop("team")
-        
+
         g = cls(**dict)
         g.team.name = team["name"]
 
@@ -48,10 +48,11 @@ class Guild:
         for member in team["members"]:
             m = Entity.from_dict(member)
             g.team.assign_to_team(m, from_file=True)
-        
+
         g.roster_scalar = scalar
-        
+
         return g
+
     def to_dict(self) -> dict:
         guild = {}
 
@@ -117,7 +118,7 @@ class Team:
     def get_team(self):
         return self.members
 
-    def assign_to_team(self, entity: Entity, from_file:bool = False):
+    def assign_to_team(self, entity: Entity, from_file: bool = False):
         # Clear out any hooks registered from previous assignment
         entity.on_death_hooks = []
 
