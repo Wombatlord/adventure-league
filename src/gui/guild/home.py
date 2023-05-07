@@ -6,6 +6,7 @@ from typing import Callable, NamedTuple
 import arcade
 import arcade.color
 import arcade.key
+import yaml
 from arcade.gui import UITextureButton
 from arcade.gui.widgets.text import UILabel
 
@@ -103,6 +104,14 @@ class HomeView(arcade.View):
                 ed = eng.game_state.guild.roster[0].to_dict()
                 print(json.dumps(ed, indent=2))
                 e = Entity.from_dict(ed)
+                with open("testing.yaml", "w+") as file:
+                    yaml.dump(ed, file)
+                with open("testing.json", "w+") as file:
+                    json.dump(ed, file)
+                import pickle
+
+                with open("testing.pikl", "wb+") as file:
+                    pickle.dump(ed, file)
                 breakpoint()
 
             case arcade.key.G:

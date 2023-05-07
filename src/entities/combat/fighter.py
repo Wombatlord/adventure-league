@@ -75,8 +75,8 @@ class Fighter:
         }
 
         if data.get("caster") is not None:
-            instance.__dict__["caster"] = Caster.from_dict(
-                data.get("caster"), owner=instance
+            instance.__dict__["_caster"] = Caster.from_dict(
+                data=data.get("caster"), owner=instance
             )
 
         instance.set_role(data.get("role"))

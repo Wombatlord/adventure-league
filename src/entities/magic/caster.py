@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 from src.entities.magic.spells import Spell
 
@@ -15,9 +15,14 @@ class MpPool:
     def to_dict(self):
         return {"max": self.max, "current": self.current}
 
-    def __init__(self, max):
+    @classmethod
+    def from_dict(cls, data) -> Self:
+        breakpoint()
+        return cls(**data["mp_pool"])
+
+    def __init__(self, max, current: int | None = None):
         self._max = max
-        self._current = max
+        self._current = current or max
 
     def spend(self, amount: int):
         self._current -= amount
@@ -52,13 +57,32 @@ class Caster:
     def to_dict(self):
         return {"mp_pool": self.mp_pool.to_dict()}
 
+    @classmethod
+    def from_dict(cls, data, owner) -> Self:
+        breakpoint()
+        mp = MpPool.from_dict(data)
+
+        instance = object.__new__(cls)
+        instance.owner = owner
+        instance.mp_pool = mp
+
+        return instance
+
     def __init__(self, max_mp: int):
         self.owner: Fighter | None = None
-        self.mp_pool = MpPool(max=max_mp)
+        self._mp_pool = MpPool(max=max_mp)
 
     def set_owner(self, owner: Caster) -> Caster:
         self.owner = owner
         return self
+
+    @property
+    def mp_pool(self) -> MpPool:
+        return self._mp_pool
+
+    @mp_pool.setter
+    def mp_pool(self, mp_pool: MpPool):
+        self._mp_pool = mp_pool
 
     @property
     def current_mp(self) -> int:

@@ -35,6 +35,36 @@ class Equipment:
     )
 
     @classmethod
+    def _init_gear_item(cls, item_data, equipment, slot):
+        """
+        Here we instantiate the equippable from the config dicts.
+        As the config is all in dict forms, the affixes will initially be a dict rather than StatAffixes.
+        Build an array of actual StatAffixes based on this config
+        Then clear the affixes and _affixes arrays on both the equippable itself and the EquippableConfig
+        Replace them with the affixes array containing actual StatAffixes build from those dict representations.
+        """
+
+        affixes = []
+        for afx in item_data[slot]["affixes"]:
+            afx["modifier"].pop("stat_class")
+            affixes.append(
+                StatAffix(
+                    name=afx.get("name"),
+                    modifier=Modifier(
+                        FighterStats,
+                        **{k: FighterStats(**v) for k, v in afx["modifier"].items()},
+                    ),
+                )
+            )
+
+        ec = EquippableConfig(
+            **{**item_data.get(slot).get("config"), "affixes": affixes}
+        )
+        equippable = Equippable(equipment, config=ec)
+
+        return equippable
+
+    @classmethod
     def from_dict(cls, data: dict, owner: Fighter) -> Self | None:
         """Here we recreate the equipment of a Fighter.
         First we assign values to the __slots__ so that they exist.
@@ -49,54 +79,12 @@ class Equipment:
         instance.helmet = None
         instance.body = None
 
-        def equips(owner):
-            """
-            Here we instantiate the equippable from the config dicts.
-            As the config is all in dict forms, the affixes will initially be a dict rather than StatAffixes.
-            Build an array of actual StatAffixes based on this config
-            Then clear the affixes and _affixes arrays on both the equippable itself and the EquippableConfig
-            Replace them with the affixes array containing actual StatAffixes build from those dict representations.
-            """
-            nonlocal slot
-            affixes = []
-            for afx in data[slot]["affixes"]:
-                affixes.append(
-                    StatAffix(
-                        name=afx.get("name"),
-                        modifier=Modifier(
-                            FighterStats,
-                            afx["modifier"]["percent"],
-                            afx["modifier"]["percent"],
-                        ),
-                    )
-                )
-
-            ec = EquippableConfig(**data.get(slot).get("config"))
-            equippable = Equippable(owner, config=ec)
-
-            ec.affixes.clear()
-            ec.affixes.extend(affixes)
-            equippable._affixes.clear()
-            equippable._affixes.extend(affixes)
-
-            return equippable
-
         for slot in cls._equippable_slots:
-            # if item := data.get(slot):
-            #     ec = EquippableConfig(**item.get("config"))
-            #     equippable = Equippable(owner, config=ec)
-
-            #     instance.item = equippable
-
-            # breakpoint()
-
-            match data.get(slot).get("slot"):
-                case "weapon":
-                    instance.weapon = equips(instance)
-                case "helmet":
-                    instance.helmet = equips(instance)
-                case "body":
-                    instance.body = equips(instance)
+            setattr(
+                instance,
+                data.get(slot).get("slot"),
+                cls._init_gear_item(data, instance, slot),
+            )
 
         return instance
 

@@ -33,8 +33,8 @@ class Modifier(Generic[_StatType]):
     def to_dict(self) -> dict:
         return {
             "stat_class": self._stat_class.name,
-            "percent": self.percent,
-            "base": self.base,
+            "percent": self.percent._asdict(),
+            "base": self.base._asdict(),
         }
 
     def __init__(
