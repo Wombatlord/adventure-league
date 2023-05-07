@@ -230,7 +230,6 @@ class EquippableConfig(NamedTuple):
             "range": self.range,
             "attacks": self.attacks,
             "spells": self.spells,
-            # "affixes": [affix.to_dict() for affix in self.affixes],
         }
 
 

@@ -35,27 +35,24 @@ class Equipment:
     )
 
     @classmethod
-    def _init_gear_item(cls, item_data, equipment, slot):
+    def _init_gear_item(cls, item_data: dict, equipment: Self, slot: str):
         """
-        Here we instantiate the equippable from the config dicts.
-        As the config is all in dict forms, the affixes will initially be a dict rather than StatAffixes.
-        Build an array of actual StatAffixes based on this config
-        Then clear the affixes and _affixes arrays on both the equippable itself and the EquippableConfig
-        Replace them with the affixes array containing actual StatAffixes build from those dict representations.
+        Hydrates the equippables with their StatAffix modifiers.
+
+        Args:
+            item_data (dict): dict representation of the equippable and affixes
+            equipment (Equipment): the equipment which will contain this equippable
+            slot (str): the str indicating which slot the item can be equipped in
+
+        Returns:
+            Equippable: equippable with deserialised StatAffixes
         """
 
         affixes = []
-        breakpoint()
         for afx in item_data[slot]["affixes"]:
             afx["modifier"].pop("stat_class")
             affixes.append(
-                StatAffix(
-                    name=afx.get("name"),
-                    modifier=Modifier(
-                        FighterStats,
-                        **{k: FighterStats(**v) for k, v in afx["modifier"].items()},
-                    ),
-                )
+                StatAffix.from_dict(afx),
             )
 
         ec = EquippableConfig(
@@ -67,11 +64,18 @@ class Equipment:
 
     @classmethod
     def from_dict(cls, data: dict, owner: Fighter) -> Self | None:
-        """Here we recreate the equipment of a Fighter.
-        First we assign values to the __slots__ so that they exist.
-        We use a closure to instantiate the equippable and prepare the affixes.
-        Then assign the equippable to an equipment slot.
-        We call equip_item outside this scope to warmup the caches.
+        """
+        Hydrates an equipment instance with the data dict and attaches the owner.
+        Assign slots first so that they exist, then hydrate each equippable from the data dict.
+        Equipment.equip_item() should be called on the equippables after the owner has ModifiableStats
+        to ensure attack / spell caches are prepared.
+
+        Args:
+            data (dict): dict representation of equipment and contained equippables.
+            owner (Fighter): owner of this equipment instance.
+
+        Returns:
+            Self | None: Equipment containing hydrated equippables.
         """
         instance = object.__new__(cls)
 

@@ -88,6 +88,14 @@ class StatAffix(NamedTuple):
     name: str
     modifier: Modifier[FighterStats]
 
+    @classmethod
+    def from_dict(cls, affix_dict):
+        modifier=Modifier(
+            FighterStats,
+            **{k: FighterStats(**v) for k, v in affix_dict["modifier"].items()},
+        )
+        return cls(affix_dict["name"], modifier)
+    
     def to_dict(self):
         return {"name": self.name, "modifier": self.modifier.to_dict()}
 
