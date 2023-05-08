@@ -18,24 +18,6 @@ class Inventory:
             "items": [item.to_dict() for item in self.items],
         }
 
-    @classmethod
-    def from_dict(cls, data, owner) -> Self:
-        inv = object.__new__(cls)
-        inv.owner = owner
-
-        items = [*data["items"]]
-        for item in items:
-            match item["name"]:
-                case "healing potion":
-                    item = HealingPotion.from_dict(owner)
-                    item.on_add_to_inventory(inv)
-
-        items = [item]
-        inv.items = items
-        inv.capacity = data["capacity"]
-
-        return inv
-
     def __init__(self, owner: Entity, capacity: int = 0) -> None:
         self.owner = owner
         self._capacity = capacity

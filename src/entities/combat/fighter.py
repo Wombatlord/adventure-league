@@ -60,52 +60,6 @@ class Fighter:
     modifiable_stats: ModifiableStats
     _caster: Caster | None
 
-    @classmethod
-    def from_dict(cls, data: dict | None, owner: Entity) -> Self | None:
-        if data is None:
-            return None
-        instance = object.__new__(cls)
-        instance.__dict__ = {
-            **data,
-            "owner": owner,
-            "health": HealthPool.from_dict(data.get("health")),
-            "stats": FighterStats(**data.get("stats")),
-            "action_points": ActionPoints.from_dict(data.get("action_points")),
-            "equipment": Equipment.from_dict(data.get("equipment"), owner=instance),
-            "_encounter_context": EncounterContext(fighter=instance),
-            "on_retreat_hooks": [],
-            "_in_combat": False,
-            "retreating": False,
-            "is_enemy": False,
-            "is_boss": False,
-            "_readied_action": None,
-        }
-
-        if data.get("_caster") is not None:
-            caster = Caster.from_dict(data=data.get("_caster"), owner=instance)
-            instance.__dict__["_caster"] = caster
-
-        instance.role = data.get("role")
-        match instance.role:
-            case "MELEE":
-                instance.set_role(FighterArchetype.MELEE)
-            case "RANGED":
-                instance.set_role(FighterArchetype.RANGED)
-            case "CASTER":
-                instance.set_role(FighterArchetype.CASTER)
-
-        instance.set_role(instance.role)
-        instance.modifiable_stats = ModifiableStats(
-            FighterStats, base_stats=instance.stats
-        )
-
-        # Warmup the caches. We do it here because this is when the Fighter has ModifiableStats
-        instance.equipment.equip_item(instance.equipment.weapon)
-        instance.equipment.equip_item(instance.equipment.helmet)
-        instance.equipment.equip_item(instance.equipment.body)
-
-        return instance
-
     def to_dict(self) -> dict:
         return {
             "role": self.role.name,
@@ -113,12 +67,12 @@ class Fighter:
             "stats": self.stats._asdict(),
             "action_points": self.action_points.to_dict(),
             "equipment": self.equipment.to_dict(),
-            "_caster": self.caster.to_dict() if self.caster else None,
+            "caster": self.caster.to_dict() if self.caster else None,
         }
 
     def __init__(
         self,
-        role: FighterArchetype,
+        role: FighterArchetype = FighterArchetype.MELEE,
         hp: int = 0,
         defence: int = 0,
         power: int = 0,

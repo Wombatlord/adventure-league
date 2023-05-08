@@ -48,43 +48,15 @@ class Equippable(EquippableABC):
     _name: str
     _range: int
     _attack_verb: str
-    _attack_names: list[str]
-    _spell_names: list[str]
+    _attacks: list[str]
+    _spells: list[str]
     _affixes: list[StatAffix]
     _available_attacks_cache: list[WeaponAttackMeta]
     _available_spells_cache: list[Spell]
 
-    @classmethod
-    def from_dict(cls, data: dict) -> Self:
-        mods = []
-        for affix in data.get("affixes"):
-            if affix.get("modifier").get("stat_class") == "FighterStats":
-                percent = [*affix["modifier"]["percent"]]
-                base = [*affix["modifier"]["base"]]
-
-                mods.append(
-                    Modifier(
-                        FighterStats,
-                        percent=FighterStats(*percent),
-                        base=FighterStats(*base),
-                    )
-                )
-        breakpoint()
-        data["affixes"] = mods
-        instance = object.__new__(cls)
-        instance.__dict__ = data
-        return instance
-
     def to_dict(self) -> dict:
         return {
             "config": self._config.to_dict(),
-            "slot": self.slot,
-            "name": self.name,
-            "range": self.range,
-            "attack_verb": self.attack_verb,
-            "attack_names": [*self._attack_names] if self._attack_names else None,
-            "spell_names": [*self._spell_names] if self._spell_names else None,
-            "affixes": [affix.to_dict() for affix in self._affixes],
         }
 
     def __init__(
@@ -96,8 +68,8 @@ class Equippable(EquippableABC):
         self._name = config.name
         self._range = config.range
         self._attack_verb = config.attack_verb
-        self._attack_names = config.attacks
-        self._spell_names = config.spells
+        self._attacks = config.attacks
+        self._spells = config.spells
         self._affixes = config.affixes
         self._available_attacks_cache = []
         self._available_spells_cache = []
@@ -129,14 +101,14 @@ class Equippable(EquippableABC):
     def _atk_cache_warmup(self):
         self._available_attacks_cache = (
             [attack(self._owner) for attack in self._prepare_attacks()]
-            if self._attack_names
+            if self._attacks
             else []
         )
 
     def _spell_cache_warmup(self):
         self._available_spells_cache = (
             [spell(self._owner.caster) for spell in self._prepare_spells()]
-            if self._spell_names
+            if self._spells
             else []
         )
 
@@ -150,7 +122,7 @@ class Equippable(EquippableABC):
 
     def _prepare_attacks(self) -> list[WeaponAttackMeta]:
         prepared = []
-        for attack in self._attack_names:
+        for attack in self._attacks:
             if attack in MetaCompendium.all_registered_attacks():
                 prepared.append(MetaCompendium.all_attacks[attack])
 
@@ -159,7 +131,7 @@ class Equippable(EquippableABC):
     def _prepare_spells(self) -> list[SpellMeta]:
         prepared = []
 
-        for spell in self._spell_names:
+        for spell in self._spells:
             if spell in MetaCompendium.all_registered_spells():
                 prepared.append(MetaCompendium.all_spells[spell])
 
@@ -230,6 +202,9 @@ class EquippableConfig(NamedTuple):
             "range": self.range,
             "attacks": self.attacks,
             "spells": self.spells,
+            "affixes": [affix.to_dict() for affix in self.affixes]
+            if self.affixes
+            else [],
         }
 
 

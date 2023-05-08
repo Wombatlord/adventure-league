@@ -34,65 +34,6 @@ class Equipment:
         *_equippable_slots,
     )
 
-    @classmethod
-    def _init_gear_item(cls, item_data: dict, equipment: Self, slot: str):
-        """
-        Hydrates the equippables with their StatAffix modifiers.
-
-        Args:
-            item_data (dict): dict representation of the equippable and affixes
-            equipment (Equipment): the equipment which will contain this equippable
-            slot (str): the str indicating which slot the item can be equipped in
-
-        Returns:
-            Equippable: equippable with deserialised StatAffixes
-        """
-
-        affixes = []
-        for afx in item_data[slot]["affixes"]:
-            afx["modifier"].pop("stat_class")
-            affixes.append(
-                StatAffix.from_dict(afx),
-            )
-
-        ec = EquippableConfig(
-            **{**item_data.get(slot).get("config"), "affixes": affixes}
-        )
-        equippable = Equippable(equipment, config=ec)
-
-        return equippable
-
-    @classmethod
-    def from_dict(cls, data: dict, owner: Fighter) -> Self | None:
-        """
-        Hydrates an equipment instance with the data dict and attaches the owner.
-        Assign slots first so that they exist, then hydrate each equippable from the data dict.
-        Equipment.equip_item() should be called on the equippables after the owner has ModifiableStats
-        to ensure attack / spell caches are prepared.
-
-        Args:
-            data (dict): dict representation of equipment and contained equippables.
-            owner (Fighter): owner of this equipment instance.
-
-        Returns:
-            Self | None: Equipment containing hydrated equippables.
-        """
-        instance = object.__new__(cls)
-
-        instance.owner = owner
-        instance.weapon = None
-        instance.helmet = None
-        instance.body = None
-
-        for slot in cls._equippable_slots:
-            setattr(
-                instance,
-                data.get(slot).get("slot"),
-                cls._init_gear_item(data, instance, slot),
-            )
-
-        return instance
-
     def to_dict(self) -> dict:
         return {
             "weapon": self.weapon.to_dict() if self.weapon else None,

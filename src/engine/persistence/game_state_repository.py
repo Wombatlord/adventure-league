@@ -5,6 +5,7 @@ from yaml import Loader, dump, load
 from src.config import SAVE_FILE_DIRECTORY
 from src.engine.guild import Guild
 from src.engine.init_engine import eng
+from src.engine.persistence.loaders import GameStateLoaders
 
 
 class GameStateRepository:
@@ -54,6 +55,5 @@ class GameStateRepository:
         with open(path, "rb") as save_file:
             state = pickle.load(save_file)
 
-        state = Guild.from_dict(state)
-
+        state = GameStateLoaders.guild_from_dict(state)
         return state

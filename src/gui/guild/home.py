@@ -107,13 +107,13 @@ class HomeView(arcade.View):
                 GameStateRepository.save_pikl(slot, guild_dict)
 
             case arcade.key.L:
-                try:
-                    guild = GameStateRepository.load_pikl(0)
-                    eng.game_state.set_guild(guild)
-                    eng.game_state.set_team()
+                # try:
+                guild = GameStateRepository.load_pikl(0)
+                eng.game_state.set_guild(guild)
+                eng.game_state.set_team()
 
-                except Exception as error:
-                    print(f"Loading Failed: {error}")
+            # except Exception as error:
+            # print(f"Loading Failed: {error}")
 
             case arcade.key.G:
                 self.window.show_view(self.parent_factory())

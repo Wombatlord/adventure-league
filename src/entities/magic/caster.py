@@ -15,10 +15,6 @@ class MpPool:
     def to_dict(self):
         return {"max": self.max, "current": self.current}
 
-    @classmethod
-    def from_dict(cls, data) -> Self:
-        return cls(**data["mp_pool"])
-
     def __init__(self, max, current: int | None = None):
         self._max = max
         self._current = current or max
@@ -55,16 +51,6 @@ class MpPool:
 class Caster:
     def to_dict(self):
         return {"mp_pool": self.mp_pool.to_dict()}
-
-    @classmethod
-    def from_dict(cls, data, owner) -> Self:
-        mp = MpPool.from_dict(data)
-
-        instance = object.__new__(cls)
-        instance.owner = owner
-        instance.mp_pool = mp
-
-        return instance
 
     def __init__(self, max_mp: int):
         self.owner: Fighter | None = None

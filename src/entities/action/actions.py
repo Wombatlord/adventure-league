@@ -15,10 +15,6 @@ Event = dict[str, Any]
 
 
 class ActionPoints:
-    @classmethod
-    def from_dict(cls, data: dict) -> Self | None:
-        return cls(data.get("per_turn"))
-
     def to_dict(self) -> dict:
         return {"per_turn": self.per_turn}
 

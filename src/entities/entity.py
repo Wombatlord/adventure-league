@@ -39,28 +39,6 @@ class Entity(yaml.YAMLObject):
     inventory: Inventory | None
     ai: AiInterface | None
 
-    @classmethod
-    def from_dict(cls, data: dict | None) -> Self | None:
-        if data is None:
-            return None
-        instance = object.__new__(cls)
-        instance.__dict__ = {
-            **data,
-            "name": Name(**data["name"]),
-            "fighter": Fighter.from_dict(data.get("fighter"), owner=instance),
-            "inventory": Inventory.from_dict(data.get("inventory"), owner=instance),
-            "is_dead": False,
-            "locatable": None,
-            "item": None,
-            "ai": None,
-            "on_death_hooks": [],
-            "species": Species.HUMAN,
-            "entity_sprite": None,
-        }
-        instance = attach_sprites(instance)
-
-        return instance
-
     def to_dict(self):
         return {
             "entity_id": self.entity_id,
