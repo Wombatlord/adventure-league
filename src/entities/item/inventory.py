@@ -20,15 +20,17 @@ class Inventory:
 
     @classmethod
     def from_dict(cls, data, owner) -> Self:
+        inv = object.__new__(cls)
+        inv.owner = owner
+        
         items = [*data["items"]]
         for item in items:
             match item["name"]:
                 case "healing potion":
                     item = HealingPotion.from_dict(owner)
+                    item.on_add_to_inventory(inv)
 
         items = [item]
-        inv = object.__new__(cls)
-        inv.owner = owner
         inv.items = items
         inv.capacity = data["capacity"]
 

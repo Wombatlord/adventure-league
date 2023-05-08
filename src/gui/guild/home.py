@@ -102,27 +102,18 @@ class HomeView(arcade.View):
         match symbol:
             case arcade.key.S:
                 slot = 0
-
                 guild_dict = eng.game_state.guild.to_dict()
-                GameStateRepository.save(slot, guild_dict)
-
-                g = Guild.from_dict(guild_dict)
-
-                import pickle
-
-                with open("testing.pikl", "wb+") as file:
-                    pickle.dump(guild_dict, file)
+                GameStateRepository.save_yaml(slot, guild_dict)
+                GameStateRepository.save_pikl(slot, guild_dict)
 
             case arcade.key.L:
                 try:
-                    guild_dict = GameStateRepository.load(0)
-                    loaded_guild = Guild.from_dict(guild_dict)
-
-                    eng.game_state.set_guild(loaded_guild)
+                    guild = GameStateRepository.load_pikl(0)
+                    eng.game_state.set_guild(guild)
                     eng.game_state.set_team()
 
-                except Exception as e:
-                    print(f"{e}")
+                except Exception as error:
+                    print(f"Loading Failed: {error}")
 
             case arcade.key.G:
                 self.window.show_view(self.parent_factory())

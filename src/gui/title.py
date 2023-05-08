@@ -139,7 +139,7 @@ class TitleView(arcade.View):
                 self.window.show_view(g)
 
             case arcade.key.L:
-                eng.game_state.guild = GameStateRepository.load(0)
+                eng.game_state.guild = GameStateRepository.load_yaml(0)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)

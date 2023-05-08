@@ -23,7 +23,8 @@ class HealingPotion(Exhaustable, Consumable, Throwable):
 
     @classmethod
     def from_dict(cls, owner):
-        return cls(owner)
+        pot = cls(owner)
+        return pot
 
     def to_dict(self) -> dict:
         return {
