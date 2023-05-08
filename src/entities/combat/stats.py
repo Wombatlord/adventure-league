@@ -7,9 +7,6 @@ from src.entities.combat.modifiable_stats import Modifier, namedtuple_add
 
 
 class HealthPool:
-    def to_dict(self):
-        return {"max": self.max_hp, "current": self.current, "bonus": self.bonus}
-
     def __init__(self, max: int, current: int = None, bonus: int = 0) -> None:
         self._max_hp = max
         self._current_hp = current or max
@@ -83,9 +80,6 @@ class EquippableStats(NamedTuple):
 class StatAffix(NamedTuple):
     name: str
     modifier: Modifier[FighterStats]
-
-    def to_dict(self):
-        return {"name": self.name, "modifier": self.modifier.to_dict()}
 
 
 modifiers = {

@@ -15,9 +15,6 @@ Event = dict[str, Any]
 
 
 class ActionPoints:
-    def to_dict(self) -> dict:
-        return {"per_turn": self.per_turn}
-
     def __init__(self, per_turn=2):
         self.per_turn = per_turn
         self.current = self.per_turn

@@ -26,17 +26,6 @@ class Modifier(Generic[_StatType]):
     _percent: _StatType
     _base: _StatType
 
-    @classmethod
-    def from_dict(cls, data) -> Self:
-        pass
-
-    def to_dict(self) -> dict:
-        return {
-            "stat_class": self._stat_class.name,
-            "percent": self.percent._asdict(),
-            "base": self.base._asdict(),
-        }
-
     def __init__(
         self,
         stat_class: type[_StatType],

@@ -54,11 +54,6 @@ class Equippable(EquippableABC):
     _available_attacks_cache: list[WeaponAttackMeta]
     _available_spells_cache: list[Spell]
 
-    def to_dict(self) -> dict:
-        return {
-            "config": self._config.to_dict(),
-        }
-
     def __init__(
         self, owner: Fighter | None, config: EquippableConfig | None = None
     ) -> None:
@@ -193,19 +188,6 @@ class EquippableConfig(NamedTuple):
     attacks: list[str] | None = None
     spells: list[str] | None = None
     affixes: list = []
-
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "slot": self.slot,
-            "attack_verb": self.attack_verb,
-            "range": self.range,
-            "attacks": self.attacks,
-            "spells": self.spells,
-            "affixes": [affix.to_dict() for affix in self.affixes]
-            if self.affixes
-            else [],
-        }
 
 
 # Example Configs

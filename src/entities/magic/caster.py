@@ -12,9 +12,6 @@ Event = dict[str, Any]
 
 
 class MpPool:
-    def to_dict(self):
-        return {"max": self.max, "current": self.current}
-
     def __init__(self, max, current: int | None = None):
         self._max = max
         self._current = current or max
@@ -49,9 +46,6 @@ class MpPool:
 
 
 class Caster:
-    def to_dict(self):
-        return {"mp_pool": self.mp_pool.to_dict()}
-
     def __init__(self, max_mp: int):
         self.owner: Fighter | None = None
         self._mp_pool = MpPool(max=max_mp)
