@@ -15,7 +15,7 @@ class Inventory:
     def to_dict(self) -> dict:
         return {
             "capacity": self.capacity,
-            "items": [item.to_dict() for item in self.items],
+            "items": [item.to_dict() if item else None for item in self.items],
         }
 
     def __init__(self, owner: Entity, capacity: int = 0) -> None:

@@ -57,6 +57,7 @@ class Fighter:
     _readied_action: BaseAction | None
     _encounter_context: EncounterContext
     health: HealthPool
+    equipment: Equipment
     modifiable_stats: ModifiableStats
     _caster: Caster | None
 

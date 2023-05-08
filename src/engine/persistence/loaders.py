@@ -15,15 +15,15 @@ from src.entities.sprite_assignment import Species, attach_sprites
 
 class GameStateLoaders:
     @classmethod
-    def guild_from_dict(cls, dict):
-        scalar = dict.pop("roster_scalar")
-        team = dict.pop("team")
+    def guild_from_dict(cls, serialised_guild: dict) -> Guild:
+        scalar = serialised_guild.pop("roster_scalar")
+        team = serialised_guild.pop("team")
 
-        g = Guild(**dict)
+        g = Guild(**serialised_guild)
         g.team.name = team["name"]
 
         entities = []
-        for e in dict["roster"]:
+        for e in serialised_guild["roster"]:
             entities.append(cls.entity_from_dict(e))
         g.roster = entities
         for member in team["members"]:
@@ -127,15 +127,18 @@ class GameStateLoaders:
     def inventory_from_dict(cls, data, owner) -> Inventory:
         inv = object.__new__(Inventory)
         inv.owner = owner
-
-        items = [*data["items"]]
-        for item in items:
+        items = []
+        
+        for item in data["items"]:
+            if not item:
+                items.append(None)
+                continue
+            
             match item["name"]:
                 case "healing potion":
                     item = HealingPotion.from_dict(owner)
                     item.on_add_to_inventory(inv)
 
-        items = [item]
         inv.items = items
         inv.capacity = data["capacity"]
 

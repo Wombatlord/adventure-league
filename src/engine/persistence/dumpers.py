@@ -3,19 +3,18 @@ from src.engine.init_engine import eng
 
 class GameStateDumpers:
     @classmethod
-    def guild_to_dict(cls) -> dict:
-        state = eng.game_state.guild
-        guild = {}
+    def guild_to_dict(cls, guild) -> dict:
+        guild_dict = {}
+        
+        guild_dict["name"] = guild.name
+        guild_dict["xp"] = guild.xp
+        guild_dict["funds"] = guild.funds
+        guild_dict["roster_limit"] = guild.roster_limit
+        guild_dict["roster"] = [cls.entity_to_dict(entity) for entity in guild.roster]
+        guild_dict["roster_scalar"] = guild.roster_scalar
+        guild_dict["team"] = cls.team_to_dict(guild.team)
 
-        guild["name"] = state.name
-        guild["xp"] = state.xp
-        guild["funds"] = state.funds
-        guild["roster_limit"] = state.roster_limit
-        guild["roster"] = [cls.entity_to_dict(entity) for entity in state.roster]
-        guild["roster_scalar"] = state.roster_scalar
-        guild["team"] = cls.team_to_dict(state.team)
-
-        return guild
+        return guild_dict
 
     @classmethod
     def entity_to_dict(cls, entity):
