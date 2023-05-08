@@ -185,7 +185,7 @@ class GameStateLoaders:
             "_affixes": mods,
             "_available_attack_cache": [],
             "_available_spell_cache": [],
-            "_config": EquippableConfig(**data["config"]),
+            "_config": EquippableConfig(**{**data["config"], "affixes": mods}),
         }
 
         return instance
