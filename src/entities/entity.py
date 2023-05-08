@@ -63,8 +63,9 @@ class Entity(yaml.YAMLObject):
 
     def to_dict(self):
         return {
-            "entity_id": self.id,
+            "entity_id": self.entity_id,
             "name": self.name._asdict(),
+            "cost": self.cost,
             "fighter": self.fighter.to_dict(),
             "inventory": self.inventory.to_dict(),
             "species": self.species,
@@ -82,7 +83,7 @@ class Entity(yaml.YAMLObject):
         species: str = Species.HUMAN,
         ai: AiInterface | None = None,
     ) -> None:
-        self.id = uuid4().hex[:10].upper()
+        self.entity_id = uuid4().hex[:10].upper()
         self.name = name
         self.cost = cost
         self.inventory = inventory

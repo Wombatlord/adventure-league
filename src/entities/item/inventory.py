@@ -22,7 +22,7 @@ class Inventory:
     def from_dict(cls, data, owner) -> Self:
         inv = object.__new__(cls)
         inv.owner = owner
-        
+
         items = [*data["items"]]
         for item in items:
             match item["name"]:

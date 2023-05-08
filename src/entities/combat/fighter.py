@@ -81,10 +81,10 @@ class Fighter:
             "_readied_action": None,
         }
 
-        if data.get("caster") is not None:
-            instance.__dict__["_caster"] = Caster.from_dict(
-                data=data.get("caster"), owner=instance
-            )
+        if data.get("_caster") is not None:
+            caster = Caster.from_dict(data=data.get("_caster"), owner=instance)
+            instance.__dict__["_caster"] = caster
+
         instance.role = data.get("role")
         match instance.role:
             case "MELEE":
@@ -113,7 +113,7 @@ class Fighter:
             "stats": self.stats._asdict(),
             "action_points": self.action_points.to_dict(),
             "equipment": self.equipment.to_dict(),
-            "caster": self.caster.to_dict() if self.caster else None,
+            "_caster": self.caster.to_dict() if self.caster else None,
         }
 
     def __init__(
@@ -141,8 +141,7 @@ class Fighter:
         self.set_role(role)
         # -----State-----
         self.action_points = ActionPoints()
-        self._caster = None
-        self.caster = caster
+        self._caster = caster
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
