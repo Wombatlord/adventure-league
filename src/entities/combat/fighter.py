@@ -60,16 +60,6 @@ class Fighter:
     modifiable_stats: ModifiableStats
     _caster: Caster | None
 
-    def to_dict(self) -> dict:
-        return {
-            "role": self.role.name,
-            "health": self.health.to_dict(),
-            "stats": self.stats._asdict(),
-            "action_points": self.action_points.to_dict(),
-            "equipment": self.equipment.to_dict(),
-            "caster": self.caster.to_dict() if self.caster else None,
-        }
-
     def __init__(
         self,
         role: FighterArchetype = FighterArchetype.MELEE,

@@ -14,6 +14,7 @@ from src.config import font_sizes
 from src.engine.game_state import GameState
 from src.engine.guild import Guild
 from src.engine.init_engine import eng
+from src.engine.persistence.dumpers import GameStateDumpers
 from src.engine.persistence.game_state_repository import GameStateRepository
 from src.entities.entity import Entity
 from src.gui.components.buttons import nav_button, update_button
@@ -102,7 +103,8 @@ class HomeView(arcade.View):
         match symbol:
             case arcade.key.S:
                 slot = 0
-                guild_dict = eng.game_state.guild.to_dict()
+                # guild_dict = eng.game_state.guild.to_dict()
+                guild_dict = GameStateDumpers.guild_to_dict()
                 GameStateRepository.save_yaml(slot, guild_dict)
                 GameStateRepository.save_pikl(slot, guild_dict)
 

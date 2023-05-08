@@ -87,14 +87,6 @@ class Team:
         else:
             self.name = name
 
-    def to_dict(self) -> dict:
-        team = {}
-
-        team["name"] = self.name
-        team["members"] = [member.to_dict() for member in self.members]
-
-        return team
-
     def get_team(self):
         return self.members
 

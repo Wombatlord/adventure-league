@@ -1,8 +1,6 @@
 from typing import Any, Generator, NamedTuple, Optional, Self
 from uuid import uuid4
 
-import yaml
-
 from src.entities.ai.ai import AiInterface
 from src.entities.combat.fighter import Fighter
 from src.entities.item.inventory import Inventory
@@ -33,7 +31,7 @@ class Name(NamedTuple):
         return self.title is not None
 
 
-class Entity(yaml.YAMLObject):
+class Entity:
     entity_sprite: EntitySprite | None
     fighter: Fighter | None
     inventory: Inventory | None
