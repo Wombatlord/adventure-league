@@ -8,12 +8,6 @@ _eng: Engine | None = None
 def _bootstrap():
     global _eng
     _eng = Engine()
-    _eng.setup()
-
-    # Get some entities in the guild
-    _eng.recruit_entity_to_guild(0)
-    _eng.recruit_entity_to_guild(0)
-    _eng.recruit_entity_to_guild(0)
 
 
 def _get_eng() -> Engine:

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from typing import Callable
+
 import arcade
 import arcade.color
 import arcade.key
 from arcade import Window
+from arcade.gui import UIEvent
 
 from src.engine.init_engine import eng
-from src.engine.persistence.game_state_repository import GameStateRepository
+from src.engine.persistence.game_state_repository import GuildRepository
 from src.gui.animation import harmonic
 from src.gui.components.buttons import get_nav_handler
 from src.gui.components.menu import LeafMenuNode, Menu, SubMenuNode
@@ -40,31 +43,31 @@ class TitleView(arcade.View):
             self.sprite_list.append(sprite)
 
         self.time = 0
-        navigate_to_guild = get_nav_handler(HomeView(parent_factory=TitleView))
+
+        slot2str = (
+            lambda slot: f"{slot.get('name', 'Empty')}|{slot.get('timestamp', '')}"
+        )
+        load_menu = SubMenuNode(
+            "Load",
+            [
+                LeafMenuNode(slot2str(item), self.load_callback(item["slot"]))
+                for item in eng.get_save_slot_metadata()
+                if item.get("timestamp")
+            ],
+        )
+
+        save_menu = SubMenuNode(
+            "Save",
+            [
+                LeafMenuNode(slot2str(item), self.save_callback(item["slot"]))
+                for item in eng.get_save_slot_metadata()
+            ],
+        )
+
         self.menu_options = [
-            LeafMenuNode("Start", navigate_to_guild),
-            SubMenuNode(
-                "first",
-                sub_menu=[
-                    LeafMenuNode("x", lambda: print("a")),
-                    LeafMenuNode("y", lambda: print("b")),
-                    LeafMenuNode("z", lambda: print("c")),
-                ],
-            ),
-            SubMenuNode(
-                "second",
-                sub_menu=[
-                    LeafMenuNode("a", lambda: None),
-                    LeafMenuNode("1", lambda: print("1")),
-                    LeafMenuNode("2", lambda: print("2")),
-                    SubMenuNode(
-                        "3",
-                        sub_menu=[
-                            LeafMenuNode("4", lambda: print("4")),
-                        ],
-                    ),
-                ],
-            ),
+            LeafMenuNode("Start", self.start_new_game),
+            load_menu,
+            save_menu,
             LeafMenuNode("Quit", arcade.exit, closes_menu=True),
         ]
         self.menu = Menu(
@@ -73,6 +76,24 @@ class TitleView(arcade.View):
             area=(450, 50 * len(self.menu_options)),
         )
         self.menu.enable()
+
+    def save_callback(self, slot) -> Callable[[], None]:
+        def _save():
+            eng.save_to_slot(slot)
+            arcade.get_window().show_view(TitleView())
+
+        return _save
+
+    def load_callback(self, slot) -> Callable[[], None]:
+        def _load():
+            eng.load_save_slot(slot)
+            get_nav_handler(HomeView(parent_factory=TitleView))(UIEvent(source=self))
+
+        return _load
+
+    def start_new_game(self, *_):
+        eng.new_game()
+        get_nav_handler(HomeView(parent_factory=TitleView))(*_)
 
     def on_update(self, delta_time: float):
         self.update_angle(delta_time)
@@ -135,11 +156,7 @@ class TitleView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int):
         match symbol:
             case arcade.key.G | arcade.key.ENTER:
-                g = HomeView(parent_factory=TitleView)
-                self.window.show_view(g)
-
-            case arcade.key.L:
-                eng.game_state.guild = GameStateRepository.load_yaml(0)
+                self.start_new_game()
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)

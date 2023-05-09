@@ -18,13 +18,16 @@ from src.world.level.dungeon import Dungeon
 
 
 class GameState:
-    guild: Optional[Guild] = None
+    _guild: Optional[Guild] = None
     team: Optional[Team] = None
     entity_pool: Optional[RecruitmentPool] = None
     dungeon: Optional[Dungeon] = None
     mission_board: Optional[MissionBoard] = None
 
     def __init__(self, eng: Engine):
+        mission_board = MissionBoard(size=3)
+        mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
+        self.set_mission_board(mission_board)
         self.occupancy_handler = SpaceOccupancyHandler(eng)
         self.combat_ai_handler = CombatAISubscriber(eng)
 
@@ -52,6 +55,15 @@ class GameState:
 
     def get_mission_board(self):
         return self.mission_board
+
+    @property
+    def guild(self) -> Guild:
+        return self._guild
+
+    @guild.setter
+    def guild(self, value: Guild):
+        self._guild = value
+        self.team = value.team
 
     def set_guild(self, guild):
         self.guild = guild

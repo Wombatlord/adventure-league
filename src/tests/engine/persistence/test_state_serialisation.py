@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from src.engine.persistence.dumpers import GameStateDumpers
-from src.engine.persistence.game_state_repository import Format, GameStateRepository
+from src.engine.persistence.game_state_repository import Format, GuildRepository
 from src.engine.persistence.loaders import GameStateLoaders
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.modifiable_stats import Modifier
@@ -38,8 +38,8 @@ class SerialisationTest(TestCase):
         self._is_set_up = True
 
         if create_save_file:
-            GameStateRepository.save(
-                slot=0, fmts=self.formats, guild_to_serialise=self.guild, testing=True
+            GuildRepository.save(
+                slot=0, guild_to_serialise=self.guild, fmts=self.formats, testing=True
             )
 
     def test_rehydrated_fighter_in_roster_has_properly_rehydrated_equipment(self):

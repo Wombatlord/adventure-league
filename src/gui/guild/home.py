@@ -16,7 +16,7 @@ from src.engine.game_state import GameState
 from src.engine.guild import Guild
 from src.engine.init_engine import eng
 from src.engine.persistence.dumpers import GameStateDumpers
-from src.engine.persistence.game_state_repository import Format, GameStateRepository
+from src.engine.persistence.game_state_repository import Format, GuildRepository
 from src.entities.entity import Entity
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.generic_sections.command_bar import CommandBarSection
@@ -106,18 +106,16 @@ class HomeView(arcade.View):
                 slot = 0
                 if config.DEBUG:
                     formats = (Format.PICKLE, Format.YAML)
-                    GameStateRepository.save(
+                    GuildRepository.save(
                         slot, fmts=formats, guild_to_serialise=eng.game_state.guild
                     )
 
                 else:
-                    GameStateRepository.save(
-                        slot, guild_to_serialise=eng.game_state.guild
-                    )
+                    GuildRepository.save(slot, guild_to_serialise=eng.game_state.guild)
 
             case arcade.key.L:
                 slot = 0
-                guild = GameStateRepository.load(slot)
+                guild = GuildRepository.load(slot)
                 eng.game_state.set_guild(guild)
                 eng.game_state.set_team()
 
