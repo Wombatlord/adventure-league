@@ -33,16 +33,16 @@ class Guild:
         if self.team:
             self.team.owner = self
 
-    def get_dict(self) -> dict:
+    def to_dict(self) -> dict:
         guild = {}
 
         guild["name"] = self.name
-        guild["level"] = self.level
+        guild["xp"] = self.xp
         guild["funds"] = self.funds
         guild["roster_limit"] = self.roster_limit
-        guild["roster"] = self.roster
+        guild["roster"] = [entity.to_dict() for entity in self.roster]
         guild["roster_scalar"] = self.roster_scalar
-        guild["team"] = self.team.get_dict()
+        guild["team"] = self.team.to_dict()
 
         return guild
 
@@ -87,18 +87,10 @@ class Team:
         else:
             self.name = name
 
-    def get_dict(self) -> dict:
-        team = {}
-
-        team["name"] = self.name
-        team["members"] = self.members
-
-        return team
-
     def get_team(self):
         return self.members
 
-    def assign_to_team(self, entity: Entity):
+    def assign_to_team(self, entity: Entity, from_file: bool = False):
         # Clear out any hooks registered from previous assignment
         entity.on_death_hooks = []
 
@@ -106,7 +98,8 @@ class Team:
         entity.fighter.on_retreat_hooks.append(
             lambda f: self.move_fighter_to_roster(f.owner)
         )
-        self.owner.roster.remove(entity)
+        if not from_file:
+            self.owner.roster.remove(entity)
         entity.fighter.retreating = False
         self.members.append(entity)
 

@@ -1,8 +1,12 @@
-from typing import Any, NamedTuple, Optional, Self
+from typing import Any, Generator, NamedTuple, Optional, Self, Sequence
+from uuid import uuid4
 
 from src.entities.ai.ai import AiInterface
-from src.entities.item.inventory import Inventory, InventoryItem
+from src.entities.combat.fighter import Fighter
+from src.entities.item.inventory import Inventory
+from src.entities.item.inventory_item import InventoryItem
 from src.entities.properties.locatable import Locatable
+from src.entities.sprite_assignment import Species, attach_sprites
 from src.entities.sprites import EntitySprite
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
@@ -27,16 +31,21 @@ class Name(NamedTuple):
         return self.title is not None
 
 
-class Species:
-    GOBLIN = "goblin"
-    SLIME = "slime"
-    HUMAN = "human"
-
-
 class Entity:
     entity_sprite: EntitySprite | None
+    fighter: Fighter | None
     inventory: Inventory | None
     ai: AiInterface | None
+
+    def to_dict(self):
+        return {
+            "entity_id": self.entity_id,
+            "name": self.name._asdict(),
+            "cost": self.cost,
+            "fighter": self.fighter.to_dict(),
+            "inventory": self.inventory.to_dict(),
+            "species": self.species,
+        }
 
     def __init__(
         self,
@@ -50,6 +59,7 @@ class Entity:
         species: str = Species.HUMAN,
         ai: AiInterface | None = None,
     ) -> None:
+        self.entity_id = uuid4().hex.upper()
         self.name = name
         self.cost = cost
         self.inventory = inventory
@@ -67,6 +77,15 @@ class Entity:
         self.set_entity_sprite(sprite)
 
         self.locatable = None
+
+    @classmethod
+    def get_by_id(cls, id: str, collection: Sequence[Self | Fighter]):
+        for entity in collection:
+            if isinstance(entity, Fighter):
+                entity = entity.owner
+
+            if entity.entity_id == id:
+                return entity
 
     def with_inventory_capacity(self, capacity: int) -> Self:
         self.inventory = Inventory(owner=self, capacity=capacity)

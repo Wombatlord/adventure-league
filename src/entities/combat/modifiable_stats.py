@@ -1,11 +1,4 @@
-from typing import Collection, Generic, NamedTuple, Self, TypeVar
-
-
-class Stats(NamedTuple):
-    power: int = 0
-    defence: int = 0
-    speed: int = 0
-
+from typing import Collection, Generic, Self, TypeVar
 
 _StatType = TypeVar("_StatType", bound=tuple)
 
@@ -30,8 +23,8 @@ def namedtuple_add(
 
 class Modifier(Generic[_StatType]):
     _stat_class: type[_StatType]
-    _percent: Stats
-    _base: Stats
+    _percent: _StatType
+    _base: _StatType
 
     def __init__(
         self,
@@ -170,5 +163,5 @@ class ModifiableStats(Generic[_StatType]):
         return False
 
     @property
-    def current(self) -> Stats:
+    def current(self) -> _StatType:
         return sum(self._modifiers, Modifier(self._stat_class)).apply(self._base_stats)

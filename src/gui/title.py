@@ -5,6 +5,8 @@ import arcade.color
 import arcade.key
 from arcade import Window
 
+from src.engine.init_engine import eng
+from src.engine.persistence.game_state_repository import GameStateRepository
 from src.gui.animation import harmonic
 from src.gui.components.buttons import get_nav_handler
 from src.gui.components.menu import LeafMenuNode, Menu, SubMenuNode
@@ -135,6 +137,9 @@ class TitleView(arcade.View):
             case arcade.key.G | arcade.key.ENTER:
                 g = HomeView(parent_factory=TitleView)
                 self.window.show_view(g)
+
+            case arcade.key.L:
+                eng.game_state.guild = GameStateRepository.load_yaml(0)
 
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)

@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
+
+from src.entities.combat.modifiable_stats import Modifier
+from src.entities.combat.stats import FighterStats, StatAffix
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
-    from src.entities.item.equippable import Equippable
+
+from src.entities.item.equippable import Equippable, EquippableConfig
 
 
 class Storage(metaclass=abc.ABCMeta):
@@ -29,6 +33,13 @@ class Equipment:
         "owner",
         *_equippable_slots,
     )
+
+    def to_dict(self) -> dict:
+        return {
+            "weapon": self.weapon.to_dict() if self.weapon else None,
+            "helmet": self.helmet.to_dict() if self.helmet else None,
+            "body": self.body.to_dict() if self.body else None,
+        }
 
     def __init__(self, owner: Fighter, weapon=None, helmet=None, body=None) -> None:
         self.owner = owner

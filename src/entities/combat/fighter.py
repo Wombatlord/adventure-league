@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
+import yaml
+
 from src.entities.action.actions import (
     ActionMeta,
     ActionPoints,
@@ -15,15 +17,17 @@ from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import FighterStats, HealthPool
-from src.entities.entity import Entity
 from src.entities.item.equipment import Equipment
-from src.entities.item.inventory import Consumable, Inventory
+from src.entities.item.inventory import Inventory
+from src.entities.item.inventory_item import Consumable
 from src.entities.magic.caster import Caster
 from src.entities.properties.meta_compendium import MetaCompendium
+from src.entities.sprites import EntitySprite
 from src.world.node import Node
 from src.world.ray import Ray
 
 if TYPE_CHECKING:
+    from src.entities.entity import Entity
     from src.world.level.room import Room
 
 Event = dict[str, Any]
@@ -53,12 +57,13 @@ class Fighter:
     _readied_action: BaseAction | None
     _encounter_context: EncounterContext
     health: HealthPool
+    equipment: Equipment
     modifiable_stats: ModifiableStats
     _caster: Caster | None
 
     def __init__(
         self,
-        role: FighterArchetype,
+        role: FighterArchetype = FighterArchetype.MELEE,
         hp: int = 0,
         defence: int = 0,
         power: int = 0,
@@ -81,8 +86,7 @@ class Fighter:
         self.set_role(role)
         # -----State-----
         self.action_points = ActionPoints()
-        self._caster = None
-        self.caster = caster
+        self._caster = caster
         self.on_retreat_hooks = []
         self.is_enemy = is_enemy
         self.is_boss = is_boss
@@ -132,13 +136,13 @@ class Fighter:
     def set_action_options(self):
         defaults = [WeaponAttackAction, MoveAction, ConsumeItemAction, EndTurnAction]
         match self.role:
-            case FighterArchetype.MELEE:
+            case FighterArchetype.MELEE | "MELEE":
                 optional = []
 
-            case FighterArchetype.RANGED:
+            case FighterArchetype.RANGED | "RANGED":
                 optional = []
 
-            case FighterArchetype.CASTER:
+            case FighterArchetype.CASTER | "CASTER":
                 optional = [MagicAction]
 
             case _:

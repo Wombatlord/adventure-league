@@ -7,10 +7,10 @@ from src.entities.combat.modifiable_stats import Modifier, namedtuple_add
 
 
 class HealthPool:
-    def __init__(self, max: int) -> None:
+    def __init__(self, max: int, current: int = None, bonus: int = 0) -> None:
         self._max_hp = max
-        self._current_hp = max
-        self._bonus_hp = 0
+        self._current_hp = current or max
+        self._bonus_hp = bonus
 
     @property
     def max_hp(self):
@@ -19,6 +19,14 @@ class HealthPool:
     @property
     def current(self):
         return self._current_hp
+
+    @property
+    def bonus(self):
+        return self._bonus_hp
+
+    @bonus.setter
+    def bonus(self, value):
+        self._bonus_hp = value
 
     @current.setter
     def current(self, value):
@@ -53,6 +61,7 @@ class HealthPool:
 
 
 class FighterStats(NamedTuple):
+    name = "FighterStats"
     defence: int = 0
     power: int = 0
     level: int = 0

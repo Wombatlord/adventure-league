@@ -1,15 +1,23 @@
 from __future__ import annotations
 
+import json
 from typing import Callable, NamedTuple
 
 import arcade
 import arcade.color
 import arcade.key
+import yaml
 from arcade.gui import UITextureButton
 from arcade.gui.widgets.text import UILabel
 
+from src import config
 from src.config import font_sizes
+from src.engine.game_state import GameState
+from src.engine.guild import Guild
 from src.engine.init_engine import eng
+from src.engine.persistence.dumpers import GameStateDumpers
+from src.engine.persistence.game_state_repository import Format, GameStateRepository
+from src.entities.entity import Entity
 from src.gui.components.buttons import nav_button, update_button
 from src.gui.generic_sections.command_bar import CommandBarSection
 from src.gui.generic_sections.info_pane import InfoPaneSection
@@ -94,6 +102,27 @@ class HomeView(arcade.View):
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
+            case arcade.key.S:
+                slot = 0
+                if config.DEBUG:
+                    formats = (Format.PICKLE, Format.YAML)
+                    GameStateRepository.save(
+                        slot, fmts=formats, guild_to_serialise=eng.game_state.guild
+                    )
+
+                else:
+                    GameStateRepository.save(
+                        slot, guild_to_serialise=eng.game_state.guild
+                    )
+
+            case arcade.key.L:
+                slot = 0
+                guild = GameStateRepository.load(slot)
+                eng.game_state.set_guild(guild)
+                eng.game_state.set_team()
+
+                breakpoint()
+
             case arcade.key.G:
                 self.window.show_view(self.parent_factory())
 
