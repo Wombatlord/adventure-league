@@ -1,4 +1,4 @@
-from typing import Any, Generator, NamedTuple, Optional, Self
+from typing import Any, Generator, NamedTuple, Optional, Self, Sequence
 from uuid import uuid4
 
 from src.entities.ai.ai import AiInterface
@@ -59,7 +59,7 @@ class Entity:
         species: str = Species.HUMAN,
         ai: AiInterface | None = None,
     ) -> None:
-        self.entity_id = uuid4().hex[:10].upper()
+        self.entity_id = uuid4().hex.upper()
         self.name = name
         self.cost = cost
         self.inventory = inventory
@@ -77,6 +77,15 @@ class Entity:
         self.set_entity_sprite(sprite)
 
         self.locatable = None
+
+    @classmethod
+    def get_by_id(cls, id: str, collection: Sequence[Self | Fighter]):
+        for entity in collection:
+            if isinstance(entity, Fighter):
+                entity = entity.owner
+
+            if entity.entity_id == id:
+                return entity
 
     def with_inventory_capacity(self, capacity: int) -> Self:
         self.inventory = Inventory(owner=self, capacity=capacity)

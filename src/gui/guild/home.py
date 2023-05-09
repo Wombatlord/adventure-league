@@ -9,8 +9,8 @@ import arcade.key
 import yaml
 from arcade.gui import UITextureButton
 from arcade.gui.widgets.text import UILabel
-from src import config
 
+from src import config
 from src.config import font_sizes
 from src.engine.game_state import GameState
 from src.engine.guild import Guild
@@ -106,19 +106,22 @@ class HomeView(arcade.View):
                 slot = 0
                 if config.DEBUG:
                     formats = (Format.PICKLE, Format.YAML)
-                    GameStateRepository.save(slot, fmts=formats)
-                
+                    GameStateRepository.save(
+                        slot, fmts=formats, guild_to_serialise=eng.game_state.guild
+                    )
+
                 else:
-                    GameStateRepository.save(slot)
+                    GameStateRepository.save(
+                        slot, guild_to_serialise=eng.game_state.guild
+                    )
 
             case arcade.key.L:
-                # try:
-                guild = GameStateRepository.load(0)
+                slot = 0
+                guild = GameStateRepository.load(slot)
                 eng.game_state.set_guild(guild)
                 eng.game_state.set_team()
 
-            # except Exception as error:
-            # print(f"Loading Failed: {error}")
+                breakpoint()
 
             case arcade.key.G:
                 self.window.show_view(self.parent_factory())

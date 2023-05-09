@@ -1,14 +1,12 @@
 import pickle
+from enum import Enum
 
 from yaml import Loader, dump, load
 
-from src.config import SAVE_FILE_DIRECTORY
+from src.config import SAVE_FILE_DIRECTORY, TEST_FILE_DIRECTORY
 from src.engine.guild import Guild
-from src.engine.init_engine import eng
 from src.engine.persistence.dumpers import GameStateDumpers
 from src.engine.persistence.loaders import GameStateLoaders
-
-from enum import Enum
 
 
 class Format(Enum):
@@ -47,9 +45,15 @@ class Format(Enum):
 
 class GameStateRepository:
     @classmethod
-    def save_file_path(cls, slot: int, fmt: Format = Format.PICKLE) -> tuple[str, ...]:
+    def save_file_path(
+        cls, slot: int, fmt: Format = Format.PICKLE, testing=False
+    ) -> tuple[str, ...]:
         if not isinstance(fmt, Format):
             raise TypeError(f"Unrecognised format {fmt}")
+
+        if testing:
+            return str(TEST_FILE_DIRECTORY / f"save_file_from_test_{slot}.{fmt.value}")
+
         return str(SAVE_FILE_DIRECTORY / f"save_{slot}.{fmt.value}")
 
     @classmethod
@@ -64,53 +68,22 @@ class GameStateRepository:
         cls,
         slot,
         fmts: Format | tuple[Format, ...] = Format.PICKLE,
+        guild_to_serialise: Guild = None,
+        testing=False,
     ):
         if not isinstance(fmts, Format | tuple):
             raise TypeError(f"Unrecognised format {fmt}")
 
         if isinstance(fmts, Format):
-            fmts.dump(GameStateDumpers.guild_to_dict(), cls.save_file_path(slot))
+            fmts.dump(
+                GameStateDumpers.guild_to_dict(guild_to_serialise),
+                cls.save_file_path(slot, testing=testing),
+            )
             return
-        
+
         elif isinstance(fmts, tuple):
             for fmt in fmts:
                 fmt.dump(
-                    GameStateDumpers.guild_to_dict(), cls.save_file_path(slot, fmt=fmt)
+                    GameStateDumpers.guild_to_dict(guild_to_serialise),
+                    cls.save_file_path(slot, fmt=fmt, testing=testing),
                 )
-
-    @classmethod
-    def save_yaml(cls, slot: int, data: dict):
-        if eng.current_room:
-            raise RuntimeError("Cannot save game while in combat")
-
-        path = cls.save_file_path(slot, fmt=Format.YAML)
-        with open(path, "w+") as save_file:
-            dump(data, save_file)
-
-    @classmethod
-    def save_pikl(cls, slot: int, data: dict):
-        if eng.current_room:
-            raise RuntimeError("Cannot save game while in combat")
-
-        path = cls.save_file_path(slot, fmt=Format.PICKLE)
-        with open(path, "wb+") as save_file:
-            pickle.dump(data, save_file)
-
-    @classmethod
-    def load_yaml(cls, slot: int) -> Guild:
-        path = cls.save_file_path(slot, fmt="yaml")
-        with open(path, "r") as save_file:
-            state = load(save_file, Loader)
-
-        state = Guild.from_dict(state)
-
-        return state
-
-    @classmethod
-    def load_pikl(cls, slot: int) -> Guild:
-        path = cls.save_file_path(slot, fmt=Format.PICKLE)
-        with open(path, "rb") as save_file:
-            state = pickle.load(save_file)
-
-        state = GameStateLoaders.guild_from_dict(state)
-        return state

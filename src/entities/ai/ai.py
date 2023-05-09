@@ -53,6 +53,7 @@ class NoCombatAI(AiInterface):
 
         callback()
 
+
 class BasicCombatAi(AiInterface):
     def choose(self, event: dict):
         callback = basic_combat_ai.decide(copy(event))

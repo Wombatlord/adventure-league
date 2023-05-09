@@ -1,13 +1,14 @@
 import random
 from typing import Callable
-from src.engine.guild import Guild
 
+from src.engine.guild import Guild
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
 from src.entities.item.equipment import Equipment
 from src.entities.item.equippable import Equippable, Sword, default_equippable_factory
 from src.entities.item.items import HealingPotion
+from src.entities.magic.caster import Caster
 from src.utils.proc_gen.syllables import simple_word
 from src.world.level.room import Room
 from src.world.node import Node
@@ -37,7 +38,7 @@ class FighterFixtures:
             "speed": 1,
             "is_boss": boss,
         }
-    
+
     @staticmethod
     def gandalf(enemy=False, boss=False):
         return {
@@ -48,11 +49,12 @@ class FighterFixtures:
             "is_enemy": enemy,
             "speed": 1,
             "is_boss": boss,
+            "caster": Caster(max_mp=10),
         }
-    
+
     @staticmethod
     def legolas(enemy=False, boss=False):
-        return  {
+        return {
             "hp": 15,
             "defence": 3,
             "power": 3,
@@ -89,7 +91,7 @@ class EntityFactory:
         e.fighter.equipment = Equipment(e.fighter)
         e.fighter.equipment.equip_item(weapon)
         return e
-    
+
     @classmethod
     def make_babies(cls, enemy: bool, count=1) -> Entity:
         e = Entity(
@@ -101,27 +103,32 @@ class EntityFactory:
         weapon = Equippable(None, Sword)
         e.fighter.equipment = Equipment(e.fighter)
         e.fighter.equipment.equip_item(weapon)
+        e.fighter.set_role(e.fighter.role)
         return e
-    
+
     @classmethod
-    def from_fixture(cls, fixture: Callable[[bool], dict], enemy=False, count=1) -> list[Entity]:
+    def from_fixture(
+        cls, fixture: Callable[[bool], dict], enemy=False, count=1
+    ) -> list[Entity]:
         entities = []
         for _ in range(count):
-            name = Name(first_name=simple_word(min_syls=2, max_syls=3), last_name=simple_word(min_syls=2, max_syls=3), title="")
+            name = Name(
+                first_name=simple_word(min_syls=2, max_syls=3),
+                last_name=simple_word(min_syls=2, max_syls=3),
+                title="",
+            )
             e = Entity(
-                name=name,
-                fighter=Fighter(**fixture(enemy))
+                name=name, fighter=Fighter(**fixture(enemy))
             ).with_inventory_capacity(1)
             e.fighter.equipment = Equipment(e.fighter)
             factory = default_equippable_factory()
             gear = factory(e.fighter.role)
             for item in gear.values():
                 e.fighter.equipment.equip_item(item)
-
+            e.fighter.set_role(e.fighter.role)
             entities.append(e)
 
         return entities
-
 
 
 class EncounterFactory:
@@ -168,7 +175,6 @@ class EncounterFactory:
         return room, mercs, enemies
 
 
-
 class GuildFactory:
     @classmethod
     def make_guild(cls) -> Guild:
@@ -182,11 +188,10 @@ class GuildFactory:
         guild.roster = [
             *EntityFactory.from_fixture(FighterFixtures.strong),
             *EntityFactory.from_fixture(FighterFixtures.gandalf),
-            *EntityFactory.from_fixture(FighterFixtures.legolas)
+            *EntityFactory.from_fixture(FighterFixtures.legolas),
         ]
 
         guild.team.assign_to_team(guild.roster[0])
         guild.team.assign_to_team(guild.roster[1])
 
         return guild
-

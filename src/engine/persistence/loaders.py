@@ -35,15 +35,19 @@ class GameStateLoaders:
         return g
 
     @classmethod
-    def entity_from_dict(cls, data: dict | None) -> Entity | None:
-        if data is None:
+    def entity_from_dict(cls, serialised_entity: dict | None) -> Entity | None:
+        if serialised_entity is None:
             return None
         instance = Entity()
         instance.__dict__ = {
-            **data,
-            "name": Name(**data["name"]),
-            "fighter": cls.fighter_from_dict(data.get("fighter"), owner=instance),
-            "inventory": cls.inventory_from_dict(data.get("inventory"), owner=instance),
+            **serialised_entity,
+            "name": Name(**serialised_entity["name"]),
+            "fighter": cls.fighter_from_dict(
+                serialised_entity.get("fighter"), owner=instance
+            ),
+            "inventory": cls.inventory_from_dict(
+                serialised_entity.get("inventory"), owner=instance
+            ),
             "is_dead": False,
             "locatable": None,
             "item": None,
@@ -58,19 +62,27 @@ class GameStateLoaders:
         return instance
 
     @classmethod
-    def fighter_from_dict(cls, data: dict | None, owner: Entity) -> Fighter | None:
-        if data is None:
+    def fighter_from_dict(
+        cls, serialised_fighter: dict | None, owner: Entity
+    ) -> Fighter | None:
+        if serialised_fighter is None:
             return None
         instance = object.__new__(Fighter)
         instance.__dict__ = {
-            **data,
+            **serialised_fighter,
             "owner": owner,
-            "health": cls.health_pool_from_dict(data.get("health")),
-            "stats": FighterStats(**data.get("stats")),
-            "equipment": cls.equipment_from_dict(data.get("equipment"), owner=instance),
-            "action_points": cls.action_points_from_dict(data.get("action_points")),
-            "_caster": cls.caster_from_dict(data=data.get("caster"), owner=instance)
-            if data["caster"] is not None
+            "health": cls.health_pool_from_dict(serialised_fighter.get("health")),
+            "stats": FighterStats(**serialised_fighter.get("stats")),
+            "equipment": cls.equipment_from_dict(
+                serialised_fighter.get("equipment"), owner=instance
+            ),
+            "action_points": cls.action_points_from_dict(
+                serialised_fighter.get("action_points")
+            ),
+            "_caster": cls.caster_from_dict(
+                serialised_caster=serialised_fighter.get("caster"), owner=instance
+            )
+            if serialised_fighter["caster"] is not None
             else None,
             "on_retreat_hooks": [],
             "is_enemy": False,
@@ -79,10 +91,15 @@ class GameStateLoaders:
             "_in_combat": False,
             "_readied_action": None,
             "_encounter_context": EncounterContext(fighter=instance),
-            "role": data["role"],
+            "role": serialised_fighter["role"],
         }
 
-        instance.role = data.get("role")
+        # We serialise without preceeding underscores,
+        # so pop this key from the instance.__dict__ after instantiating the caster
+        # under the _caster attribute.
+        instance.__dict__.pop("caster")
+
+        instance.role = serialised_fighter.get("role")
         match instance.role:
             case "MELEE":
                 instance.set_role(FighterArchetype.MELEE)
@@ -104,48 +121,52 @@ class GameStateLoaders:
         return instance
 
     @classmethod
-    def caster_from_dict(cls, data, owner) -> Caster:
-        instance = object.__new__(cls)
+    def caster_from_dict(cls, serialised_caster: dict, owner: Fighter) -> Caster:
+        instance = object.__new__(Caster)
         instance.owner = owner
-        instance.mp_pool = cls.mp_pool_from_dict(data)
+        instance.mp_pool = cls.mp_pool_from_dict(serialised_caster)
 
         return instance
 
     @classmethod
-    def mp_pool_from_dict(cls, data) -> MpPool:
-        return MpPool(**data["mp_pool"])
+    def mp_pool_from_dict(cls, serialised_mp_pool: dict) -> MpPool:
+        return MpPool(**serialised_mp_pool["mp_pool"])
 
     @classmethod
-    def health_pool_from_dict(cls, data: dict):
-        return HealthPool(**data)
+    def health_pool_from_dict(cls, serialised_health_pool: dict):
+        return HealthPool(**serialised_health_pool)
 
     @classmethod
-    def action_points_from_dict(cls, data: dict) -> ActionPoints | None:
-        return ActionPoints(data.get("per_turn"))
+    def action_points_from_dict(
+        cls, serialised_action_points: dict
+    ) -> ActionPoints | None:
+        return ActionPoints(serialised_action_points.get("per_turn"))
 
     @classmethod
-    def inventory_from_dict(cls, data, owner) -> Inventory:
+    def inventory_from_dict(cls, serialised_inventory, owner) -> Inventory:
         inv = object.__new__(Inventory)
         inv.owner = owner
         items = []
-        
-        for item in data["items"]:
+
+        for item in serialised_inventory["items"]:
             if not item:
                 items.append(None)
                 continue
-            
+
             match item["name"]:
                 case "healing potion":
                     item = HealingPotion.from_dict(owner)
                     item.on_add_to_inventory(inv)
 
         inv.items = items
-        inv.capacity = data["capacity"]
+        inv.capacity = serialised_inventory["capacity"]
 
         return inv
 
     @classmethod
-    def equipment_from_dict(cls, data: dict, owner: Fighter) -> Equipment | None:
+    def equipment_from_dict(
+        cls, serialised_equipment: dict, owner: Fighter
+    ) -> Equipment | None:
         """
         Hydrates an equipment instance with the data dict and attaches the owner.
         Assign slots first so that they exist, then hydrate each equippable from the data dict.
@@ -169,35 +190,40 @@ class GameStateLoaders:
         for slot in instance._equippable_slots:
             setattr(
                 instance,
-                data[slot]["config"]["slot"],
-                cls.equippable_from_dict(data[slot], owner=instance),
+                serialised_equipment[slot]["config"]["slot"],
+                cls.equippable_from_dict(serialised_equipment[slot], owner=instance),
             )
         return instance
 
     @classmethod
-    def equippable_from_dict(cls, data: dict, owner) -> Equippable:
+    def equippable_from_dict(cls, serialised_equippable: dict, owner) -> Equippable:
         mods = []
-        for affix in data["config"]["affixes"]:
+        for affix in serialised_equippable["config"]["affixes"]:
             if affix.get("modifier").get("stat_class") == "FighterStats":
                 mods.append(cls.stat_affix_from_dict(affix))
 
         instance = object.__new__(Equippable)
         instance.__dict__ = {
             "_owner": owner,
-            **{f"_{k}": v for k, v in data["config"].items()},
+            **{f"_{k}": v for k, v in serialised_equippable["config"].items()},
             "_affixes": mods,
             "_available_attack_cache": [],
             "_available_spell_cache": [],
-            "_config": EquippableConfig(**{**data["config"], "affixes": mods}),
+            "_config": EquippableConfig(
+                **{**serialised_equippable["config"], "affixes": mods}
+            ),
         }
 
         return instance
 
     @classmethod
-    def stat_affix_from_dict(cls, affix_dict) -> StatAffix:
-        affix_dict["modifier"].pop("stat_class")
+    def stat_affix_from_dict(cls, serialised_stat_affix: dict) -> StatAffix:
+        serialised_stat_affix["modifier"].pop("stat_class")
         modifier = Modifier(
             FighterStats,
-            **{k: FighterStats(**v) for k, v in affix_dict["modifier"].items()},
+            **{
+                k: FighterStats(**v)
+                for k, v in serialised_stat_affix["modifier"].items()
+            },
         )
-        return StatAffix(affix_dict["name"], modifier)
+        return StatAffix(serialised_stat_affix["name"], modifier)

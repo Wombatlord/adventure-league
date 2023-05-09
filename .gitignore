@@ -6,7 +6,8 @@ winvenv/
 scratch.py
 .idea/
 saves
-testing.*
+src/tests/engine/persistence/*.pikl
+src/tests/engine/persistence/*.yaml
 assets/sprites/
 assets/wordlists/
 __pycache__/

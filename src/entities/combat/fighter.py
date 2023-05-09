@@ -95,28 +95,6 @@ class Fighter:
         self._readied_action = None
         self._encounter_context = EncounterContext(self)
 
-    @classmethod
-    def from_yaml(cls, loader: yaml.Loader, node=None) -> Self:
-        f_gen: Generator[Fighter, None, None] = loader.construct_yaml_object(node, cls)
-        f = next(f_gen)
-        try:
-            next(f_gen)
-        except StopIteration:
-            pass
-
-        breakpoint()
-        from src.entities.combat.fighter_factory import select_textures
-
-        sprite_config = select_textures(f.owner.species, f)
-
-        f.owner.set_entity_sprite(
-            EntitySprite(
-                idle_textures=sprite_config.idle_textures,
-                attack_textures=sprite_config.attack_textures,
-            )
-        )
-        return f
-
     @property
     def caster(self) -> Caster | None:
         return self._caster
