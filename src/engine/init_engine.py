@@ -1,5 +1,4 @@
 from src.engine.engine import Engine
-from src.engine.game_state import AwardSpoilsHandler, GameState
 
 # Instantiate & setup the engine
 
@@ -9,6 +8,7 @@ _eng: Engine | None = None
 def _bootstrap():
     global _eng
     _eng = Engine()
+
 
 def _get_eng() -> Engine:
     global _eng

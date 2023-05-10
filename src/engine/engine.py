@@ -49,6 +49,9 @@ class Engine:
         self.subscriptions: dict[str, dict[str, Handler]] = {}
         self.combat_dispatcher = VolatileDispatcher(self)
         self.projection_dispatcher = StaticDispatcher(self)
+        from src.engine import static_subscribers
+
+        static_subscribers.subscribe(self)
 
     def static_subscribe(self, topic: str, handler_id: str, handler: Handler):
         self.projection_dispatcher.subscribe(topic, handler_id, handler)

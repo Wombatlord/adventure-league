@@ -28,8 +28,6 @@ class GameState:
         mission_board = MissionBoard(size=3)
         mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
         self.set_mission_board(mission_board)
-        self.occupancy_handler = SpaceOccupancyHandler(eng)
-        self.combat_ai_handler = CombatAISubscriber(eng)
 
     def setup(self):
         self.set_guild(
