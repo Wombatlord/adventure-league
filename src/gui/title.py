@@ -63,7 +63,7 @@ class TitleView(arcade.View):
             load_menu,
             LeafMenuNode("Quit", arcade.exit, closes_menu=True),
         ]
-        
+
         self.menu = Menu(
             menu_config=self.menu_options,
             pos=((WindowData.width / 2), (WindowData.height * 0.5)),

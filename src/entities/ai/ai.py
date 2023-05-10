@@ -2,27 +2,29 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from src.entities.ai import basic_combat_ai
-from src.utils.deep_copy import copy
-
 if TYPE_CHECKING:
     from src.engine.engine import Engine
 
 from abc import ABCMeta, abstractmethod
 
+from src.entities.ai import basic_combat_ai
+from src.utils.deep_copy import copy
+
 
 class CombatAISubscriber:
-    def __init__(self, eng: Engine) -> None:
-        eng.static_subscribe(
-            topic="await_input",
-            handler_id=f"{self.__class__.__name__}.handle",
-            handler=self.handle,
-        )
-
-    def handle(self, event: dict) -> None:
+    @classmethod
+    def handle(cls, event: dict) -> None:
         if awaiting := event.get("await_input"):
             if ai := awaiting.owner.ai:
                 ai.choose(event)
+
+
+def subscribe(eng: Engine):
+    eng.static_subscribe(
+        topic="await_input",
+        handler_id=f"{CombatAISubscriber.__name__}.handle",
+        handler=CombatAISubscriber.handle,
+    )
 
 
 class AiInterface(metaclass=ABCMeta):

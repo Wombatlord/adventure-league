@@ -49,12 +49,9 @@ class Engine:
         self.subscriptions: dict[str, dict[str, Handler]] = {}
         self.combat_dispatcher = VolatileDispatcher(self)
         self.projection_dispatcher = StaticDispatcher(self)
-        self.game_state = GameState(self)
-        self.static_subscribe(
-            topic="team triumphant",
-            handler_id="game_state",
-            handler=AwardSpoilsHandler(self.game_state).handle,
-        )
+        from src.engine import static_subscribers
+
+        static_subscribers.subscribe(self)
 
     def static_subscribe(self, topic: str, handler_id: str, handler: Handler):
         self.projection_dispatcher.subscribe(topic, handler_id, handler)
@@ -64,7 +61,11 @@ class Engine:
 
     def new_game(self) -> None:
         self.game_state = GameState(self)
-
+        self.static_subscribe(
+            topic="team triumphant",
+            handler_id="game_state",
+            handler=AwardSpoilsHandler(self.game_state).handle,
+        )
         # create a pool of potential recruits
         pool = RecruitmentPool(15)
         pool.fill_pool()
@@ -80,6 +81,11 @@ class Engine:
 
     def load_save_slot(self, slot: int):
         self.game_state = GameState(self)
+        self.static_subscribe(
+            topic="team triumphant",
+            handler_id="game_state",
+            handler=AwardSpoilsHandler(self.game_state).handle,
+        )
         self.game_state.guild = self.guild_repository.load(slot)
         self.game_state.set_team()
         pool = RecruitmentPool(15 - self.game_state.guild.current_roster_count)
