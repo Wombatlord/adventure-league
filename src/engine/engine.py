@@ -9,6 +9,7 @@ from src.engine.describer import Describer
 from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
 from src.engine.game_state import AwardSpoilsHandler, GameState
 from src.engine.mission_board import MissionBoard
+from src.engine.persistence.game_state_repository import GuildRepository
 from src.entities.combat.fighter_factory import RecruitmentPool
 from src.systems.combat import CombatRound
 
@@ -31,6 +32,7 @@ Handler = Callable[[dict], None]
 class Engine:
     game_state: GameState
     default_clock_value = 0.3
+    guild_repository = GuildRepository
 
     def __init__(self) -> None:
         self.event_queue: list[Event] = []
@@ -47,6 +49,12 @@ class Engine:
         self.subscriptions: dict[str, dict[str, Handler]] = {}
         self.combat_dispatcher = VolatileDispatcher(self)
         self.projection_dispatcher = StaticDispatcher(self)
+        self.game_state = GameState(self)
+        self.static_subscribe(
+            topic="team triumphant",
+            handler_id="game_state",
+            handler=AwardSpoilsHandler(self.game_state).handle,
+        )
 
     def static_subscribe(self, topic: str, handler_id: str, handler: Handler):
         self.projection_dispatcher.subscribe(topic, handler_id, handler)
@@ -54,13 +62,9 @@ class Engine:
     def subscribe(self, topic: str, handler_id: str, handler: Handler):
         self.combat_dispatcher.subscribe(topic, handler_id, handler)
 
-    def setup(self) -> None:
+    def new_game(self) -> None:
         self.game_state = GameState(self)
-        self.projection_dispatcher.static_subscribe(
-            topic="team triumphant",
-            handler_id="game_state",
-            handler=AwardSpoilsHandler(self.game_state).handle,
-        )
+
         # create a pool of potential recruits
         pool = RecruitmentPool(15)
         pool.fill_pool()
@@ -69,11 +73,24 @@ class Engine:
         self.game_state.guild.team.name_team()
         self.game_state.set_team()
 
-        # create a mission board
-        mission_board = MissionBoard(size=3)
-        mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
-        self.game_state.set_mission_board(mission_board)
-        self.flush_all()
+        # Get some entities in the guild
+        self.recruit_entity_to_guild(0)
+        self.recruit_entity_to_guild(0)
+        self.recruit_entity_to_guild(0)
+
+    def load_save_slot(self, slot: int):
+        self.game_state = GameState(self)
+        self.game_state.guild = self.guild_repository.load(slot)
+        self.game_state.set_team()
+        pool = RecruitmentPool(15 - self.game_state.guild.current_roster_count)
+        pool.fill_pool()
+        self.game_state.set_entity_pool(pool)
+
+    def save_to_slot(self, slot: int):
+        self.guild_repository.save(slot, self.game_state.guild)
+
+    def get_save_slot_metadata(self) -> list[dict]:
+        return self.guild_repository.get_slot_info()
 
     def flush_all(self):
         self.flush_subscriptions()

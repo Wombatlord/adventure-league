@@ -30,8 +30,8 @@ class Guild:
             self.roster_limit = int(self.level * self.roster_scalar)
 
         self.team = Team()
-        if self.team:
-            self.team.owner = self
+        self.team.owner = self
+        self.current_roster_count: int = len(self.roster) + len(self.team.members)
 
     def to_dict(self) -> dict:
         guild = {}
