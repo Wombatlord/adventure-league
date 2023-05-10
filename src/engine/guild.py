@@ -31,6 +31,7 @@ class Guild:
 
         self.team = Team()
         self.team.owner = self
+        self.current_roster_count: int = len(self.roster) + len(self.team.members)
 
     def to_dict(self) -> dict:
         guild = {}
