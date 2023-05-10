@@ -58,20 +58,12 @@ class TitleView(arcade.View):
             ],
         )
 
-        save_menu = SubMenuNode(
-            "Save",
-            [
-                LeafMenuNode(slot2str(item), self.save_callback(item["slot"]))
-                for item in eng.get_save_slot_metadata()
-            ],
-        )
-
         self.menu_options = [
             LeafMenuNode("Start", self.start_new_game),
             load_menu,
-            save_menu,
             LeafMenuNode("Quit", arcade.exit, closes_menu=True),
         ]
+        
         self.menu = Menu(
             menu_config=self.menu_options,
             pos=((WindowData.width / 2), (WindowData.height * 0.5)),
