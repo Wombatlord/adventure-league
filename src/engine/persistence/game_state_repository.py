@@ -125,7 +125,7 @@ class GuildRepository:
         metadata: list[dict] = cls._load_metadata()
         now = datetime.now()
         now_str = f"{now.month}/{now.day} {now.hour}:{now.minute}"
-        metadata[slot] = {"name": guild.name, "slot": slot, "timestamp": now_str}
+        metadata[slot] = {"name": f"Guild {slot}", "slot": slot, "timestamp": now_str}
         cls._latest_metadata = metadata
         Format.YAML.dump(metadata, cls.metadata_path)
 

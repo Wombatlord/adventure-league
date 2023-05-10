@@ -45,7 +45,9 @@ class TitleView(arcade.View):
         self.time = 0
 
         slot2str = (
-            lambda slot: f"{slot.get('name', 'Empty')}|{slot.get('timestamp', '')}"
+            lambda slot: f"{slot.get('name', 'None')}: {slot.get('timestamp', '')}"
+            if slot.get("name")
+            else "None"
         )
         load_menu = SubMenuNode(
             "Load",
