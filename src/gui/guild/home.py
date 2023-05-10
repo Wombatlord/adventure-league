@@ -236,5 +236,7 @@ class HomeView(arcade.View):
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
+        self.home_menu.menu.maintain_menu_positioning(width=width, height=height)
+        self.home_menu.menu.position_labels()
         WindowData.width = width
         WindowData.height = height
