@@ -44,6 +44,7 @@ class NormalAttack(metaclass=WeaponAttackMeta):
     name: str = "Normal Attack"
     ap_cost: int = 1
     max_range: int = 1
+    _fighter: Fighter
 
     def __init__(self, fighter) -> None:
         self._fighter = fighter
@@ -70,7 +71,8 @@ class NormalAttack(metaclass=WeaponAttackMeta):
         ):
             case RollOutcome.CRITICAL_FAIL:
                 message = f"{self._fighter.owner.name} fails to hit {target.name} embarrasingly!"
-                self._fighter.commence_retreat()
+                if not self._fighter.is_enemy:
+                    self._fighter.commence_retreat()
             case RollOutcome.FAIL:
                 message = f"{self._fighter.owner.name} fails to hit {target.name}!"
             case _:

@@ -5,8 +5,9 @@ import random
 from typing import TYPE_CHECKING, Callable, NamedTuple, Self
 
 from src.entities.combat.archetypes import FighterArchetype
-from src.entities.combat.modifiable_stats import Modifier
+from src.entities.combat.modifiable_stats import ModifiableStats, Modifier
 from src.entities.combat.stats import (
+    EquippableStats,
     FighterStats,
     PercentPowerIncrease,
     RawDefenceIncrease,
@@ -53,6 +54,7 @@ class Equippable(EquippableABC):
     _affixes: list[StatAffix]
     _available_attacks_cache: list[WeaponAttackMeta]
     _available_spells_cache: list[Spell]
+    _modifiable_stats: ModifiableStats
 
     def __init__(
         self, owner: Fighter | None, config: EquippableConfig | None = None
@@ -66,6 +68,8 @@ class Equippable(EquippableABC):
         self._attacks = config.attacks
         self._spells = config.spells
         self._affixes = config.affixes
+        self._stats = config.stats
+        self._modifiable_stats = ModifiableStats(EquippableStats, self._stats)
         self._available_attacks_cache = []
         self._available_spells_cache = []
 
@@ -80,6 +84,10 @@ class Equippable(EquippableABC):
     @property
     def range(self) -> int:
         return self._range
+
+    @property
+    def stats(self) -> ModifiableStats:
+        return self._modifiable_stats.current
 
     @property
     def available_attacks(self) -> list[WeaponAttackMeta]:
@@ -188,15 +196,22 @@ class EquippableConfig(NamedTuple):
     attacks: list[str] | None = None
     spells: list[str] | None = None
     affixes: list = []
+    stats: EquippableStats | None = None
 
 
 # Example Configs
-Helmet = EquippableConfig(name="helmet", slot="helmet", affixes=[PercentPowerIncrease])
+Helmet = EquippableConfig(
+    name="helmet",
+    slot="helmet",
+    affixes=[PercentPowerIncrease],
+    stats=EquippableStats(0, 0, 0),
+)
 
 Breastplate = EquippableConfig(
     name="breastplate",
     slot="body",
     affixes=[RawPowerIncrease, RawDefenceIncrease],
+    stats=EquippableStats(0, 0, 0),
 )
 
 Sword = EquippableConfig(
@@ -207,6 +222,7 @@ Sword = EquippableConfig(
     attacks=[NormalAttack.name],
     spells=[],
     affixes=[RawPowerIncrease],
+    stats=EquippableStats(2, 0, 0),
 )
 
 Bow = EquippableConfig(
@@ -216,6 +232,7 @@ Bow = EquippableConfig(
     range=5,
     attacks=[NormalAttack.name],
     spells=[],
+    stats=EquippableStats(1, 0, 0),
 )
 
 SpellBook = EquippableConfig(
@@ -225,4 +242,5 @@ SpellBook = EquippableConfig(
     range=1,
     attacks=[NormalAttack.name],
     spells=[MagicMissile.name, Shield.name, Fireball.name],
+    stats=EquippableStats(0, 0, 0),
 )

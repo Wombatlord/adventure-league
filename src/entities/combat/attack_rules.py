@@ -27,16 +27,17 @@ class RollOutcome(Enum):
     @classmethod
     def from_percent(cls, chance: PercentChance) -> Self:
         match chance.as_percent(), chance.outcome():
-            case x, False if x < 5:
-                return cls.CRITICAL_FAIL
-            case x, True if x >= 95:
-                return cls.PERFECT_SUCCESS
-            case _, False:
-                print(x)
-                return cls.FAIL
-            case _:
-                print(x)
-                return cls.SUCCESS
+            case x, False:
+                if x < 5:
+                    return cls.CRITICAL_FAIL
+                else:
+                    return cls.FAIL
+
+            case x, True:
+                if x >= 95:
+                    return cls.PERFECT_SUCCESS
+                else:
+                    return cls.SUCCESS
 
 
 class PercentChance:

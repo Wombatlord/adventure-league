@@ -72,9 +72,13 @@ class FighterStats(NamedTuple):
 
 
 class EquippableStats(NamedTuple):
+    name = "EquippableStats"
     attack: int = 0
     block: int = 0
     evasion: int = 0
+
+    def __add__(self, other):
+        return namedtuple_add(self.__class__, self, other)
 
 
 class StatAffix(NamedTuple):
@@ -84,7 +88,7 @@ class StatAffix(NamedTuple):
 
 modifiers = {
     "bear": lambda: Modifier(
-        FighterStats, base=FighterStats(power=random.randint(1, 13))
+        FighterStats, base=FighterStats(power=random.randint(1, 3))
     ),
     "tiger": lambda: Modifier(
         FighterStats, percent=FighterStats(power=random.randint(20, 60))
