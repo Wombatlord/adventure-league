@@ -54,6 +54,7 @@ class NormalAttack(metaclass=WeaponAttackMeta):
 
     def attack(self, target: Entity) -> Event:
         result = {}
+        message = ""
         if self._fighter.owner.is_dead:
             raise ValueError(f"{self._fighter.owner.name=}: I'm dead jim.")
 
@@ -74,19 +75,9 @@ class NormalAttack(metaclass=WeaponAttackMeta):
                 message = f"{self._fighter.owner.name} fails to hit {target.name}!"
             case _:
                 # actual_damage = AttackRules.damage_amount(self._fighter, target)
-                raw_damage = Damage.calculate_raw(self._fighter)
-                d = raw_damage.apply_reductions(target)
-                result.update({"message": d["message"]})
-                yield result
-                
-                if self._fighter.equipment.weapon.attack_verb == "melee":
-                    message = f"{self._fighter.owner.name} hits {target.name} with their {self._fighter.equipment.weapon.name} for {d['damage']}\n"
-                elif self._fighter.equipment.weapon.attack_verb == "ranged":
-                    message = f"{self._fighter.owner.name} shoots {target.name} with their {self._fighter.equipment.weapon.name} for {d['damage']}\n"
-
-                damage_details = target.fighter.take_damage(d["damage"])
-
-                result.update(**damage_details)
+                raw_damage = Damage.calculate_raw(self._fighter, target)
+                attack_resolution = raw_damage.resolve_damage()
+                yield from attack_resolution
 
         result.update({"attack": self._fighter.owner, "message": message})
         yield result

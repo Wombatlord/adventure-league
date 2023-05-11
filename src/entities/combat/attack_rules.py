@@ -32,8 +32,10 @@ class RollOutcome(Enum):
             case x, True if x >= 95:
                 return cls.PERFECT_SUCCESS
             case _, False:
+                print(x)
                 return cls.FAIL
             case _:
+                print(x)
                 return cls.SUCCESS
 
 
