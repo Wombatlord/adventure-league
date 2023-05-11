@@ -12,6 +12,7 @@ assets/sprites/
 assets/wordlists/
 __pycache__/
 docs/dev
+profiles/
 
 settings.yaml
 *.zip

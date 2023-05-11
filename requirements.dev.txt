@@ -5,3 +5,4 @@ parameterized
 ptpython
 requests
 pydrive2
+viztracer
