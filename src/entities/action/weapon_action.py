@@ -27,7 +27,7 @@ class WeaponAttackAction(BaseAction, metaclass=ActionMeta):
     ) -> Generator[Event]:
         if fighter.action_points.current >= attack.ap_cost:
             fighter.action_points.deduct_cost(cls.cost(fighter))
-            yield attack.attack(target=target.owner)
+            yield from attack.attack(target=target.owner)
 
         else:
             yield {"message": f"Not enough AP for {attack.name}"}
