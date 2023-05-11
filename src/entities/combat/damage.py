@@ -33,30 +33,52 @@ class Damage:
 
     def resolve_damage(self) -> Generator[Event, None, None]:
         result = {}
-        message = ""
 
         # 10% chance to completely evade
         if random.randint(1, 10) == 1:
             self.final_damage = 0
-            message += f"{self.target.name} evaded the attack!\n"
+            message = f"{self.target.name} evaded the attack!\n"
             result.update({"message": message})
             result.update({"damage": self.final_damage})
 
-            return result
+            yield result
+            return
 
-        # Hit confirm message
-        yield self.damage_confirm_message()
+        # Resolve Damage if not evaded.
+        yield from self.damage_confirm_message()
+        yield from self._damage_reduction_by_defense()
+        yield from self._final_resolved_damage()
+        
 
+    def damage_confirm_message(self) -> Event:
+        originator_name = self.originator.owner.name
+        weapon = self.originator.equipment.weapon
+        target_name = self.target.name
+        if weapon.attack_verb == "melee":
+            yield {
+                "message": f"{originator_name} hits {target_name} with their {originator_name}\n"
+            }
+        elif weapon.attack_verb == "ranged":
+            yield {
+                "message": f"{originator_name} shoots {target_name} with their {originator_name}\n"
+            }
+
+    def _damage_reduction_by_defense(self):
         # target.defence / 10 chance to reduce damage by 10%
         if random.randint(1, 10) < self.target.fighter.modifiable_stats.current.defence:
             reduction = 0.1
             self.final_damage = int(self.raw_damage - (self.raw_damage * reduction))
-            # message += f"{self.target.name}'s defence reduced the damage!\n"
-            yield {"message": f"{self.target.name}'s defence reduced the damage!\n"}
+            message = f"{self.target.name}'s defence reduced the damage!\n"
+        
         else:
             self.final_damage = self.raw_damage
-
-        message += f"{self.target.name} takes {self.final_damage} damage!\n"
+            message = ""
+        
+        yield {"message": message}
+    
+    def _final_resolved_damage(self):
+        result = {}
+        message = f"{self.target.name} takes {self.final_damage} damage!\n"
         result.update({"message": message})
 
         if self.target.fighter.health.current - self.final_damage <= 0:
@@ -66,13 +88,3 @@ class Damage:
         damage_details = self.target.fighter.take_damage(self.final_damage)
         result.update(**damage_details)
         yield result
-
-    def damage_confirm_message(self) -> Event:
-        if self.originator.equipment.weapon.attack_verb == "melee":
-            return {
-                "message": f"{self.originator.owner.name} hits {self.target.name} with their {self.originator.equipment.weapon.name}\n"
-            }
-        elif self.originator.equipment.weapon.attack_verb == "ranged":
-            return {
-                "message": f"{self.originator.owner.name} shoots {self.target.name} with their {self.originator.equipment.weapon.name}\n"
-            }

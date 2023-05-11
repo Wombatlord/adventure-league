@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generator
 
 from src.entities.combat.attack_rules import AttackRules, RollOutcome
 from src.entities.combat.damage import Damage
@@ -52,7 +52,7 @@ class NormalAttack(metaclass=WeaponAttackMeta):
     def fighter(self):
         return self._fighter
 
-    def attack(self, target: Entity) -> Event:
+    def attack(self, target: Entity) -> Generator[Event, None, None]:
         result = {}
         message = ""
         if self._fighter.owner.is_dead:
