@@ -21,6 +21,24 @@ def namedtuple_add(
     return stats_class(*args)
 
 
+def namedtuple_sub(
+    stats_class: type[_StatType], a: _StatType, b: _StatType
+) -> _StatType:
+    if not isinstance(a, tuple) or not isinstance(a, stats_class):
+        raise TypeError(f"The first term {a=} was not of type {stats_class}.")
+
+    if not isinstance(b, a.__class__):
+        raise TypeError(
+            f"Cannot subtract {a} of type {a.__class__} to {b} of type {type(b)}"
+        )
+
+    args = []
+    for self_stat, other_stat in zip(a, b):
+        args.append(self_stat - other_stat)
+
+    return stats_class(*args)
+
+
 class Modifier(Generic[_StatType]):
     _stat_class: type[_StatType]
     _percent: _StatType

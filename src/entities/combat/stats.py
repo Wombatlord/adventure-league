@@ -3,7 +3,11 @@ from __future__ import annotations
 import random
 from typing import Callable, NamedTuple
 
-from src.entities.combat.modifiable_stats import Modifier, namedtuple_add
+from src.entities.combat.modifiable_stats import (
+    Modifier,
+    namedtuple_add,
+    namedtuple_sub,
+)
 
 
 class HealthPool:
@@ -70,6 +74,9 @@ class FighterStats(NamedTuple):
     def __add__(self, other):
         return namedtuple_add(self.__class__, self, other)
 
+    def __sub__(self, other):
+        return namedtuple_sub(self.__class__, self, other)
+
 
 class EquippableStats(NamedTuple):
     name = "EquippableStats"
@@ -82,10 +89,13 @@ class EquippableStats(NamedTuple):
     def __add__(self, other):
         return namedtuple_add(self.__class__, self, other)
 
+    def __sub__(self, other):
+        return namedtuple_sub(self.__class__, self, other)
+
 
 class StatAffix(NamedTuple):
     name: str
-    modifier: Modifier[FighterStats]
+    modifier: Modifier[FighterStats | EquippableStats]
 
 
 modifiers = {

@@ -24,9 +24,9 @@ class Equipment:
     body: Equippable
 
     _equippable_slots = (
-        "weapon",
-        "helmet",
-        "body",
+        "_weapon",
+        "_helmet",
+        "_body",
     )
 
     __slots__ = (
@@ -45,13 +45,51 @@ class Equipment:
 
     def __init__(self, owner: Fighter, weapon=None, helmet=None, body=None) -> None:
         self.owner = owner
-        self.weapon = weapon
-        self.helmet = helmet
-        self.body = body
+        self._weapon = weapon
+        self._helmet = helmet
+        self._body = body
         self.base_equipped_stats = EquippableStats(0, 0, 0, 0, 0)
         self.modifiable_equipped_stats = ModifiableStats(
             EquippableStats, self.base_equipped_stats
         )
+
+    @property
+    def weapon(self):
+        return self._weapon
+
+    @weapon.setter
+    def weapon(self, weapon):
+        self._weapon = weapon
+
+        if weapon:
+            self.update_stats(weapon)
+
+    @property
+    def helmet(self):
+        return self._helmet
+
+    @helmet.setter
+    def helmet(self, helmet):
+        self._helmet = helmet
+        
+        if helmet:
+            self.update_stats(helmet)
+
+    @property
+    def body(self):
+        return self._body
+
+    @body.setter
+    def body(self, body):
+        self._body = body
+        
+        if body:
+            self.update_stats(body)
+
+    def update_stats(self, item):
+        self.base_equipped_stats += item.stats
+        self.modifiable_equipped_stats._base_stats += item.stats
+        self.modifiable_equipped_stats.set_modifiers(item.equipment_modifiers())
 
     def item_in_slot(self, slot) -> Equippable | None:
         if slot not in self._equippable_slots:
@@ -65,12 +103,16 @@ class Equipment:
 
         self.unequip(slot, storage)
         item.on_equip(self.owner)
-        setattr(self, slot, item)
 
-        # Update the aggregation of equippable stats & modifiers
-        self.base_equipped_stats += item.stats
-        self.modifiable_equipped_stats._base_stats += self.base_equipped_stats
-        self.modifiable_equipped_stats.set_modifiers(item.equipment_modifiers())
+        match slot:
+            case "_weapon":
+                self.weapon = item
+            case "_helmet":
+                self.helmet = item
+            case "_body":
+                self.body = item
+
+        # setattr(self, slot, item)
 
     def unequip(self, slot: str, storage: Storage | None = None):
         if prev_item := self.item_in_slot(slot):
@@ -79,6 +121,10 @@ class Equipment:
             # Update the aggregation of equippable stats & modifiers
             self.base_equipped_stats -= prev_item.stats
             self.modifiable_equipped_stats._base_stats -= prev_item.stats
+
+            # Remove any affixes that are associated to the item being unequipped
+            for affix in prev_item._equipment_affixes:
+                self.modifiable_equipped_stats.remove(affix.modifier)
 
             if storage is not None:
                 storage.store(prev_item)

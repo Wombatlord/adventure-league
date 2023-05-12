@@ -27,7 +27,7 @@ class Damage:
         # evasion % chance to completely evade
         if (
             random.randint(0, 100)
-            <= target.fighter.equipment.base_equipped_stats.evasion * 100
+            <= target.fighter.equipment.modifiable_equipped_stats.current.evasion * 100
         ):
             self.final_damage = 0
             message = f"{target.name} evaded the attack!\n"
@@ -57,7 +57,7 @@ class Damage:
     def _critical_confirm(self, target):
         message = ""
         if (
-            random.randint(0, 100)
+            random.randint(1, 100)
             <= target.fighter.equipment.modifiable_equipped_stats.current.crit
         ):
             self.raw_damage *= 2

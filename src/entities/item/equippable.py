@@ -54,6 +54,7 @@ class Equippable(EquippableABC):
     _attacks: list[str]
     _spells: list[str]
     _fighter_affixes: list[StatAffix]
+    _equipment_affixes: list[StatAffix]
     _available_attacks_cache: list[WeaponAttackMeta]
     _available_spells_cache: list[Spell]
     _modifiable_stats: ModifiableStats
@@ -185,9 +186,9 @@ def default_equippable_factory(
     gearset_config: dict | None = None,
 ) -> Callable[[FighterArchetype], dict[str, Equippable]]:
     gearset_config = gearset_config or {
-        "weapon": {"melee": (Sword,), "ranged": (Bow,), "caster": (SpellBook,)},
-        "helmet": {"melee": (Helmet,), "ranged": (Helmet,), "caster": (Helmet,)},
-        "body": {
+        "_weapon": {"melee": (Sword,), "ranged": (Bow,), "caster": (SpellBook,)},
+        "_helmet": {"melee": (Helmet,), "ranged": (Helmet,), "caster": (Helmet,)},
+        "_body": {
             "melee": (Breastplate,),
             "ranged": (Breastplate,),
             "caster": (Breastplate,),
@@ -195,14 +196,18 @@ def default_equippable_factory(
     }
 
     def factory(role: FighterArchetype) -> dict[str, Equippable]:
-        weapons = gearset_config.get("weapon", {})
-        helmets = gearset_config.get("helmet", {})
-        bodies = gearset_config.get("body", {})
+        weapons = gearset_config.get("_weapon", {})
+        helmets = gearset_config.get("_helmet", {})
+        bodies = gearset_config.get("_body", {})
 
         return {
-            "weapon": Equippable(owner=None, config=random.choice(weapons[role.value])),
-            "helmet": Equippable(owner=None, config=random.choice(helmets[role.value])),
-            "body": Equippable(owner=None, config=random.choice(bodies[role.value])),
+            "_weapon": Equippable(
+                owner=None, config=random.choice(weapons[role.value])
+            ),
+            "_helmet": Equippable(
+                owner=None, config=random.choice(helmets[role.value])
+            ),
+            "_body": Equippable(owner=None, config=random.choice(bodies[role.value])),
         }
 
     return factory
@@ -223,7 +228,7 @@ class EquippableConfig(NamedTuple):
 # Example Configs
 Helmet = EquippableConfig(
     name="helmet",
-    slot="helmet",
+    slot="_helmet",
     fighter_affixes=[PercentPowerIncrease],
     stats=EquippableStats(
         crit=0,
@@ -234,7 +239,7 @@ Helmet = EquippableConfig(
 
 Breastplate = EquippableConfig(
     name="breastplate",
-    slot="body",
+    slot="_body",
     fighter_affixes=[RawPowerIncrease, RawDefenceIncrease],
     equipment_affixes=[PercentCritIncrease],
     stats=EquippableStats(
@@ -246,14 +251,15 @@ Breastplate = EquippableConfig(
 
 Sword = EquippableConfig(
     name="sword",
-    slot="weapon",
+    slot="_weapon",
     attack_verb="melee",
     range=1,
     attacks=[NormalAttack.name],
     spells=[],
     fighter_affixes=[RawPowerIncrease],
+    equipment_affixes=[PercentCritIncrease],
     stats=EquippableStats(
-        crit=25,
+        crit=10,
         block=0,
         evasion=0,
         attack_dice=2,
@@ -263,13 +269,13 @@ Sword = EquippableConfig(
 
 Bow = EquippableConfig(
     name="bow",
-    slot="weapon",
+    slot="_weapon",
     attack_verb="ranged",
     range=5,
     attacks=[NormalAttack.name],
     spells=[],
     stats=EquippableStats(
-        crit=1,
+        crit=15,
         block=0,
         evasion=0,
         attack_dice=1,
@@ -279,7 +285,7 @@ Bow = EquippableConfig(
 
 SpellBook = EquippableConfig(
     name="grimoire",
-    slot="weapon",
+    slot="_weapon",
     attack_verb="melee",
     range=1,
     attacks=[NormalAttack.name],
