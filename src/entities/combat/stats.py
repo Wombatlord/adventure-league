@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import NamedTuple
+from typing import Callable, NamedTuple
 
 from src.entities.combat.modifiable_stats import Modifier, namedtuple_add
 
@@ -76,6 +76,8 @@ class EquippableStats(NamedTuple):
     attack: int = 0
     block: int = 0
     evasion: int = 0
+    attack_dice: int = 0
+    attack_dice_faces: int = 0
 
     def __add__(self, other):
         return namedtuple_add(self.__class__, self, other)

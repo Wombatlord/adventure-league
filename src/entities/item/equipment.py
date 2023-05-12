@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Self
-
-from src.entities.combat.modifiable_stats import Modifier
-from src.entities.combat.stats import FighterStats, StatAffix
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
 
-from src.entities.item.equippable import Equippable, EquippableConfig
+from src.entities.item.equippable import Equippable
 
 
 class Storage(metaclass=abc.ABCMeta):

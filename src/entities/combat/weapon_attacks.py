@@ -39,6 +39,14 @@ class WeaponAttackMeta(type, metaclass=abc.ABCMeta):
     def fighter(self):
         return self._fighter
 
+    @classmethod
+    def live_check(cls, attacker, target):
+        if attacker.owner.is_dead:
+            raise ValueError(f"{attacker.owner.name=}: I'm dead jim.")
+
+        if target.is_dead:
+            raise ValueError(f"{target.name=}: He's dead jim.")
+
 
 class NormalAttack(metaclass=WeaponAttackMeta):
     name: str = "Normal Attack"
@@ -56,12 +64,8 @@ class NormalAttack(metaclass=WeaponAttackMeta):
     def attack(self, target: Entity) -> Generator[Event, None, None]:
         result = {}
         message = ""
-        if self._fighter.owner.is_dead:
-            raise ValueError(f"{self._fighter.owner.name=}: I'm dead jim.")
 
-        if target.is_dead:
-            raise ValueError(f"{target.name=}: He's dead jim.")
-
+        WeaponAttackMeta.live_check(self._fighter, target)
         # For choosing attack animation sprites
         self._fighter.in_combat = True
         target.fighter.in_combat = True
@@ -77,9 +81,10 @@ class NormalAttack(metaclass=WeaponAttackMeta):
                 message = f"{self._fighter.owner.name} fails to hit {target.name}!"
             case _:
                 # actual_damage = AttackRules.damage_amount(self._fighter, target)
-                raw_damage = Damage.calculate_raw(self._fighter, target)
-                attack_resolution = raw_damage.resolve_damage()
-                yield from attack_resolution
+                yield from self.fighter.equipment.weapon.emit_damage().resolve_damage(
+                    target
+                )
+                # yield from Damage.calculate_raw(self._fighter).resolve_damage(target)
 
         result.update({"attack": self._fighter.owner, "message": message})
         yield result

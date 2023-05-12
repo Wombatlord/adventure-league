@@ -5,6 +5,7 @@ import random
 from typing import TYPE_CHECKING, Callable, NamedTuple, Self
 
 from src.entities.combat.archetypes import FighterArchetype
+from src.entities.combat.damage import Damage
 from src.entities.combat.modifiable_stats import ModifiableStats, Modifier
 from src.entities.combat.stats import (
     EquippableStats,
@@ -100,6 +101,20 @@ class Equippable(EquippableABC):
     @property
     def attack_verb(self) -> str:
         return self._attack_verb
+
+    def dice(self, die_count, faces):
+        roll = 0
+        for _ in range(die_count):
+            roll += random.randint(1, faces)
+        return roll
+
+    def emit_damage(self):
+        dies = int(self.stats.attack_dice)
+        faces = self.stats.attack_dice_faces
+        roll_base_damage = self.dice(dies, faces)
+        max_damage = self._owner.modifiable_stats.current.power + roll_base_damage
+
+        return Damage(max_damage, self._owner)
 
     def _atk_cache_warmup(self):
         self._available_attacks_cache = (
@@ -222,7 +237,7 @@ Sword = EquippableConfig(
     attacks=[NormalAttack.name],
     spells=[],
     affixes=[RawPowerIncrease],
-    stats=EquippableStats(2, 0, 0),
+    stats=EquippableStats(2, 0, 0, 2, 6),
 )
 
 Bow = EquippableConfig(
@@ -232,7 +247,7 @@ Bow = EquippableConfig(
     range=5,
     attacks=[NormalAttack.name],
     spells=[],
-    stats=EquippableStats(1, 0, 0),
+    stats=EquippableStats(1, 0, 0, 1, 12),
 )
 
 SpellBook = EquippableConfig(
@@ -242,5 +257,5 @@ SpellBook = EquippableConfig(
     range=1,
     attacks=[NormalAttack.name],
     spells=[MagicMissile.name, Shield.name, Fireball.name],
-    stats=EquippableStats(0, 0, 0),
+    stats=EquippableStats(0, 0, 0, 1, 4),
 )
