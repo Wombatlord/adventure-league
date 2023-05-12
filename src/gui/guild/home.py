@@ -187,6 +187,9 @@ class HomeView(arcade.View):
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
+            case arcade.key.P:
+                breakpoint()
+
             case arcade.key.S:
                 slot = 0
                 if config.DEBUG:

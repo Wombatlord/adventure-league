@@ -20,12 +20,15 @@ class Damage:
         self.raw_damage = raw_damage
         self.final_damage = 0
 
-    def resolve_damage(self, target) -> Generator[Event, None, None]:
+    def resolve_damage(self, target: Entity) -> Generator[Event, None, None]:
         yield from self._attack_message(target)
         result = {}
 
-        # 10% chance to completely evade
-        if random.randint(1, 10) == 1:
+        # evasion % chance to completely evade
+        if (
+            random.randint(0, 100)
+            <= target.fighter.equipment.base_equipped_stats.evasion * 100
+        ):
             self.final_damage = 0
             message = f"{target.name} evaded the attack!\n"
             result.update({"message": message})
@@ -34,6 +37,7 @@ class Damage:
             return
 
         # Resolve Damage if not evaded.
+        yield from self._critical_confirm(target)
         yield from self._damage_reduction_by_defense(target)
         yield from self._final_resolved_damage(target)
 
@@ -49,6 +53,18 @@ class Damage:
             yield {
                 "message": f"{originator_name} shoots at {target_name} with their {weapon.name}\n"
             }
+
+    def _critical_confirm(self, target):
+        message = ""
+        if (
+            random.randint(0, 100)
+            <= target.fighter.equipment.modifiable_equipped_stats.current.crit
+        ):
+            self.raw_damage *= 2
+            yield {"message": "CRITICAL!"}
+
+        else:
+            yield {"message": message}
 
     def _damage_reduction_by_defense(
         self, target: Entity

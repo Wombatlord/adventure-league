@@ -52,10 +52,10 @@ class SerialisationTest(TestCase):
         rehydrated_equipment: Equipment = rehydrated_roster[0].fighter.equipment
 
         original_weapon_affixes = [
-            affix for affix in original_equipment.weapon._affixes
+            affix for affix in original_equipment.weapon._fighter_affixes
         ]
         rehydrated_weapon_affixes = [
-            affix for affix in rehydrated_equipment.weapon._affixes
+            affix for affix in rehydrated_equipment.weapon._fighter_affixes
         ]
 
         # Assert

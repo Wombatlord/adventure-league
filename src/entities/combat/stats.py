@@ -73,9 +73,9 @@ class FighterStats(NamedTuple):
 
 class EquippableStats(NamedTuple):
     name = "EquippableStats"
-    attack: int = 0
-    block: int = 0
-    evasion: int = 0
+    crit: float = 0
+    block: float = 0
+    evasion: float = 0
     attack_dice: int = 0
     attack_dice_faces: int = 0
 
@@ -101,6 +101,9 @@ modifiers = {
     "jaguar": lambda: Modifier(
         FighterStats, percent=FighterStats(defence=random.randint(20, 60))
     ),
+    "eagle": lambda: Modifier(
+        EquippableStats, percent=EquippableStats(crit=random.randint(1, 5))
+    ),
 }
 
 
@@ -115,3 +118,4 @@ RawPowerIncrease = affix_from_modifier("bear")
 PercentPowerIncrease = affix_from_modifier("tiger")
 RawDefenceIncrease = affix_from_modifier("bull")
 PercentDefenceIncrease = affix_from_modifier("jaguar")
+PercentCritIncrease = affix_from_modifier("eagle")

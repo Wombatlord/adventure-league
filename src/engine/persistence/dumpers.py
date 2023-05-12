@@ -110,9 +110,10 @@ class GameStateDumpers:
             "attacks": equippable_config.attacks,
             "spells": equippable_config.spells,
             "affixes": [
-                cls.stat_affix_to_dict(affix) for affix in equippable_config.affixes
+                cls.stat_affix_to_dict(affix)
+                for affix in equippable_config.fighter_affixes
             ]
-            if equippable_config.affixes
+            if equippable_config.fighter_affixes
             else [],
         }
 
