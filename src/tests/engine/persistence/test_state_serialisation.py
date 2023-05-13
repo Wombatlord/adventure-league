@@ -31,16 +31,16 @@ class SerialisationTest(TestCase):
         self.guild_dict = GameStateDumpers.guild_to_dict(self.guild)
         self.guild_dict_cpy = copy(self.guild_dict)
 
+        if create_save_file:
+            GuildRepository.save(
+                slot=0, guild_to_serialise=self.guild, fmts=self.formats, testing=True
+            )
         # that you want to see reappear here
         self.loaded_guild = GameStateLoaders.guild_from_dict(self.guild_dict_cpy)
 
         self.reserialised_guild = GameStateDumpers.guild_to_dict(self.loaded_guild)
         self._is_set_up = True
 
-        if create_save_file:
-            GuildRepository.save(
-                slot=0, guild_to_serialise=self.guild, fmts=self.formats, testing=True
-            )
 
     def test_rehydrated_fighter_in_roster_has_properly_rehydrated_equipment(self):
         # Arrange / Action
@@ -52,10 +52,10 @@ class SerialisationTest(TestCase):
         rehydrated_equipment: Equipment = rehydrated_roster[0].fighter.equipment
 
         original_weapon_affixes = [
-            affix for affix in original_equipment.weapon._affixes
+            affix for affix in original_equipment.weapon._fighter_affixes
         ]
         rehydrated_weapon_affixes = [
-            affix for affix in rehydrated_equipment.weapon._affixes
+            affix for affix in rehydrated_equipment.weapon._fighter_affixes
         ]
 
         # Assert

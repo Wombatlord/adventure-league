@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import random
-from typing import NamedTuple
+from typing import Callable, NamedTuple
 
-from src.entities.combat.modifiable_stats import Modifier, namedtuple_add
+from src.entities.combat.modifiable_stats import (
+    Modifier,
+    namedtuple_add,
+    namedtuple_sub,
+)
 
 
 class HealthPool:
@@ -70,21 +74,33 @@ class FighterStats(NamedTuple):
     def __add__(self, other):
         return namedtuple_add(self.__class__, self, other)
 
+    def __sub__(self, other):
+        return namedtuple_sub(self.__class__, self, other)
+
 
 class EquippableStats(NamedTuple):
-    attack: int = 0
-    block: int = 0
-    evasion: int = 0
+    name = "EquippableStats"
+    crit: float = 0
+    block: float = 0
+    evasion: float = 0
+    attack_dice: int = 0
+    attack_dice_faces: int = 0
+
+    def __add__(self, other):
+        return namedtuple_add(self.__class__, self, other)
+
+    def __sub__(self, other):
+        return namedtuple_sub(self.__class__, self, other)
 
 
 class StatAffix(NamedTuple):
     name: str
-    modifier: Modifier[FighterStats]
+    modifier: Modifier[FighterStats | EquippableStats]
 
 
 modifiers = {
     "bear": lambda: Modifier(
-        FighterStats, base=FighterStats(power=random.randint(1, 13))
+        FighterStats, base=FighterStats(power=random.randint(1, 3))
     ),
     "tiger": lambda: Modifier(
         FighterStats, percent=FighterStats(power=random.randint(20, 60))
@@ -95,6 +111,9 @@ modifiers = {
     "jaguar": lambda: Modifier(
         FighterStats, percent=FighterStats(defence=random.randint(20, 60))
     ),
+    "eagle": lambda: Modifier(
+        EquippableStats, percent=EquippableStats(crit=random.randint(1, 5))
+    ),
 }
 
 
@@ -104,8 +123,9 @@ def affix_from_modifier(name: str) -> StatAffix:
         modifier=modifiers.get(name, lambda: Modifier(FighterStats))(),
     )
 
-
-RawPowerIncrease = affix_from_modifier("bear")
-PercentPowerIncrease = affix_from_modifier("tiger")
-RawDefenceIncrease = affix_from_modifier("bull")
-PercentDefenceIncrease = affix_from_modifier("jaguar")
+# These are lambdas so that an Equippable can roll a fresh affix on instantiation.
+RawPowerIncrease = lambda: affix_from_modifier("bear")
+PercentPowerIncrease = lambda: affix_from_modifier("tiger")
+RawDefenceIncrease = lambda: affix_from_modifier("bull")
+PercentDefenceIncrease = lambda: affix_from_modifier("jaguar")
+PercentCritIncrease = lambda: affix_from_modifier("eagle")

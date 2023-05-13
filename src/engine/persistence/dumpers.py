@@ -85,23 +85,24 @@ class GameStateDumpers:
     @classmethod
     def equipment_to_dict(cls, equipment: Equipment) -> dict:
         return {
-            "weapon": cls.equippable_to_dict(equipment.weapon)
+            "_weapon": cls.equippable_to_dict(equipment.weapon)
             if equipment.weapon
             else None,
-            "helmet": cls.equippable_to_dict(equipment.helmet)
+            "_helmet": cls.equippable_to_dict(equipment.helmet)
             if equipment.helmet
             else None,
-            "body": cls.equippable_to_dict(equipment.body) if equipment.body else None,
+            "_body": cls.equippable_to_dict(equipment.body) if equipment.body else None,
+            "base_equipped_stats": equipment.base_equipped_stats._asdict(),
         }
 
     @classmethod
     def equippable_to_dict(cls, equippable: Equippable) -> dict:
         return {
-            "config": cls.equippable_config_to_dict(equippable._config),
+            "config": cls.equippable_config_to_dict(equippable._config, equippable._fighter_affixes, equippable._equipment_affixes), "stats": equippable._stats._asdict(),
         }
 
     @classmethod
-    def equippable_config_to_dict(cls, equippable_config: EquippableConfig) -> dict:
+    def equippable_config_to_dict(cls, equippable_config: EquippableConfig, resolved_fighter_affixes, resolved_equippable_affixes) -> dict:
         return {
             "name": equippable_config.name,
             "slot": equippable_config.slot,
@@ -109,10 +110,17 @@ class GameStateDumpers:
             "range": equippable_config.range,
             "attacks": equippable_config.attacks,
             "spells": equippable_config.spells,
-            "affixes": [
-                cls.stat_affix_to_dict(affix) for affix in equippable_config.affixes
+            "fighter_affixes": [
+                cls.stat_affix_to_dict(affix)
+                for affix in resolved_fighter_affixes
             ]
-            if equippable_config.affixes
+            if resolved_fighter_affixes
+            else [],
+            "equipment_affixes": [
+                cls.stat_affix_to_dict(affix)
+                for affix in resolved_equippable_affixes
+            ]
+            if resolved_equippable_affixes
             else [],
         }
 

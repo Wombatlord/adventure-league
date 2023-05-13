@@ -27,14 +27,17 @@ class RollOutcome(Enum):
     @classmethod
     def from_percent(cls, chance: PercentChance) -> Self:
         match chance.as_percent(), chance.outcome():
-            case x, False if x < 5:
-                return cls.CRITICAL_FAIL
-            case x, True if x >= 95:
-                return cls.PERFECT_SUCCESS
-            case _, False:
-                return cls.FAIL
-            case _:
-                return cls.SUCCESS
+            case x, False:
+                if x < 5:
+                    return cls.CRITICAL_FAIL
+                else:
+                    return cls.FAIL
+
+            case x, True:
+                if x >= 95:
+                    return cls.PERFECT_SUCCESS
+                else:
+                    return cls.SUCCESS
 
 
 class PercentChance:
@@ -73,20 +76,8 @@ class AttackRules:
     @staticmethod
     def chance_to_hit(attacker: Fighter, target: Entity) -> PercentChance:
         p = attacker.modifiable_stats.current.power
-        d = target.fighter.modifiable_stats.current.defence
+        d = target.fighter.equipment.modifiable_equipped_stats.current.evasion
 
         to_hit = make_probability_func(sensitivity=5)
 
         return PercentChance(100 * to_hit(p - d))
-
-    @staticmethod
-    def damage_amount(attacker: Fighter, target: Entity) -> int:
-        p = attacker.modifiable_stats.current.power
-        d = target.fighter.modifiable_stats.current.defence
-        actual_damage = 2 * int(p**2 / (p + d))
-
-        if target.fighter.health.current - actual_damage <= 0:
-            # If the attack will kill, we will no longer be "in combat" until the next attack.
-            attacker.in_combat = False
-
-        return actual_damage

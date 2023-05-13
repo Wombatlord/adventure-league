@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generator
 
 from src.entities.combat.attack_rules import AttackRules, RollOutcome
+from src.entities.combat.damage import Damage
 from src.entities.properties.meta_compendium import MetaCompendium
 from src.world.node import Node
 
@@ -38,11 +39,20 @@ class WeaponAttackMeta(type, metaclass=abc.ABCMeta):
     def fighter(self):
         return self._fighter
 
+    @classmethod
+    def live_check(cls, attacker, target):
+        if attacker.owner.is_dead:
+            raise ValueError(f"{attacker.owner.name=}: I'm dead jim.")
+
+        if target.is_dead:
+            raise ValueError(f"{target.name=}: He's dead jim.")
+
 
 class NormalAttack(metaclass=WeaponAttackMeta):
     name: str = "Normal Attack"
     ap_cost: int = 1
     max_range: int = 1
+    _fighter: Fighter
 
     def __init__(self, fighter) -> None:
         self._fighter = fighter
@@ -51,39 +61,21 @@ class NormalAttack(metaclass=WeaponAttackMeta):
     def fighter(self):
         return self._fighter
 
-    def attack(self, target: Entity) -> Event:
+    def attack(self, target: Entity) -> Generator[Event, None, None]:
         result = {}
-        if self._fighter.owner.is_dead:
-            raise ValueError(f"{self._fighter.owner.name=}: I'm dead jim.")
+        message = ""
 
-        if target.is_dead:
-            raise ValueError(f"{target.name=}: He's dead jim.")
-
+        WeaponAttackMeta.live_check(self._fighter, target)
         # For choosing attack animation sprites
         self._fighter.in_combat = True
         target.fighter.in_combat = True
 
-        match RollOutcome.from_percent(
-            AttackRules.chance_to_hit(self._fighter, target)
-        ):
-            case RollOutcome.CRITICAL_FAIL:
-                message = f"{self._fighter.owner.name} fails to hit {target.name} embarrasingly!"
-                self._fighter.commence_retreat()
-            case RollOutcome.FAIL:
-                message = f"{self._fighter.owner.name} fails to hit {target.name}!"
-            case _:
-                actual_damage = AttackRules.damage_amount(self._fighter, target)
-                if self._fighter.equipment.weapon.attack_verb == "melee":
-                    message = f"{self._fighter.owner.name} hits {target.name} with their {self._fighter.equipment.weapon.name} for {actual_damage}\n"
-                elif self._fighter.equipment.weapon.attack_verb == "ranged":
-                    message = f"{self._fighter.owner.name} shoots {target.name} with their {self._fighter.equipment.weapon.name} for {actual_damage}\n"
-
-                damage_details = target.fighter.take_damage(actual_damage)
-
-                result.update(**damage_details)
+        yield from self.fighter.equipment.weapon.emit_damage().resolve_damage(
+            target
+        )
 
         result.update({"attack": self._fighter.owner, "message": message})
-        return result
+        yield result
 
     def valid_target(self, target: Fighter | Node) -> bool:
         if not hasattr(target, "location"):

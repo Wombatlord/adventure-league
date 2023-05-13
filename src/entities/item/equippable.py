@@ -5,9 +5,12 @@ import random
 from typing import TYPE_CHECKING, Callable, NamedTuple, Self
 
 from src.entities.combat.archetypes import FighterArchetype
-from src.entities.combat.modifiable_stats import Modifier
+from src.entities.combat.damage import Damage
+from src.entities.combat.modifiable_stats import ModifiableStats, Modifier
 from src.entities.combat.stats import (
+    EquippableStats,
     FighterStats,
+    PercentCritIncrease,
     PercentPowerIncrease,
     RawDefenceIncrease,
     RawPowerIncrease,
@@ -39,7 +42,7 @@ class EquippableABC(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def modifiers(self) -> list[Modifier[FighterStats]]:
+    def fighter_modifiers(self) -> list[Modifier[FighterStats]]:
         raise NotImplementedError()
 
 
@@ -50,9 +53,11 @@ class Equippable(EquippableABC):
     _attack_verb: str
     _attacks: list[str]
     _spells: list[str]
-    _affixes: list[StatAffix]
+    _fighter_affixes: list[StatAffix]
+    _equipment_affixes: list[StatAffix]
     _available_attacks_cache: list[WeaponAttackMeta]
     _available_spells_cache: list[Spell]
+    _modifiable_stats: ModifiableStats
 
     def __init__(
         self, owner: Fighter | None, config: EquippableConfig | None = None
@@ -65,10 +70,14 @@ class Equippable(EquippableABC):
         self._attack_verb = config.attack_verb
         self._attacks = config.attacks
         self._spells = config.spells
-        self._affixes = config.affixes
+        self._fighter_affixes = config.fighter_affixes
+        self._equipment_affixes = config.equipment_affixes
+        self._stats = config.stats
+        self._modifiable_stats = ModifiableStats(EquippableStats, self._stats)
         self._available_attacks_cache = []
         self._available_spells_cache = []
-
+        self._init_affixes()
+        
     @property
     def slot(self) -> str:
         return self._slot
@@ -82,6 +91,10 @@ class Equippable(EquippableABC):
         return self._range
 
     @property
+    def stats(self) -> ModifiableStats:
+        return self._modifiable_stats.current
+
+    @property
     def available_attacks(self) -> list[WeaponAttackMeta]:
         return self._available_attacks_cache
 
@@ -92,6 +105,20 @@ class Equippable(EquippableABC):
     @property
     def attack_verb(self) -> str:
         return self._attack_verb
+
+    def dice(self, die_count: int, faces: int) -> int:
+        roll = 0
+        for _ in range(die_count):
+            roll += random.randint(1, faces)
+        return roll
+
+    def emit_damage(self) -> Damage:
+        dies = int(self.stats.attack_dice)
+        faces = self.stats.attack_dice_faces
+        roll_base_damage = self.dice(dies, faces)
+        max_damage = self._owner.modifiable_stats.current.power + roll_base_damage
+
+        return Damage(max_damage, self._owner)
 
     def _atk_cache_warmup(self):
         self._available_attacks_cache = (
@@ -107,9 +134,9 @@ class Equippable(EquippableABC):
             else []
         )
 
-    def on_equip(self, owner) -> Self:
+    def on_equip(self, owner: Fighter) -> Self:
         self._owner = owner
-        self._owner.modifiable_stats.set_modifiers(self.modifiers())
+        self._owner.modifiable_stats.set_modifiers(self.fighter_modifiers())
         self._atk_cache_warmup()
         self._spell_cache_warmup()
 
@@ -149,17 +176,40 @@ class Equippable(EquippableABC):
         self._available_attacks_cache = None
         self._available_spells_cache = None
 
-    def modifiers(self) -> list[Modifier[FighterStats]]:
-        return [affix.modifier for affix in self._affixes]
+    def _init_affixes(self):
+        """
+        This is called on instantiation of a new equippable,
+        It rolls fresh affixes which replace the lambda waiting to be invoked.
+        """
+        self._init_fighter_affixes()     
+        self._init_equipment_affixes()
+
+    def _init_equipment_affixes(self):
+        mods = []
+        for affix in self._equipment_affixes:
+            mods.append(affix())
+        self._equipment_affixes = mods
+
+    def _init_fighter_affixes(self):
+        mods = []
+        for affix in self._fighter_affixes:
+            mods.append(affix())
+        self._fighter_affixes = mods
+        
+    def fighter_modifiers(self) -> list[Modifier[FighterStats]]:
+        return [affix.modifier for affix in self._fighter_affixes]
+
+    def equipment_modifiers(self) -> list[Modifier[EquippableStats]]:
+        return [affix.modifier for affix in self._equipment_affixes]
 
 
 def default_equippable_factory(
     gearset_config: dict | None = None,
 ) -> Callable[[FighterArchetype], dict[str, Equippable]]:
     gearset_config = gearset_config or {
-        "weapon": {"melee": (Sword,), "ranged": (Bow,), "caster": (SpellBook,)},
-        "helmet": {"melee": (Helmet,), "ranged": (Helmet,), "caster": (Helmet,)},
-        "body": {
+        "_weapon": {"melee": (Sword,), "ranged": (Bow,), "caster": (SpellBook,)},
+        "_helmet": {"melee": (Helmet,), "ranged": (Helmet,), "caster": (Helmet,)},
+        "_body": {
             "melee": (Breastplate,),
             "ranged": (Breastplate,),
             "caster": (Breastplate,),
@@ -167,14 +217,18 @@ def default_equippable_factory(
     }
 
     def factory(role: FighterArchetype) -> dict[str, Equippable]:
-        weapons = gearset_config.get("weapon", {})
-        helmets = gearset_config.get("helmet", {})
-        bodies = gearset_config.get("body", {})
+        weapons = gearset_config.get("_weapon", {})
+        helmets = gearset_config.get("_helmet", {})
+        bodies = gearset_config.get("_body", {})
 
         return {
-            "weapon": Equippable(owner=None, config=random.choice(weapons[role.value])),
-            "helmet": Equippable(owner=None, config=random.choice(helmets[role.value])),
-            "body": Equippable(owner=None, config=random.choice(bodies[role.value])),
+            "_weapon": Equippable(
+                owner=None, config=random.choice(weapons[role.value])
+            ),
+            "_helmet": Equippable(
+                owner=None, config=random.choice(helmets[role.value])
+            ),
+            "_body": Equippable(owner=None, config=random.choice(bodies[role.value])),
         }
 
     return factory
@@ -187,42 +241,82 @@ class EquippableConfig(NamedTuple):
     range: int = 0
     attacks: list[str] | None = None
     spells: list[str] | None = None
-    affixes: list = []
+    fighter_affixes: list = []
+    equipment_affixes: list = []
+    stats: EquippableStats | None = None
 
 
 # Example Configs
-Helmet = EquippableConfig(name="helmet", slot="helmet", affixes=[PercentPowerIncrease])
+Helmet = EquippableConfig(
+    name="helmet",
+    slot="_helmet",
+    fighter_affixes=[PercentPowerIncrease],
+    stats=EquippableStats(
+        crit=0,
+        block=0,
+        evasion=0,
+    ),
+)
 
 Breastplate = EquippableConfig(
     name="breastplate",
-    slot="body",
-    affixes=[RawPowerIncrease, RawDefenceIncrease],
+    slot="_body",
+    fighter_affixes=[RawPowerIncrease, RawDefenceIncrease],
+    equipment_affixes=[PercentCritIncrease],
+    stats=EquippableStats(
+        crit=0,
+        block=0,
+        evasion=0.05,
+    ),
 )
 
 Sword = EquippableConfig(
     name="sword",
-    slot="weapon",
+    slot="_weapon",
     attack_verb="melee",
     range=1,
     attacks=[NormalAttack.name],
     spells=[],
-    affixes=[RawPowerIncrease],
+    fighter_affixes=[RawPowerIncrease],
+    equipment_affixes=[PercentCritIncrease],
+    stats=EquippableStats(
+        crit=10,
+        block=0,
+        evasion=0,
+        attack_dice=2,
+        attack_dice_faces=6,
+    ),
 )
 
 Bow = EquippableConfig(
     name="bow",
-    slot="weapon",
+    slot="_weapon",
     attack_verb="ranged",
     range=5,
     attacks=[NormalAttack.name],
+    
     spells=[],
+    stats=EquippableStats(
+        crit=15,
+        block=0,
+        evasion=0,
+        attack_dice=1,
+        attack_dice_faces=12,
+    ),
 )
 
 SpellBook = EquippableConfig(
     name="grimoire",
-    slot="weapon",
+    slot="_weapon",
     attack_verb="melee",
     range=1,
     attacks=[NormalAttack.name],
     spells=[MagicMissile.name, Shield.name, Fireball.name],
+    stats=EquippableStats(
+        crit=0,
+        block=0,
+        evasion=0,
+        attack_dice=1,
+        attack_dice_faces=4,
+    ),
 )

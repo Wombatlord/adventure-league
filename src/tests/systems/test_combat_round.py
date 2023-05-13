@@ -1,7 +1,5 @@
 from unittest import TestCase
 
-from viztracer import VizTracer
-
 from src.entities.ai.ai import BasicCombatAi
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
@@ -65,22 +63,21 @@ class CombatRoundTest(TestCase):
 
         # Action
         # ======
-        with VizTracer(output_file="profiles/combat_round_profile.json"):
-            while not merc.fighter.incapacitated and not enemy.fighter.incapacitated:
-                combat_round = CombatRound([merc], [enemy])
-                while combat_round.continues():
-                    for event in combat_round.do_turn():
-                        # auto select first target
-                        if "await_input" in event:
-                            fighter = event["await_input"]
-                            ai.choose(event)
-                            assert fighter.is_ready_to_act()
+        while not merc.fighter.incapacitated and not enemy.fighter.incapacitated:
+            combat_round = CombatRound([merc], [enemy])
+            while combat_round.continues():
+                for event in combat_round.do_turn():
+                    # auto select first target
+                    if "await_input" in event:
+                        fighter = event["await_input"]
+                        ai.choose(event)
+                        assert fighter.is_ready_to_act()
 
-                # assert we're actually progressing the state
-                assert (
-                    rounds < max_rounds
-                ), f"hit max rounds. Locations: {merc.locatable.location=}, {enemy.locatable.location=}"
-                rounds += 1
+            # assert we're actually progressing the state
+            assert (
+                rounds < max_rounds
+            ), f"hit max rounds. Locations: {merc.locatable.location=}, {enemy.locatable.location=}"
+            rounds += 1
 
             assert not combat_round.continues(), "Combat should not be continuing now"
             assert (
