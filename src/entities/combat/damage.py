@@ -40,7 +40,7 @@ class Damage:
         yield from self._critical_confirm(target)
         yield from self._damage_reduction_by_defense(target)
         yield from self._final_resolved_damage(target)
-
+    
     def _attack_message(self, target) -> Event:
         originator_name = self.originator.owner.name
         weapon = self.originator.equipment.weapon
@@ -69,11 +69,11 @@ class Damage:
     def _damage_reduction_by_defense(
         self, target: Entity
     ) -> Generator[Event, None, None]:
-        mitigation = self._exponential_decay(
-            0.4, 0.9, target.fighter.modifiable_stats.current.defence
+        mitigation = self._mitigation(
+            max_mitigation=0.4, damage_fallthrough=0.8, defence=target.fighter.modifiable_stats.current.defence
         )
-        self.final_damage = self.raw_damage - (self.raw_damage * mitigation)
-        mitigation_percent = "{:.2f}".format(mitigation * 100)
+        self.final_damage = (1 - mitigation) * self.raw_damage
+        mitigation_percent = f"{mitigation * 100:.2f}"
         message = (
             f"{target.name}'s defence reduced the damage by {mitigation_percent}%!\n"
         )
@@ -94,5 +94,5 @@ class Damage:
         result.update(**damage_details)
         yield result
 
-    def _exponential_decay(self, limit: float, decay: float, stat: int) -> float:
-        return limit * (1 - decay**stat)
+    def _mitigation(self, max_mitigation: float, damage_fallthrough: float, defence: int) -> float:
+        return max_mitigation * (1 - damage_fallthrough**defence)

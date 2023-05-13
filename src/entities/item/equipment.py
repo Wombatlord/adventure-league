@@ -48,7 +48,7 @@ class Equipment:
         self._weapon = weapon
         self._helmet = helmet
         self._body = body
-        self.base_equipped_stats = EquippableStats(0, 0, 0, 0, 0)
+        self.base_equipped_stats = EquippableStats()
         self.modifiable_equipped_stats = ModifiableStats(
             EquippableStats, self.base_equipped_stats
         )
@@ -57,34 +57,13 @@ class Equipment:
     def weapon(self):
         return self._weapon
 
-    @weapon.setter
-    def weapon(self, weapon):
-        self._weapon = weapon
-
-        if weapon:
-            self.update_stats(weapon)
-
     @property
     def helmet(self):
         return self._helmet
 
-    @helmet.setter
-    def helmet(self, helmet):
-        self._helmet = helmet
-        
-        if helmet:
-            self.update_stats(helmet)
-
     @property
     def body(self):
         return self._body
-
-    @body.setter
-    def body(self, body):
-        self._body = body
-        
-        if body:
-            self.update_stats(body)
 
     def update_stats(self, item):
         self.base_equipped_stats += item.stats
@@ -106,13 +85,13 @@ class Equipment:
 
         match slot:
             case "_weapon":
-                self.weapon = item
+                self._weapon = item
             case "_helmet":
-                self.helmet = item
+                self._helmet = item
             case "_body":
-                self.body = item
+                self._body = item
 
-        # setattr(self, slot, item)
+        self.update_stats(item)
 
     def unequip(self, slot: str, storage: Storage | None = None):
         if prev_item := self.item_in_slot(slot):

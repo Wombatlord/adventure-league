@@ -70,21 +70,9 @@ class NormalAttack(metaclass=WeaponAttackMeta):
         self._fighter.in_combat = True
         target.fighter.in_combat = True
 
-        match RollOutcome.from_percent(
-            AttackRules.chance_to_hit(self._fighter, target)
-        ):
-            case RollOutcome.CRITICAL_FAIL:
-                message = f"{self._fighter.owner.name} fails to hit {target.name} embarrasingly!"
-                if not self._fighter.is_enemy:
-                    self._fighter.commence_retreat()
-            case RollOutcome.FAIL:
-                message = f"{self._fighter.owner.name} fails to hit {target.name}!"
-            case _:
-                # actual_damage = AttackRules.damage_amount(self._fighter, target)
-                yield from self.fighter.equipment.weapon.emit_damage().resolve_damage(
-                    target
-                )
-                # yield from Damage.calculate_raw(self._fighter).resolve_damage(target)
+        yield from self.fighter.equipment.weapon.emit_damage().resolve_damage(
+            target
+        )
 
         result.update({"attack": self._fighter.owner, "message": message})
         yield result

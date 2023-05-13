@@ -76,7 +76,7 @@ class AttackRules:
     @staticmethod
     def chance_to_hit(attacker: Fighter, target: Entity) -> PercentChance:
         p = attacker.modifiable_stats.current.power
-        d = target.fighter.modifiable_stats.current.defence
+        d = target.fighter.equipment.modifiable_equipped_stats.current.evasion
 
         to_hit = make_probability_func(sensitivity=5)
 

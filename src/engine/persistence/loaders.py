@@ -183,11 +183,10 @@ class GameStateLoaders:
         instance = object.__new__(Equipment)
 
         instance.owner = owner
-        instance.weapon = None
-        instance.helmet = None
-        instance.body = None
+        instance._weapon = None
+        instance._helmet = None
+        instance._body = None
         instance.base_equipped_stats = EquippableStats(**serialised_equipment["base_equipped_stats"])
-        # breakpoint()
         instance.modifiable_equipped_stats = ModifiableStats(
             EquippableStats, base_stats=instance.base_equipped_stats
         )
