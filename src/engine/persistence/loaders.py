@@ -3,7 +3,7 @@ from src.entities.action.actions import ActionPoints
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import EncounterContext, Fighter
 from src.entities.combat.modifiable_stats import ModifiableStats, Modifier
-from src.entities.combat.stats import FighterStats, HealthPool, StatAffix
+from src.entities.combat.stats import EquippableStats, FighterStats, HealthPool, StatAffix
 from src.entities.entity import Entity, Name
 from src.entities.item.equipment import Equipment
 from src.entities.item.equippable import Equippable, EquippableConfig
@@ -186,43 +186,79 @@ class GameStateLoaders:
         instance.weapon = None
         instance.helmet = None
         instance.body = None
-
+        instance.base_equipped_stats = EquippableStats(**serialised_equipment["base_equipped_stats"])
+        # breakpoint()
+        instance.modifiable_equipped_stats = ModifiableStats(
+            EquippableStats, base_stats=instance.base_equipped_stats
+        )
+        
         for slot in instance._equippable_slots:
-            setattr(
-                instance,
-                serialised_equipment[slot]["config"]["slot"],
-                cls.equippable_from_dict(serialised_equipment[slot], owner=instance),
-            )
+            match slot:
+                case "_weapon":
+                    instance._weapon = cls.equippable_from_dict(serialised_equipment[slot], owner=instance)
+                
+                case "_helmet":
+                    instance._helmet = cls.equippable_from_dict(serialised_equipment[slot], owner=instance)
+
+                case "_body":
+                    instance._body = cls.equippable_from_dict(serialised_equipment[slot], owner=instance)
+            
+            # setattr(
+            #     instance,
+            #     serialised_equipment[slot]["config"]["slot"],
+            #     cls.equippable_from_dict(serialised_equipment[slot], owner=instance),
+            # )
         return instance
 
     @classmethod
     def equippable_from_dict(cls, serialised_equippable: dict, owner) -> Equippable:
-        mods = []
-        for affix in serialised_equippable["config"]["affixes"]:
+        fighter_mods = []
+        for affix in serialised_equippable["config"]["fighter_affixes"]:
             if affix.get("modifier").get("stat_class") == "FighterStats":
-                mods.append(cls.stat_affix_from_dict(affix))
+                fighter_mods.append(cls.fighter_stat_affix_from_dict(affix))
 
+        equippable_mods = []
+        for affix in serialised_equippable["config"]["equipment_affixes"]:
+            if affix.get("modifier").get("stat_class") == "EquippableStats":
+                equippable_mods.append(cls.equipment_stat_affix_from_dict(affix))
+        
         instance = object.__new__(Equippable)
         instance.__dict__ = {
             "_owner": owner,
             **{f"_{k}": v for k, v in serialised_equippable["config"].items()},
-            "_affixes": mods,
+            "_fighter_affixes": fighter_mods,
+            "_equipment_affixes": equippable_mods,
             "_available_attack_cache": [],
             "_available_spell_cache": [],
+            "_stats": EquippableStats(**serialised_equippable["stats"]),
             "_config": EquippableConfig(
-                **{**serialised_equippable["config"], "affixes": mods}
+                **{**serialised_equippable["config"], "fighter_affixes": fighter_mods, "equipment_affixes": equippable_mods}
             ),
         }
+        
+        instance._modifiable_stats = ModifiableStats(EquippableStats, instance._stats)
 
         return instance
 
     @classmethod
-    def stat_affix_from_dict(cls, serialised_stat_affix: dict) -> StatAffix:
+    def fighter_stat_affix_from_dict(cls, serialised_stat_affix: dict) -> StatAffix:
         serialised_stat_affix["modifier"].pop("stat_class")
         modifier = Modifier(
             FighterStats,
             **{
                 k: FighterStats(**v)
+                for k, v in serialised_stat_affix["modifier"].items()
+            },
+        )
+        return StatAffix(serialised_stat_affix["name"], modifier)
+    
+    @classmethod
+    def equipment_stat_affix_from_dict(cls, serialised_stat_affix: dict) -> StatAffix:
+        serialised_stat_affix["modifier"].pop("stat_class")
+        modifier = Modifier(
+            EquippableStats,
+            **{
+                k: EquippableStats(**v)
                 for k, v in serialised_stat_affix["modifier"].items()
             },
         )

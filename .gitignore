@@ -13,8 +13,8 @@ assets/wordlists/
 __pycache__/
 docs/dev
 profiles/
-
-settings.yaml
+*.bak
 *.zip
+settings.yaml
 client_secrets.json
 credentials.json

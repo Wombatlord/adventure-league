@@ -14,6 +14,6 @@ config.SAVE_FILE_DIRECTORY = Path("src") / "tests" / "benchmarks" / "fixtures"
 class BenchmarkLoadTest(TestCase):
     def test_load(self):
         with VizTracer(output_file="profiles/test_load_profile.json"):
-            GuildRepository.load(slot=0)
+            GuildRepository.load(slot=0, testing=True)
 
         assert True

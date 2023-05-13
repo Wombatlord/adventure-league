@@ -78,7 +78,7 @@ class GuildRepository:
         return str(SAVE_FILE_DIRECTORY / f"save_{slot}.{fmt.value}")
 
     @classmethod
-    def load(cls, slot, fmt=Format.PICKLE):
+    def load(cls, slot, fmt=Format.PICKLE, testing=False):
         if not (0 <= slot < cls.MAX_SLOTS):
             raise ValueError(
                 f"Cannot load from slot {slot}, slot values must be one of {', '.join(*range(cls.MAX_SLOTS))}"
@@ -87,7 +87,7 @@ class GuildRepository:
         if not isinstance(fmt, Format):
             raise TypeError(f"Unrecognised format {fmt}")
 
-        return GameStateLoaders.guild_from_dict(fmt.load(cls.save_file_path(slot, fmt)))
+        return GameStateLoaders.guild_from_dict(fmt.load(cls.save_file_path(slot, fmt, testing)))
 
     @classmethod
     def save(
