@@ -76,7 +76,8 @@ class Equippable(EquippableABC):
         self._modifiable_stats = ModifiableStats(EquippableStats, self._stats)
         self._available_attacks_cache = []
         self._available_spells_cache = []
-
+        self._init_affixes()
+        
     @property
     def slot(self) -> str:
         return self._slot
@@ -175,6 +176,26 @@ class Equippable(EquippableABC):
         self._available_attacks_cache = None
         self._available_spells_cache = None
 
+    def _init_affixes(self):
+        """
+        This is called on instantiation of a new equippable,
+        It rolls fresh affixes which replace the lambda waiting to be invoked.
+        """
+        self._init_fighter_affixes()     
+        self._init_equipment_affixes()
+
+    def _init_equipment_affixes(self):
+        mods = []
+        for affix in self._equipment_affixes:
+            mods.append(affix())
+        self._equipment_affixes = mods
+
+    def _init_fighter_affixes(self):
+        mods = []
+        for affix in self._fighter_affixes:
+            mods.append(affix())
+        self._fighter_affixes = mods
+        
     def fighter_modifiers(self) -> list[Modifier[FighterStats]]:
         return [affix.modifier for affix in self._fighter_affixes]
 
@@ -273,6 +294,7 @@ Bow = EquippableConfig(
     attack_verb="ranged",
     range=5,
     attacks=[NormalAttack.name],
+    
     spells=[],
     stats=EquippableStats(
         crit=15,

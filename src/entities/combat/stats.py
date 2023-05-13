@@ -123,9 +123,9 @@ def affix_from_modifier(name: str) -> StatAffix:
         modifier=modifiers.get(name, lambda: Modifier(FighterStats))(),
     )
 
-
-RawPowerIncrease = affix_from_modifier("bear")
-PercentPowerIncrease = affix_from_modifier("tiger")
-RawDefenceIncrease = affix_from_modifier("bull")
-PercentDefenceIncrease = affix_from_modifier("jaguar")
-PercentCritIncrease = affix_from_modifier("eagle")
+# These are lambdas so that an Equippable can roll a fresh affix on instantiation.
+RawPowerIncrease = lambda: affix_from_modifier("bear")
+PercentPowerIncrease = lambda: affix_from_modifier("tiger")
+RawDefenceIncrease = lambda: affix_from_modifier("bull")
+PercentDefenceIncrease = lambda: affix_from_modifier("jaguar")
+PercentCritIncrease = lambda: affix_from_modifier("eagle")
