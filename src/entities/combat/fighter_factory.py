@@ -35,6 +35,7 @@ class StatBlock(NamedTuple):
     power: tuple[int, int]
     is_enemy: bool
     speed: int
+    role: FighterArchetype = FighterArchetype.MELEE
     is_boss: bool = False
     species: str = "human"
 
@@ -48,23 +49,44 @@ class StatBlock(NamedTuple):
             "defence": randint(*self.defence),
             "power": randint(*self.power),
             "is_enemy": self.is_enemy,
-            "role": FighterArchetype.MELEE,
+            "role": self.role,
             "speed": self.speed,
             "is_boss": self.is_boss,
         }
 
 
-_mercenary = StatBlock(
+_melee_mercenary_base = StatBlock(
     hp=(45, 45),
-    defence=(1, 3),
+    defence=(3, 5),
     power=(3, 5),
     speed=3,
+    role=FighterArchetype.MELEE,
     is_enemy=False,
     is_boss=False,
 )
+_ranged_mercenary_base = StatBlock(
+    hp=(40, 40),
+    defence=(1, 3),
+    power=(3, 5),
+    speed=3,
+    role=FighterArchetype.RANGED,
+    is_enemy=False,
+    is_boss=False,
+)
+_caster_mercenary_base = StatBlock(
+    hp=(45, 45),
+    defence=(1, 3),
+    power=(2, 4),
+    speed=3,
+    role=FighterArchetype.CASTER,
+    is_enemy=False,
+    is_boss=False,
+)
+
+
 _monster = StatBlock(
     species=Species.SLIME,
-    hp=(15, 20),
+    hp=(10, 15),
     defence=(1, 3),
     power=(1, 3),
     speed=1,
@@ -73,7 +95,7 @@ _monster = StatBlock(
 )
 _goblin = StatBlock(
     species=Species.GOBLIN,
-    hp=(20, 25),
+    hp=(15, 20),
     defence=(1, 3),
     power=(2, 4),
     speed=2,
@@ -93,9 +115,6 @@ _boss = StatBlock(
 def _setup_fighter_archetypes(
     fighter: Fighter, gear_factory: Callable[[FighterArchetype], dict]
 ):
-    if not fighter.is_enemy:
-        fighter.set_role(FighterArchetype.random_archetype())
-
     def default_equip(fighter):
         nonlocal gear
         for slot in fighter.equipment._equippable_slots:
@@ -156,7 +175,9 @@ def get_fighter_factory(
     return factory
 
 
-create_random_fighter = _mercenary.factory
+create_random_melee_fighter = _melee_mercenary_base.factory
+create_random_ranged_fighter = _ranged_mercenary_base.factory
+create_random_caster_fighter = _caster_mercenary_base.factory
 create_random_monster = _monster.factory
 create_random_goblin = _goblin.factory
 create_random_boss = _boss.factory
@@ -187,7 +208,15 @@ class RecruitmentPool:
         for _ in range(self.size):
             # iteratively pop a random name from the deepcopy array and supply the name to the factory.
             name = name_choices.pop(randint(0, len(name_choices) - 1))
-            self.pool.append(create_random_fighter(name))
+            match randint(0, 2):
+                case 0:
+                    self.pool.append(create_random_melee_fighter(name))
+                case 1:
+                    self.pool.append(create_random_ranged_fighter(name))
+                case 2:
+                    self.pool.append(create_random_caster_fighter(name))
+
+            # self.pool.append(create_random_fighter(name))
 
     def show_pool(self) -> None:
         # Sanity check function
