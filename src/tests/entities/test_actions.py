@@ -25,15 +25,15 @@ class ActionsTest(unittest.TestCase):
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
         weapon = EquippableItem(None, sword)
-        merc.fighter.equipment = Gear(merc.fighter)
-        merc.fighter.equipment.equip_item(weapon)
+        merc.fighter.gear = Gear(merc.fighter)
+        merc.fighter.gear.equip_item(weapon)
         merc.inventory = Inventory(owner=merc, capacity=1)
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
-        enemy.fighter.equipment = Gear(merc.fighter)
-        enemy.fighter.equipment.equip_item(weapon)
+        enemy.fighter.gear = Gear(merc.fighter)
+        enemy.fighter.gear.equip_item(weapon)
         return merc, enemy
 
     @classmethod

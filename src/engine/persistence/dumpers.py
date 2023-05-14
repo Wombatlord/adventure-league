@@ -58,7 +58,7 @@ class GameStateDumpers:
             "health": cls.health_pool_to_dict(fighter.health),
             "stats": fighter.stats._asdict(),
             "action_points": cls.action_points_to_dict(fighter.action_points),
-            "equipment": cls.gear_to_dict(fighter.equipment),
+            "gear": cls.gear_to_dict(fighter.gear),
             "caster": cls.caster_to_dict(fighter.caster) if fighter.caster else None,
         }
 

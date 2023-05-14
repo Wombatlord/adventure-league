@@ -47,7 +47,7 @@ class WeaponAttackAction(BaseAction, metaclass=ActionMeta):
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
         return [
             cls.details(fighter, attack)
-            for attack in fighter.equipment.weapon.available_attacks
+            for attack in fighter.gear.weapon.available_attacks
         ]
 
     def __init__(

@@ -78,8 +78,8 @@ class GameStateLoaders:
             "owner": owner,
             "health": cls.health_pool_from_dict(serialised_fighter.get("health")),
             "stats": FighterStats(**serialised_fighter.get("stats")),
-            "equipment": cls.gear_from_dict(
-                serialised_fighter.get("equipment"), owner=instance
+            "gear": cls.gear_from_dict(
+                serialised_fighter.get("gear"), owner=instance
             ),
             "action_points": cls.action_points_from_dict(
                 serialised_fighter.get("action_points")
@@ -119,9 +119,9 @@ class GameStateLoaders:
         )
 
         # Warmup the caches. We do it here because this is when the Fighter has ModifiableStats
-        instance.equipment.equip_item(instance.equipment.weapon)
-        instance.equipment.equip_item(instance.equipment.helmet)
-        instance.equipment.equip_item(instance.equipment.body)
+        instance.gear.equip_item(instance.gear.weapon)
+        instance.gear.equip_item(instance.gear.helmet)
+        instance.gear.equip_item(instance.gear.body)
 
         return instance
 

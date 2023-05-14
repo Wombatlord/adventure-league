@@ -115,10 +115,10 @@ _boss = StatBlock(
 def _setup_fighter_archetypes(
     fighter: Fighter, gear_factory: Callable[[FighterArchetype], dict]
 ):
-    def default_equip(fighter):
+    def default_equip(fighter: Fighter):
         nonlocal gear
-        for slot in fighter.equipment._equippable_slots:
-            fighter.equipment.equip_item(gear.get(slot))
+        for slot in fighter.gear._equippable_slots:
+            fighter.gear.equip_item(gear.get(slot))
 
     match fighter.role:
         case FighterArchetype.MELEE:

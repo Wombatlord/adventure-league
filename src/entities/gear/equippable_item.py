@@ -121,7 +121,11 @@ class EquippableItem(EquippableABC):
         roll_base_damage = self.dice(dies, faces)
         max_damage = self._owner.modifiable_stats.current.power + roll_base_damage
 
-        return Damage(max_damage, self._owner)
+        return Damage(
+            originator=self._owner,
+            raw_damage=max_damage,
+            crit_chance=self._owner.gear.modifiable_equipped_stats.current.crit,
+        )
 
     def _atk_cache_warmup(self):
         self._available_attacks_cache = (

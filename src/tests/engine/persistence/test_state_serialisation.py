@@ -47,8 +47,8 @@ class SerialisationTest(TestCase):
 
         original_roster = self.guild.roster
         rehydrated_roster = self.loaded_guild.roster
-        original_equipment: Gear = original_roster[0].fighter.equipment
-        rehydrated_equipment: Gear = rehydrated_roster[0].fighter.equipment
+        original_equipment: Gear = original_roster[0].fighter.gear
+        rehydrated_equipment: Gear = rehydrated_roster[0].fighter.gear
 
         original_weapon_affixes = [
             affix for affix in original_equipment.weapon._fighter_affixes
@@ -156,19 +156,15 @@ class SerialisationTest(TestCase):
         for entity in original_entities:
             original_entity = Entity.get_by_id(entity.entity_id, original_entities)
             rehydrated_entity = Entity.get_by_id(entity.entity_id, rehydrated_entities)
-            original_entity_attacks = original_entity.fighter.equipment.weapon._attacks
-            rehydrated_entity_attacks = (
-                rehydrated_entity.fighter.equipment.weapon._attacks
-            )
+            original_entity_attacks = original_entity.fighter.gear.weapon._attacks
+            rehydrated_entity_attacks = rehydrated_entity.fighter.gear.weapon._attacks
             rehydrated_entity_attack_cache = (
-                rehydrated_entity.fighter.equipment.weapon._available_attacks_cache
+                rehydrated_entity.fighter.gear.weapon._available_attacks_cache
             )
-            original_entity_spells = original_entity.fighter.equipment.weapon._spells
-            rehydrated_entity_spells = (
-                rehydrated_entity.fighter.equipment.weapon._spells
-            )
+            original_entity_spells = original_entity.fighter.gear.weapon._spells
+            rehydrated_entity_spells = rehydrated_entity.fighter.gear.weapon._spells
             rehydrated_entity_spell_cache = (
-                rehydrated_entity.fighter.equipment.weapon._available_spells_cache
+                rehydrated_entity.fighter.gear.weapon._available_spells_cache
             )
 
             # Assert

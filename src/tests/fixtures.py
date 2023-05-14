@@ -90,8 +90,8 @@ class EntityFactory:
             fighter=Fighter(**FighterFixtures.strong(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
         weapon = EquippableItem(None, sword)
-        e.fighter.equipment = Gear(e.fighter)
-        e.fighter.equipment.equip_item(weapon)
+        e.fighter.gear = Gear(e.fighter)
+        e.fighter.gear.equip_item(weapon)
         return e
 
     @classmethod
@@ -103,8 +103,8 @@ class EntityFactory:
             fighter=Fighter(**FighterFixtures.baby(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
         weapon = EquippableItem(None, sword)
-        e.fighter.equipment = Gear(e.fighter)
-        e.fighter.equipment.equip_item(weapon)
+        e.fighter.gear = Gear(e.fighter)
+        e.fighter.gear.equip_item(weapon)
         e.fighter.set_role(e.fighter.role)
         return e
 
@@ -122,11 +122,11 @@ class EntityFactory:
             e = Entity(
                 name=name, fighter=Fighter(**fixture(enemy))
             ).with_inventory_capacity(1)
-            e.fighter.equipment = Gear(e.fighter)
+            e.fighter.gear = Gear(e.fighter)
             factory = default_equippable_item_factory()
             gear = factory(e.fighter.role)
             for item in gear.values():
-                e.fighter.equipment.equip_item(item)
+                e.fighter.gear.equip_item(item)
             e.fighter.set_role(e.fighter.role)
             entities.append(e)
 
