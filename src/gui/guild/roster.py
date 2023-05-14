@@ -39,8 +39,8 @@ def entity_observer_widget(get_entity: Callable[[], Entity | None]):
             f"{merc.name.name_and_title} "
             f"| LVL: {merc.fighter.stats.level} "
             f"|  HP: {merc.fighter.health.current} "
-            f"| ATK: {merc.fighter.stats.power} "
-            f"| DEF: {merc.fighter.stats.defence} "
+            f"| ATK: {int(merc.fighter.modifiable_stats.current.power)} "
+            f"| DEF: {int(merc.fighter.modifiable_stats.current.defence)} "
         )
 
     recruit_info_observer = observe(

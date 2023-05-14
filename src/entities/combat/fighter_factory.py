@@ -73,7 +73,7 @@ _monster = StatBlock(
 )
 _goblin = StatBlock(
     species=Species.GOBLIN,
-    hp=(25, 30),
+    hp=(20, 25),
     defence=(1, 3),
     power=(2, 4),
     speed=2,
