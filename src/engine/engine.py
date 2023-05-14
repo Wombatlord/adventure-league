@@ -296,4 +296,6 @@ class Engine:
             return
 
         self.game_state.mission_board.clear_board()
-        self.game_state.mission_board.fill_board(max_enemies_per_room=3, room_amount=3)
+        self.game_state.mission_board.fill_board(
+            max_enemies_per_room=5, min_enemies_per_room=3, room_amount=3
+        )

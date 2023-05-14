@@ -4,24 +4,24 @@ import abc
 from typing import TYPE_CHECKING
 
 from src.entities.combat.modifiable_stats import ModifiableStats
-from src.entities.combat.stats import EquippableStats
+from src.entities.combat.stats import EquippableItemStats
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
 
-from src.entities.item.equippable import Equippable
+from src.entities.gear.equippable_item import EquippableItem
 
 
 class Storage(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def store(self, item: Equippable) -> None:
+    def store(self, item: EquippableItem) -> None:
         ...
 
 
-class Equipment:
-    weapon: Equippable
-    helmet: Equippable
-    body: Equippable
+class Gear:
+    weapon: EquippableItem
+    helmet: EquippableItem
+    body: EquippableItem
 
     _equippable_slots = (
         "_weapon",
@@ -48,9 +48,9 @@ class Equipment:
         self._weapon = weapon
         self._helmet = helmet
         self._body = body
-        self.base_equipped_stats = EquippableStats()
+        self.base_equipped_stats = EquippableItemStats()
         self.modifiable_equipped_stats = ModifiableStats(
-            EquippableStats, self.base_equipped_stats
+            EquippableItemStats, self.base_equipped_stats
         )
 
     @property
@@ -70,12 +70,12 @@ class Equipment:
         self.modifiable_equipped_stats._base_stats += item.stats
         self.modifiable_equipped_stats.set_modifiers(item.equipment_modifiers())
 
-    def item_in_slot(self, slot) -> Equippable | None:
+    def item_in_slot(self, slot) -> EquippableItem | None:
         if slot not in self._equippable_slots:
             return None
         return getattr(self, slot, None)
 
-    def equip_item(self, item: Equippable, storage: Storage = None):
+    def equip_item(self, item: EquippableItem, storage: Storage = None):
         slot = item.slot
         if slot not in self._equippable_slots:
             raise ValueError(f"Cannot equip item {item} in slot {slot}")
@@ -102,7 +102,7 @@ class Equipment:
             self.modifiable_equipped_stats._base_stats -= prev_item.stats
 
             # Remove any affixes that are associated to the item being unequipped
-            for affix in prev_item._equipment_affixes:
+            for affix in prev_item._equippable_item_affixes:
                 self.modifiable_equipped_stats.remove(affix.modifier)
 
             if storage is not None:

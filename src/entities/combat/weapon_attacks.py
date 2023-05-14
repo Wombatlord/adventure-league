@@ -70,9 +70,7 @@ class NormalAttack(metaclass=WeaponAttackMeta):
         self._fighter.in_combat = True
         target.fighter.in_combat = True
 
-        yield from self.fighter.equipment.weapon.emit_damage().resolve_damage(
-            target
-        )
+        yield from self.fighter.gear.weapon.emit_damage().resolve_damage(target)
 
         result.update({"attack": self._fighter.owner, "message": message})
         yield result
@@ -86,7 +84,7 @@ class NormalAttack(metaclass=WeaponAttackMeta):
 
         range = self._fighter.locatable.entities_in_range(
             room=self._fighter.encounter_context.get(),
-            max_range=self._fighter.equipment.weapon._range,
+            max_range=self._fighter.gear.weapon._range,
             entity_filter=lambda e: self._fighter.is_enemy_of(e.fighter),
         )
 

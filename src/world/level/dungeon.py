@@ -9,6 +9,7 @@ class Dungeon(Rewarder):
     def __init__(
         self,
         max_enemies_per_room: int,
+        min_enemies_per_room: int,
         rooms: list[Room],
         enemies: list[Entity],
         boss: Entity | None,
@@ -19,6 +20,7 @@ class Dungeon(Rewarder):
         self.current_room: Room = Room()
         self.rooms: list[Room] = rooms
         self.max_enemies_per_room = max_enemies_per_room
+        self.min_enemies_per_room = min_enemies_per_room
         self.enemies: list[Entity] = enemies
         self.boss: Entity = boss
         self.description: Optional[str] = description

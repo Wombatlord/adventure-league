@@ -3,8 +3,9 @@ from unittest import TestCase
 from src.entities.ai.ai import BasicCombatAi
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
-from src.entities.item.equipment import Equipment
-from src.entities.item.equippable import Equippable, Sword, default_equippable_factory
+from src.entities.gear.equippable_item import EquippableItem
+from src.entities.gear.gear import Gear
+from src.entities.gear.weapons import sword
 from src.entities.item.inventory import Inventory
 from src.systems.combat import CombatRound
 from src.tests.fixtures import EncounterFactory, FighterFixtures
@@ -22,15 +23,15 @@ class CombatRoundTest(TestCase):
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
         merc.inventory = Inventory(owner=merc, capacity=1)
-        weapon = Equippable(owner=None, config=Sword)
-        merc.fighter.equipment = Equipment(merc.fighter)
-        merc.fighter.equipment.equip_item(weapon)
+        weapon = EquippableItem(owner=None, config=sword)
+        merc.fighter.gear = Gear(merc.fighter)
+        merc.fighter.gear.equip_item(weapon)
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
-        enemy.fighter.equipment = Equipment(enemy.fighter)
-        enemy.fighter.equipment.equip_item(weapon)
+        enemy.fighter.gear = Gear(enemy.fighter)
+        enemy.fighter.gear.equip_item(weapon)
         enemy.inventory = Inventory(owner=enemy, capacity=1)
         return merc, enemy
 

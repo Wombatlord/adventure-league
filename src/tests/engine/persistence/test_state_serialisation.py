@@ -7,8 +7,8 @@ from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.modifiable_stats import Modifier
 from src.entities.combat.stats import StatAffix
 from src.entities.entity import Entity
-from src.entities.item.equipment import Equipment
-from src.entities.item.equippable import Equippable, EquippableConfig
+from src.entities.gear.equippable_item import EquippableItem, EquippableItemConfig
+from src.entities.gear.gear import Gear
 from src.tests.fixtures import GuildFactory
 from src.utils.deep_copy import copy
 
@@ -41,15 +41,14 @@ class SerialisationTest(TestCase):
         self.reserialised_guild = GameStateDumpers.guild_to_dict(self.loaded_guild)
         self._is_set_up = True
 
-
     def test_rehydrated_fighter_in_roster_has_properly_rehydrated_equipment(self):
         # Arrange / Action
         self.setup(force=True)
 
         original_roster = self.guild.roster
         rehydrated_roster = self.loaded_guild.roster
-        original_equipment: Equipment = original_roster[0].fighter.equipment
-        rehydrated_equipment: Equipment = rehydrated_roster[0].fighter.equipment
+        original_equipment: Gear = original_roster[0].fighter.gear
+        rehydrated_equipment: Gear = rehydrated_roster[0].fighter.gear
 
         original_weapon_affixes = [
             affix for affix in original_equipment.weapon._fighter_affixes
@@ -71,22 +70,22 @@ class SerialisationTest(TestCase):
             ), f"Affix Modifier is not of Type Modifier: {affix.modifier}"
 
         assert isinstance(
-            rehydrated_equipment.weapon, Equippable
+            rehydrated_equipment.weapon, EquippableItem
         ), f"Equippable is wrong type. Expected: Equippable, Got: {rehydrated_equipment.weapon}"
         assert isinstance(
-            rehydrated_equipment.weapon._config, EquippableConfig
+            rehydrated_equipment.weapon._config, EquippableItemConfig
         ), f"EquippableConfig is wrong type. Expected: EquippableConfig, Got: {rehydrated_equipment.weapon._config}"
         assert isinstance(
-            rehydrated_equipment.helmet, Equippable
+            rehydrated_equipment.helmet, EquippableItem
         ), f"Equippable is wrong type. Expected: Equippable, Got: {rehydrated_equipment.helmet}"
         assert isinstance(
-            rehydrated_equipment.helmet._config, EquippableConfig
+            rehydrated_equipment.helmet._config, EquippableItemConfig
         ), f"EquippableConfig is wrong type. Expected: EquippableConfig, Got: {rehydrated_equipment.helmet._config}"
         assert isinstance(
-            rehydrated_equipment.body, Equippable
+            rehydrated_equipment.body, EquippableItem
         ), f"Equippable is wrong type. Expected: Equippable, Got: {rehydrated_equipment.body}"
         assert isinstance(
-            rehydrated_equipment.body._config, EquippableConfig
+            rehydrated_equipment.body._config, EquippableItemConfig
         ), f"EquippableConfig is wrong type. Expected: EquippableConfig, Got: {rehydrated_equipment.body._config}"
 
     def test_team_member_names_are_unchanged_after_serialisation_and_rehydration(self):
@@ -157,19 +156,15 @@ class SerialisationTest(TestCase):
         for entity in original_entities:
             original_entity = Entity.get_by_id(entity.entity_id, original_entities)
             rehydrated_entity = Entity.get_by_id(entity.entity_id, rehydrated_entities)
-            original_entity_attacks = original_entity.fighter.equipment.weapon._attacks
-            rehydrated_entity_attacks = (
-                rehydrated_entity.fighter.equipment.weapon._attacks
-            )
+            original_entity_attacks = original_entity.fighter.gear.weapon._attacks
+            rehydrated_entity_attacks = rehydrated_entity.fighter.gear.weapon._attacks
             rehydrated_entity_attack_cache = (
-                rehydrated_entity.fighter.equipment.weapon._available_attacks_cache
+                rehydrated_entity.fighter.gear.weapon._available_attacks_cache
             )
-            original_entity_spells = original_entity.fighter.equipment.weapon._spells
-            rehydrated_entity_spells = (
-                rehydrated_entity.fighter.equipment.weapon._spells
-            )
+            original_entity_spells = original_entity.fighter.gear.weapon._spells
+            rehydrated_entity_spells = rehydrated_entity.fighter.gear.weapon._spells
             rehydrated_entity_spell_cache = (
-                rehydrated_entity.fighter.equipment.weapon._available_spells_cache
+                rehydrated_entity.fighter.gear.weapon._available_spells_cache
             )
 
             # Assert

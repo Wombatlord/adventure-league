@@ -17,7 +17,7 @@ from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import FighterStats, HealthPool
-from src.entities.item.equipment import Equipment
+from src.entities.gear.gear import Gear
 from src.entities.item.inventory import Inventory
 from src.entities.item.inventory_item import Consumable
 from src.entities.magic.caster import Caster
@@ -57,7 +57,7 @@ class Fighter:
     _readied_action: BaseAction | None
     _encounter_context: EncounterContext
     health: HealthPool
-    equipment: Equipment
+    gear: Gear
     modifiable_stats: ModifiableStats
     _caster: Caster | None
 
@@ -82,7 +82,7 @@ class Fighter:
             defence=defence, power=power, level=level, speed=speed
         )
         self.modifiable_stats = ModifiableStats(FighterStats, base_stats=self.stats)
-        self.equipment = Equipment(owner=self)
+        self.gear = Gear(owner=self)
         self.set_role(role)
         # -----State-----
         self.action_points = ActionPoints()
@@ -181,14 +181,14 @@ class Fighter:
         choices = {}
         for name, action_type in action_types.items():
             if action_type == WeaponAttackAction:
-                for atk in self.equipment.weapon.available_attacks:
+                for atk in self.gear.weapon.available_attacks:
                     choices[name] = action_type.all_available_to(self)
 
             elif not action_type == MagicAction:
                 choices[name] = action_type.all_available_to(self)
 
             else:
-                for spell in self.equipment.weapon.available_spells:
+                for spell in self.gear.weapon.available_spells:
                     choices[name] = action_type.all_available_to(self)
 
         event = {}

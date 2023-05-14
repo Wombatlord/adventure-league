@@ -78,7 +78,7 @@ class FighterStats(NamedTuple):
         return namedtuple_sub(self.__class__, self, other)
 
 
-class EquippableStats(NamedTuple):
+class EquippableItemStats(NamedTuple):
     name = "EquippableStats"
     crit: float = 0
     block: float = 0
@@ -95,7 +95,7 @@ class EquippableStats(NamedTuple):
 
 class StatAffix(NamedTuple):
     name: str
-    modifier: Modifier[FighterStats | EquippableStats]
+    modifier: Modifier[FighterStats | EquippableItemStats]
 
 
 modifiers = {
@@ -112,7 +112,7 @@ modifiers = {
         FighterStats, percent=FighterStats(defence=random.randint(20, 60))
     ),
     "eagle": lambda: Modifier(
-        EquippableStats, percent=EquippableStats(crit=random.randint(1, 5))
+        EquippableItemStats, percent=EquippableItemStats(crit=random.randint(1, 5))
     ),
 }
 
@@ -123,9 +123,10 @@ def affix_from_modifier(name: str) -> StatAffix:
         modifier=modifiers.get(name, lambda: Modifier(FighterStats))(),
     )
 
+
 # These are lambdas so that an Equippable can roll a fresh affix on instantiation.
-RawPowerIncrease = lambda: affix_from_modifier("bear")
-PercentPowerIncrease = lambda: affix_from_modifier("tiger")
-RawDefenceIncrease = lambda: affix_from_modifier("bull")
-PercentDefenceIncrease = lambda: affix_from_modifier("jaguar")
-PercentCritIncrease = lambda: affix_from_modifier("eagle")
+raw_power_increase = lambda: affix_from_modifier("bear")
+percent_power_increase = lambda: affix_from_modifier("tiger")
+raw_defence_increase = lambda: affix_from_modifier("bull")
+percent_defence_increase = lambda: affix_from_modifier("jaguar")
+percent_crit_increase = lambda: affix_from_modifier("eagle")

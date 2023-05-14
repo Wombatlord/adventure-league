@@ -4,8 +4,9 @@ from src.entities.action.actions import ConsumeItemAction, EndTurnAction, MoveAc
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
-from src.entities.item.equipment import Equipment
-from src.entities.item.equippable import Equippable, Sword
+from src.entities.gear.equippable_item import EquippableItem
+from src.entities.gear.gear import Gear
+from src.entities.gear.weapons import sword
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
 from src.entities.properties.meta_compendium import MetaCompendium
@@ -23,16 +24,16 @@ class ActionsTest(unittest.TestCase):
             name=Name(first_name="strong", last_name="very", title="the tactical"),
             fighter=Fighter(**FighterFixtures.strong(enemy=False, boss=False)),
         )
-        weapon = Equippable(None, Sword)
-        merc.fighter.equipment = Equipment(merc.fighter)
-        merc.fighter.equipment.equip_item(weapon)
+        weapon = EquippableItem(None, sword)
+        merc.fighter.gear = Gear(merc.fighter)
+        merc.fighter.gear.equip_item(weapon)
         merc.inventory = Inventory(owner=merc, capacity=1)
         enemy = Entity(
             name=Name(first_name="baby", last_name="weak", title="the feeble"),
             fighter=Fighter(**FighterFixtures.baby(enemy=True, boss=False)),
         )
-        enemy.fighter.equipment = Equipment(merc.fighter)
-        enemy.fighter.equipment.equip_item(weapon)
+        enemy.fighter.gear = Gear(merc.fighter)
+        enemy.fighter.gear.equip_item(weapon)
         return merc, enemy
 
     @classmethod

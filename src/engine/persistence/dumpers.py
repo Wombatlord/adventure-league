@@ -9,8 +9,8 @@ if TYPE_CHECKING:
     from src.entities.combat.modifiable_stats import Modifier
     from src.entities.combat.stats import HealthPool, StatAffix
     from src.entities.entity import Entity
-    from src.entities.item.equipment import Equipment
-    from src.entities.item.equippable import Equippable, EquippableConfig
+    from src.entities.gear.equippable_item import EquippableItem, EquippableItemConfig
+    from src.entities.gear.gear import Gear
     from src.entities.magic.caster import Caster, MpPool
 
 
@@ -58,7 +58,7 @@ class GameStateDumpers:
             "health": cls.health_pool_to_dict(fighter.health),
             "stats": fighter.stats._asdict(),
             "action_points": cls.action_points_to_dict(fighter.action_points),
-            "equipment": cls.equipment_to_dict(fighter.equipment),
+            "gear": cls.gear_to_dict(fighter.gear),
             "caster": cls.caster_to_dict(fighter.caster) if fighter.caster else None,
         }
 
@@ -83,26 +83,36 @@ class GameStateDumpers:
         }
 
     @classmethod
-    def equipment_to_dict(cls, equipment: Equipment) -> dict:
+    def gear_to_dict(cls, gear: Gear) -> dict:
         return {
-            "_weapon": cls.equippable_to_dict(equipment.weapon)
-            if equipment.weapon
+            "_weapon": cls.equippable_item_to_dict(gear.weapon)
+            if gear.weapon
             else None,
-            "_helmet": cls.equippable_to_dict(equipment.helmet)
-            if equipment.helmet
+            "_helmet": cls.equippable_item_to_dict(gear.helmet)
+            if gear.helmet
             else None,
-            "_body": cls.equippable_to_dict(equipment.body) if equipment.body else None,
-            "base_equipped_stats": equipment.base_equipped_stats._asdict(),
+            "_body": cls.equippable_item_to_dict(gear.body) if gear.body else None,
+            "base_equipped_stats": gear.base_equipped_stats._asdict(),
         }
 
     @classmethod
-    def equippable_to_dict(cls, equippable: Equippable) -> dict:
+    def equippable_item_to_dict(cls, equippable: EquippableItem) -> dict:
         return {
-            "config": cls.equippable_config_to_dict(equippable._config, equippable._fighter_affixes, equippable._equipment_affixes), "stats": equippable._stats._asdict(),
+            "config": cls.equippable_item_config_to_dict(
+                equippable._config,
+                equippable._fighter_affixes,
+                equippable._equippable_item_affixes,
+            ),
+            "stats": equippable._stats._asdict(),
         }
 
     @classmethod
-    def equippable_config_to_dict(cls, equippable_config: EquippableConfig, resolved_fighter_affixes, resolved_equippable_affixes) -> dict:
+    def equippable_item_config_to_dict(
+        cls,
+        equippable_config: EquippableItemConfig,
+        resolved_fighter_affixes,
+        resolved_equippable_affixes,
+    ) -> dict:
         return {
             "name": equippable_config.name,
             "slot": equippable_config.slot,
@@ -111,14 +121,12 @@ class GameStateDumpers:
             "attacks": equippable_config.attacks,
             "spells": equippable_config.spells,
             "fighter_affixes": [
-                cls.stat_affix_to_dict(affix)
-                for affix in resolved_fighter_affixes
+                cls.stat_affix_to_dict(affix) for affix in resolved_fighter_affixes
             ]
             if resolved_fighter_affixes
             else [],
-            "equipment_affixes": [
-                cls.stat_affix_to_dict(affix)
-                for affix in resolved_equippable_affixes
+            "equippable_item_affixes": [
+                cls.stat_affix_to_dict(affix) for affix in resolved_equippable_affixes
             ]
             if resolved_equippable_affixes
             else [],

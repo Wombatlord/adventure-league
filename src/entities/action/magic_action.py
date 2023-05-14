@@ -58,7 +58,7 @@ class MagicAction(BaseAction, metaclass=ActionMeta):
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
         return [
             cls.details(fighter, spell)
-            for spell in fighter.equipment.weapon.available_spells
+            for spell in fighter.gear.weapon.available_spells
         ]
 
     def __init__(self, fighter: Fighter, target: Fighter, spell: Spell) -> None:
