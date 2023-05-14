@@ -70,9 +70,7 @@ class NormalAttack(metaclass=WeaponAttackMeta):
         self._fighter.in_combat = True
         target.fighter.in_combat = True
 
-        yield from self.fighter.equipment.weapon.emit_damage().resolve_damage(
-            target
-        )
+        yield from self.fighter.equipment.weapon.emit_damage().resolve_damage(target)
 
         result.update({"attack": self._fighter.owner, "message": message})
         yield result

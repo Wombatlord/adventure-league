@@ -40,7 +40,7 @@ class Damage:
         yield from self._critical_confirm(target)
         yield from self._damage_reduction_by_defense(target)
         yield from self._final_resolved_damage(target)
-    
+
     def _attack_message(self, target) -> Event:
         originator_name = self.originator.owner.name
         weapon = self.originator.equipment.weapon
@@ -70,7 +70,9 @@ class Damage:
         self, target: Entity
     ) -> Generator[Event, None, None]:
         mitigation = self._mitigation(
-            max_mitigation=0.4, damage_fallthrough=0.8, defence=target.fighter.modifiable_stats.current.defence
+            max_mitigation=0.4,
+            damage_fallthrough=0.8,
+            defence=target.fighter.modifiable_stats.current.defence,
         )
         self.final_damage = (1 - mitigation) * self.raw_damage
         mitigation_percent = f"{mitigation * 100:.2f}"
@@ -94,5 +96,7 @@ class Damage:
         result.update(**damage_details)
         yield result
 
-    def _mitigation(self, max_mitigation: float, damage_fallthrough: float, defence: int) -> float:
+    def _mitigation(
+        self, max_mitigation: float, damage_fallthrough: float, defence: int
+    ) -> float:
         return max_mitigation * (1 - damage_fallthrough**defence)

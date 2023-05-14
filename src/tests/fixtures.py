@@ -5,8 +5,10 @@ from src.engine.guild import Guild
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
-from src.entities.item.equipment import Equipment
-from src.entities.item.equippable import Equippable, Sword, default_equippable_factory
+from src.entities.gear.equippable_item import EquippableItem
+from src.entities.gear.gear import Gear
+from src.entities.gear.gear_factory import default_equippable_item_factory
+from src.entities.gear.weapons import sword
 from src.entities.item.items import HealingPotion
 from src.entities.magic.caster import Caster
 from src.utils.proc_gen.syllables import simple_word
@@ -87,8 +89,8 @@ class EntityFactory:
             ),
             fighter=Fighter(**FighterFixtures.strong(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
-        weapon = Equippable(None, Sword)
-        e.fighter.equipment = Equipment(e.fighter)
+        weapon = EquippableItem(None, sword)
+        e.fighter.equipment = Gear(e.fighter)
         e.fighter.equipment.equip_item(weapon)
         return e
 
@@ -100,8 +102,8 @@ class EntityFactory:
             ),
             fighter=Fighter(**FighterFixtures.baby(enemy=enemy, boss=False)),
         ).with_inventory_capacity(1)
-        weapon = Equippable(None, Sword)
-        e.fighter.equipment = Equipment(e.fighter)
+        weapon = EquippableItem(None, sword)
+        e.fighter.equipment = Gear(e.fighter)
         e.fighter.equipment.equip_item(weapon)
         e.fighter.set_role(e.fighter.role)
         return e
@@ -120,8 +122,8 @@ class EntityFactory:
             e = Entity(
                 name=name, fighter=Fighter(**fixture(enemy))
             ).with_inventory_capacity(1)
-            e.fighter.equipment = Equipment(e.fighter)
-            factory = default_equippable_factory()
+            e.fighter.equipment = Gear(e.fighter)
+            factory = default_equippable_item_factory()
             gear = factory(e.fighter.role)
             for item in gear.values():
                 e.fighter.equipment.equip_item(item)

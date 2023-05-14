@@ -1,31 +1,17 @@
 from copy import deepcopy
 from random import randint
-from typing import Callable, NamedTuple, Self
+from typing import Callable, NamedTuple
 
 from src.config.constants import merc_names
 from src.entities.ai.ai import BasicCombatAi
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name, Species
-from src.entities.item.equippable import (
-    Bow,
-    Equippable,
-    Helmet,
-    SpellBook,
-    Sword,
-    default_equippable_factory,
-)
+from src.entities.gear.gear_factory import default_equippable_item_factory
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
 from src.entities.magic.caster import Caster
 from src.entities.sprite_assignment import attach_sprites
-from src.gui.animated_sprite_config import (
-    AnimatedSpriteConfig,
-    choose_boss_texture,
-    choose_goblin_textures,
-    choose_merc_textures,
-    choose_slime_textures,
-)
 from src.utils.proc_gen import syllables
 
 NAME_GENS: dict[str, Callable[[], str]] = {
@@ -69,7 +55,7 @@ class StatBlock(NamedTuple):
 
 
 _mercenary = StatBlock(
-    hp=(25, 25),
+    hp=(45, 45),
     defence=(1, 3),
     power=(3, 5),
     speed=3,
@@ -78,7 +64,7 @@ _mercenary = StatBlock(
 )
 _monster = StatBlock(
     species=Species.SLIME,
-    hp=(8, 8),
+    hp=(15, 20),
     defence=(1, 3),
     power=(1, 3),
     speed=1,
@@ -87,7 +73,7 @@ _monster = StatBlock(
 )
 _goblin = StatBlock(
     species=Species.GOBLIN,
-    hp=(10, 14),
+    hp=(25, 30),
     defence=(1, 3),
     power=(2, 4),
     speed=2,
@@ -95,7 +81,7 @@ _goblin = StatBlock(
     is_boss=False,
 )
 _boss = StatBlock(
-    hp=(30, 30),
+    hp=(50, 60),
     defence=(2, 4),
     power=(2, 4),
     speed=1,
@@ -125,7 +111,7 @@ def _setup_fighter_archetypes(
             default_equip(fighter)
 
         case FighterArchetype.CASTER:
-            fighter.caster = Caster(max_mp=10)
+            fighter.caster = Caster(max_mp=15)
             gear = gear_factory(FighterArchetype.CASTER)
             default_equip(fighter)
 
@@ -152,7 +138,7 @@ def get_fighter_factory(
         conf = stats.fighter_conf()
 
         entity.fighter = _from_conf(conf, entity)
-        gear_factory = default_equippable_factory()
+        gear_factory = default_equippable_item_factory()
         _setup_fighter_archetypes(entity.fighter, gear_factory)
 
         entity.inventory = Inventory(owner=entity, capacity=1)

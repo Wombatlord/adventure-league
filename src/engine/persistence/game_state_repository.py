@@ -87,7 +87,9 @@ class GuildRepository:
         if not isinstance(fmt, Format):
             raise TypeError(f"Unrecognised format {fmt}")
 
-        return GameStateLoaders.guild_from_dict(fmt.load(cls.save_file_path(slot, fmt, testing)))
+        return GameStateLoaders.guild_from_dict(
+            fmt.load(cls.save_file_path(slot, fmt, testing))
+        )
 
     @classmethod
     def save(

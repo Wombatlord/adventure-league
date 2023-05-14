@@ -107,7 +107,7 @@ class MagicMissile(Spell, metaclass=SpellMeta):
     effect_type = EffectType.ENTITY
 
     def __init__(self, caster: Caster):
-        self._damage: int = 1
+        self._damage: int = 5
         self._caster = caster
 
     def entity_cast(self, target: Fighter | None) -> Generator[Event, None, None]:
@@ -154,7 +154,7 @@ class Shield(Spell, metaclass=SpellMeta):
     effect_type = EffectType.SELF
 
     def __init__(self, caster: Caster):
-        self._shield_value: int = 1
+        self._shield_value: int = 5
         self._caster = caster
 
     def self_cast(self) -> Generator[Event]:
@@ -202,8 +202,8 @@ class Fireball(Spell, metaclass=SpellMeta):
 
     def __init__(self, caster: Caster):
         self._caster = caster
-        self._max_damage: int = 8
-        self._min_damage: int = 4
+        self._max_damage: int = 15
+        self._min_damage: int = 5
         self._template = AoETemplate(anchor=Node(0, 0), shape=self.template_shape)
 
     def aoe_cast(self, target: Node) -> Generator[Event]:
