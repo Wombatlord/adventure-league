@@ -102,7 +102,6 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def details(cls, fighter: Fighter, destination: Node, path) -> dict:
-        # path = fighter.locatable.path_to_destination(destination)
         return {
             **ActionMeta.details(cls, fighter, destination),
             "subject": fighter,
@@ -114,13 +113,12 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        nearest_enemy = fighter.locatable.nearest_entity(
+        _, path = fighter.locatable.nearest_entity(
             room=fighter.encounter_context.get(),
             entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
         )
 
-        full_path = fighter.locatable.path_to_target(nearest_enemy.fighter.locatable)
-        trimmed_path = full_path[: int(fighter.modifiable_stats.current.speed) + 1]
+        trimmed_path = path[: int(fighter.modifiable_stats.current.speed) + 1]
         destination = trimmed_path[-1]
 
         if destination in [
@@ -128,6 +126,7 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
             for entity in fighter.encounter_context.encounter_context.occupants
         ]:
             destination = trimmed_path[-2]
+
         return [cls.details(fighter, destination, trimmed_path)]
 
     def __init__(self, fighter: Fighter, destination: Node) -> None:

@@ -215,4 +215,4 @@ class Locatable:
                 shortest_path = path
                 closest_entity = occupant
 
-        return closest_entity
+        return (closest_entity, shortest_path)

@@ -34,7 +34,7 @@ class ChoosingTarget(CombatAiState):
         if fighter is None:
             raise ValueError(f"{self.working_set=}")
 
-        nearest = fighter.locatable.nearest_entity(
+        nearest, _ = fighter.locatable.nearest_entity(
             room=fighter.encounter_context.get(),
             entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
         )
