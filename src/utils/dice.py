@@ -48,6 +48,18 @@ class D:
 
         return D.from_roll(lambda: other() + self())
 
+    def __sub__(self, other):
+        if isinstance(other, int | float):
+            return D.from_roll(lambda: self() - other)
+
+        return D.from_roll(lambda: self() - other())
+
+    def __rsub__(self, other):
+        if isinstance(other, int | float):
+            return D.from_roll(lambda: other - self)
+
+        return D.from_roll(lambda: other - self())
+
     def __radd__(self, other: int | float | Self) -> Self:
         return self.__add__(other)
 
