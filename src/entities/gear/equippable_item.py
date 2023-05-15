@@ -110,6 +110,7 @@ class EquippableItem(EquippableABC):
         return self._attack_verb
 
     def dice(self, die_count: int, faces: int) -> int:
+        breakpoint()
         roll = 0
         for _ in range(die_count):
             roll += random.randint(1, faces)
@@ -117,7 +118,7 @@ class EquippableItem(EquippableABC):
 
     def emit_damage(self) -> Damage:
         dies = int(self.stats.attack_dice)
-        faces = self.stats.attack_dice_faces
+        faces = int(self.stats.attack_dice_faces)
         roll_base_damage = self.dice(dies, faces)
         max_damage = self._owner.modifiable_stats.current.power + roll_base_damage
 
