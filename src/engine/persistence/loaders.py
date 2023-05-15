@@ -78,9 +78,7 @@ class GameStateLoaders:
             "owner": owner,
             "health": cls.health_pool_from_dict(serialised_fighter.get("health")),
             "stats": FighterStats(**serialised_fighter.get("stats")),
-            "gear": cls.gear_from_dict(
-                serialised_fighter.get("gear"), owner=instance
-            ),
+            "gear": cls.gear_from_dict(serialised_fighter.get("gear"), owner=instance),
             "action_points": cls.action_points_from_dict(
                 serialised_fighter.get("action_points")
             ),
