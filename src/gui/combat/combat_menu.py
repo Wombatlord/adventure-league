@@ -182,24 +182,28 @@ class CombatMenu:
         return self
 
     def move_choice(self, available_moves: list[dict], get_current_node) -> MenuNode:
-        moves = available_moves
-        callbacks_by_destination = {
-            move["subject"][-1]: move["on_confirm"] for move in moves
-        }
-        templates_by_destination = {
-            move["subject"][-1]: move["subject"] for move in moves
-        }
+        agent: Fighter = available_moves[0]["subject"]
 
         def choose_move(node: Node):
-            callback = callbacks_by_destination.get(node, lambda: None)
+            callback = lambda: agent.ready_action(MoveAction(agent, get_current_node()))
             callback()
             self._on_teardown()
 
         def validate_move(node: Node) -> bool:
-            return node in callbacks_by_destination
+            occupied = [
+                entity.fighter.location
+                for entity in agent.encounter_context.get().occupants
+            ]
+            if node not in occupied:
+                return True
+            else:
+                return False
 
         def show_path(node: Node) -> None:
-            current = templates_by_destination.get(node, [node, node])
+            current = agent.locatable.path_to_destination(node)
+            limit = agent.modifiable_stats.current.speed + 1
+            if len(current) > limit:
+                current = current[: int(limit)]
             self._highlight(
                 green=current[:1],
                 gold=current[1:-1],

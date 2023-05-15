@@ -101,22 +101,34 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
         yield from fighter.locatable.traverse(path)
 
     @classmethod
-    def details(cls, fighter: Fighter, destination: Node) -> dict:
-        path = fighter.locatable.path_to_destination(destination)
+    def details(cls, fighter: Fighter, destination: Node, path) -> dict:
+        # path = fighter.locatable.path_to_destination(destination)
         return {
             **ActionMeta.details(cls, fighter, destination),
-            "subject": path,
+            "subject": fighter,
+            "destination": destination,
+            "path": path,
             "on_confirm": lambda: fighter.ready_action(cls(fighter, destination)),
-            "label": f"{path[-1]}",
+            "label": f"{destination[-1]}",
         }
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        available = []
-        for path in fighter.locatable.available_moves(speed=fighter.stats.speed):
-            available.append(cls.details(fighter, destination=path[-1]))
+        nearest_enemy = fighter.locatable.nearest_entity(
+            room=fighter.encounter_context.get(),
+            entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
+        )
 
-        return available
+        full_path = fighter.locatable.path_to_target(nearest_enemy.fighter.locatable)
+        trimmed_path = full_path[: int(fighter.modifiable_stats.current.speed) + 1]
+        destination = trimmed_path[-1]
+
+        if destination in [
+            entity.fighter.location
+            for entity in fighter.encounter_context.encounter_context.occupants
+        ]:
+            destination = trimmed_path[-2]
+        return [cls.details(fighter, destination, trimmed_path)]
 
     def __init__(self, fighter: Fighter, destination: Node) -> None:
         self.fighter = fighter

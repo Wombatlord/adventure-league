@@ -59,7 +59,7 @@ class ApproachingTarget(CombatAiState):
 
     def next_state(self) -> State | None:
         target: Fighter = self.working_set["target"]
-        moves = self.choices_of(MoveAction)
+        moves = self.choices_of(MoveAction).pop()
         fighter = self.agent()
         enemies_in_range = fighter.locatable.entities_in_range(
             room=fighter.encounter_context.get(),
@@ -67,21 +67,11 @@ class ApproachingTarget(CombatAiState):
             entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
         )
 
-        def ends_closest(option) -> int:
-            _path = option["subject"]
-
-            if target.locatable.path_to_destination(_path[-1]) is None:
-                return 1000
-
-            return len(target.locatable.path_to_destination(_path[-1]))
-
-        ranked_moves = sorted(moves, key=ends_closest)
-        best = ranked_moves[0]
         if enemies_in_range:
             self.working_set["in_range"] = enemies_in_range
             return ChoosingAttack(self.working_set)
         else:
-            self.working_set["output"] = best["on_confirm"]
+            self.working_set["output"] = moves["on_confirm"]
             return ActionChosen(self.working_set)
 
 
