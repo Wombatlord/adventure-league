@@ -34,7 +34,7 @@ class ChoosingTarget(CombatAiState):
         if fighter is None:
             raise ValueError(f"{self.working_set=}")
 
-        nearest = fighter.locatable.nearest_entity(
+        nearest, path = fighter.locatable.nearest_entity(
             room=fighter.encounter_context.get(),
             entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
         )
@@ -48,6 +48,7 @@ class ChoosingTarget(CombatAiState):
             return ActionChosen(self.working_set)
         else:
             self.working_set["target"] = nearest.fighter
+            self.working_set["path_to_nearest"] = path
             return ApproachingTarget(self.working_set)
 
 
@@ -58,8 +59,7 @@ class ApproachingTarget(CombatAiState):
     """
 
     def next_state(self) -> State | None:
-        target: Fighter = self.working_set["target"]
-        moves = self.choices_of(MoveAction)
+        moves = self.choices_of(MoveAction).pop()
         fighter = self.agent()
         enemies_in_range = fighter.locatable.entities_in_range(
             room=fighter.encounter_context.get(),
@@ -67,21 +67,18 @@ class ApproachingTarget(CombatAiState):
             entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
         )
 
-        def ends_closest(option) -> int:
-            _path = option["subject"]
+        path = self.working_set["path_to_nearest"]
+        trimmed_path = path[: int(moves["subject"].modifiable_stats.current.speed) + 1]
 
-            if target.locatable.path_to_destination(_path[-1]) is None:
-                return 1000
+        destination = trimmed_path[-1]
+        if destination not in moves["subject"].encounter_context.get().space:
+            destination = trimmed_path[-2]
 
-            return len(target.locatable.path_to_destination(_path[-1]))
-
-        ranked_moves = sorted(moves, key=ends_closest)
-        best = ranked_moves[0]
         if enemies_in_range:
             self.working_set["in_range"] = enemies_in_range
             return ChoosingAttack(self.working_set)
         else:
-            self.working_set["output"] = best["on_confirm"]
+            self.working_set["output"] = lambda: moves["on_confirm"](destination)
             return ActionChosen(self.working_set)
 
 

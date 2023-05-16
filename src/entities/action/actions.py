@@ -80,7 +80,13 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
         if destination == locatable.location:
             return 0
 
-        distance = len(locatable.path_to_destination(destination)[1:])
+        # If the player has selected a node beyond the end of the highlighted path,
+        # Only calculate the cost of the part of the path that will actually be traversed.
+        full_path = locatable.path_to_destination(destination)
+        path = full_path[1:]
+        if len(path) > locatable.speed:
+            path = path[: locatable.speed]
+        distance = len(path)
 
         # We want this to be 0 if distance <= speed
         distance_cost = (distance - 1) // locatable.speed
@@ -89,34 +95,30 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
         total_cost = base_cost + distance_cost
 
-        return total_cost
+        return total_cost, full_path
 
     @classmethod
     def execute(
         cls, fighter: Fighter, destination: Node
     ) -> Generator[Event, None, None]:
-        cost = cls.cost(fighter, destination)
+        cost, path = cls.cost(fighter, destination)
         fighter.action_points.deduct_cost(cost)
-        path = fighter.locatable.path_to_destination(destination)
         yield from fighter.locatable.traverse(path)
 
     @classmethod
-    def details(cls, fighter: Fighter, destination: Node) -> dict:
-        path = fighter.locatable.path_to_destination(destination)
+    def details(cls, fighter: Fighter) -> dict:
         return {
-            **ActionMeta.details(cls, fighter, destination),
-            "subject": path,
-            "on_confirm": lambda: fighter.ready_action(cls(fighter, destination)),
-            "label": f"{path[-1]}",
+            **ActionMeta.details(cls, fighter),
+            "subject": fighter,
+            "on_confirm": lambda destination: fighter.ready_action(
+                cls(fighter, destination)
+            ),
+            "label": f"{fighter.owner.name}",
         }
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        available = []
-        for path in fighter.locatable.available_moves(speed=fighter.stats.speed):
-            available.append(cls.details(fighter, destination=path[-1]))
-
-        return available
+        return [cls.details(fighter)]
 
     def __init__(self, fighter: Fighter, destination: Node) -> None:
         self.fighter = fighter

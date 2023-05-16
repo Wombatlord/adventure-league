@@ -207,8 +207,6 @@ class HomeView(arcade.View):
                 eng.game_state.set_guild(guild)
                 eng.game_state.set_team()
 
-                breakpoint()
-
             case arcade.key.G:
                 self.window.show_view(self.parent_factory())
 

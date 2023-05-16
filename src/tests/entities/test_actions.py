@@ -172,20 +172,35 @@ class MoveActionTest(unittest.TestCase):
         decision = ai.latest_decision()
         _assert_keys(
             msg=decision,
-            expected_keys={"name", "actor", "cost", "subject", "on_confirm", "label"},
+            expected_keys={
+                "name",
+                "actor",
+                "cost",
+                "subject",
+                "on_confirm",
+                "label",
+            },
         )
 
         # this has to be calculated now, if we get it later the fighter has reached their destination and
         # incurred the cost
-        cost = MoveAction.cost(
-            fighter=current_fighter, destination=decision["subject"][-1]
+        _, path = current_fighter.locatable.nearest_entity(
+            room=current_fighter.encounter_context.get(),
+            entity_filter=lambda e: e.fighter.is_enemy_of(current_fighter),
         )
+
+        trimmed_path = path[: int(current_fighter.modifiable_stats.current.speed) + 1]
+        destination = trimmed_path[-1]
+        if destination not in current_fighter.encounter_context.get().space:
+            destination = trimmed_path[-2]
+
+        cost, _ = MoveAction.cost(fighter=current_fighter, destination=destination)
         expected_points_remaining = current_fighter.action_points.per_turn - cost
 
         # assert the turn generator gives us a series of moves
-        chosen_path = decision["subject"]
+        # chosen_path = decision["path"]
         step_event: dict | None = None
-        for _ in range(len(chosen_path[1:])):
+        for _ in range(len(trimmed_path[1:])):
             step_event = next(turn)
             _assert_keys(msg=step_event, expected_keys={"move"})
 
