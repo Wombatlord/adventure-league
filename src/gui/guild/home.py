@@ -22,6 +22,7 @@ from src.gui.components.buttons import get_nav_handler, nav_button, update_butto
 from src.gui.components.menu import LeafMenuNode, Menu, SubMenuNode
 from src.gui.generic_sections.command_bar import CommandBarSection
 from src.gui.generic_sections.info_pane import InfoPaneSection
+from src.gui.guild.equipment import EquipView
 from src.gui.guild.missions import MissionsView
 from src.gui.guild.roster import RosterView
 from src.gui.window_data import WindowData
@@ -229,6 +230,12 @@ class HomeView(arcade.View):
                 )
                 self.window.show_view(roster_view)
 
+            case arcade.key.X:
+                equip_view = EquipView(
+                    None, parent_factory=lambda: HomeView(parent_factory=self.parent_factory)
+                )
+                self.window.show_view(equip_view)
+            
             case arcade.key.ESCAPE:
                 if self.home_menu.menu is None:
                     self.home_menu.enable()
