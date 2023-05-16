@@ -10,6 +10,7 @@ from src.entities.combat.stats import EquippableItemStats, FighterStats, StatAff
 from src.entities.combat.weapon_attacks import WeaponAttackMeta
 from src.entities.magic.spells import Spell, SpellMeta
 from src.entities.properties.meta_compendium import MetaCompendium
+from src.utils.dice import D
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -109,16 +110,10 @@ class EquippableItem(EquippableABC):
     def attack_verb(self) -> str:
         return self._attack_verb
 
-    def dice(self, die_count: int, faces: int) -> int:
-        roll = 0
-        for _ in range(die_count):
-            roll += random.randint(1, faces)
-        return roll
-
     def emit_damage(self) -> Damage:
         dies = int(self.stats.attack_dice)
         faces = int(self.stats.attack_dice_faces)
-        roll_base_damage = self.dice(dies, faces)
+        roll_base_damage = dies * D(faces).roll()
         max_damage = self._owner.modifiable_stats.current.power + roll_base_damage
 
         return Damage(
