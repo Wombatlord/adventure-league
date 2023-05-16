@@ -126,13 +126,12 @@ class RecruitmentPaneSection(arcade.Section):
         highlighted_label = self.recruits_labels[
             self.recruitment_scroll_window.position.pos
         ]
-
         # Remove the UILabel from UIBoxLayout and pop the corresponding item from the recruitment_scroll_window.
         self.manager.children[0][0].children[1].remove(highlighted_label)
         self.recruitment_scroll_window.pop()
 
         # Update state
-        self.recruits_labels = self.manager.children[0][0].children[1].children[1:]
+        self.recruits_labels = self.manager.children[0][0].children[1].children
 
         # Ensure highlighting carries over to the now selected recruit.
         _highlight_selection(
@@ -150,7 +149,6 @@ class RecruitmentPaneSection(arcade.Section):
             """
             self.recruitment_scroll_window.decr_selection()
             _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
-            # self.manager.trigger_render()
 
         if symbol == arcade.key.DOWN:
             """
@@ -159,7 +157,6 @@ class RecruitmentPaneSection(arcade.Section):
             """
             self.recruitment_scroll_window.incr_selection()
             _highlight_selection(self.recruitment_scroll_window, self.recruits_labels)
-            # self.manager.trigger_render()
 
         if symbol == arcade.key.ENTER:
             # If the total amount of guild members does not equal the roster_limit, recruit the selected mercenary to the guild.
