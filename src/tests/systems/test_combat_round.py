@@ -83,7 +83,9 @@ class CombatRoundTest(TestCase):
                 ), f"hit max rounds. Locations: {merc.locatable.location=}, {enemy.locatable.location=}"
                 rounds += 1
 
-                assert not combat_round.continues(), "Combat should not be continuing now"
+                assert (
+                    not combat_round.continues()
+                ), "Combat should not be continuing now"
                 assert (
                     combat_round and combat_round.victor() is not None
                 ), "No clear winner, seems sus."

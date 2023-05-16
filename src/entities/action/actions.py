@@ -80,7 +80,12 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
         if destination == locatable.location:
             return 0
 
-        distance = len(locatable.path_to_destination(destination)[1:])
+        # If the player has selected a node beyond the end of the highlighted path,
+        # Only calculate the cost of the part of the path that will actually be traversed.
+        path = locatable.path_to_destination(destination)[1:]
+        if len(path) > locatable.speed:
+            path = path[: locatable.speed]
+        distance = len(path)
 
         # We want this to be 0 if distance <= speed
         distance_cost = (distance - 1) // locatable.speed
@@ -101,33 +106,17 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
         yield from fighter.locatable.traverse(path)
 
     @classmethod
-    def details(cls, fighter: Fighter, destination: Node, path) -> dict:
+    def details(cls, fighter: Fighter) -> dict:
         return {
-            **ActionMeta.details(cls, fighter, destination),
+            **ActionMeta.details(cls, fighter),
             "subject": fighter,
-            "destination": destination,
-            "path": path,
-            "on_confirm": lambda: fighter.ready_action(cls(fighter, destination)),
-            "label": f"{destination[-1]}",
+            "on_confirm": lambda destination: fighter.ready_action(cls(fighter, destination)),
+            "label": f"{fighter.owner.name}",
         }
 
     @classmethod
     def all_available_to(cls, fighter: Fighter) -> list[dict]:
-        _, path = fighter.locatable.nearest_entity(
-            room=fighter.encounter_context.get(),
-            entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
-        )
-
-        trimmed_path = path[: int(fighter.modifiable_stats.current.speed) + 1]
-        destination = trimmed_path[-1]
-
-        if destination in [
-            entity.fighter.location
-            for entity in fighter.encounter_context.encounter_context.occupants
-        ]:
-            destination = trimmed_path[-2]
-
-        return [cls.details(fighter, destination, trimmed_path)]
+        return [cls.details(fighter)]
 
     def __init__(self, fighter: Fighter, destination: Node) -> None:
         self.fighter = fighter

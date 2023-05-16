@@ -110,7 +110,6 @@ class EquippableItem(EquippableABC):
         return self._attack_verb
 
     def dice(self, die_count: int, faces: int) -> int:
-        breakpoint()
         roll = 0
         for _ in range(die_count):
             roll += random.randint(1, faces)

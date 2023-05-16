@@ -55,7 +55,11 @@ class TestAI:
         if not callable(callback):
             raise TypeError(f"The callback {choice.get('on_confirm')=} is not callable")
         self.decision_log.append(choice)
-        callback()
+        if choice["name"] == "move":
+            destination = self.destination(event)
+            callback(destination)
+        else:
+            callback()
         self.count_decision()
 
     def potential_targets(self):
@@ -66,6 +70,26 @@ class TestAI:
         )
         return in_range
 
+    def destination(self, event):
+        # breakpoint()
+        fighter = event["choices"]["move"][0]["subject"]
+        
+        _, path = fighter.locatable.nearest_entity(
+            room=fighter.encounter_context.get(),
+            entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
+        )
+
+        trimmed_path = path[: int(fighter.modifiable_stats.current.speed) + 1]
+        destination = trimmed_path[-1]
+
+        if destination in [
+            entity.fighter.location
+            for entity in fighter.encounter_context.encounter_context.occupants
+        ]:
+            destination = trimmed_path[-2]
+            
+        return destination
+    
     def fallback_move_decision(self, options: list[dict]):
         nearest_enemy, _ = self._current_fighter.locatable.nearest_entity(
             self._current_fighter.encounter_context.get(),

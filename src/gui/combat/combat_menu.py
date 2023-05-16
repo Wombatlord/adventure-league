@@ -185,25 +185,18 @@ class CombatMenu:
         agent: Fighter = available_moves[0]["subject"]
 
         def choose_move(node: Node):
-            callback = lambda: agent.ready_action(MoveAction(agent, get_current_node()))
+            callback = lambda: agent.ready_action(MoveAction(agent, node))
             callback()
             self._on_teardown()
 
         def validate_move(node: Node) -> bool:
-            occupied = [
-                entity.fighter.location
-                for entity in agent.encounter_context.get().occupants
-            ]
-            if node not in occupied:
-                return True
-            else:
-                return False
+            return node in agent.encounter_context.get().space
 
         def show_path(node: Node) -> None:
             current = agent.locatable.path_to_destination(node)
             limit = agent.modifiable_stats.current.speed + 1
-            if len(current) > limit:
-                current = current[: int(limit)]
+            current = current[: min(int(limit), len(current))]
+
             self._highlight(
                 green=current[:1],
                 gold=current[1:-1],
