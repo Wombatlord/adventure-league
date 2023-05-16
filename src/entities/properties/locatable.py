@@ -166,6 +166,7 @@ class Locatable:
                 # calculation of paths for entities that we can't or shouldn't check
                 not occupant.locatable
                 or occupant.locatable is self
+                or not entity_filter(occupant)
             ):
                 continue
 
@@ -176,7 +177,7 @@ class Locatable:
             path_length = len(path)
             is_in_range = path_length - (max_range + 1) <= 0
 
-            if is_in_range and entity_filter(occupant):
+            if is_in_range:
                 in_range.append(occupant)
 
         return in_range

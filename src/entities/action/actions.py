@@ -82,7 +82,8 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
         # If the player has selected a node beyond the end of the highlighted path,
         # Only calculate the cost of the part of the path that will actually be traversed.
-        path = locatable.path_to_destination(destination)[1:]
+        full_path = locatable.path_to_destination(destination)
+        path = full_path[1:]
         if len(path) > locatable.speed:
             path = path[: locatable.speed]
         distance = len(path)
@@ -94,15 +95,14 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
 
         total_cost = base_cost + distance_cost
 
-        return total_cost
+        return total_cost, full_path
 
     @classmethod
     def execute(
         cls, fighter: Fighter, destination: Node
     ) -> Generator[Event, None, None]:
-        cost = cls.cost(fighter, destination)
+        cost, path = cls.cost(fighter, destination)
         fighter.action_points.deduct_cost(cost)
-        path = fighter.locatable.path_to_destination(destination)
         yield from fighter.locatable.traverse(path)
 
     @classmethod
@@ -110,7 +110,9 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
         return {
             **ActionMeta.details(cls, fighter),
             "subject": fighter,
-            "on_confirm": lambda destination: fighter.ready_action(cls(fighter, destination)),
+            "on_confirm": lambda destination: fighter.ready_action(
+                cls(fighter, destination)
+            ),
             "label": f"{fighter.owner.name}",
         }
 

@@ -181,7 +181,7 @@ class MoveActionTest(unittest.TestCase):
                 "label",
             },
         )
-        
+
         # this has to be calculated now, if we get it later the fighter has reached their destination and
         # incurred the cost
         _, path = current_fighter.locatable.nearest_entity(
@@ -193,10 +193,8 @@ class MoveActionTest(unittest.TestCase):
         destination = trimmed_path[-1]
         if destination not in current_fighter.encounter_context.get().space:
             destination = trimmed_path[-2]
-        
-        cost = MoveAction.cost(
-            fighter=current_fighter, destination=destination
-        )
+
+        cost, _ = MoveAction.cost(fighter=current_fighter, destination=destination)
         expected_points_remaining = current_fighter.action_points.per_turn - cost
 
         # assert the turn generator gives us a series of moves

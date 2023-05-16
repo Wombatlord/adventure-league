@@ -66,14 +66,14 @@ class ApproachingTarget(CombatAiState):
             max_range=fighter.gear.weapon._range,
             entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
         )
-        
+
         path = self.working_set["path_to_nearest"]
         trimmed_path = path[: int(moves["subject"].modifiable_stats.current.speed) + 1]
 
         destination = trimmed_path[-1]
         if destination not in moves["subject"].encounter_context.get().space:
             destination = trimmed_path[-2]
-        
+
         if enemies_in_range:
             self.working_set["in_range"] = enemies_in_range
             return ChoosingAttack(self.working_set)

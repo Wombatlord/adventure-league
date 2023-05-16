@@ -73,7 +73,7 @@ class TestAI:
     def destination(self, event):
         # breakpoint()
         fighter = event["choices"]["move"][0]["subject"]
-        
+
         _, path = fighter.locatable.nearest_entity(
             room=fighter.encounter_context.get(),
             entity_filter=lambda e: e.fighter.is_enemy_of(fighter),
@@ -87,9 +87,9 @@ class TestAI:
             for entity in fighter.encounter_context.encounter_context.occupants
         ]:
             destination = trimmed_path[-2]
-            
+
         return destination
-    
+
     def fallback_move_decision(self, options: list[dict]):
         nearest_enemy, _ = self._current_fighter.locatable.nearest_entity(
             self._current_fighter.encounter_context.get(),
