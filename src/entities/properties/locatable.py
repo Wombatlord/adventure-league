@@ -49,32 +49,6 @@ class Locatable:
             }
         }
 
-    def approach_target(self, target: Locatable) -> Generator[dict]:
-        yield {
-            "message": f"{self.owner.name.name_and_title} moved toward {target.owner.name.name_and_title} with bad intentions"
-        }
-        if self.location == target.location:
-            # attacker and target are overlapping.
-            yield self.traverse(choice(self.adjacent_locations())),
-
-        target_adjancencies = set(target.locatable.adjacent_locations())
-
-        if self.location in target_adjancencies:
-            # no traversal is necessary
-            yield self._no_move()
-            return
-
-        # path ends in adjacent node to target
-        path_to_target = self.path_to_target(target)
-        dest_index = -1
-
-        for i, place in enumerate(path_to_target):
-            if place in target_adjancencies:
-                dest_index = i
-                break
-
-        yield from self.traverse(path_to_target[: dest_index + 1])
-
     def traverse(self, path: Sequence[Node]) -> Generator[dict]:
         if not path or len(path) == 1:
             yield self._no_move()
@@ -102,19 +76,6 @@ class Locatable:
                 "orientation": self.orientation,
             },
         }
-
-    def available_moves(self, speed: int | None = None) -> tuple[tuple[Node, ...], ...]:
-        paths = []
-        for node in self.space.all_included_nodes():
-            path = self.path_to_destination(node)
-            if path is None or len(path) <= 1:
-                continue
-            if len(path) > speed + 1:
-                continue
-
-            paths.append(path)
-
-        return tuple(paths)
 
     def adjacent_locations(self) -> tuple[Node, ...]:
         """A getter for the tuple of nodes that are close enough to this Locatable for
