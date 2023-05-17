@@ -4,6 +4,7 @@ from typing import Callable, TYPE_CHECKING
 from src.gui.components.buttons import nav_button
 from src.gui.generic_sections.command_bar import CommandBarSection
 from arcade.gui.widgets.text import UILabel
+from src.engine.init_engine import eng
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -11,33 +12,48 @@ if TYPE_CHECKING:
 from src.gui.window_data import WindowData
 from src.gui.generic_sections.info_pane import InfoPaneSection
 
-CARD_VALUES = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
-CARD_SUITS = ["Clubs", "Hearts", "Spades", "Diamonds"]
 
-
-class Card(arcade.Sprite):
-    """Card sprite"""
-
-    def __init__(self, suit, value, scale=1):
-        """Card constructor"""
-
-        # Attributes for suit and value
-        self.suit = suit
-        self.value = value
-
-        # Image to use for the sprite when face up
-        self.image_file_name = (
-            f":resources:images/cards/card{self.suit}{self.value}.png"
+class StorageZone:
+    def __init__(self) -> None:
+        self.zone = arcade.SpriteSolidColor(
+            500, 520, 250, 460, color=arcade.csscolor.GRAY
         )
+        self.unequipped_count = 0
 
-        # Call the parent
-        super().__init__(
-            self.image_file_name,
-            scale,
-            hit_box_algorithm="None",
-            center_x=100,
-            center_y=400,
+
+class GearSlots:
+    def __init__(self) -> None:
+        self.weapon_slot = arcade.SpriteSolidColor(
+            50, 50, color=arcade.csscolor.AQUAMARINE
         )
+        self.helmet_slot = arcade.SpriteSolidColor(50, 50, color=arcade.csscolor.VIOLET)
+        self.body_slot = arcade.SpriteSolidColor(50, 50, color=arcade.csscolor.ORCHID)
+        self.helmet_slot.position = 900, 250
+        self.weapon_slot.position = 900, 400
+        self.body_slot.position = 900, 550
+
+        self.currently_equipped = eng.game_state.guild.roster[0].fighter.gear
+
+        self.equipped_icons = [
+            self.currently_equipped.weapon._sprite.sprite,
+            self.currently_equipped.helmet._sprite.sprite,
+            self.currently_equipped.body._sprite.sprite,
+        ]
+
+        self.currently_equipped.weapon._sprite.sprite.position = (
+            self.weapon_slot.position
+        )
+        self.currently_equipped.helmet._sprite.sprite.position = (
+            self.helmet_slot.position
+        )
+        self.currently_equipped.body._sprite.sprite.position = self.body_slot.position
+
+        self.slot_sprite_list = arcade.SpriteList()
+        self.slot_sprite_list.extend(
+            [self.weapon_slot, self.helmet_slot, self.body_slot]
+        )
+        self.equip_list = arcade.SpriteList()
+        self.equip_list.extend(self.equipped_icons)
 
 
 class EquipSection(arcade.Section):
@@ -50,47 +66,37 @@ class EquipSection(arcade.Section):
         **kwargs,
     ):
         super().__init__(left, bottom, width, height, **kwargs)
-
-        self.fighter_to_equip = Card("Spades", "A")
+        self.storage_zone = StorageZone()
+        self.gear_slots = GearSlots()
 
         self.held_item = None
         self.held_item_original_position = None
-        self.equip_list = arcade.SpriteList()
-        self.equip_list.append(self.fighter_to_equip)
-        
+
         self.slot_list: arcade.SpriteList = arcade.SpriteList()
 
-        # Create the mats for the bottom face down and face up piles
-        equippable_slot = arcade.SpriteSolidColor(150, 250, color=arcade.csscolor.AQUAMARINE)
-        original_slot = arcade.SpriteSolidColor(150, 250, color=arcade.csscolor.VIOLET)
-        third_slot = arcade.SpriteSolidColor(150, 250, color=arcade.csscolor.ORCHID)
-        original_slot.position = 100, 400
-        equippable_slot.position = 500, 400
-        third_slot.position = 900, 400
-        self.slot_list.extend([equippable_slot, original_slot, third_slot])
-        
+        self.slot_list.extend(
+            [self.storage_zone.zone, *self.gear_slots.slot_sprite_list]
+        )
+
+        self.equip_list = arcade.SpriteList()
+        self.equip_list.extend([*self.gear_slots.equip_list])
+
     def on_draw(self):
         self.slot_list.draw()
-        self.equip_list.draw()
+        self.equip_list.draw(pixelated=True)
 
     def pull_to_top(self, card: arcade.Sprite):
-        """Pull card to top of rendering order (last to render, looks on-top)"""
-
-        # Remove, and append to the end
+        """Pull draggable to top of rendering order (last to render, looks on-top)"""
         self.equip_list.remove(card)
         self.equip_list.append(card)
 
     def on_mouse_press(self, x, y, button, key_modifiers):
-        """Called when the user presses a mouse button."""
-
-        # Get list of cards we've clicked on
+        # Get sprite at the mouse cursor
         equips = arcade.get_sprites_at_point((x, y), self.equip_list)
 
-        # Have we clicked on a card?
+        # Have we clicked on an item? Otherwise do nothing.
         if len(equips) > 0:
-            # All other cases, grab the face-up card we are clicking on
             self.held_item = equips[0]
-            # Save the position
             self.held_item_original_position = self.held_item.position
             # Put on top in drawing order
             self.pull_to_top(self.held_item)
@@ -99,27 +105,37 @@ class EquipSection(arcade.Section):
         # If we don't have an item, who cares
         if not self.held_item:
             return
-        
-        # Find the closest pile, in case we are in contact with more than one
+
+        # Find the closest slot / zone, in case we are in contact with more than one
         slot, distance = arcade.get_closest_sprite(self.held_item, self.slot_list)
         reset_position = True
 
-        # See if we are in contact with the closest pile
+        # See if we are in contact with the closest slot / zone
         if arcade.check_for_collision(self.held_item, slot):
+            # For each held sprite, move it to the slot / zone we dropped on
 
-            # For each held card, move it to the pile we dropped on
+            # Move sprite to proper position
+            if slot == self.storage_zone.zone:
+                self.storage_zone.unequipped_count += 1
+                padding = 35
+                center_x = slot.center_x - slot.center_x + padding
+                center_y = slot.center_y + slot.center_y // 2
+                self.held_item.position = (
+                    center_x * self.storage_zone.unequipped_count,
+                    center_y,
+                )
 
-            # Move cards to proper position
-            self.held_item.position = slot.center_x, slot.center_y
-
-            # Success, don't reset position of cards
+            else:
+                self.held_item.position = slot.center_x, slot.center_y
+                self.storage_zone.unequipped_count -= 1
+            # Success, don't reset position of sprite
             reset_position = False
 
-            # Release on top play pile? And only one card held?
+        # Released on valid zone?
         if reset_position:
-            # Where-ever we were dropped, it wasn't valid. Reset the each card's position
+            # Where-ever we were dropped, it wasn't valid. Reset the sprite's position
             # to its original spot.
-                self.held_item.position = self.held_item_original_position
+            self.held_item.position = self.held_item_original_position
 
         # We are no longer holding an item
         self.held_item = None
@@ -148,7 +164,11 @@ class EquipView(arcade.View):
             prevent_dispatch={False},
             prevent_dispatch_view={False},
             margin=5,
-            texts=[UILabel(text="placeholder text",font_size=24, font_name=WindowData.font)],
+            texts=[
+                UILabel(
+                    text="placeholder text", font_size=24, font_name=WindowData.font
+                )
+            ],
         )
 
         # CommandBar config
@@ -178,10 +198,10 @@ class EquipView(arcade.View):
         self.add_section(self.info_pane_section)
         self.add_section(self.command_bar_section)
         self.add_section(self.equip_section)
-        
+
     def on_draw(self):
         self.clear()
-        
+
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()

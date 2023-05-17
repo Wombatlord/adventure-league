@@ -105,6 +105,19 @@ class SpriteSheetSpecs:
         ),
     )
 
+    icons = SheetSpec(
+        args=("./assets/sprites/IsometricTRPGAssetPack_UI.png",),
+        kwargs=_hashable(
+            **{
+                "sprite_height": 8,
+                "sprite_width": 8,
+                "columns": 10,
+                "count": 86,
+                "margin": 0,
+            }
+        )
+    )
+    
     banners = SheetSpec(
         args=("./assets/sprites/banner_sheet.png",),
         kwargs=_hashable(
