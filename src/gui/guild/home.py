@@ -229,12 +229,6 @@ class HomeView(arcade.View):
                     parent_factory=lambda: HomeView(parent_factory=self.parent_factory)
                 )
                 self.window.show_view(roster_view)
-
-            case arcade.key.X:
-                equip_view = EquipView(
-                    None, parent_factory=lambda: HomeView(parent_factory=self.parent_factory)
-                )
-                self.window.show_view(equip_view)
             
             case arcade.key.ESCAPE:
                 if self.home_menu.menu is None:

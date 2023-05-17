@@ -73,7 +73,7 @@ class EquippableItem(EquippableABC):
         
         
         self._sprite = EntitySprite(idle_textures=(tex,), attack_textures=(tex,), scale=6)
-        
+        self._sprite.owner = self
         
         self._config = config
         self._slot = config.slot

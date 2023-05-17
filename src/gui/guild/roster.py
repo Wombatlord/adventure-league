@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
 
+from src.gui.guild.equipment import EquipView
+
 if TYPE_CHECKING:
     from src.gui.guild.home import HomeView
 
@@ -262,6 +264,12 @@ class RosterView(arcade.View):
                     RecruitmentView(parent_factory=self.parent_factory)
                 )
 
+            case arcade.key.X:
+                equip_view = EquipView(
+                    self.get_selected_entity(), parent_factory=lambda: RosterView(parent_factory=self.parent_factory)
+                )
+                self.window.show_view(equip_view)
+            
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
         WindowData.width = width
