@@ -115,9 +115,9 @@ class SpriteSheetSpecs:
                 "count": 86,
                 "margin": 0,
             }
-        )
+        ),
     )
-    
+
     banners = SheetSpec(
         args=("./assets/sprites/banner_sheet.png",),
         kwargs=_hashable(

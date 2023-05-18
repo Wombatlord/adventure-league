@@ -131,7 +131,7 @@ class BaseSprite(OffsetSprite, Sprite):
                     self.animation_cycle = 0.75
 
 
-class EntitySprite:
+class SpriteAttribute:
     sprite: BaseSprite
 
     def __init__(

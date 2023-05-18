@@ -22,8 +22,12 @@ class Armory(Storage):
         self.armour = []
 
     def store(self, item: EquippableItem) -> None:
-        if item.slot == "weapon":
+        if item.slot == "_weapon":
             self.weapons.append(item)
 
         else:
             self.armour.append(item)
+
+    @property
+    def count(self) -> int:
+        return len(self.weapons) + len(self.armour)

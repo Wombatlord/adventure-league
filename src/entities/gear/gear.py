@@ -75,6 +75,9 @@ class Gear:
             return None
         return getattr(self, slot, None)
 
+    def is_equipped(self, item: EquippableItem) -> bool:
+        return self.item_in_slot(item.slot) is item
+
     def equip_item(self, item: EquippableItem, storage: Storage = None):
         slot = item.slot
         if slot not in self._equippable_slots:
@@ -96,7 +99,13 @@ class Gear:
     def unequip(self, slot: str, storage: Storage | None = None):
         if prev_item := self.item_in_slot(slot):
             prev_item.unequip()
-
+            match prev_item.slot:
+                case "_weapon":
+                    self._weapon = None
+                case "_helmet":
+                    self._helmet = None
+                case "_body":
+                    self._body = None
             # Update the aggregation of equippable stats & modifiers
             self.base_equipped_stats -= prev_item.stats
             self.modifiable_equipped_stats._base_stats -= prev_item.stats

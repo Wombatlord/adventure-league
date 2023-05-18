@@ -10,7 +10,7 @@ from src.entities.combat.stats import EquippableItemStats, FighterStats, StatAff
 from src.entities.combat.weapon_attacks import WeaponAttackMeta
 from src.entities.magic.spells import Spell, SpellMeta
 from src.entities.properties.meta_compendium import MetaCompendium
-from src.entities.sprites import EntitySprite
+from src.entities.sprites import SpriteAttribute
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.dice import D
 
@@ -51,7 +51,9 @@ class EquippableABC(metaclass=abc.ABCMeta):
     def fighter_modifiers(self) -> list[Modifier[FighterStats]]:
         raise NotImplementedError()
 
+
 tex = SpriteSheetSpecs.icons.load_one(68)
+
 
 class EquippableItem(EquippableABC):
     _slot: str
@@ -70,11 +72,12 @@ class EquippableItem(EquippableABC):
         self, owner: Fighter | None, config: EquippableItemConfig | None = None
     ) -> None:
         self._owner = owner
-        
-        
-        self._sprite = EntitySprite(idle_textures=(tex,), attack_textures=(tex,), scale=6)
+
+        self._sprite = SpriteAttribute(
+            idle_textures=(tex,), attack_textures=(tex,), scale=6
+        )
         self._sprite.owner = self
-        
+
         self._config = config
         self._slot = config.slot
         self._name = config.name

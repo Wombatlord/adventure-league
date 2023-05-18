@@ -44,7 +44,7 @@ indicators = arcade.load_spritesheet(
 )
 
 
-class EntitySprite(arcade.Sprite):
+class SpriteAttribute(arcade.Sprite):
     def __init__(
         self,
         textures: list[Texture],
@@ -91,10 +91,14 @@ class MyGame(arcade.Window):
         self.space.exclusions.add(Node(1, 0))
         self.space.exclusions.add(Node(0, 1))
 
-        self.iterable_entity_sprite = EntitySprite(entities, 0, self.get_size(), 6)
+        self.iterable_entity_sprite = SpriteAttribute(entities, 0, self.get_size(), 6)
         self.iterable_tile_sprite = TileSprite(tiles, 0, self.get_size(), 6)
-        self.entity_center_mark_sprite = EntitySprite(indicators, 0, self.get_size(), 1)
-        self.tile_center_mark_sprite = EntitySprite(indicators, 0, self.get_size(), 1)
+        self.entity_center_mark_sprite = SpriteAttribute(
+            indicators, 0, self.get_size(), 1
+        )
+        self.tile_center_mark_sprite = SpriteAttribute(
+            indicators, 0, self.get_size(), 1
+        )
         self.sprite_list = arcade.SpriteList()
 
         self.left_pressed = False

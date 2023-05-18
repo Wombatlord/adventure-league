@@ -4,6 +4,7 @@ from random import randint
 from typing import Optional
 
 from src.config.constants import team_names
+from src.engine.armory import Armory
 from src.entities.entity import Entity
 from src.entities.item.loot import Loot
 
@@ -32,6 +33,7 @@ class Guild:
         self.team = Team()
         self.team.owner = self
         self.current_roster_count: int = len(self.roster) + len(self.team.members)
+        self.armory = Armory()
 
     def to_dict(self) -> dict:
         guild = {}

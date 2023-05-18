@@ -266,10 +266,13 @@ class RosterView(arcade.View):
 
             case arcade.key.X:
                 equip_view = EquipView(
-                    self.get_selected_entity(), parent_factory=lambda: RosterView(parent_factory=self.parent_factory)
+                    self.get_selected_entity().fighter,
+                    parent_factory=lambda: RosterView(
+                        parent_factory=self.parent_factory
+                    ),
                 )
                 self.window.show_view(equip_view)
-            
+
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
         WindowData.width = width

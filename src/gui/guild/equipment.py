@@ -1,189 +1,32 @@
 from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple
+
 import arcade
-from typing import Callable, TYPE_CHECKING
-from src.entities.entity import Entity
-from src.entities.gear.gear import Gear
-from src.entities.sprites import EntitySprite
+from arcade.gui.widgets.text import UILabel
+
+from src.engine.armory import Armory
+from src.entities.combat.fighter import Fighter
+from src.entities.gear.equippable_item import EquippableItem
 from src.gui.components.buttons import nav_button
 from src.gui.generic_sections.command_bar import CommandBarSection
-from arcade.gui.widgets.text import UILabel
-from src.engine.init_engine import eng
 
 if TYPE_CHECKING:
-    from src.entities.combat.fighter import Fighter
+    from src.entities.entity import Entity
+    from src.entities.sprites import SpriteAttribute
+    from src.entities.gear.gear import Gear
 
-from src.gui.window_data import WindowData
+from src.engine.init_engine import eng
 from src.gui.generic_sections.info_pane import InfoPaneSection
-
-
-class StorageZone:
-    def __init__(self) -> None:
-        self.zone = arcade.SpriteSolidColor(
-            500, 520, 250, 460, color=arcade.csscolor.GRAY
-        )
-        self._filled_positions = 0
-
-    @property
-    def filled_positions(self):
-        return self._filled_positions
-
-    def item_stored(self):
-        self._filled_positions += 1
-
-    def item_removed(self):
-        self._filled_positions -= 1
-
-
-class GearSlots:
-    def __init__(self, to_be_equipped: Gear) -> None:
-        self.weapon_slot = arcade.SpriteSolidColor(
-            50, 50, color=arcade.csscolor.AQUAMARINE
-        )
-        self.helmet_slot = arcade.SpriteSolidColor(50, 50, color=arcade.csscolor.VIOLET)
-        self.body_slot = arcade.SpriteSolidColor(50, 50, color=arcade.csscolor.ORCHID)
-        self.weapon_slot.position = 900, 550
-        self.helmet_slot.position = 900, 400
-        self.body_slot.position = 900, 250
-        self.slot_sprite_list = arcade.SpriteList()
-        self.slot_sprite_list.extend(
-            [self.body_slot, self.helmet_slot, self.weapon_slot]
-        )
-
-        self.currently_equipped = to_be_equipped
-        icons = [
-            (item._sprite.sprite, label)
-            for item, label in self.initial_equips(to_be_equipped)
-        ]
-        self.assign_initial_equip_icons_to_slots(icons)
-
-        self.equip_list = arcade.SpriteList()
-
-        for icon in icons:
-            self.equip_list.append(icon[0])
-
-    def initial_equips(self, equips):
-        equipped = []
-        for slot in equips._equippable_slots:
-            match slot:
-                case "_weapon":
-                    if equips.weapon:
-                        equipped.append((equips.weapon, "weapon"))
-                case "_helmet":
-                    if equips.helmet:
-                        equipped.append((equips.helmet, "helmet"))
-                case "_body":
-                    if equips.body:
-                        equipped.append((equips.body, "body"))
-
-        return equipped
-
-    def assign_initial_equip_icons_to_slots(self, icons: list):
-        for icon_tuple in icons:
-            match icon_tuple[1]:
-                case "weapon":
-                    icon_tuple[0].position = self.weapon_slot.position
-                case "helmet":
-                    icon_tuple[0].position = self.helmet_slot.position
-                case "body":
-                    icon_tuple[0].position = self.body_slot.position
-
-
-class EquipSection(arcade.Section):
-    def __init__(
-        self,
-        left: int,
-        bottom: int,
-        width: int,
-        height: int,
-        to_be_equipped: Entity,
-        **kwargs,
-    ):
-        super().__init__(left, bottom, width, height, **kwargs)
-        self.storage_zone = StorageZone()
-        self.gear_slots = GearSlots(to_be_equipped=to_be_equipped.fighter.gear)
-
-        self.held_item = None
-        self.held_item_original_position = None
-
-        self.slot_list: arcade.SpriteList = arcade.SpriteList()
-
-        self.slot_list.extend(
-            [self.storage_zone.zone, *self.gear_slots.slot_sprite_list]
-        )
-
-        self.equip_list = arcade.SpriteList()
-        self.equip_list.extend([*self.gear_slots.equip_list])
-
-    def on_draw(self):
-        self.slot_list.draw()
-        self.equip_list.draw(pixelated=True)
-
-    def pull_to_top(self, card: arcade.Sprite):
-        """Pull draggable to top of rendering order (last to render, looks on-top)"""
-        self.equip_list.remove(card)
-        self.equip_list.append(card)
-
-    def on_mouse_press(self, x, y, button, key_modifiers):
-        # Get sprite at the mouse cursor
-        equips: arcade.SpriteList = arcade.get_sprites_at_point((x, y), self.equip_list)
-
-        # Have we clicked on an item? Otherwise do nothing.
-        if len(equips) > 0:
-            self.held_item: EntitySprite = equips[0]
-            self.held_item_original_position = self.held_item.position
-            # Put on top in drawing order
-            self.pull_to_top(self.held_item)
-
-    def on_mouse_release(self, x: float, y: float, button: int, modifiers: int):
-        # If we don't have an item, who cares
-        if not self.held_item:
-            return
-
-        # Find the closest slot / zone, in case we are in contact with more than one
-        slot, distance = arcade.get_closest_sprite(self.held_item, self.slot_list)
-        reset_position = True
-
-        # See if we are in contact with the closest slot / zone
-        if arcade.check_for_collision(self.held_item, slot):
-            # For each held sprite, move it to the slot / zone we dropped on
-
-            # Move sprite to proper position
-            if slot == self.storage_zone.zone:
-                self.storage_zone.item_stored()
-                padding = 35
-                center_x = slot.center_x - slot.center_x + padding
-                center_y = slot.center_y + slot.center_y // 2
-                self.held_item.position = (
-                    center_x * self.storage_zone.filled_positions,
-                    center_y,
-                )
-                print(self.held_item.owner.owner.slot)
-            else:
-                self.held_item.position = slot.center_x, slot.center_y
-                self.storage_zone.item_removed()
-            # Success, don't reset position of sprite
-            reset_position = False
-
-        # Released on valid zone?
-        if reset_position:
-            # Where-ever we were dropped, it wasn't valid. Reset the sprite's position
-            # to its original spot.
-            self.held_item.position = self.held_item_original_position
-
-        # We are no longer holding an item
-        self.held_item = None
-
-    def on_mouse_motion(self, x: float, y: float, dx: float, dy: float):
-        if self.held_item:
-            self.held_item.center_x = x
-            self.held_item.center_y = y
+from src.gui.window_data import WindowData
 
 
 class EquipView(arcade.View):
     """Draw a view displaying information about a guild"""
 
     def __init__(
-        self, to_be_equipped: Entity, parent_factory: Callable[[], arcade.View]
+        self, to_be_equipped: Fighter, parent_factory: Callable[[], arcade.View]
     ):
         super().__init__()
         self.parent_factory = parent_factory
@@ -199,7 +42,7 @@ class EquipView(arcade.View):
             margin=5,
             texts=[
                 UILabel(
-                    text=self.to_be_equipped.name.name_and_title,
+                    text=self.to_be_equipped.owner.name.name_and_title,
                     font_size=24,
                     font_name=WindowData.font,
                 )
@@ -227,7 +70,7 @@ class EquipView(arcade.View):
             height=WindowData.height - 198,
             prevent_dispatch={False},
             prevent_dispatch_view={False},
-            to_be_equipped=self.to_be_equipped,
+            fighter=self.to_be_equipped,
         )
 
         # Add sections to section manager.
@@ -255,3 +98,258 @@ class EquipView(arcade.View):
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
         pass
+
+
+###################
+class ItemReceiver:
+    def __init__(self, gear: Gear, slot: str, sprite: arcade.Sprite):
+        self.gear = gear
+        self.slot = slot
+        self.sprite = sprite
+        self.initial_overlay()
+
+    def put(self, item: EquippableItem) -> bool:
+        if not self.can_receive(item):
+            return False
+        if not self.gear.is_equipped(item):
+            self.gear.equip_item(item, eng.game_state.guild.armory)
+
+        item._sprite.sprite.position = self.sprite.position
+        return True
+
+    def can_receive(self, item) -> bool:
+        return item.slot == self.slot
+
+    def initial_overlay(self):
+        if self.slot == "_weapon" and self.gear.weapon:
+            self.gear.weapon._sprite.sprite.position = self.sprite.position
+        elif self.slot == "_helmet" and self.gear.helmet:
+            self.gear.helmet._sprite.sprite.position = self.sprite.position
+        elif self.slot == "_body" and self.gear.body:
+            self.gear.body._sprite.sprite.position = self.sprite.position
+
+
+class ItemStorageArea:
+    def __init__(self, gear: Gear, sprite: arcade.Sprite):
+        self.gear = gear
+        self.sprite = sprite
+
+    def put(self, item: EquippableItem) -> bool:
+        if self.gear.is_equipped(item):
+            print("unequipping")
+            self.gear.unequip(item.slot, eng.game_state.guild.armory)
+
+        item._sprite.sprite.position = self.sprite.position
+        return True
+
+
+class ReceiverCollection:
+    _item_receivers: dict[str, ItemReceiver]
+
+    def __init__(self, storage: Armory):
+        self.storage = storage
+        self._item_receivers = {}
+        self.sprites = arcade.SpriteList()
+
+    def register(self, slot: str, receiver: ItemReceiver):
+        self._item_receivers[slot] = receiver
+        if receiver.sprite not in self.sprites:
+            self.sprites.append(receiver.sprite)
+
+    def register_armory(self, armory: ItemStorageArea):
+        self._item_receivers["armory"] = armory
+        self.sprites.append(armory.sprite)
+
+    def identify_slot(self, sprite: arcade.Sprite) -> str | None:
+        items = self._item_receivers.items()
+
+        for slot, receiver in items:
+            if receiver.sprite is sprite:
+                return slot
+
+        return None
+
+    def put_into_slot_at_sprite(self, sprite: arcade.Sprite, item: EquippableItem):
+        slot = self.identify_slot(sprite)
+        if not slot:
+            breakpoint()
+            raise ValueError("Could not identify slot")
+
+        if receiver := self._item_receivers.get(slot, None):
+            return receiver.put(item)
+
+
+class Draggable:
+    sprite: arcade.Sprite
+    is_held: bool = False
+    item: EquippableItem
+
+    def __init__(self, item: EquippableItem, is_held=False):
+        self.sprite = item._sprite.sprite
+        self.item = item
+        self.is_held = is_held
+
+    def is_clicked(self, mouse: tuple[int, int]) -> bool:
+        return self.sprite.collides_with_point(mouse)
+
+
+class DraggableCollection:
+    draggables: list[Draggable]
+    hand: Draggable | None
+    sprites: arcade.SpriteList
+
+    def __init__(self, gear: Gear) -> None:
+        self.gear = gear
+        self.sprites = arcade.SpriteList()
+        self.draggables = [
+            Draggable(gear.weapon),
+            Draggable(gear.helmet),
+            Draggable(gear.body),
+        ]
+        self.sprites.extend([draggable.sprite for draggable in self.draggables])
+        self.hand = None
+
+    def add_to_collection(self, draggable: Draggable):
+        if draggable.sprite not in self.sprites:
+            self.draggables.append(draggable)
+            self.sprites.append(draggable.sprite)
+
+    def pick_up_at_mouse(self, mouse: tuple[int, int]):
+        for item in self.draggables:
+            item.is_held = not self.hand and item.is_clicked(mouse)
+            if item.is_held:
+                self.draggables.remove(item)
+                self.hand = item
+                return
+
+    def on_update(self, lmb: bool):
+        if self.hand and not lmb:
+            self.drop()
+
+    def drop(self):
+        self.draggables.append(self.hand)
+        self.hand.is_held = False
+        self.on_drop(self.hand)
+        self.hand = None
+
+    def on_drop(self, dropped: Draggable):
+        pass
+
+
+class EquipSection(arcade.Section):
+    def __init__(
+        self,
+        left: int,
+        bottom: int,
+        width: int,
+        height: int,
+        fighter: Fighter,
+        **kwargs,
+    ):
+        super().__init__(left, bottom, width, height, **kwargs)
+        self.fighter = fighter
+        self.gear = fighter.gear
+        self.armory = eng.game_state.get_guild().armory
+
+        self.item_storage_area = ItemStorageArea(
+            self.gear,
+            arcade.SpriteSolidColor(
+                300, 500, color=arcade.csscolor.GRAY, center_x=150, center_y=450
+            ),
+        )
+        self.item_receivers = ReceiverCollection(self.armory)
+        self._register_receivers()
+
+        self.draggable_collection = DraggableCollection(self.gear)
+
+        self.items = arcade.SpriteList()
+        self.items.extend(
+            [*self.item_receivers.sprites, *self.draggable_collection.sprites]
+        )
+        self.mouse = 0, 0
+        self.lmb_pressed = False
+
+        self.draggable = None
+        self.original_draggable_position = None
+
+    def _register_receivers(self):
+        self.item_receivers.register_armory(self.item_storage_area)
+        slot_x, slot_y = 900, 650
+        for slot in ("_weapon", "_helmet", "_body"):
+            self.item_receivers.register(
+                slot=slot,
+                receiver=ItemReceiver(
+                    gear=self.gear,
+                    slot=slot,
+                    sprite=arcade.SpriteSolidColor(
+                        width=50,
+                        height=50,
+                        color=arcade.csscolor.AQUAMARINE,
+                        center_x=slot_x,
+                        center_y=slot_y,
+                    ),
+                ),
+            )
+            slot_y -= 150
+
+    def on_draw(self):
+        self.items.draw(pixelated=True)
+
+    def on_update(self, dt: float):
+        if self.draggable and self.draggable.is_held:
+            self.draggable.sprite.position = self.mouse
+
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        self.mouse = x, y
+        self.lmb_pressed = button == arcade.MOUSE_BUTTON_LEFT
+        if self.lmb_pressed:
+            for draggable in self.draggable_collection.draggables:
+                if draggable.is_clicked(self.mouse):
+                    draggable.is_held = True
+                    self.draggable = draggable
+                    self.original_draggable_position = self.draggable.sprite.position
+                    return
+
+    def _get_receiver_sprite(self, x: int, y: int) -> arcade.Sprite | None:
+        """
+        This currently requires an exact overlap of mouse position and ItemReceiver sprite
+        """
+        pos = (x, y)
+        for sprite in self.item_receivers.sprites:
+            if sprite.position == pos:
+                return sprite
+
+    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
+        if not self.draggable:
+            return
+
+        self.mouse = x, y
+        if self.lmb_pressed and button == arcade.MOUSE_BUTTON_LEFT:
+            self.lmb_pressed = False
+
+            item_slot_sprite, distance = arcade.get_closest_sprite(
+                self.draggable.sprite, self.item_receivers.sprites
+            )
+
+            successfully_placed = False
+            if arcade.check_for_collision(self.draggable.sprite, item_slot_sprite):
+                # if (
+                #     destination := self._get_receiver_sprite(x, y)
+                #     and self.draggable.is_held
+                # ):
+                successfully_placed = self.item_receivers.put_into_slot_at_sprite(
+                    item_slot_sprite, self.draggable.item
+                )
+
+            if not successfully_placed:
+                self.draggable.sprite.position = self.original_draggable_position
+
+            self.draggable.is_held = False
+            self.draggable = None
+
+    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
+        self.mouse = x, y
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        if symbol == arcade.key.P:
+            breakpoint()

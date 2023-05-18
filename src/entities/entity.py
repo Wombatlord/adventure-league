@@ -7,7 +7,7 @@ from src.entities.item.inventory import Inventory
 from src.entities.item.inventory_item import InventoryItem
 from src.entities.properties.locatable import Locatable
 from src.entities.sprite_assignment import Species, attach_sprites
-from src.entities.sprites import EntitySprite
+from src.entities.sprites import SpriteAttribute
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
 
@@ -32,7 +32,7 @@ class Name(NamedTuple):
 
 
 class Entity:
-    entity_sprite: EntitySprite | None
+    entity_sprite: SpriteAttribute | None
     fighter: Fighter | None
     inventory: Inventory | None
     ai: AiInterface | None
@@ -91,7 +91,7 @@ class Entity:
         self.inventory = Inventory(owner=self, capacity=capacity)
         return self
 
-    def set_entity_sprite(self, sprite: EntitySprite):
+    def set_entity_sprite(self, sprite: SpriteAttribute):
         self.entity_sprite = sprite
         if self.entity_sprite:
             self.entity_sprite.owner = self
