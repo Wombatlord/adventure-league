@@ -20,14 +20,11 @@ class Armory(Storage):
     def __init__(self) -> None:
         self.weapons = []
         self.armour = []
-
+        self.storage = []
+        
     def store(self, item: EquippableItem) -> None:
-        if item.slot == "_weapon":
-            self.weapons.append(item)
-
-        else:
-            self.armour.append(item)
+        self.storage.append(item)
 
     @property
     def count(self) -> int:
-        return len(self.weapons) + len(self.armour)
+        return len(self.storage)
