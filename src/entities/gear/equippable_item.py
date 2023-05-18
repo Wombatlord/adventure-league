@@ -185,6 +185,9 @@ class EquippableItem(EquippableABC):
         return self._available_spells_cache
 
     def unequip(self):
+        for affix in self._fighter_affixes:
+            print(self._owner.modifiable_stats.remove(affix.modifier))
+        
         self._owner = None
         self._available_attacks_cache = None
         self._available_spells_cache = None

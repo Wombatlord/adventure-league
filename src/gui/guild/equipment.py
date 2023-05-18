@@ -201,12 +201,25 @@ class DraggableCollection:
     def __init__(self, gear: Gear) -> None:
         self.gear = gear
         self.sprites = arcade.SpriteList()
-        self.draggables = [
-            Draggable(gear.weapon),
-            Draggable(gear.helmet),
-            Draggable(gear.body),
-        ]
-        self.sprites.extend([draggable.sprite for draggable in self.draggables])
+        self.draggables = []
+        if self.gear.weapon:
+            weapon = Draggable(gear.weapon)
+            self.draggables.append(weapon)
+        if self.gear.helmet:
+            helmet = Draggable(gear.helmet)
+            self.draggables.append(helmet)
+        if self.gear.body:
+            body = Draggable(gear.body)
+            self.draggables.append(body)
+        
+        if self.draggables:
+            self.sprites.extend([draggable.sprite for draggable in self.draggables])
+        
+        for item in eng.game_state.guild.armory.armour:
+            self.draggables.append(Draggable(item))
+        
+        self.sprites.extend([draggable._sprite.sprite for draggable in eng.game_state.guild.armory.armour])
+        
         self.hand = None
 
     def add_to_collection(self, draggable: Draggable):

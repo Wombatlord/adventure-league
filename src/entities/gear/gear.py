@@ -113,6 +113,8 @@ class Gear:
             # Remove any affixes that are associated to the item being unequipped
             for affix in prev_item._equippable_item_affixes:
                 self.modifiable_equipped_stats.remove(affix.modifier)
+                
 
+                
             if storage is not None:
                 storage.store(prev_item)
