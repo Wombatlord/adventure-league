@@ -130,17 +130,18 @@ class ItemReceiver:
 class ItemStorageArea:
     COLS = 7
     ROWS = 14
-    CELL_SIZE: int = 35
-    MARGIN: int = 5
+    CELL_SIZE: int = 45
+    MARGIN: int = 0
 
     def __init__(
-        self, gear: Gear, storage: Armory, sprite: arcade.Sprite, section_bottom
+        self, gear: Gear, storage: Armory, sprite: arcade.Sprite, section_bottom, get_original_pos
     ):
         self.gear = gear
         self.storage = storage
         self.sprite = sprite
         self.section_bottom = section_bottom
         self.coords = []
+        self.get_original_pos = get_original_pos
 
         self.calculate_grid_coords()
 
@@ -170,9 +171,13 @@ class ItemStorageArea:
         return True
 
     def calculate_stored_item_sprite_position(self, item):
-        nearest_x, nearest_y = self.nearest_point(item)
-        item._sprite.sprite.center_x = nearest_x
-        item._sprite.sprite.center_y = nearest_y
+        valid_position = self.can_be_placed(item)
+        
+        if valid_position:
+            item._sprite.sprite.position = valid_position
+        
+        else:
+            item._sprite.sprite.position = self.get_original_pos()
 
     def nearest_point(self, item):
         item_position = item._sprite.sprite.position
@@ -182,6 +187,14 @@ class ItemStorageArea:
                 item_position[1] - point[1], item_position[0] - point[0]
             ),
         )
+    
+    def can_be_placed(self, item):
+        nearest_x, nearest_y = self.nearest_point(item)
+        for stored_item in self.storage.storage:
+            if stored_item._sprite.sprite.position == (nearest_x, nearest_y):
+                return False
+        
+        return nearest_x, nearest_y
 
 
 class ReceiverCollection:
@@ -314,9 +327,10 @@ class EquipSection(arcade.Section):
             gear=self.gear,
             storage=self.armory,
             sprite=arcade.SpriteSolidColor(
-                300, 520, color=arcade.csscolor.GRAY, center_x=150, center_y=460
+                325, 520, color=arcade.csscolor.GRAY, center_x=160, center_y=460
             ),
             section_bottom=self.bottom,
+            get_original_pos=self.get_original_pos
         )
         self.item_receivers = ReceiverCollection(self.armory)
         self._register_receivers()
@@ -333,6 +347,9 @@ class EquipSection(arcade.Section):
         self.draggable = None
         self.original_draggable_position = None
 
+    def get_original_pos(self):
+        return self.original_draggable_position
+    
     def _register_receivers(self):
         self.item_receivers.register_armory(self.item_storage_area)
         slot_x, slot_y = 900, 650
