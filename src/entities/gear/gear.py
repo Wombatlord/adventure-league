@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
+from src.engine.armory import Armory
 from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import EquippableItemStats
 
@@ -10,12 +11,6 @@ if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
 
 from src.entities.gear.equippable_item import EquippableItem
-
-
-class Storage(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def store(self, item: EquippableItem) -> None:
-        ...
 
 
 class Gear:
@@ -78,10 +73,13 @@ class Gear:
     def is_equipped(self, item: EquippableItem) -> bool:
         return self.item_in_slot(item.slot) is item
 
-    def equip_item(self, item: EquippableItem, storage: Storage = None):
+    def equip_item(self, item: EquippableItem, storage: Armory = None):
         slot = item.slot
         if slot not in self._equippable_slots:
             raise ValueError(f"Cannot equip item {item} in slot {slot}")
+
+        if storage and item in storage.storage:
+            storage.storage.remove(item)
 
         self.unequip(slot, storage)
         item.on_equip(self.owner)
@@ -96,7 +94,7 @@ class Gear:
 
         self.update_stats(item)
 
-    def unequip(self, slot: str, storage: Storage | None = None):
+    def unequip(self, slot: str, storage: Armory | None = None):
         if prev_item := self.item_in_slot(slot):
             prev_item.unequip()
             match prev_item.slot:
@@ -113,11 +111,9 @@ class Gear:
             # Remove any affixes that are associated to the item being unequipped
             for affix in prev_item._equippable_item_affixes:
                 self.modifiable_equipped_stats.remove(affix.modifier)
-                
 
-                
             if storage is not None:
                 storage.store(prev_item)
-    
+
     def currently_equipped(self):
         return (self.weapon, self.helmet, self.body)

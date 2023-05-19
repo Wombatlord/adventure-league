@@ -127,40 +127,60 @@ class ItemReceiver:
 
 
 class ItemStorageArea:
-    def __init__(self, gear: Gear, storage: Armory, sprite: arcade.Sprite, section_bottom):
+    CELLS_PER_ROW = 10
+    CELL_SIZE: int = 35
+    MARGIN: int = 5
+
+    def __init__(
+        self, gear: Gear, storage: Armory, sprite: arcade.Sprite, section_bottom
+    ):
         self.gear = gear
         self.storage = storage
         self.sprite = sprite
-        self.cols = int(self.sprite.width // 8)
-        self.rows = int(self.sprite.height // 10)
         self.section_bottom = section_bottom
-        self.first_row = []
-        self.second_row = []
-    
+
+        self.grid_coords = [
+            [[] for y in range(self.CELLS_PER_ROW)] for x in range(self.CELLS_PER_ROW)
+        ]
+
+        self.calculate_grid_coords()
+
+    def calculate_grid_coords(self):
+        for i, row in enumerate(self.grid_coords):
+            for j, col in enumerate(row):
+                x = j * (self.CELL_SIZE + self.MARGIN) + (
+                    self.CELL_SIZE / 2 + self.MARGIN
+                )
+                y = i * (self.CELL_SIZE + self.MARGIN) + (
+                    self.CELL_SIZE / 2 + self.MARGIN
+                )
+                print(j)
+                row[j] = (x, y)
+
+        print(self.grid_coords)
+
+    def take_out(self, item):
+        if item in self.sprite_grid:
+            self.sprite_grid.remove(item._sprite.sprite)
+
     def put(self, item: EquippableItem) -> bool:
         if self.gear.is_equipped(item):
             self.gear.unequip(item.slot, eng.game_state.guild.armory)
 
-        if len(self.first_row) < 1:
-            self.first_row.append(item._sprite.sprite)
-        else:
-            self.second_row.append(item._sprite.sprite)
-        
         self.calculate_stored_item_sprite_position(item)
         return True
 
     def calculate_stored_item_sprite_position(self, item):
-        if item._sprite.sprite in self.first_row:
-            index_in_row = self.first_row.index(item._sprite.sprite) + 1
-            item._sprite.sprite.center_x = (self.cols * index_in_row) - 15
-            item._sprite.sprite.center_y = (self.rows + self.sprite.height + self.section_bottom) - 80
-        
-        else:
-            index_in_row = self.second_row.index(item._sprite.sprite) + 1
-            item._sprite.sprite.center_x = (self.cols * index_in_row) - 15
-            item._sprite.sprite.center_y = (self.rows + self.sprite.height + self.section_bottom) - 145
-            
-        
+        idx = self.storage.storage.index(item)
+        if idx < 4:
+            x, y = self.grid_coords[0][idx]
+            item._sprite.sprite.position = (
+                x,
+                y + self.section_bottom - item._sprite.sprite.height,
+            )
+            item._sprite.sprite.center_y += self.sprite.height
+
+
 class ReceiverCollection:
     _item_receivers: dict[str, ItemReceiver]
 
@@ -221,7 +241,7 @@ class DraggableCollection:
         self.sprites = arcade.SpriteList()
         self.draggables = []
         self.prepare_draggables(gear)
-        
+
         self.hand = None
 
     def prepare_draggables(self, gear: Gear):
@@ -234,14 +254,16 @@ class DraggableCollection:
         if self.gear.body:
             body = Draggable(gear.body)
             self.draggables.append(body)
-        
+
         if self.draggables:
             self.sprites.extend([draggable.sprite for draggable in self.draggables])
-        
+
         for item in eng.game_state.guild.armory.storage:
             self.draggables.append(Draggable(item))
-        
-        self.sprites.extend([draggable._sprite.sprite for draggable in eng.game_state.guild.armory.storage])
+
+        for draggable in self.draggables:
+            if draggable.sprite not in self.sprites:
+                self.sprites.append(draggable.sprite)
 
     def add_to_collection(self, draggable: Draggable):
         if draggable.sprite not in self.sprites:
@@ -291,7 +313,7 @@ class EquipSection(arcade.Section):
             sprite=arcade.SpriteSolidColor(
                 300, 520, color=arcade.csscolor.GRAY, center_x=150, center_y=460
             ),
-            section_bottom=self.bottom
+            section_bottom=self.bottom,
         )
         self.item_receivers = ReceiverCollection(self.armory)
         self._register_receivers()
