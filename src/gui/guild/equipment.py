@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple
+from typing import TYPE_CHECKING, Callable
 
 import arcade
 from arcade.gui.widgets.text import UILabel
@@ -13,8 +12,6 @@ from src.gui.components.buttons import nav_button
 from src.gui.generic_sections.command_bar import CommandBarSection
 
 if TYPE_CHECKING:
-    from src.entities.entity import Entity
-    from src.entities.sprites import SpriteAttribute
     from src.entities.gear.gear import Gear
 
 from src.engine.init_engine import eng
@@ -130,19 +127,40 @@ class ItemReceiver:
 
 
 class ItemStorageArea:
-    def __init__(self, gear: Gear, sprite: arcade.Sprite):
+    def __init__(self, gear: Gear, storage: Armory, sprite: arcade.Sprite, section_bottom):
         self.gear = gear
+        self.storage = storage
         self.sprite = sprite
-
+        self.cols = int(self.sprite.width // 8)
+        self.rows = int(self.sprite.height // 10)
+        self.section_bottom = section_bottom
+        self.first_row = []
+        self.second_row = []
+    
     def put(self, item: EquippableItem) -> bool:
         if self.gear.is_equipped(item):
-            print("unequipping")
             self.gear.unequip(item.slot, eng.game_state.guild.armory)
 
-        item._sprite.sprite.position = self.sprite.position
+        if len(self.first_row) < 1:
+            self.first_row.append(item._sprite.sprite)
+        else:
+            self.second_row.append(item._sprite.sprite)
+        
+        self.calculate_stored_item_sprite_position(item)
         return True
 
-
+    def calculate_stored_item_sprite_position(self, item):
+        if item._sprite.sprite in self.first_row:
+            index_in_row = self.first_row.index(item._sprite.sprite) + 1
+            item._sprite.sprite.center_x = (self.cols * index_in_row) - 15
+            item._sprite.sprite.center_y = (self.rows + self.sprite.height + self.section_bottom) - 80
+        
+        else:
+            index_in_row = self.second_row.index(item._sprite.sprite) + 1
+            item._sprite.sprite.center_x = (self.cols * index_in_row) - 15
+            item._sprite.sprite.center_y = (self.rows + self.sprite.height + self.section_bottom) - 145
+            
+        
 class ReceiverCollection:
     _item_receivers: dict[str, ItemReceiver]
 
@@ -206,7 +224,7 @@ class DraggableCollection:
         
         self.hand = None
 
-    def prepare_draggables(self, gear):
+    def prepare_draggables(self, gear: Gear):
         if self.gear.weapon:
             weapon = Draggable(gear.weapon)
             self.draggables.append(weapon)
@@ -268,10 +286,12 @@ class EquipSection(arcade.Section):
         self.armory = eng.game_state.get_guild().armory
 
         self.item_storage_area = ItemStorageArea(
-            self.gear,
-            arcade.SpriteSolidColor(
-                300, 500, color=arcade.csscolor.GRAY, center_x=150, center_y=450
+            gear=self.gear,
+            storage=self.armory,
+            sprite=arcade.SpriteSolidColor(
+                300, 520, color=arcade.csscolor.GRAY, center_x=150, center_y=460
             ),
+            section_bottom=self.bottom
         )
         self.item_receivers = ReceiverCollection(self.armory)
         self._register_receivers()

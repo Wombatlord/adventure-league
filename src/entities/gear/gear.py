@@ -118,3 +118,6 @@ class Gear:
                 
             if storage is not None:
                 storage.store(prev_item)
+    
+    def currently_equipped(self):
+        return (self.weapon, self.helmet, self.body)
