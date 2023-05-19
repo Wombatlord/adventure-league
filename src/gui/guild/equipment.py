@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING, Callable
 
 import arcade
@@ -127,7 +128,8 @@ class ItemReceiver:
 
 
 class ItemStorageArea:
-    CELLS_PER_ROW = 10
+    COLS = 7
+    ROWS = 14
     CELL_SIZE: int = 35
     MARGIN: int = 5
 
@@ -138,26 +140,23 @@ class ItemStorageArea:
         self.storage = storage
         self.sprite = sprite
         self.section_bottom = section_bottom
-
-        self.grid_coords = [
-            [[] for y in range(self.CELLS_PER_ROW)] for x in range(self.CELLS_PER_ROW)
-        ]
+        self.coords = []
 
         self.calculate_grid_coords()
 
     def calculate_grid_coords(self):
-        for i, row in enumerate(self.grid_coords):
-            for j, col in enumerate(row):
+        for i in range(self.ROWS):
+            for j in range(self.COLS):
                 x = j * (self.CELL_SIZE + self.MARGIN) + (
                     self.CELL_SIZE / 2 + self.MARGIN
                 )
-                y = i * (self.CELL_SIZE + self.MARGIN) + (
-                    self.CELL_SIZE / 2 + self.MARGIN
+                y = (
+                    i * (self.CELL_SIZE + self.MARGIN)
+                    + (self.CELL_SIZE / 2 + self.MARGIN)
+                    + self.section_bottom
                 )
-                print(j)
-                row[j] = (x, y)
 
-        print(self.grid_coords)
+                self.coords.append((x, y))
 
     def take_out(self, item):
         if item in self.sprite_grid:
@@ -171,14 +170,18 @@ class ItemStorageArea:
         return True
 
     def calculate_stored_item_sprite_position(self, item):
-        idx = self.storage.storage.index(item)
-        if idx < 4:
-            x, y = self.grid_coords[0][idx]
-            item._sprite.sprite.position = (
-                x,
-                y + self.section_bottom - item._sprite.sprite.height,
-            )
-            item._sprite.sprite.center_y += self.sprite.height
+        nearest_x, nearest_y = self.nearest_point(item)
+        item._sprite.sprite.center_x = nearest_x
+        item._sprite.sprite.center_y = nearest_y
+
+    def nearest_point(self, item):
+        item_position = item._sprite.sprite.position
+        return min(
+            self.coords,
+            key=lambda point: math.hypot(
+                item_position[1] - point[1], item_position[0] - point[0]
+            ),
+        )
 
 
 class ReceiverCollection:

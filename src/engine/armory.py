@@ -21,7 +21,7 @@ class Armory(Storage):
         self.weapons = []
         self.armour = []
         self.storage = []
-        
+
     def store(self, item: EquippableItem) -> None:
         self.storage.append(item)
 
