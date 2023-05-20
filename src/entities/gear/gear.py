@@ -117,6 +117,6 @@ class Gear:
 
     def currently_equipped(self):
         return (self.weapon, self.helmet, self.body)
-    
+
     def as_list(self) -> list[EquippableItem]:
         return [item for item in self.currently_equipped() if item is not None]

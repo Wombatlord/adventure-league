@@ -159,7 +159,7 @@ class ModifiableStats(Generic[_StatType]):
 
     def update_base_stats(self, new_base: _StatType):
         self._base_stats = new_base
-    
+
     def include_modifier(self, modifier: Modifier[_StatType]):
         self._modifiers.append(modifier)
 

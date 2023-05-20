@@ -279,11 +279,8 @@ class Rectangle(NamedTuple):
                 and other.b >= self.b
                 and other.t < self.t
             )
-        
+
         if isinstance(other, tuple | Vec2):
-            return (
-                self.l <= other[0] < self.r 
-                and self.b <= other[1] < self.t
-            )
+            return self.l <= other[0] < self.r and self.b <= other[1] < self.t
 
         return False

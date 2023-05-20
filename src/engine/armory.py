@@ -11,7 +11,6 @@ class Storage(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def store(self, item: EquippableItem) -> None:
         ...
-        
 
     @abc.abstractmethod
     def remove(self, item: EquippableItem) -> None:
@@ -33,7 +32,7 @@ class Armory(Storage):
 
     def store(self, item: EquippableItem) -> None:
         self.storage.append(item)
-    
+
     def remove(self, item: EquippableItem) -> None:
         self.storage.remove(item)
 
