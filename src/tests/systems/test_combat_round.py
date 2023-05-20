@@ -86,7 +86,7 @@ class CombatRoundTest(TestCase):
                 assert (
                     not combat_round.continues()
                 ), "Combat should not be continuing now"
-            
+
             assert (
                 combat_round and combat_round.victor() is not None
             ), "No clear winner, seems sus."

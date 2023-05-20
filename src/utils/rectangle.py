@@ -272,12 +272,15 @@ class Rectangle(NamedTuple):
         return self.from_limits(self.min + displacement, self.max + displacement)
 
     def __contains__(self, other):
-        if not isinstance(other, Rectangle):
-            return False
+        if isinstance(other, Rectangle):
+            return (
+                other.l >= self.l
+                and other.r < self.r
+                and other.b >= self.b
+                and other.t < self.t
+            )
 
-        return (
-            other.l >= self.l
-            and other.r < self.r
-            and other.b >= self.b
-            and other.t < self.t
-        )
+        if isinstance(other, tuple | Vec2):
+            return self.l <= other[0] < self.r and self.b <= other[1] < self.t
+
+        return False

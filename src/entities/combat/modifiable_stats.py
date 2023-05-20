@@ -157,6 +157,9 @@ class ModifiableStats(Generic[_StatType]):
         self._base_stats = base_stats
         self._modifiers = [Modifier(self._stat_class)]
 
+    def update_base_stats(self, new_base: _StatType):
+        self._base_stats = new_base
+
     def include_modifier(self, modifier: Modifier[_StatType]):
         self._modifiers.append(modifier)
 

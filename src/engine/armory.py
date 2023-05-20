@@ -12,6 +12,14 @@ class Storage(metaclass=abc.ABCMeta):
     def store(self, item: EquippableItem) -> None:
         ...
 
+    @abc.abstractmethod
+    def remove(self, item: EquippableItem) -> None:
+        ...
+
+    @abc.abstractmethod
+    def __contains__(self, item: EquippableItem) -> bool:
+        ...
+
 
 class Armory(Storage):
     weapons: list[EquippableItem]
@@ -20,10 +28,17 @@ class Armory(Storage):
     def __init__(self) -> None:
         self.weapons = []
         self.armour = []
+        self.storage = []
 
     def store(self, item: EquippableItem) -> None:
-        if item.slot == "weapon":
-            self.weapons.append(item)
+        self.storage.append(item)
 
-        else:
-            self.armour.append(item)
+    def remove(self, item: EquippableItem) -> None:
+        self.storage.remove(item)
+
+    @property
+    def count(self) -> int:
+        return len(self.storage)
+
+    def __contains__(self, item: EquippableItem) -> bool:
+        return item in self.storage

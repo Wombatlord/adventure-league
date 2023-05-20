@@ -22,7 +22,7 @@ from src.entities.item.inventory import Inventory
 from src.entities.item.inventory_item import Consumable
 from src.entities.magic.caster import Caster
 from src.entities.properties.meta_compendium import MetaCompendium
-from src.entities.sprites import EntitySprite
+from src.entities.sprites import SpriteAttribute
 from src.world.node import Node
 from src.world.ray import Ray
 

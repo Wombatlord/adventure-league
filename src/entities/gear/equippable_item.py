@@ -10,6 +10,8 @@ from src.entities.combat.stats import EquippableItemStats, FighterStats, StatAff
 from src.entities.combat.weapon_attacks import WeaponAttackMeta
 from src.entities.magic.spells import Spell, SpellMeta
 from src.entities.properties.meta_compendium import MetaCompendium
+from src.entities.sprites import SpriteAttribute
+from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.dice import D
 
 if TYPE_CHECKING:
@@ -50,6 +52,9 @@ class EquippableABC(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
 
+tex = SpriteSheetSpecs.icons.load_one(68)
+
+
 class EquippableItem(EquippableABC):
     _slot: str
     _name: str
@@ -67,6 +72,12 @@ class EquippableItem(EquippableABC):
         self, owner: Fighter | None, config: EquippableItemConfig | None = None
     ) -> None:
         self._owner = owner
+
+        self._sprite = SpriteAttribute(
+            idle_textures=(tex,), attack_textures=(tex,), scale=6
+        )
+        self._sprite.owner = self
+
         self._config = config
         self._slot = config.slot
         self._name = config.name
@@ -81,6 +92,10 @@ class EquippableItem(EquippableABC):
         self._available_attacks_cache = []
         self._available_spells_cache = []
         self._init_affixes()
+
+    @property
+    def sprite(self) -> SpriteAttribute:
+        return self._sprite
 
     @property
     def slot(self) -> str:
@@ -174,6 +189,9 @@ class EquippableItem(EquippableABC):
         return self._available_spells_cache
 
     def unequip(self):
+        for affix in self._fighter_affixes:
+            self._owner.modifiable_stats.remove(affix.modifier)
+
         self._owner = None
         self._available_attacks_cache = None
         self._available_spells_cache = None

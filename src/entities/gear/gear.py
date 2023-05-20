@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
+from src.engine.armory import Armory
 from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import EquippableItemStats
 
@@ -10,12 +11,6 @@ if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
 
 from src.entities.gear.equippable_item import EquippableItem
-
-
-class Storage(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def store(self, item: EquippableItem) -> None:
-        ...
 
 
 class Gear:
@@ -75,10 +70,16 @@ class Gear:
             return None
         return getattr(self, slot, None)
 
-    def equip_item(self, item: EquippableItem, storage: Storage = None):
+    def is_equipped(self, item: EquippableItem) -> bool:
+        return self.item_in_slot(item.slot) is item
+
+    def equip_item(self, item: EquippableItem, storage: Armory = None):
         slot = item.slot
         if slot not in self._equippable_slots:
             raise ValueError(f"Cannot equip item {item} in slot {slot}")
+
+        if storage and item in storage.storage:
+            storage.storage.remove(item)
 
         self.unequip(slot, storage)
         item.on_equip(self.owner)
@@ -93,13 +94,19 @@ class Gear:
 
         self.update_stats(item)
 
-    def unequip(self, slot: str, storage: Storage | None = None):
+    def unequip(self, slot: str, storage: Armory | None = None):
         if prev_item := self.item_in_slot(slot):
             prev_item.unequip()
-
+            match prev_item.slot:
+                case "_weapon":
+                    self._weapon = None
+                case "_helmet":
+                    self._helmet = None
+                case "_body":
+                    self._body = None
             # Update the aggregation of equippable stats & modifiers
             self.base_equipped_stats -= prev_item.stats
-            self.modifiable_equipped_stats._base_stats -= prev_item.stats
+            self.modifiable_equipped_stats.update_base_stats(self.base_equipped_stats)
 
             # Remove any affixes that are associated to the item being unequipped
             for affix in prev_item._equippable_item_affixes:
@@ -107,3 +114,9 @@ class Gear:
 
             if storage is not None:
                 storage.store(prev_item)
+
+    def currently_equipped(self):
+        return (self.weapon, self.helmet, self.body)
+
+    def as_list(self) -> list[EquippableItem]:
+        return [item for item in self.currently_equipped() if item is not None]
