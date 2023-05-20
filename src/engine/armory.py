@@ -11,6 +11,15 @@ class Storage(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def store(self, item: EquippableItem) -> None:
         ...
+        
+
+    @abc.abstractmethod
+    def remove(self, item: EquippableItem) -> None:
+        ...
+
+    @abc.abstractmethod
+    def __contains__(self, item: EquippableItem) -> bool:
+        ...
 
 
 class Armory(Storage):
@@ -24,7 +33,13 @@ class Armory(Storage):
 
     def store(self, item: EquippableItem) -> None:
         self.storage.append(item)
+    
+    def remove(self, item: EquippableItem) -> None:
+        self.storage.remove(item)
 
     @property
     def count(self) -> int:
         return len(self.storage)
+
+    def __contains__(self, item: EquippableItem) -> bool:
+        return item in self.storage

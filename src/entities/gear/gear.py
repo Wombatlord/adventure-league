@@ -106,7 +106,7 @@ class Gear:
                     self._body = None
             # Update the aggregation of equippable stats & modifiers
             self.base_equipped_stats -= prev_item.stats
-            self.modifiable_equipped_stats._base_stats -= prev_item.stats
+            self.modifiable_equipped_stats.update_base_stats(self.base_equipped_stats)
 
             # Remove any affixes that are associated to the item being unequipped
             for affix in prev_item._equippable_item_affixes:
@@ -117,3 +117,6 @@ class Gear:
 
     def currently_equipped(self):
         return (self.weapon, self.helmet, self.body)
+    
+    def as_list(self) -> list[EquippableItem]:
+        return [item for item in self.currently_equipped() if item is not None]

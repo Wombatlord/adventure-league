@@ -11,6 +11,7 @@ from src.entities.combat.fighter import Fighter
 from src.entities.gear.equippable_item import EquippableItem
 from src.gui.components.buttons import nav_button
 from src.gui.generic_sections.command_bar import CommandBarSection
+from src.gui.guild.inventory_grid import GridLoc, SnapGrid
 
 if TYPE_CHECKING:
     from src.entities.gear.gear import Gear
@@ -18,6 +19,7 @@ if TYPE_CHECKING:
 from src.engine.init_engine import eng
 from src.gui.generic_sections.info_pane import InfoPaneSection
 from src.gui.window_data import WindowData
+from pyglet.math import Vec2
 
 
 class EquipView(arcade.View):
@@ -100,7 +102,14 @@ class EquipView(arcade.View):
 
 ###################
 class ItemReceiver:
-    def __init__(self, gear: Gear, slot: str, sprite: arcade.Sprite):
+    def __init__(
+        self,
+        gear: Gear,
+        slot: str,
+        sprite: arcade.Sprite,
+        inventory_grid: InventoryGrid,
+    ):
+        self.inventory_grid = inventory_grid
         self.gear = gear
         self.slot = slot
         self.sprite = sprite
@@ -110,6 +119,7 @@ class ItemReceiver:
         if not self.can_receive(item):
             return False
         if not self.gear.is_equipped(item):
+            self.inventory_grid.take(item)
             self.gear.equip_item(item, eng.game_state.guild.armory)
 
         item._sprite.sprite.position = self.sprite.position
@@ -127,74 +137,113 @@ class ItemReceiver:
             self.gear.body._sprite.sprite.position = self.sprite.position
 
 
-class ItemStorageArea:
-    COLS = 7
-    ROWS = 14
-    CELL_SIZE: int = 45
-    MARGIN: int = 0
-
+class InventoryGrid:
     def __init__(
-        self, gear: Gear, storage: Armory, sprite: arcade.Sprite, section_bottom, get_original_pos
+        self,
+        w: int,
+        h: int,
+        slot_size: Vec2,
+        storage: Armory,
+        gear: Gear,
+        bottom_left: Vec2 | None = None,
+        contents: dict[GridLoc, EquippableItem] | None = None,
     ):
-        self.gear = gear
-        self.storage = storage
+        self._grid = SnapGrid.from_grid_dimensions(
+            w, h, slot_size, bottom_left or Vec2(0, 0)
+        )
+        self._sprite_dims = slot_size * 0.8
+        self._contents = contents or {}
+        self._storage = storage
+        self._gear = gear
+    
+    def search_contents(self, item) -> GridLoc | None:
+        for loc, candidate in self._contents.items():
+            if item is candidate:
+                return loc
+
+        return None
+
+    def take(self, item: EquippableItem):
+        loc = self.search_contents(item)
+        if loc:
+            self._contents.pop(loc)
+        if item in self._storage:
+            self._storage.remove(item)
+
+    def put(self, item: EquippableItem):
+        screen_pos = Vec2(*item.sprite.sprite.position)
+
+        snapped = self._grid.snap_to_grid(screen_pos)
+        if snapped is None:
+            return
+
+        item.sprite.sprite.position = snapped
+
+        if self._gear.is_equipped(item):
+            self._gear.unequip(item.slot, self._storage)
+        else:
+            self.take(item)
+
+        self._contents[self._grid.to_grid_loc(screen_pos)] = item
+
+    def build_receivers(self) -> list[StorageReceiver]:
+        receivers = []
+        for screen_pos in self._grid.locations_in_rows():
+            receivers.append(self._build_receiver(screen_pos))
+
+        return receivers
+
+    def _build_receiver(self, screen_pos: Vec2) -> StorageReceiver:
+        return StorageReceiver(
+            arcade.SpriteSolidColor(
+                width=self._sprite_dims.x,
+                height=self._sprite_dims.y,
+                center_x=screen_pos.x,
+                center_y=screen_pos.y,
+                color=arcade.color.GRAY,
+            ),
+            self,
+        )
+
+    def build_draggables(self) -> list[Draggable]:
+        draggables = []
+        storage = self._storage.storage
+        placed = 0
+        for screen_pos in self._grid.locations_in_rows():
+            if placed >= len(storage):
+                continue
+            
+            item = storage[placed]
+            draggables.append(self._build_draggable(screen_pos, storage[placed]))
+            placed += 1
+            self._contents[self._grid.to_grid_loc(screen_pos)] = item
+            item.sprite.sprite.position = screen_pos
+            
+        return draggables
+
+    def _build_draggable(self, screen_pos: Vec2, item: EquippableItem) -> Draggable:
+        item.sprite.position = screen_pos.x, screen_pos.y
+        return Draggable(item)
+
+    def is_occupied(self, screen_pos: Vec2) -> bool:
+        loc = self._grid.to_grid_loc(screen_pos)
+        return loc in self._contents
+
+
+class StorageReceiver:
+    def __init__(self, sprite: arcade.Sprite, inventory: InventoryGrid):
         self.sprite = sprite
-        self.section_bottom = section_bottom
-        self.coords = []
-        self.get_original_pos = get_original_pos
-
-        self.calculate_grid_coords()
-
-    def calculate_grid_coords(self):
-        for i in range(self.ROWS):
-            for j in range(self.COLS):
-                x = j * (self.CELL_SIZE + self.MARGIN) + (
-                    self.CELL_SIZE / 2 + self.MARGIN
-                )
-                y = (
-                    i * (self.CELL_SIZE + self.MARGIN)
-                    + (self.CELL_SIZE / 2 + self.MARGIN)
-                    + self.section_bottom
-                )
-
-                self.coords.append((x, y))
-
-    def take_out(self, item):
-        if item in self.sprite_grid:
-            self.sprite_grid.remove(item._sprite.sprite)
+        self.inventory_grid = inventory
 
     def put(self, item: EquippableItem) -> bool:
-        if self.gear.is_equipped(item):
-            self.gear.unequip(item.slot, eng.game_state.guild.armory)
+        if not self.can_receive(item):
+            return False
 
-        self.calculate_stored_item_sprite_position(item)
+        self.inventory_grid.put(item)
         return True
 
-    def calculate_stored_item_sprite_position(self, item):
-        valid_position = self.can_be_placed(item)
-        
-        if valid_position:
-            item._sprite.sprite.position = valid_position
-        
-        else:
-            item._sprite.sprite.position = self.get_original_pos()
-
-    def nearest_point(self, item):
-        item_position = item._sprite.sprite.position
-        return min(
-            self.coords,
-            key=lambda point: math.hypot(
-                item_position[1] - point[1], item_position[0] - point[0]
-            ),
-        )
-    
-    def can_be_placed(self, item):
-        nearest_x, nearest_y = self.nearest_point(item)
-        for stored_item in self.storage.storage:
-            if stored_item._sprite.sprite.position == (nearest_x, nearest_y):
-                return False
-        
-        return nearest_x, nearest_y
+    def can_receive(self, item: EquippableItem) -> bool:
+        return not self.inventory_grid.is_occupied(Vec2(*item.sprite.sprite.position))
 
 
 class ReceiverCollection:
@@ -203,6 +252,7 @@ class ReceiverCollection:
     def __init__(self, storage: Armory):
         self.storage = storage
         self._item_receivers = {}
+        self._storage_receivers = []
         self.sprites = arcade.SpriteList()
 
     def register(self, slot: str, receiver: ItemReceiver):
@@ -210,11 +260,13 @@ class ReceiverCollection:
         if receiver.sprite not in self.sprites:
             self.sprites.append(receiver.sprite)
 
-    def register_armory(self, armory: ItemStorageArea):
-        self._item_receivers["armory"] = armory
-        self.sprites.append(armory.sprite)
+    def register_armory(self, reciever: StorageReceiver):
+        if reciever.sprite in self.sprites:
+            return
+        self._storage_receivers.append(reciever)
+        self.sprites.append(reciever.sprite)
 
-    def identify_slot(self, sprite: arcade.Sprite) -> str | None:
+    def identify_equip_slot(self, sprite: arcade.Sprite) -> str | None:
         items = self._item_receivers.items()
 
         for slot, receiver in items:
@@ -223,14 +275,27 @@ class ReceiverCollection:
 
         return None
 
-    def put_into_slot_at_sprite(self, sprite: arcade.Sprite, item: EquippableItem):
-        slot = self.identify_slot(sprite)
+    def identify_inventory_slot(self, sprite: arcade.Sprite) -> int | None:
+        for slot, receiver in enumerate(self._storage_receivers):
+            if receiver.sprite is sprite:
+                return slot
+
+        return None
+
+    def put_into_slot_at_sprite(self, sprite: arcade.Sprite, item: EquippableItem) -> bool:
+        slot = self.identify_equip_slot(sprite)
         if not slot:
-            breakpoint()
+            slot = self.identify_inventory_slot(sprite)
+
+        if slot is None:
             raise ValueError("Could not identify slot")
 
-        if receiver := self._item_receivers.get(slot, None):
-            return receiver.put(item)
+        match slot:
+            case x if isinstance(x, str):
+                if receiver := self._item_receivers.get(slot, None):
+                    return receiver.put(item)
+            case x if isinstance(x, int):
+                return self._storage_receivers[slot].put(item)
 
 
 class Draggable:
@@ -251,9 +316,11 @@ class DraggableCollection:
     draggables: list[Draggable]
     hand: Draggable | None
     sprites: arcade.SpriteList
-
-    def __init__(self, gear: Gear) -> None:
+    inventory_grid: InventoryGrid
+    
+    def __init__(self, gear: Gear, inventory_grid: InventoryGrid) -> None:
         self.gear = gear
+        self.inventory_grid = inventory_grid
         self.sprites = arcade.SpriteList()
         self.draggables = []
         self.prepare_draggables(gear)
@@ -261,25 +328,12 @@ class DraggableCollection:
         self.hand = None
 
     def prepare_draggables(self, gear: Gear):
-        if self.gear.weapon:
-            weapon = Draggable(gear.weapon)
-            self.draggables.append(weapon)
-        if self.gear.helmet:
-            helmet = Draggable(gear.helmet)
-            self.draggables.append(helmet)
-        if self.gear.body:
-            body = Draggable(gear.body)
-            self.draggables.append(body)
+        for item in gear.as_list():
+            self.add_to_collection(Draggable(item))
+        
+        for draggable in self.inventory_grid.build_draggables():
+            self.add_to_collection(draggable)
 
-        if self.draggables:
-            self.sprites.extend([draggable.sprite for draggable in self.draggables])
-
-        for item in eng.game_state.guild.armory.storage:
-            self.draggables.append(Draggable(item))
-
-        for draggable in self.draggables:
-            if draggable.sprite not in self.sprites:
-                self.sprites.append(draggable.sprite)
 
     def add_to_collection(self, draggable: Draggable):
         if draggable.sprite not in self.sprites:
@@ -323,24 +377,19 @@ class EquipSection(arcade.Section):
         self.gear = fighter.gear
         self.armory = eng.game_state.get_guild().armory
 
-        self.item_storage_area = ItemStorageArea(
-            gear=self.gear,
-            storage=self.armory,
-            sprite=arcade.SpriteSolidColor(
-                325, 520, color=arcade.csscolor.GRAY, center_x=160, center_y=460
-            ),
-            section_bottom=self.bottom,
-            get_original_pos=self.get_original_pos
-        )
         self.item_receivers = ReceiverCollection(self.armory)
+        self.inventory_grid = InventoryGrid(
+            3,
+            4,
+            Vec2(60, 90),
+            self.armory,
+            self.gear,
+            bottom_left=Vec2(0, 2 * self.height / 3),
+        )
         self._register_receivers()
 
-        self.draggable_collection = DraggableCollection(self.gear)
+        self.draggable_collection = DraggableCollection(self.gear, self.inventory_grid)
 
-        self.items = arcade.SpriteList()
-        self.items.extend(
-            [*self.item_receivers.sprites, *self.draggable_collection.sprites]
-        )
         self.mouse = 0, 0
         self.lmb_pressed = False
 
@@ -349,9 +398,8 @@ class EquipSection(arcade.Section):
 
     def get_original_pos(self):
         return self.original_draggable_position
-    
+
     def _register_receivers(self):
-        self.item_receivers.register_armory(self.item_storage_area)
         slot_x, slot_y = 900, 650
         for slot in ("_weapon", "_helmet", "_body"):
             self.item_receivers.register(
@@ -366,12 +414,17 @@ class EquipSection(arcade.Section):
                         center_x=slot_x,
                         center_y=slot_y,
                     ),
+                    inventory_grid=self.inventory_grid,
                 ),
             )
             slot_y -= 150
 
+        for receiver in self.inventory_grid.build_receivers():
+            self.item_receivers.register_armory(receiver)
+
     def on_draw(self):
-        self.items.draw(pixelated=True)
+        self.item_receivers.sprites.draw(pixelated=True)
+        self.draggable_collection.sprites.draw(pixelated=True)
 
     def on_update(self, dt: float):
         if self.draggable and self.draggable.is_held:
@@ -411,17 +464,13 @@ class EquipSection(arcade.Section):
 
             successfully_placed = False
             if arcade.check_for_collision(self.draggable.sprite, item_slot_sprite):
-                # if (
-                #     destination := self._get_receiver_sprite(x, y)
-                #     and self.draggable.is_held
-                # ):
                 successfully_placed = self.item_receivers.put_into_slot_at_sprite(
                     item_slot_sprite, self.draggable.item
                 )
 
             if not successfully_placed:
                 self.draggable.sprite.position = self.original_draggable_position
-
+            
             self.draggable.is_held = False
             self.draggable = None
 

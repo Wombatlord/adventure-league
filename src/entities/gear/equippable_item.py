@@ -94,6 +94,10 @@ class EquippableItem(EquippableABC):
         self._init_affixes()
 
     @property
+    def sprite(self) -> SpriteAttribute:
+        return self._sprite
+
+    @property
     def slot(self) -> str:
         return self._slot
 
