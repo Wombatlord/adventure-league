@@ -79,7 +79,7 @@ class SnapGrid:
         return screen_loc in self.bounds
 
     def locations_in_rows(self) -> Generator[Vec2, None, None]:
-        top_left = GridLoc.snap(Vec2(0, self.grid_bounds.t))
+        top_left = GridLoc.snap(Vec2(0, self.grid_bounds.t - 0.5))
         along = lambda gl: GridLoc(gl.x + 1, gl.y)
         next_row = lambda gl: GridLoc(0, gl.y - 1)
 

@@ -70,7 +70,7 @@ class InventoryGrid:
         self._grid = SnapGrid.from_grid_dimensions(
             w, h, slot_size, bottom_left or Vec2(0, 0)
         )
-        self._sprite_dims = slot_size * 0.8
+        self._sprite_dims = slot_size * 0.9
         self._contents = contents or {}
         self._storage = storage
         self._gear = gear
