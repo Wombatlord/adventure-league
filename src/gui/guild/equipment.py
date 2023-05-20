@@ -147,6 +147,7 @@ class InventoryGrid:
         gear: Gear,
         bottom_left: Vec2 | None = None,
         contents: dict[GridLoc, EquippableItem] | None = None,
+        original_draggable_position = None
     ):
         self._grid = SnapGrid.from_grid_dimensions(
             w, h, slot_size, bottom_left or Vec2(0, 0)
@@ -155,7 +156,8 @@ class InventoryGrid:
         self._contents = contents or {}
         self._storage = storage
         self._gear = gear
-    
+        self.original_draggable_position = original_draggable_position
+        
     def search_contents(self, item) -> GridLoc | None:
         for loc, candidate in self._contents.items():
             if item is candidate:
@@ -175,6 +177,7 @@ class InventoryGrid:
 
         snapped = self._grid.snap_to_grid(screen_pos)
         if snapped is None:
+            item.sprite.sprite.position = self.original_draggable_position()
             return
 
         item.sprite.sprite.position = snapped
@@ -385,6 +388,7 @@ class EquipSection(arcade.Section):
             self.armory,
             self.gear,
             bottom_left=Vec2(0, 2 * self.height / 3),
+            original_draggable_position=self.get_original_draggable_pos
         )
         self._register_receivers()
 
@@ -396,7 +400,7 @@ class EquipSection(arcade.Section):
         self.draggable = None
         self.original_draggable_position = None
 
-    def get_original_pos(self):
+    def get_original_draggable_pos(self):
         return self.original_draggable_position
 
     def _register_receivers(self):
