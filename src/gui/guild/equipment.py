@@ -121,11 +121,11 @@ class EquipSection(arcade.Section):
         self.item_receivers = ReceiverCollection(self.armory)
         self.inventory_grid = InventoryGrid(
             6,
-            6,
+            8,
             Vec2(60, 60),
             self.armory,
             self.gear,
-            bottom_left=Vec2(0, 2 * self.height / 4),
+            bottom_left=Vec2(0,215),
             original_draggable_position=self.get_original_draggable_pos,
         )
         self._register_receivers()

@@ -36,7 +36,7 @@ class ItemReceiver:
         if not self.can_receive(item):
             return False
         if not self.gear.is_equipped(item):
-            self.inventory_grid.take(item)
+            self.inventory_grid.take(item, remove_from_storage=True)
             self.gear.equip_item(item, eng.game_state.guild.armory)
 
         item._sprite.sprite.position = self.sprite.position
@@ -83,11 +83,11 @@ class InventoryGrid:
 
         return None
 
-    def take(self, item: EquippableItem):
+    def take(self, item: EquippableItem, remove_from_storage: bool = False):
         loc = self.search_contents(item)
         if loc:
             self._contents.pop(loc)
-        if item in self._storage:
+        if item in self._storage and remove_from_storage:
             self._storage.remove(item)
 
     def put(self, item: EquippableItem):
@@ -101,7 +101,7 @@ class InventoryGrid:
         item.sprite.sprite.position = snapped
 
         if item in self._storage.storage:
-            return
+            self.take(item)
         elif self._gear.is_equipped(item):
             self._gear.unequip(item.slot, self._storage)
 
