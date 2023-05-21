@@ -100,10 +100,10 @@ class InventoryGrid:
 
         item.sprite.sprite.position = snapped
 
-        if self._gear.is_equipped(item):
+        if item in self._storage.storage:
+            return
+        elif self._gear.is_equipped(item):
             self._gear.unequip(item.slot, self._storage)
-        else:
-            self.take(item)
 
         self._contents[self._grid.to_grid_loc(screen_pos)] = item
 

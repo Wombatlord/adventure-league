@@ -112,7 +112,7 @@ class SpriteSheetSpecs:
                 "sprite_height": 8,
                 "sprite_width": 8,
                 "columns": 10,
-                "count": 86,
+                "count": 110,
                 "margin": 0,
             }
         ),

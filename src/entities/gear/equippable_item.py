@@ -10,7 +10,8 @@ from src.entities.combat.stats import EquippableItemStats, FighterStats, StatAff
 from src.entities.combat.weapon_attacks import WeaponAttackMeta
 from src.entities.magic.spells import Spell, SpellMeta
 from src.entities.properties.meta_compendium import MetaCompendium
-from src.entities.sprites import SpriteAttribute
+from src.entities.sprites import AnimatedSpriteAttribute, SimpleSpriteAttribute
+from src.gui.simple_sprite_config import choose_item_texture
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.dice import D
 
@@ -52,7 +53,7 @@ class EquippableABC(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
 
-tex = SpriteSheetSpecs.icons.load_one(68)
+tex = SpriteSheetSpecs.icons.load_one(108)
 
 
 class EquippableItem(EquippableABC):
@@ -73,11 +74,6 @@ class EquippableItem(EquippableABC):
     ) -> None:
         self._owner = owner
 
-        self._sprite = SpriteAttribute(
-            idle_textures=(tex,), attack_textures=(tex,), scale=6
-        )
-        self._sprite.owner = self
-
         self._config = config
         self._slot = config.slot
         self._name = config.name
@@ -88,13 +84,18 @@ class EquippableItem(EquippableABC):
         self._fighter_affixes = config.fighter_affixes
         self._equippable_item_affixes = config.equippable_item_affixes
         self._stats = config.stats
+        self._sprite = SimpleSpriteAttribute(
+            path_or_texture=choose_item_texture(self), scale=6
+        )
+        self._sprite.owner = self
+
         self._modifiable_stats = ModifiableStats(EquippableItemStats, self._stats)
         self._available_attacks_cache = []
         self._available_spells_cache = []
         self._init_affixes()
 
     @property
-    def sprite(self) -> SpriteAttribute:
+    def sprite(self) -> AnimatedSpriteAttribute:
         return self._sprite
 
     @property
