@@ -6,11 +6,14 @@ import arcade
 
 from src.engine.armory import Armory
 from src.gui.components.draggables import Draggable
-from src.gui.guild.inventory_grid import SnapGrid
+from src.gui.guild.snap_grid import SnapGrid
+from src.textures.pixelated_nine_patch import PixelatedNinePatch
+from src.textures.texture_data import SingleTextureSpecs
+from src.utils.rectangle import Corner, Rectangle
 
 if TYPE_CHECKING:
     from src.entities.gear.equippable_item import EquippableItem
-    from src.gui.guild.inventory_grid import GridLoc
+    from src.gui.guild.snap_grid import GridLoc
     from src.entities.gear.gear import Gear
 
 from pyglet.math import Vec2
@@ -32,18 +35,18 @@ class ItemReceiver:
         self.sprite = sprite
         self.initial_overlay()
 
-    def put(self, item: EquippableItem) -> bool:
-        if not self.can_receive(item):
+    def put(self, draggable: Draggable) -> bool:
+        if not self.can_receive(draggable):
             return False
-        if not self.gear.is_equipped(item):
-            self.inventory_grid.take(item, remove_from_storage=True)
-            self.gear.equip_item(item, eng.game_state.guild.armory)
+        if not self.gear.is_equipped(draggable.item):
+            self.inventory_grid.take(draggable, remove_from_storage=True)
+            self.gear.equip_item(draggable.item, eng.game_state.guild.armory)
 
-        item._sprite.sprite.position = self.sprite.position
+        draggable.item._sprite.sprite.position = self.sprite.position
         return True
 
-    def can_receive(self, item) -> bool:
-        return item.slot == self.slot
+    def can_receive(self, draggable: Draggable) -> bool:
+        return draggable.item.slot == self.slot
 
     def initial_overlay(self):
         if self.slot == "_weapon" and self.gear.weapon:
@@ -53,8 +56,14 @@ class ItemReceiver:
         elif self.slot == "_body" and self.gear.body:
             self.gear.body._sprite.sprite.position = self.sprite.position
 
+    def reposition(self, new_pos: Vec2):
+        self.sprite.position = new_pos
+    
 
 class InventoryGrid:
+    _grid: SnapGrid
+    _contents: dict[GridLoc, Draggable]
+
     def __init__(
         self,
         w: int,
@@ -63,7 +72,7 @@ class InventoryGrid:
         storage: Armory,
         gear: Gear,
         bottom_left: Vec2 | None = None,
-        contents: dict[GridLoc, EquippableItem] | None = None,
+        contents: dict[GridLoc, Draggable] | None = None,
         original_draggable_position: Callable[[], tuple[float, float] | None]
         | None = None,
     ):
@@ -75,22 +84,42 @@ class InventoryGrid:
         self._storage = storage
         self._gear = gear
         self.original_draggable_position = original_draggable_position
+        self._pin_args = None
+        self._receivers = []
+        self._draggables = []
 
-    def search_contents(self, item) -> GridLoc | None:
+    def get_bounds(self) -> Rectangle:
+        return self._grid.bounds
+
+    def search_contents(self, draggable: Draggable) -> GridLoc | None:
         for loc, candidate in self._contents.items():
-            if item is candidate:
+            if draggable.item is candidate.item:
                 return loc
 
         return None
+    
+    def pin_corner(self, corner: Corner, pin: Callable[[], Vec2]):
+        self._grid.pin_corner(corner, pin)
 
-    def take(self, item: EquippableItem, remove_from_storage: bool = False):
-        loc = self.search_contents(item)
+    def on_resize(self):
+        self._grid.on_resize()
+
+        for receiver, screen_pos in zip(self._receivers, self._grid.locations_in_rows()):
+            grid_loc = self._grid.to_grid_loc(screen_pos)
+            if occupying_draggable := self._contents.get(grid_loc):
+                occupying_draggable.reposition(screen_pos)
+            receiver.reposition(screen_pos)
+
+    def take(self, draggable: Draggable, remove_from_storage: bool = False):
+        item = draggable.item
+        loc = self.search_contents(draggable)
         if loc:
             self._contents.pop(loc)
         if item in self._storage and remove_from_storage:
             self._storage.remove(item)
 
-    def put(self, item: EquippableItem):
+    def put(self, draggable: Draggable):
+        item = draggable.item
         screen_pos = Vec2(*item.sprite.sprite.position)
 
         snapped = self._grid.snap_to_grid(screen_pos)
@@ -101,18 +130,20 @@ class InventoryGrid:
         item.sprite.sprite.position = snapped
 
         if item in self._storage.storage:
-            self.take(item)
+            self.take(draggable)
         elif self._gear.is_equipped(item):
             self._gear.unequip(item.slot, self._storage)
 
-        self._contents[self._grid.to_grid_loc(screen_pos)] = item
+        self._contents[self._grid.to_grid_loc(screen_pos)] = draggable
 
     def build_receivers(self) -> list[StorageReceiver]:
-        receivers = []
+        if self._receivers:
+            return [*self._receivers]
+        
         for screen_pos in self._grid.locations_in_rows():
-            receivers.append(self._build_receiver(screen_pos))
+            self._receivers.append(self._build_receiver(screen_pos))
 
-        return receivers
+        return [*self._receivers]
 
     def _build_receiver(self, screen_pos: Vec2) -> StorageReceiver:
         return StorageReceiver(
@@ -135,9 +166,10 @@ class InventoryGrid:
                 continue
 
             item = storage[placed]
-            draggables.append(self._build_draggable(screen_pos, storage[placed]))
+            draggable = self._build_draggable(screen_pos, storage[placed])
+            draggables.append(draggable)
             placed += 1
-            self._contents[self._grid.to_grid_loc(screen_pos)] = item
+            self._contents[self._grid.to_grid_loc(screen_pos)] = draggable
             item.sprite.sprite.position = screen_pos
 
         return draggables
@@ -156,16 +188,18 @@ class StorageReceiver:
         self.sprite = sprite
         self.inventory_grid = inventory
 
-    def put(self, item: EquippableItem) -> bool:
-        if not self.can_receive(item):
+    def put(self, draggable: Draggable) -> bool:
+        if not self.can_receive(draggable):
             return False
 
-        self.inventory_grid.put(item)
+        self.inventory_grid.put(draggable)
         return True
 
-    def can_receive(self, item: EquippableItem) -> bool:
-        return not self.inventory_grid.is_occupied(Vec2(*item.sprite.sprite.position))
+    def can_receive(self, draggable: Draggable) -> bool:
+        return not self.inventory_grid.is_occupied(Vec2(*draggable.item.sprite.sprite.position))
 
+    def reposition(self, new_pos: Vec2):
+        self.sprite.position = new_pos
 
 class ReceiverCollection:
     _item_receivers: dict[str, ItemReceiver]
@@ -204,7 +238,7 @@ class ReceiverCollection:
         return None
 
     def put_into_slot_at_sprite(
-        self, sprite: arcade.Sprite, item: EquippableItem
+        self, sprite: arcade.Sprite, draggable: Draggable
     ) -> bool:
         slot = self.identify_equip_slot(sprite)
         if not slot:
@@ -216,6 +250,6 @@ class ReceiverCollection:
         match slot:
             case x if isinstance(x, str):
                 if receiver := self._item_receivers.get(slot, None):
-                    return receiver.put(item)
+                    return receiver.put(draggable)
             case x if isinstance(x, int):
-                return self._storage_receivers[slot].put(item)
+                return self._storage_receivers[slot].put(draggable)

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import copy
 
 import math
 from typing import TYPE_CHECKING, Callable
@@ -13,7 +14,10 @@ from src.gui.components.buttons import nav_button
 from src.gui.components.draggables import DraggableCollection
 from src.gui.components.receivers import InventoryGrid, ItemReceiver, ReceiverCollection
 from src.gui.generic_sections.command_bar import CommandBarSection
-from src.gui.guild.inventory_grid import GridLoc, SnapGrid
+from src.gui.guild.snap_grid import GridLoc, SnapGrid
+from src.textures.pixelated_nine_patch import PixelatedNinePatch
+from src.textures.texture_data import SingleTextureSpecs
+from src.utils.rectangle import Corner
 
 if TYPE_CHECKING:
     from src.entities.gear.gear import Gear
@@ -115,19 +119,24 @@ class EquipSection(arcade.Section):
     ):
         super().__init__(left, bottom, width, height, **kwargs)
         self.fighter = fighter
+        
         self.gear = fighter.gear
         self.armory = eng.game_state.get_guild().armory
 
         self.item_receivers = ReceiverCollection(self.armory)
         self.inventory_grid = InventoryGrid(
-            6,
+            7,
             8,
             Vec2(60, 60),
             self.armory,
             self.gear,
-            bottom_left=Vec2(0,215),
+            bottom_left=Vec2(15, 220),
             original_draggable_position=self.get_original_draggable_pos,
         )
+
+        top_left_offset = self.inventory_grid.get_bounds().corners[Corner.TOP_LEFT.value] - (Vec2(0, self.get_height()) + self.get_position())
+        self.inventory_grid.pin_corner(Corner.TOP_LEFT, lambda: Vec2(0, self.get_height()) + self.get_position() + top_left_offset)
+        
         self._register_receivers()
 
         self.draggable_collection = DraggableCollection(self.gear, self.inventory_grid)
@@ -137,8 +146,24 @@ class EquipSection(arcade.Section):
 
         self.draggable = None
         self.original_draggable_position = None
+        self.grid_backing = PixelatedNinePatch(
+            left=16,
+            right=16,
+            bottom=16,
+            top=16,
+            texture=SingleTextureSpecs.panel_highlighted.loaded,
+        )
+        self.item_receivers.sprites.append(
+            self.fighter.owner.entity_sprite.sprite
+        )
+    
+    def get_position(self) -> Vec2:
+        return Vec2(self.left, self.bottom)
 
-    def get_original_draggable_pos(self):
+    def get_height(self) -> int:
+        return self.height
+    
+    def get_original_draggable_pos(self) -> Vec2:
         return self.original_draggable_position
 
     def _register_receivers(self):
@@ -165,6 +190,7 @@ class EquipSection(arcade.Section):
             self.item_receivers.register_armory(receiver)
 
     def on_draw(self):
+        self.grid_backing.draw_sized(position=(0, 205), size=(450, self.height))
         self.item_receivers.sprites.draw(pixelated=True)
         self.draggable_collection.sprites.draw(pixelated=True)
 
@@ -207,7 +233,7 @@ class EquipSection(arcade.Section):
             successfully_placed = False
             if arcade.check_for_collision(self.draggable.sprite, item_slot_sprite):
                 successfully_placed = self.item_receivers.put_into_slot_at_sprite(
-                    item_slot_sprite, self.draggable.item
+                    item_slot_sprite, self.draggable
                 )
 
             if not successfully_placed:
@@ -222,3 +248,7 @@ class EquipSection(arcade.Section):
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.P:
             breakpoint()
+    
+    def on_resize(self, width, height):
+        self.height = height - 205
+        self.inventory_grid.on_resize()

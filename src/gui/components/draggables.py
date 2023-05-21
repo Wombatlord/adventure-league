@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import arcade
+from pyglet.math import Vec2
 
 if TYPE_CHECKING:
     from src.entities.gear.equippable_item import EquippableItem
@@ -22,7 +23,9 @@ class Draggable:
 
     def is_clicked(self, mouse: tuple[int, int]) -> bool:
         return self.sprite.collides_with_point(mouse)
-
+    
+    def reposition(self, new_pos: Vec2):
+        self.sprite.position = new_pos
 
 class DraggableCollection:
     draggables: list[Draggable]
