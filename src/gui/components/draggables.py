@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 import arcade
 from pyglet.math import Vec2
 
+from src.utils.rectangle import Rectangle
+
 if TYPE_CHECKING:
     from src.entities.gear.equippable_item import EquippableItem
     from src.entities.gear.gear import Gear
@@ -15,14 +17,28 @@ class Draggable:
     sprite: arcade.Sprite
     is_held: bool = False
     item: EquippableItem
+    hit_box: Rectangle
 
     def __init__(self, item: EquippableItem, is_held=False):
         self.sprite = item._sprite.sprite
         self.item = item
         self.is_held = is_held
 
+    @property
+    def hit_box(self) -> Rectangle:
+        return Rectangle.from_limits(
+            min_v=Vec2(
+                self.sprite.center_x - self.sprite.width / 2,
+                self.sprite.center_y - self.sprite.height / 2,
+            ),
+            max_v=Vec2(
+                self.sprite.center_x + self.sprite.width / 2,
+                self.sprite.center_y + self.sprite.height / 2,
+            ),
+        )
+
     def is_clicked(self, mouse: tuple[int, int]) -> bool:
-        return self.sprite.collides_with_point(mouse)
+        return Vec2(*mouse) in self.hit_box
 
     def reposition(self, new_pos: Vec2):
         self.sprite.position = new_pos
@@ -44,11 +60,11 @@ class DraggableCollection:
         self.hand = None
         self.original_position = None
 
-    def draggable_at_position(self, position: Vec2) -> Draggable | None:
+    def draggable_at_position(self, mouse_position: Vec2) -> Draggable | None:
         hovered_draggable = None
 
         for draggable in self.draggables:
-            if draggable.sprite.collides_with_point(position):
+            if mouse_position in draggable.hit_box:
                 hovered_draggable = draggable
                 break
 

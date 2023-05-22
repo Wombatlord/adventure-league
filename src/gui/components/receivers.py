@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable
 import arcade
 
 from src.engine.armory import Armory
-from src.gui.components.draggables import Draggable
+from src.gui.components.draggables import Draggable, DraggableCollection
 from src.gui.guild.snap_grid import SnapGrid
 from src.textures.pixelated_nine_patch import PixelatedNinePatch
 from src.textures.texture_data import SingleTextureSpecs
@@ -211,7 +211,7 @@ class InventoryGrid:
         return draggables
 
     def _build_draggable(self, screen_pos: Vec2, item: EquippableItem) -> Draggable:
-        item.sprite.position = screen_pos.x, screen_pos.y
+        item.sprite.position = int(screen_pos.x), int(screen_pos.y)
         return Draggable(item)
 
     def is_occupied(self, screen_pos: Vec2) -> bool:
