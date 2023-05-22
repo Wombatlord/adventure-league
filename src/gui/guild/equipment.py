@@ -222,21 +222,21 @@ class EquipSection(arcade.Section):
     def _register_receivers(self):
         slot_x, slot_y = self.window.width * 0.9, 650
         for slot in ("_weapon", "_helmet", "_body"):
-            self.item_receivers.register(
+            receiver = ItemReceiver(
+                gear=self.gear,
                 slot=slot,
-                receiver=ItemReceiver(
-                    gear=self.gear,
-                    slot=slot,
-                    sprite=arcade.SpriteSolidColor(
-                        width=50,
-                        height=50,
-                        color=arcade.csscolor.AQUAMARINE,
-                        center_x=slot_x,
-                        center_y=slot_y,
-                    ),
-                    inventory_grid=self.inventory_grid,
+                sprite=arcade.SpriteSolidColor(
+                    width=50,
+                    height=50,
+                    color=arcade.csscolor.AQUAMARINE,
+                    center_x=slot_x,
+                    center_y=slot_y,
                 ),
+                inventory_grid=self.inventory_grid,
             )
+
+            self.item_receivers.register(slot=slot, receiver=receiver),
+
             slot_y -= 150
 
         for receiver in self.inventory_grid.build_receivers():
@@ -306,4 +306,6 @@ class EquipSection(arcade.Section):
     def on_resize(self, width, height):
         self.height = height - self.bottom
         self.inventory_grid.on_resize()
+        for _, receiver in self.item_receivers._item_receivers.items():
+            receiver.on_resize()
         self.display_hovered.x = self.window.width / 2

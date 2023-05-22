@@ -33,7 +33,44 @@ class ItemReceiver:
         self.gear = gear
         self.slot = slot
         self.sprite = sprite
+
+        self.bounds = Rectangle.from_limits(
+            min_v=Vec2(
+                self.sprite.center_x - self.sprite.width / 2,
+                self.sprite.center_y - self.sprite.height / 2,
+            ),
+            max_v=Vec2(
+                self.sprite.center_x + self.sprite.width / 2,
+                self.sprite.center_y + self.sprite.height / 2,
+            ),
+        )
+        self._pin, self._corner = None, None
+        self.pin_corner(Corner.TOP_LEFT, self.get_offsets())
+
         self.initial_overlay()
+
+    def get_offsets(self) -> Callable[[], Vec2]:
+        y_offset = (
+            arcade.get_window().height - self.sprite.center_y - self.sprite.height / 2
+        )
+        x_offset = (
+            arcade.get_window().width - self.sprite.center_x + self.sprite.width / 2
+        )
+
+        return lambda: Vec2(
+            arcade.get_window().width - x_offset, arcade.get_window().height - y_offset
+        )
+
+    def pin_corner(self, corner: Corner, pin: Callable[[], Vec2]):
+        self._pin = pin
+        self._corner = corner
+
+    def on_resize(self):
+        if not self._corner or not self._pin:
+            return
+
+        self.bounds = self.bounds.with_corner_at(self._corner, self._pin())
+        self.sprite.position = self.bounds.center
 
     def put(self, draggable: Draggable) -> bool:
         if not self.can_receive(draggable):
