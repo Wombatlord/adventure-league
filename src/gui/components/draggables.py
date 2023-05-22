@@ -23,9 +23,10 @@ class Draggable:
 
     def is_clicked(self, mouse: tuple[int, int]) -> bool:
         return self.sprite.collides_with_point(mouse)
-    
+
     def reposition(self, new_pos: Vec2):
         self.sprite.position = new_pos
+
 
 class DraggableCollection:
     draggables: list[Draggable]
@@ -41,6 +42,17 @@ class DraggableCollection:
         self.prepare_draggables(gear)
 
         self.hand = None
+        self.original_position = None
+
+    def draggable_at_position(self, position: Vec2) -> Draggable | None:
+        hovered_draggable = None
+
+        for draggable in self.draggables:
+            if draggable.sprite.collides_with_point(position):
+                hovered_draggable = draggable
+                break
+
+        return hovered_draggable
 
     def prepare_draggables(self, gear: Gear):
         for item in gear.as_list():
@@ -54,13 +66,15 @@ class DraggableCollection:
             self.draggables.append(draggable)
             self.sprites.append(draggable.sprite)
 
-    def pick_up_at_mouse(self, mouse: tuple[int, int]):
+    def pick_up_at_mouse(self, mouse: tuple[int, int]) -> tuple[int, int] | None:
         for item in self.draggables:
             item.is_held = not self.hand and item.is_clicked(mouse)
             if item.is_held:
                 self.draggables.remove(item)
                 self.hand = item
-                return
+                return item.sprite.position
+
+        return None
 
     def on_update(self, lmb: bool):
         if self.hand and not lmb:

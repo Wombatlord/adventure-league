@@ -1,4 +1,5 @@
 from typing import NamedTuple
+
 from src.entities.combat.stats import (
     EquippableItemStats,
     percent_crit_increase,
@@ -8,7 +9,6 @@ from src.entities.combat.weapon_attacks import NormalAttack
 from src.entities.gear.base_gear_names import BaseWeaponNames
 from src.entities.gear.equippable_item import EquippableItemConfig
 from src.entities.magic.spells import Fireball, MagicMissile, Shield
-
 
 sword = EquippableItemConfig(
     name=BaseWeaponNames.SWORD,

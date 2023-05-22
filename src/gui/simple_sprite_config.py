@@ -4,6 +4,7 @@ import random
 from typing import TYPE_CHECKING, NamedTuple, Sequence
 
 from arcade import Texture
+
 from src.entities.gear.base_gear_names import BaseWeaponNames
 
 if TYPE_CHECKING:

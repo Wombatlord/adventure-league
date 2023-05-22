@@ -1,12 +1,13 @@
 import operator
-from typing import NamedTuple, Self
 from enum import Enum
+from typing import NamedTuple, Self
 
 from arcade.camera import FourFloatTuple, FourIntTuple
 from pyglet.math import Vec2
 
 Real = int | float
 FourNumbers = tuple[Real, Real, Real, Real]
+
 
 class Corner(Enum):
     BOTTOM_LEFT = 0
@@ -277,10 +278,10 @@ class Rectangle(NamedTuple):
 
         """
         return self.from_limits(self.min + displacement, self.max + displacement)
-    
+
     def with_corner_at(self, corner: Corner, position: Vec2) -> Self:
         """
-        This will return a rectangle which is a translation of this instance and whose specified corner 
+        This will return a rectangle which is a translation of this instance and whose specified corner
         will be at the position supplied.
 
         Args:

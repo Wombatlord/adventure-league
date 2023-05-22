@@ -92,6 +92,24 @@ class EquippableItemStats(NamedTuple):
     def __sub__(self, other):
         return namedtuple_sub(self.__class__, self, other)
 
+    def display_stats(self, delim: str = " | ") -> str:
+        dict_val = self._asdict()
+
+        dmg_string = f"Attack: {self.attack_dice}d{self.attack_dice_faces}"
+        dict_val.pop("attack_dice")
+        dict_val.pop("attack_dice_faces")
+
+        attributes = [dmg_string]
+
+        for stat_name, value in dict_val.items():
+            readable_name = stat_name.replace("_", " ").title()
+            if isinstance(value, float):
+                value = f"{value:.1f}"
+            readable_stat = f"{readable_name}: {value}"
+            attributes.append(readable_stat)
+
+        return delim.join(attributes)
+
 
 class StatAffix(NamedTuple):
     name: str

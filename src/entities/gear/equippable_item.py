@@ -4,6 +4,7 @@ import abc
 import random
 from typing import TYPE_CHECKING, NamedTuple, Self
 
+from src import config
 from src.entities.combat.damage import Damage
 from src.entities.combat.modifiable_stats import ModifiableStats, Modifier
 from src.entities.combat.stats import EquippableItemStats, FighterStats, StatAffix
@@ -93,6 +94,9 @@ class EquippableItem(EquippableABC):
         self._available_attacks_cache = []
         self._available_spells_cache = []
         self._init_affixes()
+
+    def display_stats(self, delim=" | "):
+        return self._stats.display_stats(delim)
 
     @property
     def sprite(self) -> AnimatedSpriteAttribute:

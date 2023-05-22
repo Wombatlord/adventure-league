@@ -94,6 +94,9 @@ class BaseSprite(OffsetSprite, Sprite):
         self._draw_priority_offset = kwargs.get("draw_priority_offset", 0)
         self._node = None
 
+    def set_scale(self, scale: int):
+        self.scale = scale
+
     def get_draw_priority(self) -> float:
         return self._draw_priority - self._draw_priority_offset
 

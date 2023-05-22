@@ -58,7 +58,7 @@ class ItemReceiver:
 
     def reposition(self, new_pos: Vec2):
         self.sprite.position = new_pos
-    
+
 
 class InventoryGrid:
     _grid: SnapGrid
@@ -73,8 +73,6 @@ class InventoryGrid:
         gear: Gear,
         bottom_left: Vec2 | None = None,
         contents: dict[GridLoc, Draggable] | None = None,
-        original_draggable_position: Callable[[], tuple[float, float] | None]
-        | None = None,
     ):
         self._grid = SnapGrid.from_grid_dimensions(
             w, h, slot_size, bottom_left or Vec2(0, 0)
@@ -83,7 +81,6 @@ class InventoryGrid:
         self._contents = contents or {}
         self._storage = storage
         self._gear = gear
-        self.original_draggable_position = original_draggable_position
         self._pin_args = None
         self._receivers = []
         self._draggables = []
@@ -97,14 +94,16 @@ class InventoryGrid:
                 return loc
 
         return None
-    
+
     def pin_corner(self, corner: Corner, pin: Callable[[], Vec2]):
         self._grid.pin_corner(corner, pin)
 
     def on_resize(self):
         self._grid.on_resize()
 
-        for receiver, screen_pos in zip(self._receivers, self._grid.locations_in_rows()):
+        for receiver, screen_pos in zip(
+            self._receivers, self._grid.locations_in_rows()
+        ):
             grid_loc = self._grid.to_grid_loc(screen_pos)
             if occupying_draggable := self._contents.get(grid_loc):
                 occupying_draggable.reposition(screen_pos)
@@ -124,7 +123,6 @@ class InventoryGrid:
 
         snapped = self._grid.snap_to_grid(screen_pos)
         if snapped is None:
-            item.sprite.sprite.position = self.original_draggable_position()
             return
 
         item.sprite.sprite.position = snapped
@@ -139,7 +137,7 @@ class InventoryGrid:
     def build_receivers(self) -> list[StorageReceiver]:
         if self._receivers:
             return [*self._receivers]
-        
+
         for screen_pos in self._grid.locations_in_rows():
             self._receivers.append(self._build_receiver(screen_pos))
 
@@ -196,10 +194,13 @@ class StorageReceiver:
         return True
 
     def can_receive(self, draggable: Draggable) -> bool:
-        return not self.inventory_grid.is_occupied(Vec2(*draggable.item.sprite.sprite.position))
+        return not self.inventory_grid.is_occupied(
+            Vec2(*draggable.item.sprite.sprite.position)
+        )
 
     def reposition(self, new_pos: Vec2):
         self.sprite.position = new_pos
+
 
 class ReceiverCollection:
     _item_receivers: dict[str, ItemReceiver]
