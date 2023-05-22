@@ -237,7 +237,7 @@ class EquipSection(arcade.Section):
 
             self.item_receivers.register(slot=slot, receiver=receiver),
 
-            slot_y -= 150
+            slot_y -= 75
 
         for receiver in self.inventory_grid.build_receivers():
             self.item_receivers.register_armory(receiver)

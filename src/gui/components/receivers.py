@@ -47,7 +47,7 @@ class ItemReceiver:
         self._pin, self._corner = None, None
         self.pin_corner(Corner.TOP_LEFT, self.get_offsets())
 
-        self.initial_overlay()
+        self.overlay_equipped_sprite()
 
     def get_offsets(self) -> Callable[[], Vec2]:
         y_offset = (
@@ -70,8 +70,9 @@ class ItemReceiver:
             return
 
         self.bounds = self.bounds.with_corner_at(self._corner, self._pin())
-        self.sprite.position = self.bounds.center
-
+        self.reposition(self.bounds.center)
+        self.overlay_equipped_sprite()
+        
     def put(self, draggable: Draggable) -> bool:
         if not self.can_receive(draggable):
             return False
@@ -85,7 +86,7 @@ class ItemReceiver:
     def can_receive(self, draggable: Draggable) -> bool:
         return draggable.item.slot == self.slot
 
-    def initial_overlay(self):
+    def overlay_equipped_sprite(self):
         if self.slot == "_weapon" and self.gear.weapon:
             self.gear.weapon._sprite.sprite.position = self.sprite.position
         elif self.slot == "_helmet" and self.gear.helmet:
