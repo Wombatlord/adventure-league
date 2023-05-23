@@ -73,10 +73,11 @@ class InventoryGrid:
         storage: Armory,
         gear: Gear,
         bottom_left: Vec2 | None = None,
+        top_left: Vec2 | None = None,
         contents: dict[GridLoc, Draggable] | None = None,
     ):
         self._grid = SnapGrid.from_grid_dimensions(
-            w, h, slot_size, bottom_left or Vec2(0, 0)
+            w, h, slot_size, bottom_left or Vec2(0, 0), top_left or Vec2(0,0)
         )
         self._sprite_dims = slot_size * 0.9
         self._contents = contents or {}

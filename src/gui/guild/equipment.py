@@ -172,6 +172,7 @@ class EquipSection(arcade.Section):
             self.armory,
             self.gear,
             bottom_left=Vec2(15, 220),
+            top_left=Vec2(15 , self.get_height() + self.get_position().y - 10)
         )
 
         self.prepare_pins()
@@ -217,7 +218,7 @@ class EquipSection(arcade.Section):
         ] - (Vec2(0, self.get_height()) + self.get_position())
         self.inventory_grid.pin_corner(
             Corner.TOP_LEFT,
-            lambda: Vec2(0, self.get_height()) + self.get_position() + top_left_offset,
+            lambda: Vec2(15, self.get_height() + self.bottom - 10)# + self.get_position() + top_left_offset,
         )
 
     def update_debug_text(self):

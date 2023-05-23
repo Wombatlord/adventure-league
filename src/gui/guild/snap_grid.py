@@ -30,7 +30,7 @@ class SnapGrid:
 
     @classmethod
     def from_grid_dimensions(
-        cls, w: int, h: int, slot_size: Vec2, bottom_left: Vec2
+        cls, w: int, h: int, slot_size: Vec2, bottom_left: Vec2, top_left: Vec2
     ) -> Self:
         on_screen_dims = Vec2(
             x=w * slot_size.x,
@@ -38,7 +38,7 @@ class SnapGrid:
         )
 
         screen_area = Rectangle.from_limits(
-            min_v=bottom_left, max_v=bottom_left + on_screen_dims
+            min_v=Vec2(top_left.x, top_left.y - on_screen_dims.y), max_v=Vec2(top_left.x + on_screen_dims.x, top_left.y)
         )
 
         return cls(slot_size, screen_area)
