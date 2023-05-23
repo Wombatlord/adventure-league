@@ -81,7 +81,7 @@ def alternating_big_pillars(
         *rectangle(2, 2, offset=Node(1, 4)),
         *rectangle(2, 2, offset=Node(7, 4)),
     ]
-
+    
     return tuple(sorted(pillars + list(room), key=draw_priority))
 
 
@@ -132,7 +132,7 @@ def random_room(
     return random.choice(
         [
             # basic_room,
-            side_pillars,
-            # alternating_big_pillars,
+            # side_pillars,
+            alternating_big_pillars,
         ]
     )(dimensions, height)

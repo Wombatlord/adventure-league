@@ -18,14 +18,15 @@ class PathingSpace(AStar):
     @classmethod
     def from_level_geometry(cls, geometry: tuple[NodeWithMaterial], floor_level=0):
         all_traversable = []
-        for n in geometry:
-            if n.node.z != floor_level - 1:
+        block_locations = [n.node for n in geometry]
+        for n in block_locations:
+            if n.z != floor_level - 1:
                 continue
 
-            if n.node.above in geometry:
+            if n.above in block_locations:
                 continue
 
-            all_traversable.append(n.node.above)
+            all_traversable.append(n.above)
 
         min_x = min(n.x for n in all_traversable)
         min_y = min(n.y for n in all_traversable)
@@ -40,7 +41,7 @@ class PathingSpace(AStar):
             for x in range(min_x, max_x)
             for y in range(min_y, max_y)
         } - {*all_traversable}
-
+        
         return PathingSpace(minima, maxima, exclusions)
 
     def __init__(self, minima: Node, maxima: Node, exclusions: set[Node] | None = None):
