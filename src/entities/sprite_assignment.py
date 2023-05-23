@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
 
-from src.entities.sprites import SpriteAttribute
+from src.entities.sprites import AnimatedSpriteAttribute
 
 if TYPE_CHECKING:
     from src.entities.entity import Entity
@@ -59,7 +59,7 @@ def select_textures(species: str, fighter: Fighter) -> AnimatedSpriteConfig:
 def attach_sprites(entity: Entity) -> Entity:
     sprite_config = select_textures(entity.species, entity.fighter)
     entity.set_entity_sprite(
-        SpriteAttribute(
+        AnimatedSpriteAttribute(
             idle_textures=sprite_config.idle_textures,
             attack_textures=sprite_config.attack_textures,
         )

@@ -19,7 +19,7 @@ from src.entities.entity import Entity
 from src.gui.components.buttons import nav_button
 from src.gui.components.layouts import (
     box_containing_horizontal_label_pair,
-    label_with_observer,
+    get_colored_label,
 )
 from src.gui.components.observer import observe
 from src.gui.generic_sections.command_bar import CommandBarSection
@@ -31,7 +31,7 @@ from src.gui.guild.roster_sections import (
 from src.gui.window_data import WindowData
 
 
-def entity_observer_widget(get_entity: Callable[[], Entity | None]):
+def entity_observer_widget(get_entity: Callable[[], Entity | None]) -> UILabel:
     def entity_info_label(ui_label, merc: Entity | None) -> None:
         if merc is None:
             ui_label.text = "No stats to display."
@@ -50,7 +50,7 @@ def entity_observer_widget(get_entity: Callable[[], Entity | None]):
         sync_widget=entity_info_label,
     )
 
-    entity_info = label_with_observer(
+    entity_info = get_colored_label(
         label=f"",
         width=WindowData.width,
         height=50,
@@ -77,8 +77,8 @@ class RecruitmentView(arcade.View):
             name="recruitment_pane_section",
             left=2,
             bottom=342,
-            width=WindowData.width,
-            height=WindowData.height,
+            width=self.window.width,
+            height=self.window.height,
             prevent_dispatch_view={False},
         )
         self.add_section(self.recruitment_pane_section)
@@ -194,8 +194,8 @@ class RosterView(arcade.View):
         self.roster_and_team_pane_section = RosterAndTeamPaneSection(
             left=2,
             bottom=342,
-            width=WindowData.width,
-            height=WindowData.height,
+            width=self.window.width,
+            height=self.window.height,
             prevent_dispatch_view={False},
         )
 

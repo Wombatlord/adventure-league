@@ -1,19 +1,25 @@
 from __future__ import annotations
 
 import math
+from copy import copy
 from typing import TYPE_CHECKING, Callable
 
 import arcade
 from arcade.gui.widgets.text import UILabel
+from src import config
 
 from src.engine.armory import Armory
 from src.entities.combat.fighter import Fighter
 from src.entities.gear.equippable_item import EquippableItem
 from src.gui.components.buttons import nav_button
 from src.gui.components.draggables import DraggableCollection
+from src.gui.components.observer import Observer, observe
 from src.gui.components.receivers import InventoryGrid, ItemReceiver, ReceiverCollection
 from src.gui.generic_sections.command_bar import CommandBarSection
-from src.gui.guild.inventory_grid import GridLoc, SnapGrid
+from src.gui.guild.snap_grid import GridLoc, SnapGrid
+from src.textures.pixelated_nine_patch import PixelatedNinePatch
+from src.textures.texture_data import SingleTextureSpecs
+from src.utils.rectangle import Corner, Rectangle
 
 if TYPE_CHECKING:
     from src.entities.gear.gear import Gear
@@ -48,7 +54,7 @@ class EquipView(arcade.View):
                     text=self.to_be_equipped.owner.name.name_and_title,
                     font_size=24,
                     font_name=WindowData.font,
-                )
+                ),
             ],
         )
 
@@ -84,9 +90,14 @@ class EquipView(arcade.View):
     def on_draw(self):
         self.clear()
 
+    def on_update(self, delta_time: float):
+        self.to_be_equipped.owner.entity_sprite.sprite.update_animation(delta_time)
+
     def on_show_view(self) -> None:
         self.info_pane_section.manager.enable()
         self.command_bar_section.manager.enable()
+
+        self.to_be_equipped.owner.entity_sprite.sprite.set_scale(16)
 
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.
@@ -96,11 +107,45 @@ class EquipView(arcade.View):
         self.command_bar_section.manager.disable()
         self.info_pane_section.manager.disable()
 
+        self.to_be_equipped.owner.entity_sprite.sprite.set_scale(4)
+
         self.clear()
 
     def on_resize(self, width: int, height: int) -> None:
         super().on_resize(width, height)
-        pass
+        self.to_be_equipped.owner.entity_sprite.sprite.position = (
+            self.window.width * 0.7,
+            self.window.height * 0.8,
+        )
+
+
+def sync_item_info(equipment_text: arcade.Text, item: EquippableItem | None) -> None:
+    if item is None:
+        equipment_text.text = "No stats to display."
+        return
+
+    equipment_text.text = item.display_stats()
+
+
+def equipment_hover_text(
+    get_item: Callable[[], EquippableItem | None], position: Vec2
+) -> arcade.Text:
+    observer = observe(
+        get_observed_state=get_item,
+        sync_widget=sync_item_info,
+    )
+
+    hovered_item_info = arcade.Text(
+        text="",
+        start_x=position.x,
+        start_y=position.y,
+        font_name=WindowData.font,
+        font_size=18,
+        anchor_x="center",
+    )
+    sync_item_info(hovered_item_info, get_item())
+
+    return observer.attach(hovered_item_info)
 
 
 class EquipSection(arcade.Section):
@@ -115,106 +160,175 @@ class EquipSection(arcade.Section):
     ):
         super().__init__(left, bottom, width, height, **kwargs)
         self.fighter = fighter
+
         self.gear = fighter.gear
         self.armory = eng.game_state.get_guild().armory
 
         self.item_receivers = ReceiverCollection(self.armory)
         self.inventory_grid = InventoryGrid(
-            6,
-            6,
+            8,
+            11,
             Vec2(60, 60),
             self.armory,
             self.gear,
-            bottom_left=Vec2(0, 2 * self.height / 4),
-            original_draggable_position=self.get_original_draggable_pos,
+            bottom_left=Vec2(15, 220),
+            top_left=Vec2(15 , self.get_height() + self.get_position().y - 10)
         )
-        self._register_receivers()
+
+        self.prepare_pins()
 
         self.draggable_collection = DraggableCollection(self.gear, self.inventory_grid)
+        self._register_receivers()
 
         self.mouse = 0, 0
         self.lmb_pressed = False
 
-        self.draggable = None
         self.original_draggable_position = None
+        self.grid_backing = PixelatedNinePatch(
+            left=16,
+            right=16,
+            bottom=16,
+            top=16,
+            texture=SingleTextureSpecs.panel_highlighted.loaded,
+        )
 
-    def get_original_draggable_pos(self):
-        return self.original_draggable_position
+        self.display_hovered = equipment_hover_text(
+            self.currently_hovered, Vec2(self.width * 0.5, 100)
+        )
+
+        self.debug_text = arcade.Text(
+            text="",
+            start_x=self.width / 2,
+            start_y=self.height / 2,
+            color=arcade.color.RED,
+            font_size=24,
+        )
+        self.position_fighter_sprite()
+
+    def position_fighter_sprite(self):
+        self.fighter.owner.entity_sprite.sprite.position = (
+            self.item_receivers.bounds.center.x,
+            self.item_receivers.bounds.center.y,
+        )
+        self.item_receivers.sprites.append(self.fighter.owner.entity_sprite.sprite)
+
+    def prepare_pins(self):
+        top_left_offset = self.inventory_grid.get_bounds().corners[
+            Corner.TOP_LEFT.value
+        ] - (Vec2(0, self.get_height()) + self.get_position())
+        self.inventory_grid.pin_corner(
+            Corner.TOP_LEFT,
+            lambda: Vec2(15, self.get_height() + self.bottom - 10)# + self.get_position() + top_left_offset,
+        )
+
+    def update_debug_text(self):
+        self.debug_text.text = "\n".join(
+            [
+                f"mouse: {self.mouse}",
+            ]
+        )
+
+    def currently_hovered(self) -> EquippableItem | None:
+        item = None
+        if draggable := self.draggable_collection.hand:
+            item = draggable.item
+
+        if draggable := self.draggable_collection.draggable_at_position(
+            Vec2(*self.mouse)
+        ):
+            item = draggable.item
+
+        return item
+
+    def get_position(self) -> Vec2:
+        return Vec2(self.left, self.bottom)
+
+    def get_height(self) -> int:
+        return self.height
 
     def _register_receivers(self):
-        slot_x, slot_y = 900, 650
-        for slot in ("_weapon", "_helmet", "_body"):
-            self.item_receivers.register(
+        slot_x = self.item_receivers.bounds.r - 50
+        y_positions = [
+            self.item_receivers.bounds.h / 3 * 2 + 198,
+            self.item_receivers.bounds.h / 2 + 198,
+            self.item_receivers.bounds.h / 3 + 198,
+        ]
+        for slot, y_pos in zip(("_weapon", "_helmet", "_body"), y_positions):
+            receiver = ItemReceiver(
+                gear=self.gear,
                 slot=slot,
-                receiver=ItemReceiver(
-                    gear=self.gear,
-                    slot=slot,
-                    sprite=arcade.SpriteSolidColor(
-                        width=50,
-                        height=50,
-                        color=arcade.csscolor.AQUAMARINE,
-                        center_x=slot_x,
-                        center_y=slot_y,
-                    ),
-                    inventory_grid=self.inventory_grid,
+                sprite=arcade.SpriteSolidColor(
+                    width=50,
+                    height=50,
+                    color=arcade.csscolor.AQUAMARINE,
+                    center_x=slot_x,
+                    center_y=y_pos,
                 ),
+                inventory_grid=self.inventory_grid,
             )
-            slot_y -= 150
+            self.item_receivers.register(slot=slot, receiver=receiver),
 
         for receiver in self.inventory_grid.build_receivers():
             self.item_receivers.register_armory(receiver)
 
     def on_draw(self):
+        self.grid_backing.draw_sized(
+            position=(0, 200), size=(self.width / 3, self.height)
+        )
         self.item_receivers.sprites.draw(pixelated=True)
         self.draggable_collection.sprites.draw(pixelated=True)
+        self.display_hovered.draw()
+
+        if config.DEBUG:
+            self.debug_text.draw()
 
     def on_update(self, dt: float):
-        if self.draggable and self.draggable.is_held:
-            self.draggable.sprite.position = self.mouse
+        self.display_hovered.on_update(...)
+
+        if held := self.draggable_collection.hand:
+            held.sprite.position = self.mouse
+
+        if config.DEBUG:
+            self.update_debug_text()
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         self.mouse = x, y
         self.lmb_pressed = button == arcade.MOUSE_BUTTON_LEFT
         if self.lmb_pressed:
-            for draggable in self.draggable_collection.draggables:
-                if draggable.is_clicked(self.mouse):
-                    draggable.is_held = True
-                    self.draggable = draggable
-                    self.original_draggable_position = self.draggable.sprite.position
-                    return
+            self.original_draggable_position = (
+                self.draggable_collection.pick_up_at_mouse(self.mouse)
+            )
 
     def _get_receiver_sprite(self, x: int, y: int) -> arcade.Sprite | None:
-        """
-        This currently requires an exact overlap of mouse position and ItemReceiver sprite
-        """
         pos = (x, y)
         for sprite in self.item_receivers.sprites:
             if sprite.position == pos:
                 return sprite
 
     def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        if not self.draggable:
+        if not self.draggable_collection.hand:
             return
+
+        held = self.draggable_collection.hand
 
         self.mouse = x, y
         if self.lmb_pressed and button == arcade.MOUSE_BUTTON_LEFT:
             self.lmb_pressed = False
 
             item_slot_sprite, distance = arcade.get_closest_sprite(
-                self.draggable.sprite, self.item_receivers.sprites
+                held.sprite, self.item_receivers.sprites
             )
 
             successfully_placed = False
-            if arcade.check_for_collision(self.draggable.sprite, item_slot_sprite):
+            if arcade.check_for_collision(held.sprite, item_slot_sprite):
                 successfully_placed = self.item_receivers.put_into_slot_at_sprite(
-                    item_slot_sprite, self.draggable.item
+                    item_slot_sprite, held
                 )
 
             if not successfully_placed:
-                self.draggable.sprite.position = self.original_draggable_position
+                held.sprite.position = self.original_draggable_position
 
-            self.draggable.is_held = False
-            self.draggable = None
+            self.draggable_collection.drop()
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         self.mouse = x, y
@@ -222,3 +336,14 @@ class EquipSection(arcade.Section):
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol == arcade.key.P:
             breakpoint()
+
+    def on_resize(self, width, height):
+        self.height = height - self.bottom
+        self.width = width
+        self.inventory_grid.on_resize()
+        self.item_receivers.on_resize()
+        self.display_hovered.x = self.window.width / 2
+        self.fighter.owner.entity_sprite.sprite.position = (
+            self.item_receivers.bounds.center.x,
+            self.item_receivers.bounds.center.y,
+        )

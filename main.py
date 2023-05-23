@@ -20,7 +20,7 @@ def start_adventure_league():
     )
 
     window.set_icon(WindowData.window_icon)
-    window.set_minimum_size(1080, 720)
+    window.set_minimum_size(1600, 900)
     title_view = TitleView(window=window)
     window.show_view(title_view)
 

@@ -1,8 +1,8 @@
-from typing import Generator, NamedTuple, Self
+from typing import Callable, Generator, NamedTuple, Self
 
 from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
-from src.utils.rectangle import Rectangle
+from src.utils.rectangle import Corner, Rectangle
 
 
 class GridLoc(NamedTuple):
@@ -18,15 +18,19 @@ class GridLoc(NamedTuple):
 
 
 class SnapGrid:
+    _pin: Callable[[], Vec2] | None
+    _corner: Corner | None
+
     def __init__(self, slot_size: Vec2, screen_area: Rectangle) -> None:
         self.bounds = screen_area
         self.slot_size = slot_size
         self._to_slot_offset = Mat4.from_scale(Vec3(*slot_size, 1))
         self._to_grid_transform = ~self._to_slot_offset
+        self._pin, self._corner = None, None
 
     @classmethod
     def from_grid_dimensions(
-        cls, w: int, h: int, slot_size: Vec2, bottom_left: Vec2
+        cls, w: int, h: int, slot_size: Vec2, bottom_left: Vec2, top_left: Vec2
     ) -> Self:
         on_screen_dims = Vec2(
             x=w * slot_size.x,
@@ -34,10 +38,20 @@ class SnapGrid:
         )
 
         screen_area = Rectangle.from_limits(
-            min_v=bottom_left, max_v=bottom_left + on_screen_dims
+            min_v=Vec2(top_left.x, top_left.y - on_screen_dims.y), max_v=Vec2(top_left.x + on_screen_dims.x, top_left.y)
         )
 
         return cls(slot_size, screen_area)
+
+    def pin_corner(self, corner: Corner, pin: Callable[[], Vec2]):
+        self._pin = pin
+        self._corner = corner
+
+    def on_resize(self):
+        if not self._corner or not self._pin:
+            return
+
+        self.bounds = self.bounds.with_corner_at(self._corner, self._pin())
 
     def translation(self) -> Vec2:
         return self.bounds.min + self.slot_size * 0.5
@@ -59,7 +73,7 @@ class SnapGrid:
     def snap_to_grid(self, screen_pos: Vec2) -> Vec2 | None:
         if not self.in_screen_area(screen_pos):
             return
-
+        
         grid_vec = self.to_grid(screen_pos)
         snapped = GridLoc.snap(grid_vec)
 

@@ -94,6 +94,9 @@ class BaseSprite(OffsetSprite, Sprite):
         self._draw_priority_offset = kwargs.get("draw_priority_offset", 0)
         self._node = None
 
+    def set_scale(self, scale: int):
+        self.scale = scale
+
     def get_draw_priority(self) -> float:
         return self._draw_priority - self._draw_priority_offset
 
@@ -131,7 +134,7 @@ class BaseSprite(OffsetSprite, Sprite):
                     self.animation_cycle = 0.75
 
 
-class SpriteAttribute:
+class AnimatedSpriteAttribute:
     sprite: BaseSprite
 
     def __init__(
@@ -194,3 +197,21 @@ class SpriteAttribute:
                 pass
 
         self.sprite.set_texture(0)
+
+
+class SimpleSpriteAttribute:
+    sprite: BaseSprite
+
+    def __init__(
+        self,
+        path_or_texture: Texture,
+        scale: float = 4,
+    ) -> None:
+        self.owner = None
+        self.sprite = BaseSprite(path_or_texture=path_or_texture, scale=scale)
+        self.sprite.owner = self
+        self.sprite.set_texture(0)
+
+    def offset_anchor(self, offset_px: Point) -> Self:
+        self.sprite.offset_anchor(offset_px)
+        return self

@@ -11,8 +11,8 @@ def _cross_platform_name(name: str) -> str:
 
 
 class WindowData:
-    width = 1080
-    height = 720
-    scale = (width / 1080, height / 720)
+    width = 1600
+    height = 900
+    scale = (width / 1600, height / 900)
     window_icon = pyglet.image.load("./assets/icon.png")
     font = _cross_platform_name("Alagard")

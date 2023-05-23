@@ -70,7 +70,7 @@ class ColoredLabel(NamedTuple):
         )
 
 
-def label_with_observer(
+def get_colored_label(
     label: Colored_Label,
     width,
     height,
@@ -79,7 +79,7 @@ def label_with_observer(
     color,
     attach,
     multiline,
-):
+) -> UILabel:
     return ColoredLabel(label, align, font_size, color, attach).get_ui_label(
         width=width, height=height, multiline=multiline
     )
