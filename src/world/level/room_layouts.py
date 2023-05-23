@@ -15,14 +15,14 @@ class NodeWithMaterial(NamedTuple):
     materials = [SpriteSheetSpecs.tiles.loaded[89], SpriteSheetSpecs.tiles.loaded[88]]
 
     @classmethod
-    def create(cls, x, y, z=0) -> Self:
-        return cls(node=Node(x, y, z), material=random.choice(cls.materials))
+    def create(cls, x, y, z=0, offset = Node(0,0)) -> Self:
+        return cls(node=Node(x, y, z) + offset, material=random.choice(cls.materials))
 
 
 def rectangle(
     w: int = 1, h: int = 1, offset: Node = Node(0, 0)
 ) -> tuple[NodeWithMaterial, ...]:
-    return tuple(Node(x, y) + offset for x in range(w) for y in range(h))
+    return tuple(NodeWithMaterial.create(x=x, y=y, offset=offset)for x in range(w) for y in range(h))
 
 
 @lru_cache(maxsize=1)
@@ -82,8 +82,6 @@ def alternating_big_pillars(
         *rectangle(2, 2, offset=Node(7, 4)),
     ]
 
-    breakpoint()
-
     return tuple(sorted(pillars + list(room), key=draw_priority))
 
 
@@ -133,8 +131,8 @@ def random_room(
 ) -> tuple[NodeWithMaterial]:
     return random.choice(
         [
-            basic_room,
-            # side_pillars,
+            # basic_room,
+            side_pillars,
             # alternating_big_pillars,
         ]
     )(dimensions, height)
