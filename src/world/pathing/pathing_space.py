@@ -7,7 +7,7 @@ from typing import Generator, Iterable, Sequence
 
 from astar import AStar
 
-from src.world.level.room_layouts import NodeWithMaterial
+from src.world.level.room_layouts import Terrain, TerrainNode
 from src.world.node import Node
 
 
@@ -16,9 +16,10 @@ class PathingSpace(AStar):
     maxima: Node
 
     @classmethod
-    def from_level_geometry(cls, geometry: tuple[NodeWithMaterial], floor_level=0):
+    def from_level_geometry(cls, geometry: tuple[TerrainNode], floor_level=0):
+        terrain = Terrain(geometry)
+        block_locations = terrain.nodes
         all_traversable = []
-        block_locations = [n.node for n in geometry]
         for n in block_locations:
             if n.z != floor_level - 1:
                 continue
@@ -28,18 +29,13 @@ class PathingSpace(AStar):
 
             all_traversable.append(n.above)
 
-        min_x = min(n.x for n in all_traversable)
-        min_y = min(n.y for n in all_traversable)
-        minima = Node(min_x, min_y, floor_level)
-
-        max_x = max(n.x for n in all_traversable) + 1
-        max_y = max(n.y for n in all_traversable) + 1
-        maxima = Node(max_x, max_y, floor_level)
-
+        minima = terrain.minima
+        maxima = terrain.maxima
+        
         exclusions = {
             Node(x, y, floor_level)
-            for x in range(min_x, max_x)
-            for y in range(min_y, max_y)
+            for x in range(minima.x, maxima.x)
+            for y in range(minima.y, maxima.y)
         } - {*all_traversable}
         
         return PathingSpace(minima, maxima, exclusions)
