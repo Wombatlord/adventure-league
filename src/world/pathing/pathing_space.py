@@ -10,6 +10,7 @@ from astar import AStar
 from src.world.level.room_layouts import Terrain, TerrainNode
 from src.world.node import Node
 from pyglet.math import Vec3
+import abc
 
 Item = TypeVar("Item", bound=object)
 
@@ -18,7 +19,20 @@ class Container(Protocol[Item]):
     def __contains__(self, item: Item):
         pass
 
+class PathingStrategyInterface(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def neighbors(self, node: Node) -> Generator[Node, None, None]:
+        pass
+    
+    @abc.abstractmethod
+    def distance_between(self, n1: Node, n2: Node) -> int:
+        pass
 
+    @abc.abstractmethod
+    def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int:
+        pass
+    
+    
 class HeightMap:
     terrain: Terrain
 
@@ -29,7 +43,7 @@ class HeightMap:
         return self.terrain.highest_node_at(node.x, node.y)
 
 
-class PathingStrategy:
+class FlatStrategy(PathingStrategyInterface):
     def __init__(self, all_nodes: Container[Node]) -> None:
         self.all_nodes = all_nodes
 
@@ -45,7 +59,7 @@ class PathingStrategy:
         return 1
 
 
-class PathingStrategyWithHeightMap:
+class HeightMapStrategy(PathingStrategyInterface):
     all_nodes: Container[Node]
     height_map: Callable[[Node], Node | None]
 
@@ -87,7 +101,7 @@ class PathingSpace(AStar):
     def from_level_geometry(cls, geometry: tuple[TerrainNode], floor_level=0):
         terrain = Terrain(geometry)
         height_map = HeightMap(terrain=terrain)
-        strat = PathingStrategyWithHeightMap(
+        strat = HeightMapStrategy(
             all_nodes=[node.above for node in terrain.nodes], height_map=height_map
         )
 
@@ -100,7 +114,7 @@ class PathingSpace(AStar):
         minima: Node,
         maxima: Node,
         exclusions: set[Node] | None = None,
-        pathing_strategy: PathingStrategy | PathingStrategyWithHeightMap | None = None
+        pathing_strategy: PathingStrategyInterface | None = None
     ):
         if exclusions is None:
             exclusions = set()
@@ -109,7 +123,7 @@ class PathingSpace(AStar):
         self.maxima = maxima
         self.static_exclusions = exclusions
         self.dynamic_exclusions = set()
-        self.strat = pathing_strategy or PathingStrategy(self)
+        self.strat = pathing_strategy or FlatStrategy(self)
 
     def __contains__(self, item: Node) -> bool:
         return (
