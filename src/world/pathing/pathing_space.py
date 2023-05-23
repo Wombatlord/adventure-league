@@ -3,12 +3,80 @@ from __future__ import annotations
 import random
 from functools import lru_cache
 from random import randint
-from typing import Generator, Iterable, Sequence
+from typing import Any, Callable, Generator, Iterable, Protocol, Sequence, TypeVar
 
 from astar import AStar
 
 from src.world.level.room_layouts import Terrain, TerrainNode
 from src.world.node import Node
+from pyglet.math import Vec3
+
+Item = TypeVar("Item", bound=object)
+
+
+class Container(Protocol[Item]):
+    def __contains__(self, item: Item):
+        pass
+
+
+class HeightMap:
+    terrain: Terrain
+
+    def __init__(self, terrain) -> None:
+        self.terrain = terrain
+
+    def __call__(self, node: Node) -> Node | None:
+        return self.terrain.highest_node_at(node.x, node.y)
+
+
+class PathingStrategy:
+    def __init__(self, all_nodes: Container[Node]) -> None:
+        self.all_nodes = all_nodes
+
+    def neighbors(self, node: Node) -> Generator[Node, None, None]:
+        for candidate in node.adjacent:
+            if candidate in self.all_nodes:
+                yield candidate
+
+    def distance_between(self, n1: Node, n2: Node) -> int:
+        return 1 if sum(abs(delta) for delta in (n1 - n2)) == 1 else 1.5
+
+    def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int:
+        return 1
+
+
+class PathingStrategyWithHeightMap:
+    all_nodes: Container[Node]
+    height_map: Callable[[Node], Node | None]
+
+    def __init__(
+        self, all_nodes: Container[Node], height_map: Callable[[Node], Node | None]
+    ) -> None:
+        self.all_nodes = all_nodes
+        self.height_map = height_map
+
+    def neighbors(self, node: Node) -> Generator[Node, None, None]:
+        for candidate in node.adjacent:
+            if height_adjusted := self.height_map(candidate):
+                yield height_adjusted
+
+    def distance_between(self, n1: Node, n2: Node) -> int:
+        aggregate_offset = sum(*(abs(component) for component in n1 - n2))
+        match aggregate_offset:
+            case 3:
+                return 2
+            case 2:
+                return 1.5
+            case 1:
+                return 1
+            case _:
+                return 0
+
+    def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int:
+        v1 = Vec3(*n1)
+        v2 = Vec3(*n2)
+
+        return v1.distance(v2)
 
 
 class PathingSpace(AStar):
@@ -18,29 +86,22 @@ class PathingSpace(AStar):
     @classmethod
     def from_level_geometry(cls, geometry: tuple[TerrainNode], floor_level=0):
         terrain = Terrain(geometry)
-        block_locations = terrain.nodes
-        all_traversable = []
-        for n in block_locations:
-            if n.z != floor_level - 1:
-                continue
+        height_map = HeightMap(terrain=terrain)
+        strat = PathingStrategyWithHeightMap(
+            all_nodes=[node.above for node in terrain.nodes], height_map=height_map
+        )
 
-            if n.above in block_locations:
-                continue
+        return PathingSpace(
+            minima=terrain.minima, maxima=terrain.maxima, exclusions=set(), pathing_strategy=strat
+        )
 
-            all_traversable.append(n.above)
-
-        minima = terrain.minima
-        maxima = terrain.maxima
-        
-        exclusions = {
-            Node(x, y, floor_level)
-            for x in range(minima.x, maxima.x)
-            for y in range(minima.y, maxima.y)
-        } - {*all_traversable}
-        
-        return PathingSpace(minima, maxima, exclusions)
-
-    def __init__(self, minima: Node, maxima: Node, exclusions: set[Node] | None = None):
+    def __init__(
+        self,
+        minima: Node,
+        maxima: Node,
+        exclusions: set[Node] | None = None,
+        pathing_strategy: PathingStrategy | PathingStrategyWithHeightMap | None = None
+    ):
         if exclusions is None:
             exclusions = set()
 
@@ -48,9 +109,14 @@ class PathingSpace(AStar):
         self.maxima = maxima
         self.static_exclusions = exclusions
         self.dynamic_exclusions = set()
+        self.strat = pathing_strategy or PathingStrategy(self)
 
     def __contains__(self, item: Node) -> bool:
-        return self.in_bounds(item) and item not in self.exclusions
+        return (
+            self.in_bounds(item)
+            and item not in self.exclusions
+            and item in self.height_map
+        )
 
     @property
     def exclusions(self) -> set[Node]:
@@ -66,15 +132,13 @@ class PathingSpace(AStar):
         return x_within and y_within
 
     def neighbors(self, node: Node) -> Generator[Node, None, None]:
-        for candidate in node.adjacent:
-            if candidate in self:
-                yield candidate
+        yield from self.strat.neighbors(node)
 
     def distance_between(self, n1: Node, n2: Node) -> int:
-        return 1 if sum(abs(delta) for delta in (n1 - n2)) == 1 else 1.5
+        return self.strat.distance_between(n1, n2)
 
     def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int:
-        return 1
+        return self.strat.heuristic_cost_estimate(n1, n2)
 
     @property
     def height(self) -> int:

@@ -35,7 +35,14 @@ class Terrain(NamedTuple):
         max_y = max(block.node.y for block in self.terrain_nodes)
         
         return Node(max_x, max_y)
+    
+    def highest_node_at(self, x,y) -> Node | None:
+        nodes = [block.node for block in self.terrain_nodes if block.node.x == x and block.node.y == y]
+        if not nodes:
+            return None
         
+        height_ordered = sorted(nodes, key=lambda n: -n.z)
+        return height_ordered[0]
         
 class TerrainNode(NamedTuple):
     node: Node
