@@ -34,45 +34,8 @@ class ItemReceiver:
         self.slot = slot
         self.sprite = sprite
 
-        self.bounds = Rectangle.from_limits(
-            min_v=Vec2(
-                self.sprite.center_x - self.sprite.width / 2,
-                self.sprite.center_y - self.sprite.height / 2,
-            ),
-            max_v=Vec2(
-                self.sprite.center_x + self.sprite.width / 2,
-                self.sprite.center_y + self.sprite.height / 2,
-            ),
-        )
-        self._pin, self._corner = None, None
-        self.pin_corner(Corner.TOP_LEFT, self.get_offsets())
-
         self.overlay_equipped_sprite()
 
-    def get_offsets(self) -> Callable[[], Vec2]:
-        y_offset = (
-            arcade.get_window().height - self.sprite.center_y - self.sprite.height / 2
-        )
-        x_offset = (
-            arcade.get_window().width - self.sprite.center_x + self.sprite.width / 2
-        )
-
-        return lambda: Vec2(
-            arcade.get_window().width - x_offset, arcade.get_window().height - y_offset
-        )
-
-    def pin_corner(self, corner: Corner, pin: Callable[[], Vec2]):
-        self._pin = pin
-        self._corner = corner
-
-    def on_resize(self):
-        if not self._corner or not self._pin:
-            return
-
-        self.bounds = self.bounds.with_corner_at(self._corner, self._pin())
-        self.reposition(self.bounds.center)
-        self.overlay_equipped_sprite()
-        
     def put(self, draggable: Draggable) -> bool:
         if not self.can_receive(draggable):
             return False
@@ -80,7 +43,7 @@ class ItemReceiver:
             self.inventory_grid.take(draggable, remove_from_storage=True)
             self.gear.equip_item(draggable.item, eng.game_state.guild.armory)
 
-        draggable.item._sprite.sprite.position = self.sprite.position
+        draggable.item.sprite.sprite.position = self.sprite.position
         return True
 
     def can_receive(self, draggable: Draggable) -> bool:
@@ -155,15 +118,17 @@ class InventoryGrid:
         if item in self._storage and remove_from_storage:
             self._storage.remove(item)
 
-    def put(self, draggable: Draggable):
+    def put(self, draggable: Draggable) -> bool:
         item = draggable.item
         screen_pos = Vec2(*item.sprite.sprite.position)
 
         snapped = self._grid.snap_to_grid(screen_pos)
+
         if snapped is None:
-            return
+            return False
 
         item.sprite.sprite.position = snapped
+        item.sprite.sprite.scale = 6
 
         if item in self._storage.storage:
             self.take(draggable)
@@ -171,6 +136,7 @@ class InventoryGrid:
             self._gear.unequip(item.slot, self._storage)
 
         self._contents[self._grid.to_grid_loc(screen_pos)] = draggable
+        return True
 
     def build_receivers(self) -> list[StorageReceiver]:
         if self._receivers:
@@ -228,8 +194,7 @@ class StorageReceiver:
         if not self.can_receive(draggable):
             return False
 
-        self.inventory_grid.put(draggable)
-        return True
+        return self.inventory_grid.put(draggable)
 
     def can_receive(self, draggable: Draggable) -> bool:
         return not self.inventory_grid.is_occupied(
@@ -242,12 +207,51 @@ class StorageReceiver:
 
 class ReceiverCollection:
     _item_receivers: dict[str, ItemReceiver]
+    bounds: Rectangle
 
     def __init__(self, storage: Armory):
         self.storage = storage
         self._item_receivers = {}
         self._storage_receivers = []
         self.sprites = arcade.SpriteList()
+
+        self.bounds = Rectangle.from_limits(
+            min_v=Vec2(arcade.get_window().width/3, 196),
+            max_v=Vec2(arcade.get_window().width/3 * 2, arcade.get_window().height),
+        )
+
+        self._pin, self._corner = None, None
+        self.pin_corner(Corner.TOP_LEFT, self.get_offsets())
+
+    def get_offsets(self) -> Callable[[], Vec2]:
+        return lambda: Vec2(
+            arcade.get_window().width / 3, arcade.get_window().height
+        )
+
+    def pin_corner(self, corner: Corner, pin: Callable[[], Vec2]):
+        self._pin = pin
+        self._corner = corner
+
+    def on_resize(self):
+        if not self._corner or not self._pin:
+            return
+
+        self.bounds = self.bounds.from_limits(
+            min_v=Vec2(arcade.get_window().width/3, 196),
+            max_v=Vec2(arcade.get_window().width/3 * 2, arcade.get_window().height),
+        ).with_corner_at(self._corner, self._pin())
+        
+        slot_x = self.bounds.r - 50
+        for slot_name, receiver in self._item_receivers.items():
+            match slot_name:
+                case "_weapon":
+                    receiver.reposition(Vec2(slot_x, self.bounds.h / 3 * 2 + 198))
+                case "_helmet":
+                    receiver.reposition(Vec2(slot_x, self.bounds.h / 2 + 198))
+                case "_body":
+                    receiver.reposition(Vec2(slot_x, self.bounds.h / 3 + 198))
+
+            receiver.overlay_equipped_sprite()
 
     def register(self, slot: str, receiver: ItemReceiver):
         self._item_receivers[slot] = receiver

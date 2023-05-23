@@ -98,10 +98,6 @@ class EquipView(arcade.View):
         self.command_bar_section.manager.enable()
 
         self.to_be_equipped.owner.entity_sprite.sprite.set_scale(16)
-        self.to_be_equipped.owner.entity_sprite.sprite.position = (
-            self.window.width * 0.7,
-            self.window.height * 0.8,
-        )
 
     def on_hide_view(self) -> None:
         """Disable the UIManager for this view.
@@ -170,24 +166,18 @@ class EquipSection(arcade.Section):
 
         self.item_receivers = ReceiverCollection(self.armory)
         self.inventory_grid = InventoryGrid(
-            7,
             8,
+            11,
             Vec2(60, 60),
             self.armory,
             self.gear,
-            bottom_left=Vec2(15, self.height - 300),
+            bottom_left=Vec2(15, 220),
         )
 
-        top_left_offset = self.inventory_grid.get_bounds().corners[
-            Corner.TOP_LEFT.value
-        ] - (Vec2(0, self.get_height()) + self.get_position())
-        self.inventory_grid.pin_corner(
-            Corner.TOP_LEFT,
-            lambda: Vec2(0, self.get_height()) + self.get_position() + top_left_offset,
-        )
+        self.prepare_pins()
+
         self.draggable_collection = DraggableCollection(self.gear, self.inventory_grid)
         self._register_receivers()
-
 
         self.mouse = 0, 0
         self.lmb_pressed = False
@@ -200,21 +190,43 @@ class EquipSection(arcade.Section):
             top=16,
             texture=SingleTextureSpecs.panel_highlighted.loaded,
         )
-        self.item_receivers.sprites.append(self.fighter.owner.entity_sprite.sprite)
+
         self.display_hovered = equipment_hover_text(
             self.currently_hovered, Vec2(self.width * 0.5, 100)
         )
-        
+
         self.debug_text = arcade.Text(
-            text="", start_x=self.width/2, start_y=self.height /2, color=arcade.color.RED, font_size=24
+            text="",
+            start_x=self.width / 2,
+            start_y=self.height / 2,
+            color=arcade.color.RED,
+            font_size=24,
         )
-        
+        self.position_fighter_sprite()
+
+    def position_fighter_sprite(self):
+        self.fighter.owner.entity_sprite.sprite.position = (
+            self.item_receivers.bounds.center.x,
+            self.item_receivers.bounds.center.y,
+        )
+        self.item_receivers.sprites.append(self.fighter.owner.entity_sprite.sprite)
+
+    def prepare_pins(self):
+        top_left_offset = self.inventory_grid.get_bounds().corners[
+            Corner.TOP_LEFT.value
+        ] - (Vec2(0, self.get_height()) + self.get_position())
+        self.inventory_grid.pin_corner(
+            Corner.TOP_LEFT,
+            lambda: Vec2(0, self.get_height()) + self.get_position() + top_left_offset,
+        )
 
     def update_debug_text(self):
-        self.debug_text.text = "\n".join([
-            f"mouse: {self.mouse}",
-        ])
-    
+        self.debug_text.text = "\n".join(
+            [
+                f"mouse: {self.mouse}",
+            ]
+        )
+
     def currently_hovered(self) -> EquippableItem | None:
         item = None
         if draggable := self.draggable_collection.hand:
@@ -223,7 +235,6 @@ class EquipSection(arcade.Section):
         if draggable := self.draggable_collection.draggable_at_position(
             Vec2(*self.mouse)
         ):
-            print(self.mouse)
             item = draggable.item
 
         return item
@@ -235,8 +246,13 @@ class EquipSection(arcade.Section):
         return self.height
 
     def _register_receivers(self):
-        slot_x, slot_y = self.window.width * 0.9, 650
-        for slot in ("_weapon", "_helmet", "_body"):
+        slot_x = self.item_receivers.bounds.r - 50
+        y_positions = [
+            self.item_receivers.bounds.h / 3 * 2 + 198,
+            self.item_receivers.bounds.h / 2 + 198,
+            self.item_receivers.bounds.h / 3 + 198,
+        ]
+        for slot, y_pos in zip(("_weapon", "_helmet", "_body"), y_positions):
             receiver = ItemReceiver(
                 gear=self.gear,
                 slot=slot,
@@ -245,26 +261,26 @@ class EquipSection(arcade.Section):
                     height=50,
                     color=arcade.csscolor.AQUAMARINE,
                     center_x=slot_x,
-                    center_y=slot_y,
+                    center_y=y_pos,
                 ),
                 inventory_grid=self.inventory_grid,
             )
             self.item_receivers.register(slot=slot, receiver=receiver),
-            slot_y -= 75
 
         for receiver in self.inventory_grid.build_receivers():
             self.item_receivers.register_armory(receiver)
 
     def on_draw(self):
-        self.grid_backing.draw_sized(position=(0, 202), size=(450, self.height - 4))
+        self.grid_backing.draw_sized(
+            position=(0, 200), size=(self.width / 3, self.height)
+        )
         self.item_receivers.sprites.draw(pixelated=True)
         self.draggable_collection.sprites.draw(pixelated=True)
-        self.draggable_collection.sprites.draw_hit_boxes(color=arcade.color.RED)
         self.display_hovered.draw()
 
         if config.DEBUG:
             self.debug_text.draw()
-        
+
     def on_update(self, dt: float):
         self.display_hovered.on_update(...)
 
@@ -273,7 +289,7 @@ class EquipSection(arcade.Section):
 
         if config.DEBUG:
             self.update_debug_text()
-        
+
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         self.mouse = x, y
         self.lmb_pressed = button == arcade.MOUSE_BUTTON_LEFT
@@ -322,7 +338,11 @@ class EquipSection(arcade.Section):
 
     def on_resize(self, width, height):
         self.height = height - self.bottom
+        self.width = width
         self.inventory_grid.on_resize()
-        for _, receiver in self.item_receivers._item_receivers.items():
-            receiver.on_resize()
+        self.item_receivers.on_resize()
         self.display_hovered.x = self.window.width / 2
+        self.fighter.owner.entity_sprite.sprite.position = (
+            self.item_receivers.bounds.center.x,
+            self.item_receivers.bounds.center.y,
+        )

@@ -60,6 +60,9 @@ class DraggableCollection:
         self.hand = None
         self.original_position = None
 
+    def rescale_sprite(self, scale):
+        self.hand.sprite.scale = scale
+    
     def draggable_at_position(self, mouse_position: Vec2) -> Draggable | None:
         hovered_draggable = None
 
@@ -88,6 +91,7 @@ class DraggableCollection:
             if item.is_held:
                 self.draggables.remove(item)
                 self.hand = item
+                self.rescale_sprite(12)
                 return item.sprite.position
 
         return None
@@ -98,6 +102,7 @@ class DraggableCollection:
 
     def drop(self):
         self.draggables.append(self.hand)
+        self.rescale_sprite(6)
         self.hand.is_held = False
         self.on_drop(self.hand)
         self.hand = None

@@ -73,7 +73,7 @@ class SnapGrid:
     def snap_to_grid(self, screen_pos: Vec2) -> Vec2 | None:
         if not self.in_screen_area(screen_pos):
             return
-
+        
         grid_vec = self.to_grid(screen_pos)
         snapped = GridLoc.snap(grid_vec)
 
