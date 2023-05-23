@@ -77,7 +77,7 @@ class InventoryGrid:
         contents: dict[GridLoc, Draggable] | None = None,
     ):
         self._grid = SnapGrid.from_grid_dimensions(
-            w, h, slot_size, bottom_left or Vec2(0, 0), top_left or Vec2(0,0)
+            w, h, slot_size, bottom_left or Vec2(0, 0), top_left or Vec2(0, 0)
         )
         self._sprite_dims = slot_size * 0.9
         self._contents = contents or {}
@@ -217,17 +217,15 @@ class ReceiverCollection:
         self.sprites = arcade.SpriteList()
 
         self.bounds = Rectangle.from_limits(
-            min_v=Vec2(arcade.get_window().width/3, 196),
-            max_v=Vec2(arcade.get_window().width/3 * 2, arcade.get_window().height),
+            min_v=Vec2(arcade.get_window().width / 3, 196),
+            max_v=Vec2(arcade.get_window().width / 3 * 2, arcade.get_window().height),
         )
 
         self._pin, self._corner = None, None
         self.pin_corner(Corner.TOP_LEFT, self.get_offsets())
 
     def get_offsets(self) -> Callable[[], Vec2]:
-        return lambda: Vec2(
-            arcade.get_window().width / 3, arcade.get_window().height
-        )
+        return lambda: Vec2(arcade.get_window().width / 3, arcade.get_window().height)
 
     def pin_corner(self, corner: Corner, pin: Callable[[], Vec2]):
         self._pin = pin
@@ -238,10 +236,10 @@ class ReceiverCollection:
             return
 
         self.bounds = self.bounds.from_limits(
-            min_v=Vec2(arcade.get_window().width/3, 196),
-            max_v=Vec2(arcade.get_window().width/3 * 2, arcade.get_window().height),
+            min_v=Vec2(arcade.get_window().width / 3, 196),
+            max_v=Vec2(arcade.get_window().width / 3 * 2, arcade.get_window().height),
         ).with_corner_at(self._corner, self._pin())
-        
+
         slot_x = self.bounds.r - 50
         for slot_name, receiver in self._item_receivers.items():
             match slot_name:

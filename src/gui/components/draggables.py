@@ -62,7 +62,7 @@ class DraggableCollection:
 
     def rescale_sprite(self, scale):
         self.hand.sprite.scale = scale
-    
+
     def draggable_at_position(self, mouse_position: Vec2) -> Draggable | None:
         hovered_draggable = None
 

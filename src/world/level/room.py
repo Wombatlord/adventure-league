@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
 
 from src.entities.entity import Entity
-from src.world.level.room_layouts import basic_room
+from src.world.level.room_layouts import TerrainNode, basic_room
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
 
@@ -23,7 +23,7 @@ class Room:
         self._cleared = False
         self.entry_door = Node(x=0, y=5) if size[1] > 5 else Node(0, 0)
 
-    def set_layout(self, layout: tuple[Node, ...]) -> Self:
+    def set_layout(self, layout: tuple[TerrainNode, ...]) -> Self:
         self.layout = layout
         self.space = PathingSpace.from_level_geometry(self.layout)
         return self
