@@ -176,5 +176,8 @@ def norm(m3: Mat3) -> Mat3:
     return scale_preserving_transform
 
 
-def draw_priority(n: Node) -> float:
-    return -(n.x + n.y - 2*n.z)
+def draw_priority(node) -> float:
+    if not hasattr(node, "node"):
+        return -(node.x + node.y - 2*node.z)
+
+    return -(node.node.x + node.node.y - 2*node.node.z)

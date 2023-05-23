@@ -265,11 +265,11 @@ class Scene(arcade.Section):
         self.world_sprite_list.clear()
         for node in self.encounter_room.layout:
             sprite = BaseSprite(
-                SpriteSheetSpecs.tiles.loaded[89],
+                node.material,
                 scale=self.SPRITE_SCALE,
                 transform=self.transform,
             )
-            sprite.set_node(node)
+            sprite.set_node(node.node)
             self.world_sprite_list.append(sprite)
 
     def prepare_dude_sprites(self):

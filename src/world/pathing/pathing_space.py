@@ -7,6 +7,7 @@ from typing import Generator, Iterable, Sequence
 
 from astar import AStar
 
+from src.world.level.room_layouts import NodeWithMaterial
 from src.world.node import Node
 
 
@@ -15,16 +16,16 @@ class PathingSpace(AStar):
     maxima: Node
 
     @classmethod
-    def from_level_geometry(cls, geometry: tuple[Node], floor_level=0):
+    def from_level_geometry(cls, geometry: tuple[NodeWithMaterial], floor_level=0):
         all_traversable = []
         for n in geometry:
-            if n.z != floor_level - 1:
+            if n.node.z != floor_level - 1:
                 continue
 
-            if n.above in geometry:
+            if n.node.above in geometry:
                 continue
 
-            all_traversable.append(n.above)
+            all_traversable.append(n.node.above)
 
         min_x = min(n.x for n in all_traversable)
         min_y = min(n.y for n in all_traversable)
