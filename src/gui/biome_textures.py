@@ -6,44 +6,47 @@ from src.textures.texture_data import SpriteSheetSpecs
 
 tiles = SpriteSheetSpecs.tiles.loaded
 
+
 class BiomeName(NamedTuple):
     CASTLE = "castle"
     DESERT = "desert"
     SNOW = "snow"
-    
+
     @classmethod
     def all_biomes(cls):
         return [cls.CASTLE, cls.DESERT, cls.SNOW]
 
+
 class Biome(NamedTuple):
-    floor: list[Texture]
-    wall: list[Texture]
-    pillar: list[Texture]
+    FLOOR = "floor"
+    WALL = "wall"
+    PILLAR = "pillar"
+    floor_tiles: list[Texture]
+    wall_tiles: list[Texture]
+    pillar_tiles: list[Texture]
 
 
 class BiomeTextures(NamedTuple):
     @classmethod
     def castle(self):
         return Biome(
-            floor=[tiles[88], tiles[89]],
-            wall=[tiles[88], tiles[89]],
-            pillar=[tiles[88], tiles[89]],
+            floor_tiles=[tiles[88], tiles[89]],
+            wall_tiles=[tiles[88], tiles[89]],
+            pillar_tiles=[tiles[88], tiles[89]],
         )
 
     @classmethod
     def desert(self):
         return Biome(
-            floor=[tiles[3], tiles[88]], wall=[tiles[3], tiles[88]], pillar=[tiles[42]]
+            floor_tiles=[tiles[3], tiles[88]],
+            wall_tiles=[tiles[3], tiles[88]],
+            pillar_tiles=[tiles[42]],
         )
 
     @classmethod
     def snow(self):
         return Biome(
-            floor=[tiles[22], tiles[89]],
-            wall=[tiles[22], tiles[23], tiles[89]],
-            pillar=[tiles[23]],
+            floor_tiles=[tiles[22], tiles[89]],
+            wall_tiles=[tiles[22], tiles[23], tiles[89]],
+            pillar_tiles=[tiles[23]],
         )
-
-    @property
-    def exclusions(self):
-        return []

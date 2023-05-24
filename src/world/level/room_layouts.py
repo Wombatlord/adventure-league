@@ -14,57 +14,6 @@ from src.world.node import Node
 
 class Terrain(NamedTuple):
     terrain_nodes: list[TerrainNode]
-    biomes: list[str]
-    castle: Biome = BiomeTextures.castle()
-    desert: Biome = BiomeTextures.desert()
-    snow: Biome = BiomeTextures.snow()
-
-    def with_biome_textures(self) -> Self:
-        for biome in self.biomes:
-            match biome:
-                case BiomeName.CASTLE:
-                    self.castle_textures()
-
-                case BiomeName.DESERT:
-                    self.desert_textures()
-
-                case BiomeName.SNOW:
-                    self.snow_textures()
-
-        return self
-
-    def snow_textures(self):
-        for terrain_node in self.terrain_nodes:
-            if terrain_node.name == "floor":
-                terrain_node.texture = random.choice(self.snow.floor)
-
-            if terrain_node.name == "wall":
-                terrain_node.texture = random.choice(self.snow.wall)
-
-            if terrain_node.name == "pillar":
-                terrain_node.texture = random.choice(self.snow.pillar)
-
-    def desert_textures(self):
-        for terrain_node in self.terrain_nodes:
-            if terrain_node.name == "floor":
-                terrain_node.texture = random.choice(self.desert.floor)
-
-            if terrain_node.name == "wall":
-                terrain_node.texture = random.choice(self.desert.wall)
-
-            if terrain_node.name == "pillar":
-                terrain_node.texture = random.choice(self.desert.pillar)
-
-    def castle_textures(self):
-        for terrain_node in self.terrain_nodes:
-            if terrain_node.name == "floor":
-                terrain_node.texture = random.choice(self.castle.floor)
-
-            if terrain_node.name == "wall":
-                terrain_node.texture = random.choice(self.castle.wall)
-
-            if terrain_node.name == "pillar":
-                terrain_node.texture = random.choice(self.castle.pillar)
 
     @property
     def nodes(self):
@@ -93,7 +42,6 @@ class TerrainNode:
     node: Node
     name: str
     texture: Texture | None = None
-    materials = [SpriteSheetSpecs.tiles.loaded[89], SpriteSheetSpecs.tiles.loaded[88]]
 
     def __init__(self, node, name) -> None:
         self.node = node
@@ -115,23 +63,23 @@ def rectangle(
 @lru_cache(maxsize=1)
 def basic_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNode, ...]:
     floor = [
-        TerrainNode.create(x, y, height - 1, name="floor")
+        TerrainNode.create(x, y, height - 1, name=Biome.FLOOR)
         for x in range(dimensions[0])
         for y in range(dimensions[1])
     ]
 
     walls = (
         [
-            TerrainNode.create(x=dimensions[0], y=y, name="wall")
+            TerrainNode.create(x=dimensions[0], y=y, name=Biome.WALL)
             for y in range(dimensions[1])
         ]
         + [
-            TerrainNode.create(x=x, y=dimensions[1], z=height, name="wall")
+            TerrainNode.create(x=x, y=dimensions[1], z=height, name=Biome.WALL)
             for x in range(dimensions[0])
         ]
         + [
-            TerrainNode.create(x=10, y=10, z=height, name="wall"),
-            TerrainNode.create(x=10, y=10, z=height + 1, name="wall"),
+            TerrainNode.create(x=10, y=10, z=height, name=Biome.WALL),
+            TerrainNode.create(x=10, y=10, z=height + 1, name=Biome.WALL),
         ]
     )
 
@@ -149,7 +97,7 @@ def side_pillars(
 
     w, h = dimensions
     pillars = [
-        TerrainNode.create(x=x, y=y, name="pillar")
+        TerrainNode.create(x=x, y=y, name=Biome.PILLAR)
         for x in range(1, w, 2)
         for y in (1, h - 2)
     ]
@@ -173,7 +121,7 @@ def alternating_big_pillars(
     ]
 
     for pillar in pillars:
-        pillar.name = "pillar"
+        pillar.name = Biome.PILLAR
 
     return tuple(sorted(pillars + list(room), key=draw_priority))
 

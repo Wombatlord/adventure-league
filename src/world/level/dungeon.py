@@ -1,7 +1,9 @@
+import random
 from typing import Generator, Optional
 
 from src.entities.entity import Entity
 from src.entities.item.loot import Loot, Rewarder
+from src.gui.biome_textures import BiomeName
 from src.world.level.room import Room
 
 
@@ -17,7 +19,8 @@ class Dungeon(Rewarder):
         treasure: Optional[int] = 0,
         xp_reward: Optional[int] = 0,
     ) -> None:
-        self.current_room: Room = Room()
+        self.biome = random.choice(BiomeName.all_biomes())
+        self.current_room: Room | None = None
         self.rooms: list[Room] = rooms
         self.max_enemies_per_room = max_enemies_per_room
         self.min_enemies_per_room = min_enemies_per_room
