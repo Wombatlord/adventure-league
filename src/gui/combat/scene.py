@@ -263,13 +263,15 @@ class Scene(arcade.Section):
 
     def level_to_sprite_list(self):
         self.world_sprite_list.clear()
-        for node in self.encounter_room.layout:
+        for terrain_node in self.encounter_room.layout:
+            self.encounter_room.room_texturer.apply_biome_textures()
+
             sprite = BaseSprite(
-                node.material,
+                terrain_node.texture,
                 scale=self.SPRITE_SCALE,
                 transform=self.transform,
             )
-            sprite.set_node(node.node)
+            sprite.set_node(terrain_node.node)
             self.world_sprite_list.append(sprite)
 
     def prepare_dude_sprites(self):

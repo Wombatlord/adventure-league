@@ -41,8 +41,8 @@ def create_random_dungeon(enemy_amount) -> Dungeon:
 
 
 # Room testing with Room Class
-def create_random_enemy_room(enemy_amount) -> Room:
-    room = Room().set_layout(random_room((10, 10)))
+def create_random_enemy_room(enemy_amount, biome) -> Room:
+    room = Room(biome).set_layout(random_room((10, 10)))
 
     for enemy in range(enemy_amount):
         roll = randint(0, 3)
@@ -54,8 +54,8 @@ def create_random_enemy_room(enemy_amount) -> Room:
     return room
 
 
-def create_random_boss_room() -> Room:
-    room = Room().set_layout(random_room((10, 10)))
+def create_random_boss_room(biome) -> Room:
+    room = Room(biome).set_layout(random_room((10, 10)))
 
     room.add_entity(
         create_random_boss(
@@ -81,9 +81,9 @@ def create_dungeon_with_boss_room(
     )
     for _ in range(room_amount):
         e = randint(min_enemies_per_room, d.max_enemies_per_room)
-        d.rooms.append(create_random_enemy_room(enemy_amount=e))
+        d.rooms.append(create_random_enemy_room(enemy_amount=e, biome=d.biome))
 
-    d.rooms.append(create_random_boss_room())
+    d.rooms.append(create_random_boss_room(d.biome))
     d.boss = d.rooms[-1].enemies[0]
     return d
 

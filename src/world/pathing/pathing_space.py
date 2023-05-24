@@ -7,6 +7,7 @@ from typing import Generator, Iterable, Sequence
 
 from astar import AStar
 
+from src.gui.biome_textures import BiomeName
 from src.world.level.room_layouts import Terrain, TerrainNode
 from src.world.node import Node
 
@@ -31,13 +32,13 @@ class PathingSpace(AStar):
 
         minima = terrain.minima
         maxima = terrain.maxima
-        
+
         exclusions = {
             Node(x, y, floor_level)
             for x in range(minima.x, maxima.x)
             for y in range(minima.y, maxima.y)
         } - {*all_traversable}
-        
+
         return PathingSpace(minima, maxima, exclusions)
 
     def __init__(self, minima: Node, maxima: Node, exclusions: set[Node] | None = None):
