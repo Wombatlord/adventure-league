@@ -7,6 +7,7 @@ from typing import Any, Callable, Generator, Iterable, Protocol, Sequence, TypeV
 
 from astar import AStar
 
+from src.gui.biome_textures import BiomeName
 from src.world.level.room_layouts import Terrain, TerrainNode
 from src.world.node import Node
 from pyglet.math import Vec3

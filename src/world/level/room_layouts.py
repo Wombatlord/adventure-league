@@ -6,6 +6,7 @@ from typing import NamedTuple, Self
 
 from arcade import Texture
 
+from src.gui.biome_textures import Biome, BiomeName, BiomeTextures
 from src.textures.texture_data import SpriteSheetSpecs
 from src.world.isometry.transforms import draw_priority
 from src.world.node import Node
@@ -26,14 +27,14 @@ class Terrain(NamedTuple):
     def minima(self) -> Node:
         min_x = min(block.node.x for block in self.terrain_nodes)
         min_y = min(block.node.y for block in self.terrain_nodes)
-        
+
         return Node(min_x, min_y)
 
     @property
     def maxima(self) -> Node:
         max_x = max(block.node.x for block in self.terrain_nodes)
         max_y = max(block.node.y for block in self.terrain_nodes)
-        
+
         return Node(max_x, max_y)
     
     def highest_node_at(self, x,y) -> Node | None:
@@ -46,39 +47,46 @@ class Terrain(NamedTuple):
         
 class TerrainNode(NamedTuple):
     node: Node
-    material: Texture
-    materials = [SpriteSheetSpecs.tiles.loaded[89], SpriteSheetSpecs.tiles.loaded[88]]
+    name: str
+    texture: Texture | None = None
+
+    def __init__(self, node, name) -> None:
+        self.node = node
+        self.name = name
 
     @classmethod
-    def create(cls, x, y, z=0, offset = Node(0,0)) -> Self:
-        return cls(node=Node(x, y, z) + offset, material=random.choice(cls.materials))
+    def create(cls, x, y, z=0, offset=Node(0, 0), name=None) -> Self:
+        return cls(node=Node(x, y, z) + offset, name=name)
 
 
 def rectangle(
     w: int = 1, h: int = 1, offset: Node = Node(0, 0)
 ) -> tuple[TerrainNode, ...]:
-    return tuple(TerrainNode.create(x=x, y=y, offset=offset)for x in range(w) for y in range(h))
+    return tuple(
+        TerrainNode.create(x=x, y=y, offset=offset) for x in range(w) for y in range(h)
+    )
 
 
 @lru_cache(maxsize=1)
-def basic_room(
-    dimensions: tuple[int, int], height: int = 0
-) -> tuple[TerrainNode, ...]:
+def basic_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNode, ...]:
     floor = [
-        TerrainNode.create(x, y, height - 1)
+        TerrainNode.create(x, y, height - 1, name=Biome.FLOOR)
         for x in range(dimensions[0])
         for y in range(dimensions[1])
     ]
 
     walls = (
-        [TerrainNode.create(x=dimensions[0], y=y) for y in range(dimensions[1])]
+        [
+            TerrainNode.create(x=dimensions[0], y=y, name=Biome.WALL)
+            for y in range(dimensions[1])
+        ]
         + [
-            TerrainNode.create(x=x, y=dimensions[1], z=height)
+            TerrainNode.create(x=x, y=dimensions[1], z=height, name=Biome.WALL)
             for x in range(dimensions[0])
         ]
         + [
-            TerrainNode.create(x=10, y=10, z=height),
-            TerrainNode.create(x=10, y=10, z=height + 1),
+            TerrainNode.create(x=10, y=10, z=height, name=Biome.WALL),
+            TerrainNode.create(x=10, y=10, z=height + 1, name=Biome.WALL),
         ]
     )
 
@@ -96,7 +104,9 @@ def side_pillars(
 
     w, h = dimensions
     pillars = [
-        TerrainNode.create(x=x, y=y) for x in range(1, w, 2) for y in (1, h - 2)
+        TerrainNode.create(x=x, y=y, name=Biome.PILLAR)
+        for x in range(1, w, 2)
+        for y in (1, h - 2)
     ]
     return tuple(sorted(pillars + list(room), key=draw_priority))
 
@@ -116,7 +126,10 @@ def alternating_big_pillars(
         *rectangle(2, 2, offset=Node(1, 4)),
         *rectangle(2, 2, offset=Node(7, 4)),
     ]
-    
+
+    for pillar in pillars:
+        pillar.name = Biome.WALL
+
     return tuple(sorted(pillars + list(room), key=draw_priority))
 
 
@@ -161,13 +174,11 @@ def one_block_corridor(
     return tuple(sorted(pillars + list(room), key=draw_priority))
 
 
-def random_room(
-    dimensions: tuple[int, int], height: int = 0
-) -> tuple[TerrainNode]:
+def random_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNode]:
     return random.choice(
         [
             # basic_room,
             side_pillars,
-            alternating_big_pillars,
+            # alternating_big_pillars,
         ]
     )(dimensions, height)
