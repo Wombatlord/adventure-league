@@ -6,6 +6,14 @@ from src.textures.texture_data import SpriteSheetSpecs
 
 tiles = SpriteSheetSpecs.tiles.loaded
 
+class BiomeName(NamedTuple):
+    CASTLE = "castle"
+    DESERT = "desert"
+    SNOW = "snow"
+    
+    @classmethod
+    def all_biomes(cls):
+        return [cls.CASTLE, cls.DESERT, cls.SNOW]
 
 class Biome(NamedTuple):
     floor: list[Texture]

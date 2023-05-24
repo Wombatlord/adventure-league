@@ -6,6 +6,7 @@ from random import randint
 from typing import Generator, Iterable, Sequence
 
 from astar import AStar
+from src.gui.biome_textures import BiomeName
 
 from src.world.level.room_layouts import Terrain, TerrainNode
 from src.world.node import Node
@@ -17,7 +18,7 @@ class PathingSpace(AStar):
 
     @classmethod
     def from_level_geometry(cls, geometry: tuple[TerrainNode], floor_level=0):
-        terrain = Terrain(geometry, ["snow"]).with_biome_textures()
+        terrain = Terrain(geometry, [random.choice(BiomeName.all_biomes())]).with_biome_textures()
         block_locations = terrain.nodes
         all_traversable = []
         for n in block_locations:

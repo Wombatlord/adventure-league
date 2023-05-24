@@ -6,7 +6,7 @@ from typing import NamedTuple, Self
 
 from arcade import Texture
 
-from src.gui.biome_textures import Biome, BiomeTextures
+from src.gui.biome_textures import Biome, BiomeName, BiomeTextures
 from src.textures.texture_data import SpriteSheetSpecs
 from src.world.isometry.transforms import draw_priority
 from src.world.node import Node
@@ -22,13 +22,13 @@ class Terrain(NamedTuple):
     def with_biome_textures(self) -> Self:
         for biome in self.biomes:
             match biome:
-                case "castle":
+                case BiomeName.CASTLE:
                     self.castle_textures()
 
-                case "desert":
+                case BiomeName.DESERT:
                     self.desert_textures()
 
-                case "snow":
+                case BiomeName.SNOW:
                     self.snow_textures()
 
         return self
@@ -222,8 +222,8 @@ def one_block_corridor(
 def random_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNode]:
     return random.choice(
         [
-            # basic_room,
-            # side_pillars,
+            basic_room,
+            side_pillars,
             alternating_big_pillars,
         ]
     )(dimensions, height)
