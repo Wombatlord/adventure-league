@@ -11,10 +11,11 @@ class BiomeName(NamedTuple):
     CASTLE = "castle"
     DESERT = "desert"
     SNOW = "snow"
-
+    PLAINS = "plains"
+    
     @classmethod
     def all_biomes(cls):
-        return [cls.CASTLE, cls.DESERT, cls.SNOW]
+        return [cls.CASTLE, cls.DESERT, cls.SNOW, cls.PLAINS]
 
 
 class Biome(NamedTuple):
@@ -40,13 +41,21 @@ class BiomeTextures(NamedTuple):
         return Biome(
             floor_tiles=[tiles[3], tiles[88]],
             wall_tiles=[tiles[3], tiles[88]],
-            pillar_tiles=[tiles[42]],
+            pillar_tiles=[tiles[42], tiles[31], tiles[9], tiles[8], tiles[20]],
         )
 
     @classmethod
     def snow(self):
         return Biome(
-            floor_tiles=[tiles[22], tiles[89]],
+            floor_tiles=[tiles[22], tiles[23], tiles[89]],
             wall_tiles=[tiles[22], tiles[23], tiles[89]],
-            pillar_tiles=[tiles[23]],
+            pillar_tiles=[tiles[32], tiles[43], tiles[20]],
+        )
+    
+    @classmethod
+    def plains(self):
+        return Biome(
+            floor_tiles=[tiles[0], tiles[1], tiles[25]],
+            wall_tiles=[tiles[0], tiles[1]],
+            pillar_tiles=[tiles[30], tiles[41], tiles[9], tiles[8], tiles[19], tiles[10]]
         )

@@ -19,6 +19,7 @@ class RoomTexturer(NamedTuple):
     castle = BiomeTextures.castle()
     snow = BiomeTextures.snow()
     desert = BiomeTextures.desert()
+    plains = BiomeTextures.plains()
     terrain_nodes: list[TerrainNode]
 
     def apply_biome_textures(self) -> Self:
@@ -32,6 +33,9 @@ class RoomTexturer(NamedTuple):
             case BiomeName.SNOW:
                 self.snow_textures()
 
+            case BiomeName.PLAINS:
+                self.plains_textures()
+            
     def snow_textures(self):
         for terrain_node in self.terrain_nodes:
             if terrain_node.name == Biome.FLOOR:
@@ -65,6 +69,16 @@ class RoomTexturer(NamedTuple):
             if terrain_node.name == Biome.PILLAR:
                 terrain_node.texture = random.choice(self.castle.pillar_tiles)
 
+    def plains_textures(self):
+        for terrain_node in self.terrain_nodes:
+            if terrain_node.name == Biome.FLOOR:
+                terrain_node.texture = random.choice(self.plains.floor_tiles)
+
+            if terrain_node.name == Biome.WALL:
+                terrain_node.texture = random.choice(self.plains.wall_tiles)
+
+            if terrain_node.name == Biome.PILLAR:
+                terrain_node.texture = random.choice(self.plains.pillar_tiles)
 
 class Room:
     space: PathingSpace | None

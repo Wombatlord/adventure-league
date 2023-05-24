@@ -121,7 +121,7 @@ def alternating_big_pillars(
     ]
 
     for pillar in pillars:
-        pillar.name = Biome.PILLAR
+        pillar.name = Biome.WALL
 
     return tuple(sorted(pillars + list(room), key=draw_priority))
 
@@ -170,8 +170,8 @@ def one_block_corridor(
 def random_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNode]:
     return random.choice(
         [
-            basic_room,
+            # basic_room,
             side_pillars,
-            alternating_big_pillars,
+            # alternating_big_pillars,
         ]
     )(dimensions, height)
