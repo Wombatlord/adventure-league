@@ -265,7 +265,7 @@ class Scene(arcade.Section):
         self.world_sprite_list.clear()
         for node in self.encounter_room.layout:
             sprite = BaseSprite(
-                node.material,
+                node.texture,
                 scale=self.SPRITE_SCALE,
                 transform=self.transform,
             )

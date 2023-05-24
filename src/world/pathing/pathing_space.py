@@ -17,7 +17,7 @@ class PathingSpace(AStar):
 
     @classmethod
     def from_level_geometry(cls, geometry: tuple[TerrainNode], floor_level=0):
-        terrain = Terrain(geometry)
+        terrain = Terrain(geometry, ["snow"]).with_biome_textures()
         block_locations = terrain.nodes
         all_traversable = []
         for n in block_locations:
@@ -31,13 +31,13 @@ class PathingSpace(AStar):
 
         minima = terrain.minima
         maxima = terrain.maxima
-        
+
         exclusions = {
             Node(x, y, floor_level)
             for x in range(minima.x, maxima.x)
             for y in range(minima.y, maxima.y)
         } - {*all_traversable}
-        
+
         return PathingSpace(minima, maxima, exclusions)
 
     def __init__(self, minima: Node, maxima: Node, exclusions: set[Node] | None = None):
