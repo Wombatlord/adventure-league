@@ -59,6 +59,11 @@ class Room:
         self.space.exclusions = exclusions
 
     def add_entity(self, entity: Entity):
+        if self.layout is None:
+            raise ValueError(
+                "Cannot add entities to a room without a layout. Did you miss a call to set_layout()?"
+            )
+
         mob_spawns = self.mob_spawns_points()
         if entity.fighter.is_enemy:
             spawn_point = next(mob_spawns)

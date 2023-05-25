@@ -169,15 +169,20 @@ class PathingSpace(AStar):
             return attempt
 
         tried = {attempt}  # will be empty if node not excluded
-        while (
-            attempt := random.choice(
-                [adj for adj in attempt.adjacent if self.in_bounds(adj)]
-            )
-        ) not in self:
-            tried.add(attempt)
-            # if we've tried every unique node
-            if len(tried) == len(self):
-                return
+        try:
+            while (
+                attempt := random.choice(
+                    [adj for adj in attempt.adjacent if self.in_bounds(adj)]
+                )
+            ) not in self:
+                tried.add(attempt)
+                # if we've tried every unique node
+                if len(tried) == len(self):
+                    return
+        except IndexError as e:
+            raise ValueError(
+                f"Choose_next_unoccupied({start_at=}) was started at a location that is probably out of bounds"
+            ) from e
 
         return attempt
 
