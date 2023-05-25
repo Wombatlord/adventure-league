@@ -71,7 +71,6 @@ class TestAI:
         return in_range
 
     def destination(self, event):
-        # breakpoint()
         fighter = event["choices"]["move"][0]["subject"]
 
         _, path = fighter.locatable.nearest_entity(

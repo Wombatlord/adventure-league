@@ -13,6 +13,7 @@ from src.entities.item.items import HealingPotion
 from src.entities.magic.caster import Caster
 from src.utils.proc_gen.syllables import simple_word
 from src.world.level.room import Room
+from src.world.level.room_layouts import basic_room
 from src.world.node import Node
 
 
@@ -160,20 +161,22 @@ class EncounterFactory:
 
     @classmethod
     def _get_encounter(cls, size=2) -> Room:
-        return Room((size, size))
+        return Room(size=(size, size))
 
     @classmethod
     def one_vs_one_enemies_lose(
         cls, room_size: int
     ) -> tuple[Room, list[Entity], list[Entity]]:
-        room = cls._get_encounter(room_size)
+        room = cls._get_encounter(room_size).set_layout(
+            basic_room((room_size, room_size))
+        )
         mercs = room.include_party(cls._make_team(strong_count=1, enemy=False))
         enemies = room.include_party(cls._make_team(baby_count=1, enemy=True))
 
         e1, e2 = mercs + enemies
 
         e1.locatable.location = room.space.minima
-        e2.locatable.location = room.space.maxima - Node(1, 1)
+        e2.locatable.location = room.space.maxima - Node(2, 2)
         return room, mercs, enemies
 
 

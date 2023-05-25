@@ -14,6 +14,7 @@ from src.systems.combat import CombatRound
 from src.tests.ai_fixture import TestAI
 from src.tests.fixtures import EncounterFactory, FighterFixtures
 from src.world.level.room import Room
+from src.world.level.room_layouts import basic_room
 from src.world.node import Node
 
 
@@ -44,7 +45,7 @@ class ActionsTest(unittest.TestCase):
 
     @classmethod
     def get_encounter(cls, size=2) -> Room:
-        return Room((size, size))
+        return Room(size=(size, size)).set_layout(basic_room((size, size)))
 
     @classmethod
     def set_up_encounter(cls, room_size: int, e1: Entity, e2) -> Room:
