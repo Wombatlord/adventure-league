@@ -6,7 +6,7 @@ from typing import NamedTuple, Self
 
 from arcade import Texture
 
-from src.gui.biome_textures import Biome, BiomeName, BiomeTextures
+from src.gui.biome_textures import Biome, BiomeName, BiomeTextures, TileTypes
 from src.textures.texture_data import SpriteSheetSpecs
 from src.world.isometry.transforms import draw_priority
 from src.world.node import Node
@@ -32,24 +32,32 @@ class Terrain(NamedTuple):
 
     @property
     def maxima(self) -> Node:
-        max_x = max(block.node.x for block in self.terrain_nodes)
-        max_y = max(block.node.y for block in self.terrain_nodes)
+        max_x = max(block.node.x for block in self.terrain_nodes) + 1
+        max_y = max(block.node.y for block in self.terrain_nodes) + 1
 
         return Node(max_x, max_y)
 
 
 class TerrainNode:
     node: Node
-    name: str
+    tile_type: str
     texture: Texture | None = None
 
-    def __init__(self, node, name) -> None:
+    def __init__(self, node, tile_type) -> None:
         self.node = node
-        self.name = name
+        self.tile_type = tile_type
+
+    def __hash__(self) -> int:
+        return hash(self.node)
+
+    def __eq__(self, __value: object) -> bool:
+        if isinstance(__value, TerrainNode):
+            return self.node == __value.node
+        return False
 
     @classmethod
-    def create(cls, x, y, z=0, offset=Node(0, 0), name=None) -> Self:
-        return cls(node=Node(x, y, z) + offset, name=name)
+    def create(cls, x, y, z=0, offset=Node(0, 0), tile_type=None) -> Self:
+        return cls(node=Node(x, y, z) + offset, tile_type=tile_type)
 
 
 def rectangle(
@@ -63,23 +71,27 @@ def rectangle(
 @lru_cache(maxsize=1)
 def basic_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNode, ...]:
     floor = [
-        TerrainNode.create(x, y, height - 1, name=Biome.FLOOR)
+        TerrainNode.create(x, y, height - 1, tile_type=TileTypes.FLOOR)
         for x in range(dimensions[0])
         for y in range(dimensions[1])
     ]
 
     walls = (
         [
-            TerrainNode.create(x=dimensions[0], y=y, name=Biome.WALL)
+            TerrainNode.create(x=dimensions[0], y=y, tile_type=TileTypes.WALL)
             for y in range(dimensions[1])
         ]
         + [
-            TerrainNode.create(x=x, y=dimensions[1], z=height, name=Biome.WALL)
+            TerrainNode.create(x=x, y=dimensions[1], z=height, tile_type=TileTypes.WALL)
             for x in range(dimensions[0])
         ]
         + [
-            TerrainNode.create(x=10, y=10, z=height, name=Biome.WALL),
-            TerrainNode.create(x=10, y=10, z=height + 1, name=Biome.WALL),
+            TerrainNode.create(
+                x=dimensions[0], y=dimensions[1], z=height, tile_type=TileTypes.WALL
+            ),
+            TerrainNode.create(
+                x=dimensions[0], y=dimensions[1], z=height + 1, tile_type=TileTypes.WALL
+            ),
         ]
     )
 
@@ -97,7 +109,7 @@ def side_pillars(
 
     w, h = dimensions
     pillars = [
-        TerrainNode.create(x=x, y=y, name=Biome.PILLAR)
+        TerrainNode.create(x=x, y=y, tile_type=TileTypes.PILLAR)
         for x in range(1, w, 2)
         for y in (1, h - 2)
     ]
@@ -121,7 +133,7 @@ def alternating_big_pillars(
     ]
 
     for pillar in pillars:
-        pillar.name = Biome.WALL
+        pillar.tile_type = TileTypes.WALL
 
     return tuple(sorted(pillars + list(room), key=draw_priority))
 
@@ -170,8 +182,8 @@ def one_block_corridor(
 def random_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNode]:
     return random.choice(
         [
-            # basic_room,
+            basic_room,
             side_pillars,
-            # alternating_big_pillars,
+            alternating_big_pillars,
         ]
     )(dimensions, height)

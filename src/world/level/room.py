@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING, Generator, NamedTuple, Self
 
-from src.gui.biome_textures import Biome, BiomeName, BiomeTextures
+from src.gui.biome_textures import BiomeName, biome_map
 
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
@@ -15,76 +15,24 @@ from src.world.pathing.pathing_space import PathingSpace
 
 
 class RoomTexturer(NamedTuple):
-    biome: BiomeName
-    castle = BiomeTextures.castle()
-    snow = BiomeTextures.snow()
-    desert = BiomeTextures.desert()
-    plains = BiomeTextures.plains()
+    biome_name: BiomeName
     terrain_nodes: list[TerrainNode]
 
     def apply_biome_textures(self) -> Self:
-        match self.biome:
-            case BiomeName.CASTLE:
-                self.castle_textures()
-
-            case BiomeName.DESERT:
-                self.desert_textures()
-
-            case BiomeName.SNOW:
-                self.snow_textures()
-
-            case BiomeName.PLAINS:
-                self.plains_textures()
-            
-    def snow_textures(self):
+        biome_textures = biome_map[self.biome_name]
         for terrain_node in self.terrain_nodes:
-            if terrain_node.name == Biome.FLOOR:
-                terrain_node.texture = random.choice(self.snow.floor_tiles)
+            terrain_node.texture = biome_textures.choose_tile_texture(
+                terrain_node.tile_type
+            )
 
-            if terrain_node.name == Biome.WALL:
-                terrain_node.texture = random.choice(self.snow.wall_tiles)
-
-            if terrain_node.name == Biome.PILLAR:
-                terrain_node.texture = random.choice(self.snow.pillar_tiles)
-
-    def desert_textures(self):
-        for terrain_node in self.terrain_nodes:
-            if terrain_node.name == Biome.FLOOR:
-                terrain_node.texture = random.choice(self.desert.floor_tiles)
-
-            if terrain_node.name == Biome.WALL:
-                terrain_node.texture = random.choice(self.desert.wall_tiles)
-
-            if terrain_node.name == Biome.PILLAR:
-                terrain_node.texture = random.choice(self.desert.pillar_tiles)
-
-    def castle_textures(self):
-        for terrain_node in self.terrain_nodes:
-            if terrain_node.name == Biome.FLOOR:
-                terrain_node.texture = random.choice(self.castle.floor_tiles)
-
-            if terrain_node.name == Biome.WALL:
-                terrain_node.texture = random.choice(self.castle.wall_tiles)
-
-            if terrain_node.name == Biome.PILLAR:
-                terrain_node.texture = random.choice(self.castle.pillar_tiles)
-
-    def plains_textures(self):
-        for terrain_node in self.terrain_nodes:
-            if terrain_node.name == Biome.FLOOR:
-                terrain_node.texture = random.choice(self.plains.floor_tiles)
-
-            if terrain_node.name == Biome.WALL:
-                terrain_node.texture = random.choice(self.plains.wall_tiles)
-
-            if terrain_node.name == Biome.PILLAR:
-                terrain_node.texture = random.choice(self.plains.pillar_tiles)
 
 class Room:
     space: PathingSpace | None
 
     def __init__(
-        self, biome: str = BiomeName.CASTLE, size: tuple[int, int] = (10, 10)
+        self,
+        size: tuple[int, int] = (10, 10),
+        biome: str = BiomeName.CASTLE,
     ) -> None:
         self.layout = None
         self.space = None

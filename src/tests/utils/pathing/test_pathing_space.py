@@ -2,6 +2,7 @@ import unittest
 
 from parameterized import parameterized
 
+from src.world.level.room_layouts import TerrainNode
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
 
@@ -88,23 +89,31 @@ class TestPathing(unittest.TestCase):
 
 
 class TestConstructFromLevelGeometry(unittest.TestCase):
-    def get_trivial_level(self) -> tuple[Node]:
-        return (Node(0, 0, -1),)
+    def get_trivial_level(self) -> tuple[TerrainNode]:
+        return (TerrainNode.create(0, 0, -1),)
 
     def get_geometry_with_blocked_nodes(
         self, blocked_nodes: set[Node], size: tuple[int, int]
-    ) -> tuple[Node, ...]:
+    ) -> tuple[TerrainNode, ...]:
         return tuple(
-            [Node(x, y, z=-1) for x in range(0, size[0]) for y in range(0, size[1])]
+            [
+                TerrainNode.create(x, y, z=-1)
+                for x in range(0, size[0])
+                for y in range(0, size[1])
+            ]
             + list(blocked_nodes)
         )
 
     def get_geometry_with_holes_in_floor(
-        self, hole_locations: set[Node], size: tuple[int, int]
-    ) -> tuple[Node, ...]:
+        self, hole_locations: set[TerrainNode], size: tuple[int, int]
+    ) -> tuple[TerrainNode, ...]:
         return tuple(
             (
-                {Node(x, y, z=-1) for x in range(0, size[0]) for y in range(0, size[1])}
+                {
+                    TerrainNode.create(x, y, z=-1)
+                    for x in range(0, size[0])
+                    for y in range(0, size[1])
+                }
                 - hole_locations
             )
         )
@@ -120,9 +129,12 @@ class TestConstructFromLevelGeometry(unittest.TestCase):
         assert len(space) == 1
         assert Node(0, 0, 0) in space
 
+    def as_terrain_nodes(self, nodes: set[Node]) -> set[TerrainNode]:
+        return {TerrainNode.create(*n) for n in nodes}
+
     def test_from_level_geometry_creates_exclusions_for_blocked_nodes(self):
         # Arrange
-        blocked = {Node(1, 1), Node(3, 2), Node(0, 4)}
+        blocked = self.as_terrain_nodes({Node(1, 1), Node(3, 2), Node(0, 4)})
         geom = self.get_geometry_with_blocked_nodes(blocked, size=(5, 5))
 
         # Action
@@ -132,13 +144,17 @@ class TestConstructFromLevelGeometry(unittest.TestCase):
         assert (
             len(space.exclusions) == 3
         ), f"unexpected number of exclusions, expected 3, got {len(space.exclusions)=}"
-        assert (
-            space.exclusions == blocked
-        ), f"blocked nodes {blocked=}, exclusions in the wrong place {space.exclusions-blocked}"
+        assert space.exclusions == {
+            b.node for b in blocked
+        }, f"blocked nodes {blocked=}, exclusions in the wrong place {space.exclusions-blocked}"
 
     def test_from_level_geometry_creates_exclusions_for_when_nodes_are_above_pits(self):
         # Arrange
-        pit_locations = {Node(1, 1, z=-1), Node(3, 2, z=-1), Node(0, 4, z=-1)}
+        pit_locations = {
+            TerrainNode.create(1, 1, z=-1),
+            TerrainNode.create(3, 2, z=-1),
+            TerrainNode.create(0, 4, z=-1),
+        }
         geom = self.get_geometry_with_holes_in_floor(pit_locations, size=(5, 5))
 
         # Action
@@ -149,7 +165,9 @@ class TestConstructFromLevelGeometry(unittest.TestCase):
             len(space.exclusions) == 3
         ), f"unexpected number of exclusions, expected 3, got {len(space.exclusions)=}"
 
-        expected_exclusions = {n.above for n in pit_locations}
+        expected_exclusions = {
+            terrain_node.node.above for terrain_node in pit_locations
+        }
         assert space.exclusions == expected_exclusions, (
             f"excluded nodes {expected_exclusions=}, exclusions in the wrong place:"
             f" {space.exclusions-expected_exclusions}"

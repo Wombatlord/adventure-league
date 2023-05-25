@@ -198,17 +198,17 @@ class GameStateLoaders:
             match slot:
                 case "_weapon":
                     instance._weapon = cls.equippable_item_from_dict(
-                        serialised_gear[slot], owner=instance
+                        serialised_gear[slot], owner=owner
                     )
 
                 case "_helmet":
                     instance._helmet = cls.equippable_item_from_dict(
-                        serialised_gear[slot], owner=instance
+                        serialised_gear[slot], owner=owner
                     )
 
                 case "_body":
                     instance._body = cls.equippable_item_from_dict(
-                        serialised_gear[slot], owner=instance
+                        serialised_gear[slot], owner=owner
                     )
 
         return instance
