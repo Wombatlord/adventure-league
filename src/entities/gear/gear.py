@@ -73,9 +73,9 @@ class Gear:
     def is_equipped(self, item: EquippableItem) -> bool:
         return self.item_in_slot(item.slot) is item
 
-    def equip_item(self, item: EquippableItem, storage: Armory = None):
+    def equip_item(self, item: EquippableItem | None, storage: Armory = None):
         if not item:
-            return
+            return None
 
         slot = item.slot
         if slot not in self._equippable_slots:

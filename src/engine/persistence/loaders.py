@@ -230,10 +230,10 @@ class GameStateLoaders:
 
     @classmethod
     def equippable_item_from_dict(
-        cls, serialised_equippable_item: dict, owner
-    ) -> EquippableItem:
+        cls, serialised_equippable_item: dict | None, owner: Fighter
+    ) -> EquippableItem | None:
         if not serialised_equippable_item:
-            return
+            return None
 
         fighter_mods = []
         for affix in serialised_equippable_item["config"]["fighter_affixes"]:
