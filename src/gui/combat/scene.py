@@ -16,7 +16,7 @@ from src.utils.camera_controls import CameraController
 from src.world.isometry.transforms import Transform
 from src.world.level.room import Room
 from src.world.node import Node
-
+from wfc import wfc_textures
 
 def do_nothing():
     pass
@@ -263,11 +263,11 @@ class Scene(arcade.Section):
 
     def level_to_sprite_list(self):
         self.world_sprite_list.clear()
-        for terrain_node in self.encounter_room.layout:
+        for i, terrain_node in enumerate(self.encounter_room.layout):
             self.encounter_room.room_texturer.apply_biome_textures()
 
             sprite = BaseSprite(
-                terrain_node.texture,
+                wfc_textures[i],
                 scale=self.SPRITE_SCALE,
                 transform=self.transform,
             )
