@@ -22,12 +22,9 @@ class Storage(metaclass=abc.ABCMeta):
 
 
 class Armory(Storage):
-    weapons: list[EquippableItem]
-    armour: list[EquippableItem]
+    storage: list[EquippableItem]
 
     def __init__(self) -> None:
-        self.weapons = []
-        self.armour = []
         self.storage = []
 
     def store(self, item: EquippableItem) -> None:

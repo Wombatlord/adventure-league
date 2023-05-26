@@ -74,6 +74,9 @@ class Gear:
         return self.item_in_slot(item.slot) is item
 
     def equip_item(self, item: EquippableItem, storage: Armory = None):
+        if not item:
+            return
+
         slot = item.slot
         if slot not in self._equippable_slots:
             raise ValueError(f"Cannot equip item {item} in slot {slot}")

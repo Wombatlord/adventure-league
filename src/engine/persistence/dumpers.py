@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from src.engine.armory import Armory
+
 if TYPE_CHECKING:
     from src.engine.guild import Guild, Team
     from src.entities.action.actions import ActionPoints
@@ -26,8 +28,15 @@ class GameStateDumpers:
         guild_dict["roster"] = [cls.entity_to_dict(entity) for entity in guild.roster]
         guild_dict["roster_scalar"] = guild.roster_scalar
         guild_dict["team"] = cls.team_to_dict(guild.team)
+        guild_dict["armory"] = cls.armory_to_dict(guild.armory)
 
         return guild_dict
+
+    @classmethod
+    def armory_to_dict(cls, armory: Armory) -> dict:
+        return {
+            "storage": [cls.equippable_item_to_dict(item) for item in armory.storage]
+        }
 
     @classmethod
     def entity_to_dict(cls, entity: Entity) -> dict:

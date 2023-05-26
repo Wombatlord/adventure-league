@@ -1,3 +1,4 @@
+from src.engine.armory import Armory
 from src.engine.guild import Guild
 from src.entities.action.actions import ActionPoints
 from src.entities.combat.archetypes import FighterArchetype
@@ -16,6 +17,8 @@ from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion
 from src.entities.magic.caster import Caster, MpPool
 from src.entities.sprite_assignment import Species, attach_sprites
+from src.entities.sprites import SimpleSpriteAttribute
+from src.gui.simple_sprite_config import choose_item_texture
 
 
 class GameStateLoaders:
@@ -23,8 +26,10 @@ class GameStateLoaders:
     def guild_from_dict(cls, serialised_guild: dict) -> Guild:
         scalar = serialised_guild.pop("roster_scalar")
         team = serialised_guild.pop("team")
-
+        armory = serialised_guild.pop("armory")
         g = Guild(**serialised_guild)
+        g.armory = cls.armory_from_dict(armory)
+
         g.team.name = team["name"]
 
         entities = []
@@ -38,6 +43,16 @@ class GameStateLoaders:
         g.roster_scalar = scalar
 
         return g
+
+    @classmethod
+    def armory_from_dict(cls, serialised_armory: dict) -> Armory:
+        instance = Armory()
+        instance.storage = [
+            cls.equippable_item_from_dict(item, None)
+            for item in serialised_armory["storage"]
+        ]
+
+        return instance
 
     @classmethod
     def entity_from_dict(cls, serialised_entity: dict | None) -> Entity | None:
@@ -217,6 +232,9 @@ class GameStateLoaders:
     def equippable_item_from_dict(
         cls, serialised_equippable_item: dict, owner
     ) -> EquippableItem:
+        if not serialised_equippable_item:
+            return
+
         fighter_mods = []
         for affix in serialised_equippable_item["config"]["fighter_affixes"]:
             if affix.get("modifier").get("stat_class") == "FighterStats":
@@ -244,6 +262,11 @@ class GameStateLoaders:
                 }
             ),
         }
+
+        instance._sprite = SimpleSpriteAttribute(
+            path_or_texture=choose_item_texture(instance), scale=6
+        )
+        instance._sprite.owner = instance
 
         instance._modifiable_stats = ModifiableStats(
             EquippableItemStats, instance._stats
