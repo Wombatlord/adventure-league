@@ -9,7 +9,7 @@ from src.engine.describer import Describer
 from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
 from src.engine.game_state import AwardSpoilsHandler, GameState
 from src.engine.mission_board import MissionBoard
-from src.engine.persistence.game_state_repository import GuildRepository
+from src.engine.persistence.game_state_repository import Format, GuildRepository
 from src.entities.combat.fighter_factory import RecruitmentPool
 from src.systems.combat import CombatRound
 
@@ -93,7 +93,9 @@ class Engine:
         self.game_state.set_entity_pool(pool)
 
     def save_to_slot(self, slot: int):
-        self.guild_repository.save(slot, self.game_state.guild)
+        self.guild_repository.save(
+            slot, self.game_state.guild, fmts=(Format.PICKLE, Format.YAML)
+        )
 
     def get_save_slot_metadata(self) -> list[dict]:
         return self.guild_repository.get_slot_info()
