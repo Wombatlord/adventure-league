@@ -1,8 +1,9 @@
-import random
 import math
-from typing import Literal
-from arcade import Texture
+import random
+from typing import Literal, NamedTuple
+
 import colorama
+from arcade import Texture
 
 from src.textures.texture_data import SpriteSheetSpecs
 
@@ -11,8 +12,10 @@ tiles = SpriteSheetSpecs.tiles.loaded
 # Types
 Tile = str
 Coordinates = tuple[int, int]
-Up = tuple[Literal[1], Literal[0]]; Down = tuple[Literal[-1], Literal[0]]
-Left = tuple[Literal[0], Literal[-1]]; Right = tuple[Literal[0], Literal[1]]
+Up = tuple[Literal[1], Literal[0]]
+Down = tuple[Literal[-1], Literal[0]]
+Left = tuple[Literal[0], Literal[-1]]
+Right = tuple[Literal[0], Literal[1]]
 Direction = Up | Down | Left | Right
 Compatibility = tuple[Tile, Tile, Direction]
 Weights = dict[Tile, int]
@@ -56,11 +59,15 @@ class Wavefunction(object):
         size -- a 2-tuple of (width, height)
         weights -- a dict of tile -> weight of tile
         """
-        coefficient_matrix = Wavefunction.init_coefficient_matrix(size, list(weights.keys()))
+        coefficient_matrix = Wavefunction.init_coefficient_matrix(
+            size, list(weights.keys())
+        )
         return Wavefunction(coefficient_matrix, weights)
 
     @staticmethod
-    def init_coefficient_matrix(size: tuple[int, int], tiles: list[Tile]) -> CoefficientMatrix:
+    def init_coefficient_matrix(
+        size: tuple[int, int], tiles: list[Tile]
+    ) -> CoefficientMatrix:
         """Initializes a 2-D wavefunction matrix of coefficients.
         The matrix has size `size`, and each element of the matrix
         starts with all tiles as possible. No tile is forbidden yet.
@@ -109,7 +116,7 @@ class Wavefunction(object):
         this method raises an exception.
         """
         opts = self.get(co_ords)
-        assert(len(opts) == 1)
+        assert len(opts) == 1
         return next(iter(opts))
 
     def get_all_collapsed(self) -> list[list[Tile]]:
@@ -145,7 +152,6 @@ class Wavefunction(object):
 
         return math.log(sum_of_weights) - (sum_of_weight_log_weights / sum_of_weights)
 
-
     def is_fully_collapsed(self) -> bool:
         """Returns true if every element in Wavefunction is fully
         collapsed, and false otherwise.
@@ -167,7 +173,9 @@ class Wavefunction(object):
         """
         y, x = co_ords
         opts = self.coefficient_matrix[y][x]
-        filtered_tiles_with_weights = [(tile, weight) for tile, weight in self.weights.items() if tile in opts]
+        filtered_tiles_with_weights = [
+            (tile, weight) for tile, weight in self.weights.items() if tile in opts
+        ]
 
         total_weights = sum([weight for _, weight in filtered_tiles_with_weights])
         rnd = random.random() * total_weights
@@ -197,7 +205,12 @@ class Model(object):
     Wavefunction Collapse algorithm.
     """
 
-    def __init__(self, output_size: tuple[int, int], weights: Weights, compatibility_oracle: CompatibilityOracle):
+    def __init__(
+        self,
+        output_size: tuple[int, int],
+        weights: Weights,
+        compatibility_oracle: CompatibilityOracle,
+    ):
         self.output_size = output_size
         self.compatibility_oracle = compatibility_oracle
 
@@ -249,9 +262,12 @@ class Model(object):
                 for other_tile in set(self.wavefunction.get(other_co_ords)):
                     # Check whether the tile is compatible with any tile in
                     # the current location's wavefunction.
-                    other_tile_is_possible = any([
-                        self.compatibility_oracle.check(cur_tile, other_tile, d) for cur_tile in cur_possible_tiles
-                    ])
+                    other_tile_is_possible = any(
+                        [
+                            self.compatibility_oracle.check(cur_tile, other_tile, d)
+                            for cur_tile in cur_possible_tiles
+                        ]
+                    )
                     # If the tile is not compatible with any of the tiles in
                     # the current location's wavefunction then it is impossible
                     # for it to ever get chosen. We therefore remove it from
@@ -300,7 +316,9 @@ def render_colors(matrix: list[list[Tile]], colors: dict[str, str]) -> None:
         # print("".join(output_row))
 
 
-def valid_dirs(cur_co_ords: Coordinates, matrix_size: tuple[int, int]) -> list[Direction]:
+def valid_dirs(
+    cur_co_ords: Coordinates, matrix_size: tuple[int, int]
+) -> list[Direction]:
     """Returns the valid directions from `cur_co_ord` in a matrix
     of `matrix_size`. Ensures that we don't try to take step to the
     left when we are already on the left edge of the matrix.
@@ -309,17 +327,23 @@ def valid_dirs(cur_co_ords: Coordinates, matrix_size: tuple[int, int]) -> list[D
     width, height = matrix_size
     dirs: list[Direction] = []
 
-    if y < height-1: dirs.append(UP)
-    if y > 0: dirs.append(DOWN)
-    if x > 0: dirs.append(LEFT)
-    if x < width-1: dirs.append(RIGHT)
+    if y < height - 1:
+        dirs.append(UP)
+    if y > 0:
+        dirs.append(DOWN)
+    if x > 0:
+        dirs.append(LEFT)
+    if x < width - 1:
+        dirs.append(RIGHT)
 
     return dirs
 
 
-def parse_example_matrix(matrix: list[list[Tile]]) -> tuple[set[Compatibility], Weights]:
+def parse_example_matrix(
+    matrix: list[list[Tile]],
+) -> tuple[set[Compatibility], Weights]:
     """Parses an example `matrix`. Extracts:
-    
+
     1. Tile compatibilities - which pairs of tiles can be placed next
         to each other and in which directions
     2. Tile weights - how common different tiles are
@@ -346,30 +370,32 @@ def parse_example_matrix(matrix: list[list[Tile]]) -> tuple[set[Compatibility], 
             weights[cur_tile] += 1
 
             for d in valid_dirs((y, x), (matrix_width, matrix_height)):
-                other_tile = matrix[y+d[0]][x+d[1]]
+                other_tile = matrix[y + d[0]][x + d[1]]
                 compatibilities.add((cur_tile, other_tile, d))
 
     return compatibilities, weights
 
 
 input_matrix = [
-    ['L','L','L','L'],
-    ['L','L','L','L'],
-    ['L','L','L','L'],
-    ['L','C','C','L'],
-    ['C','S','S','C'],
-    ['S','S','S','S'],
-    ['S','S','S','S'],
+    ["L", "L", "L", "L"],
+    ["L", "L", "L", "L"],
+    ["L", "L", "L", "L"],
+    ["L", "C", "C", "L"],
+    ["C", "S", "S", "C"],
+    ["S", "S", "S", "S"],
+    ["S", "S", "S", "S"],
 ]
+
 input_matrix2 = [
-    ['A','A','A','A'],
-    ['A','A','A','A'],
-    ['A','A','A','A'],
-    ['A','C','C','A'],
-    ['C','B','B','C'],
-    ['C','B','B','C'],
-    ['A','C','C','A'],
+    ["A", "A", "A", "A"],
+    ["A", "A", "A", "A"],
+    ["A", "A", "A", "A"],
+    ["A", "C", "C", "A"],
+    ["C", "B", "B", "C"],
+    ["C", "B", "B", "C"],
+    ["A", "C", "C", "A"],
 ]
+
 
 compatibilities, weights = parse_example_matrix(input_matrix)
 compatibility_oracle = CompatibilityOracle(compatibilities)
@@ -377,32 +403,36 @@ model = Model((10, 10), weights, compatibility_oracle)
 output = model.run()
 
 colors = {
-    'L': colorama.Fore.GREEN,
-    'S': colorama.Fore.BLUE,
-    'C': colorama.Fore.YELLOW,
-    'A': colorama.Fore.CYAN,
-    'B': colorama.Fore.MAGENTA,
+    "L": colorama.Fore.GREEN,
+    "S": colorama.Fore.BLUE,
+    "C": colorama.Fore.YELLOW,
+    "A": colorama.Fore.CYAN,
+    "B": colorama.Fore.MAGENTA,
 }
 
 mapping = {
     "L": tiles[1],
     "C": tiles[3],
-    "S": tiles[4]
+    "S": tiles[4],
+    "CR": tiles[48],
+    "POS_Y": tiles[45],
+    "NEG_Y": tiles[44],
+    "T1": tiles[51],
+    "T2": tiles[54],
 }
 
-def prepare_textures(matrix: list[list[Tile]], mapping: dict[str, Texture]) -> None:
-    """Render the fully collapsed `matrix` using the given `colors.
 
-    Arguments:
-    matrix -- 2-D matrix of tiles
-    colors -- dict of tile -> `colorama` color
-    """
+def prepare_textures(matrix: list[list[Tile]], mapping: dict[str, Texture]) -> None:
     final_matrix = []
+
     for row in matrix:
+        output_row = []
         for val in row:
             texture = mapping[val]
-            final_matrix.append(texture)
+            output_row.append(texture)
 
+        final_matrix.append(output_row)
     return final_matrix
+
 
 wfc_textures = prepare_textures(output, mapping)
