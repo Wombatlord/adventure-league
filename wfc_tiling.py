@@ -38,13 +38,11 @@ class TileWeights:
 
 class Symmetrys:
     grass = (
-        (
-            Tiles.grass,
-            Tiles.straight_a,
-            Tiles.cross,
-            Tiles.corner_two,
-            Tiles.corner_four,
-        ),
+        Tiles.grass,
+        Tiles.straight_a,
+        Tiles.cross,
+        Tiles.corner_two,
+        Tiles.corner_four,
     )
 
     @classmethod
