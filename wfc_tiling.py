@@ -278,49 +278,36 @@ def grid_rotate_cw(grid: Grid) -> Grid:
         ["#", "#", "#"],
         ["#", "#", "#"],
     ]
-    top_left = grid[0][0]
-    top_mid = grid[0][1]
-    top_right = grid[0][2]
-    left = grid[1][0]
-    mid = grid[1][1]
-    right = grid[1][2]
-    btm_left = grid[2][0]
-    btm = grid[2][1]
-    btm_right = grid[2][2]
 
-    (
-        top_left,
-        top_mid,
-        top_right,
-        left,
-        mid,
-        right,
-        btm_left,
-        btm,
-        btm_right,
-    ) = rotate_symbols(
-        grid,
-        rotated,
-        top_left,
-        top_mid,
-        top_right,
-        left,
-        mid,
-        right,
-        btm_left,
-        btm,
-        btm_right,
-    )
+    top_row = [
+        grid[0][0],
+        grid[0][1],
+        grid[0][2],
+    ]
 
-    rotated[0][0] = btm_left
-    rotated[0][1] = left
-    rotated[0][2] = top_left
-    rotated[1][0] = btm
-    rotated[1][1] = mid
-    rotated[1][2] = top_mid
-    rotated[2][0] = btm_right
-    rotated[2][1] = right
-    rotated[2][2] = top_right
+    mid_row = [
+        grid[1][0],
+        grid[1][1],
+        grid[1][2],
+    ]
+
+    btm_row = [
+        grid[2][0],
+        grid[2][1],
+        grid[2][2],
+    ]
+
+    (top, mid, btm) = rotate_symbols_in_grid(top_row, mid_row, btm_row)
+
+    rotated[0][0] = btm[0]
+    rotated[0][1] = mid[0]
+    rotated[0][2] = top[0]
+    rotated[1][0] = btm[1]
+    rotated[1][1] = mid[1]
+    rotated[1][2] = top[1]
+    rotated[2][0] = btm[2]
+    rotated[2][1] = mid[2]
+    rotated[2][2] = top[2]
 
     rotated[0] = (*rotated[0],)
     rotated[1] = (*rotated[1],)
@@ -329,41 +316,35 @@ def grid_rotate_cw(grid: Grid) -> Grid:
     return (*rotated,)
 
 
-def rotate_symbols(
-    grid, rotated, top_left, top, top_right, left, mid, right, btm_left, btm, btm_right
-):
-    # Top Row
-    if top_left == "|":
-        top_left = "-"
-    if top == "|":
-        top = "-"
-    if top_right == "|":
-        top_right = "-"
+def rotate_symbols_in_grid(top_row, mid_row, btm_row) -> Grid:
+    top_left, top, top_right = rotate_symbols_in_row(top_row)
+    left, mid, right = rotate_symbols_in_row(mid_row)
+    btm_left, btm, btm_right = rotate_symbols_in_row(btm_row)
 
-    # Mid Row
-    if left == "-":
-        left = "|"
+    return ((top_left, top, top_right), (left, mid, right), (btm_left, btm, btm_right))
 
-    if mid == "-":
-        mid = "|"
-    elif mid == "|":
-        mid = "-"
 
-    if right == "-":
-        right = "|"
+def rotate_symbols_in_row(row) -> tuple[str, str, str]:
+    l = row[0]
+    m = row[1]
+    r = row[2]
 
-    # Btm Row
-    if btm_left == "|":
-        btm_left = "-"
-    if btm == "|":
-        btm = "-"
-    if btm_right == "|":
-        btm_right = "-"
+    if l == "|":
+        l = "-"
+    elif l == "-":
+        l = "|"
 
-    # if grid[1][1] == "#":
-    #     rotated[1][1] = grid[1][1]
+    if m == "|":
+        m = "-"
+    elif m == "-":
+        m = "|"
 
-    return top_left, top, top_right, left, mid, right, btm_left, btm, btm_right
+    if r == "|":
+        r = "-"
+    elif r == "-":
+        r = "|"
+
+    return l, m, r
 
 
 grid = {
@@ -386,7 +367,7 @@ meta_grid = (
 )
 
 
-def meta_grid_element_rotate(m_grid, rots: int):
+def meta_grid_element_rotate(m_grid, rots: int = 0) -> Grid:
     top = m_grid[0]
     mid = m_grid[1]
     btm = m_grid[2]
@@ -398,7 +379,7 @@ def meta_grid_element_rotate(m_grid, rots: int):
     return ((*top_grids,), (*mid_grids,), (*btm_grids,))
 
 
-def element_rotate(rots, row, grid_row):
+def element_rotate(rots, row, grid_row) -> list[Grid]:
     for symbol in row:
         g = grid[symbol]
         if rots == 1:
@@ -411,46 +392,6 @@ def element_rotate(rots, row, grid_row):
     return grid_row
 
 
-def build_from_meta_grid(m_grid):
-    top = m_grid[0]
-    mid = m_grid[1]
-    btm = m_grid[2]
-
-    top_grids = build_row(top, [])
-    mid_grids = build_row(mid, [])
-    btm_grids = build_row(btm, [])
-
-    return ((*top_grids,), (*mid_grids,), (*btm_grids,))
-
-
-def build_row(row, grids):
-    for symbol in row:
-        match symbol:
-            case "-":
-                g = grid["-"]
-            case "-m":
-                g = grid["-m"]
-            case "¬":
-                g = grid["¬"]
-            case "¬1":
-                g = grid["¬1"]
-            case "¬2":
-                g = grid["¬2"]
-            case "¬3":
-                g = grid["¬3"]
-            case "|":
-                g = grid["|"]
-            case "|m":
-                g = grid["|m"]
-            case "+":
-                g = grid["+"]
-            case "#":
-                g = grid["#"]
-        grids.append(g)
-
-    return grids
-
-
 meta_grid_rotated = meta_grid_element_rotate(grid_rotate_cw(meta_grid), rots=1)
 meta_grid_rotated_twice = meta_grid_element_rotate(
     grid_rotate_cw(grid_rotate_cw(meta_grid)), rots=2
@@ -458,7 +399,7 @@ meta_grid_rotated_twice = meta_grid_element_rotate(
 meta_grid_rotated_thrice = meta_grid_element_rotate(
     grid_rotate_cw(grid_rotate_cw(grid_rotate_cw(meta_grid))), rots=3
 )
-m_grid = build_from_meta_grid(meta_grid)
+m_grid = meta_grid_element_rotate(meta_grid, rots=0)
 
 top_row = (
     meta_grid_rotated[0] + meta_grid_rotated_twice[0] + meta_grid_rotated_thrice[0]
