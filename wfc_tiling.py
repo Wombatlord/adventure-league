@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Callable, Literal, NamedTuple, Protocol, Self, TypeVar
 
-from arcade import Texture
 import colorama
+from arcade import Texture
 
 from src.textures.texture_data import SpriteSheetSpecs
 
@@ -278,17 +278,49 @@ def grid_rotate_cw(grid: Grid) -> Grid:
         ["#", "#", "#"],
         ["#", "#", "#"],
     ]
-    top = grid[0][1]
+    top_left = grid[0][0]
+    top_mid = grid[0][1]
+    top_right = grid[0][2]
     left = grid[1][0]
+    mid = grid[1][1]
     right = grid[1][2]
+    btm_left = grid[2][0]
     btm = grid[2][1]
+    btm_right = grid[2][2]
 
-    top, left, right, btm = rotate_symbols(grid, rotated, top, left, right, btm)
+    (
+        top_left,
+        top_mid,
+        top_right,
+        left,
+        mid,
+        right,
+        btm_left,
+        btm,
+        btm_right,
+    ) = rotate_symbols(
+        grid,
+        rotated,
+        top_left,
+        top_mid,
+        top_right,
+        left,
+        mid,
+        right,
+        btm_left,
+        btm,
+        btm_right,
+    )
 
+    rotated[0][0] = btm_left
     rotated[0][1] = left
+    rotated[0][2] = top_left
     rotated[1][0] = btm
-    rotated[1][2] = top
+    rotated[1][1] = mid
+    rotated[1][2] = top_mid
+    rotated[2][0] = btm_right
     rotated[2][1] = right
+    rotated[2][2] = top_right
 
     rotated[0] = (*rotated[0],)
     rotated[1] = (*rotated[1],)
@@ -297,24 +329,41 @@ def grid_rotate_cw(grid: Grid) -> Grid:
     return (*rotated,)
 
 
-def rotate_symbols(grid, rotated, top, left, right, btm):
+def rotate_symbols(
+    grid, rotated, top_left, top, top_right, left, mid, right, btm_left, btm, btm_right
+):
+    # Top Row
+    if top_left == "|":
+        top_left = "-"
     if top == "|":
         top = "-"
-    if btm == "|":
-        btm = "-"
+    if top_right == "|":
+        top_right = "-"
 
+    # Mid Row
     if left == "-":
         left = "|"
+
+    if mid == "-":
+        mid = "|"
+    elif mid == "|":
+        mid = "-"
+
     if right == "-":
         right = "|"
 
-    if grid[1][1] == "-":
-        rotated[1][1] = "|"
-    if grid[1][1] == "|":
-        rotated[1][1] = "-"
-    if rotated[1][1] == "#":
-        rotated[1][1] = grid[1][1]
-    return top, left, right, btm
+    # Btm Row
+    if btm_left == "|":
+        btm_left = "-"
+    if btm == "|":
+        btm = "-"
+    if btm_right == "|":
+        btm_right = "-"
+
+    # if grid[1][1] == "#":
+    #     rotated[1][1] = grid[1][1]
+
+    return top_left, top, top_right, left, mid, right, btm_left, btm, btm_right
 
 
 grid = {
@@ -331,9 +380,9 @@ grid = {
 }
 
 meta_grid = (
+    ("¬", "¬1", "#"),
+    ("¬3", "+", "-m"),
     ("#", "|m", "#"),
-    ("-m", "+","¬2"),
-    ("#", "#", "#"),
 )
 
 
@@ -349,8 +398,8 @@ def meta_grid_element_rotate(m_grid, rots: int):
     return ((*top_grids,), (*mid_grids,), (*btm_grids,))
 
 
-def element_rotate(rots, top, grid_row):
-    for symbol in top:
+def element_rotate(rots, row, grid_row):
+    for symbol in row:
         g = grid[symbol]
         if rots == 1:
             g = grid_rotate_cw(g)
@@ -411,9 +460,15 @@ meta_grid_rotated_thrice = meta_grid_element_rotate(
 )
 m_grid = build_from_meta_grid(meta_grid)
 
-top_row = meta_grid_rotated[0] + meta_grid_rotated_twice[0] + meta_grid_rotated_thrice[0]
-mid_row = meta_grid_rotated[1] + meta_grid_rotated_twice[1] + meta_grid_rotated_thrice[1]
-btm_row = meta_grid_rotated[2] + meta_grid_rotated_twice[2] + meta_grid_rotated_thrice[2]
+top_row = (
+    meta_grid_rotated[0] + meta_grid_rotated_twice[0] + meta_grid_rotated_thrice[0]
+)
+mid_row = (
+    meta_grid_rotated[1] + meta_grid_rotated_twice[1] + meta_grid_rotated_thrice[1]
+)
+btm_row = (
+    meta_grid_rotated[2] + meta_grid_rotated_twice[2] + meta_grid_rotated_thrice[2]
+)
 
 print_grids_horizontal(m_grid[0])
 print_grids_horizontal(m_grid[1])
