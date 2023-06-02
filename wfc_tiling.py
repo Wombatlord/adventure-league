@@ -6,21 +6,12 @@ from arcade import Texture
 
 from src.textures.texture_data import SpriteSheetSpecs
 
-Up = tuple[Literal[1], Literal[0]]
-Down = tuple[Literal[-1], Literal[0]]
-Left = tuple[Literal[0], Literal[-1]]
-Right = tuple[Literal[0], Literal[1]]
-
-UP = (1, 0)
-DOWN = (-1, 0)
-LEFT = (0, -1)
-RIGHT = (0, 1)
-DIRS = [UP, DOWN, LEFT, RIGHT]
+CharTile = tuple[tuple[str, str, str], tuple[str, str, str], tuple[str, str, str]]
 
 tiles = SpriteSheetSpecs.tiles.loaded
 
 
-class Tiles:
+class TextureTiles:
     grass = tiles[1]
     ew = tiles[43]
     ns = tiles[44]
@@ -38,172 +29,85 @@ class TileWeights:
     cross = 0.2
 
 
-class Symmetrys:
-    grass = (
-        Tiles.grass,
-        Tiles.ew,
-        Tiles.nesw,
-        Tiles.ne,
-        Tiles.sw,
-    )
-
-    @classmethod
-    def grass_adjacent_rotations(cls, dir) -> tuple[Texture]:
-        rotations = [cls.grass]
-        if dir == UP:
-            return cls.grass
-        if dir == RIGHT:
-            rotations[1] = Tiles.ns
-            rotations[3] = Tiles.se
-            rotations[4] = Tiles.corner.three
-        if dir == DOWN:
-            rotations[3] = Tiles.se
-            rotations[4] = Tiles.nw
-        if dir == LEFT:
-            rotations[1] = Tiles.ns
-
-        return tuple(rotations)
-
-
-###############
-adjacency = (
-    # --
-    (Tiles.ew, Tiles.ew),
-    # -¬
-    (Tiles.ew, Tiles.nw),
-    # +¬
-    (Tiles.nesw, Tiles.nw),
-    # +-
-    (Tiles.nesw, Tiles.ew),
-    # ++ - Omitted
-    # r¬
-    (Tiles.se, Tiles.sw),
-    # ~
-    (Tiles.se, Tiles.nw),
-)
-
-
-def _a(t: Texture) -> Texture:
-    tiles = {
-        "-": [Tiles.ew, Tiles.ns, Tiles.ew, Tiles.ns],
-        "+": [Tiles.nesw, Tiles.nesw, Tiles.nesw, Tiles.nesw],
-        "¬": [Tiles.se, Tiles.ne, Tiles.nw, Tiles.sw],
-    }
-    family = None
-    for fam, members in tiles.items():
-        if t in members:
-            family = fam
-
-    target = (tiles[family].index(t) + 1) % 4
-    return tiles[family][target]
-
-
-def _b(t: Texture) -> Texture:
-    reflections = [
-        (Tiles.ns, Tiles.ns),
-        (Tiles.ew, Tiles.ew),
-        (Tiles.nesw, Tiles.nesw),
-        (Tiles.se, Tiles.sw),
-        (Tiles.ne, Tiles.nw),
-    ]
-
-    for one, tother in reflections:
-        if t == one:
-            return tother
-        else:
-            return one
-
-
-def identity(t: Texture) -> Texture:
-    return t
+T = TypeVar("T", Texture, CharTile)
 
 
 class Transform:
-    def __init__(self, transform: Callable[[Texture], Texture]):
+    def __init__(self, transform: Callable[[T], T]):
         self.transform = transform
 
-    def __call__(self, t: Texture) -> Texture:
-        self.transform(t)
+    def __call__(self, t: T) -> T:
+        return self.transform(t)
 
     def __mul__(self, other: Self) -> Self:
-        a = Transform()
-        a.transform = lambda t: other.transform(self.transform(t))
+        a = Transform(lambda t: other.transform(self.transform(t)))
         return a
 
 
-a = Transform(_a)
-b = Transform(_b)
-e = Transform(identity)
+def rotate_symbols_in_grid(top_row, mid_row, btm_row) -> CharTile:
+    top_left, top, top_right = rotate_symbols_in_row(top_row)
+    left, mid, right = rotate_symbols_in_row(mid_row)
+    btm_left, btm, btm_right = rotate_symbols_in_row(btm_row)
+
+    return ((top_left, top, top_right), (left, mid, right), (btm_left, btm, btm_right))
 
 
-def variations(tile):
-    transforms = (e, a, a * a, a * a * a, b, b * a, b * a * a, b * a * a * a)
+def rotate_symbols_in_row(row) -> tuple[str, str, str]:
+    l, m, r = row[0], row[1], row[2]
 
-    return [transform(tile) for transform in transforms]
+    if l == "|":
+        l = "-"
+    elif l == "-":
+        l = "|"
 
+    if m == "|":
+        m = "-"
+    elif m == "-":
+        m = "|"
 
-#
-#               ###
-#               -+#
-#               #|#
-#
-#  ### #|#      #|#
-#  --- -+#  =>  #|#
-#  ### ###      #|#
-#
-#
-#
-Grid = tuple[tuple[str, str, str], tuple[str, str, str], tuple[str, str, str]]
+    if r == "|":
+        r = "-"
+    elif r == "-":
+        r = "|"
 
-grass = (
-    ("#", "#", "#"),
-    ("#", "#", "#"),
-    ("#", "#", "#"),
-)
-
-ew = (
-    ("#", "#", "#"),
-    ("-", "-", "-"),
-    ("#", "#", "#"),
-)
-
-se = (
-    ("#", "#", "#"),
-    ("#", "+", "-"),
-    ("#", "|", "#"),
-)
-
-nesw = (
-    ("#", "|", "#"),
-    ("-", "+", "-"),
-    ("#", "|", "#"),
-)
+    return l, m, r
 
 
-def print_grid(grid: Grid):
-    a = "".join(grid[0]) + "\n"
-    b = "".join(grid[1]) + "\n"
-    c = "".join(grid[2])
+def grid_ns_reflect(grid: CharTile) -> CharTile:
+    reflected = [
+        ["#", "#", "#"],
+        ["#", "#", "#"],
+        ["#", "#", "#"],
+    ]
 
-    final = colorama.Fore.GREEN + f"{a}{b}{c}" + colorama.Style.RESET_ALL
-    print(final)
+    top_l = grid[0][0]
+    top_mid = grid[0][1]
+    top_r = grid[0][2]
+
+    btm_l = grid[2][0]
+    btm_mid = grid[2][1]
+    btm_r = grid[2][2]
+
+    reflected[1][0] = grid[1][0]
+    reflected[1][1] = grid[1][1]
+    reflected[1][2] = grid[1][2]
+
+    reflected[0][0] = btm_l
+    reflected[0][1] = btm_mid
+    reflected[0][2] = btm_r
+
+    reflected[2][0] = top_l
+    reflected[2][1] = top_mid
+    reflected[2][2] = top_r
+
+    reflected[0] = (*reflected[0],)
+    reflected[1] = (*reflected[1],)
+    reflected[2] = (*reflected[2],)
+
+    return reflected
 
 
-def print_grids_horizontal(grids: list[Grid]):
-    a1 = ""
-    a2 = ""
-    c3 = ""
-
-    for grid in grids:
-        a1 += "".join(grid[0]) + " "
-        a2 += "".join(grid[1]) + " "
-        c3 += "".join(grid[2]) + " "
-
-    final = colorama.Fore.GREEN + f"{a1}\n{a2}\n{c3}" + colorama.Style.RESET_ALL
-    print(final)
-
-
-def grid_ew_reflect(grid: Grid) -> Grid:
+def grid_ew_reflect(grid: CharTile) -> CharTile:
     reflected = [
         ["#", "#", "#"],
         ["#", "#", "#"],
@@ -238,59 +142,17 @@ def grid_ew_reflect(grid: Grid) -> Grid:
     return (*reflected,)
 
 
-def grid_ns_reflect(grid: Grid) -> Grid:
-    reflected = [
-        ["#", "#", "#"],
-        ["#", "#", "#"],
-        ["#", "#", "#"],
-    ]
-
-    top_l = grid[0][0]
-    top_mid = grid[0][1]
-    top_r = grid[0][2]
-
-    btm_l = grid[2][0]
-    btm_mid = grid[2][1]
-    btm_r = grid[2][2]
-
-    reflected[1][0] = grid[1][0]
-    reflected[1][1] = grid[1][1]
-    reflected[1][2] = grid[1][2]
-
-    reflected[0][0] = btm_l
-    reflected[0][1] = btm_mid
-    reflected[0][2] = btm_r
-
-    reflected[2][0] = top_l
-    reflected[2][1] = top_mid
-    reflected[2][2] = top_r
-
-    reflected[0] = (*reflected[0],)
-    reflected[1] = (*reflected[1],)
-    reflected[2] = (*reflected[2],)
-
-    return reflected
-
-
-def grid_rotate_cw(grid: Grid) -> Grid:
-    rotated = [
-        ["#", "#", "#"],
-        ["#", "#", "#"],
-        ["#", "#", "#"],
-    ]
-
+def grid_rotate_cw(grid: CharTile) -> CharTile:
     top_row = [
         grid[0][0],
         grid[0][1],
         grid[0][2],
     ]
-
     mid_row = [
         grid[1][0],
         grid[1][1],
         grid[1][2],
     ]
-
     btm_row = [
         grid[2][0],
         grid[2][1],
@@ -299,66 +161,174 @@ def grid_rotate_cw(grid: Grid) -> Grid:
 
     (top, mid, btm) = rotate_symbols_in_grid(top_row, mid_row, btm_row)
 
-    rotated[0][0] = btm[0]
-    rotated[0][1] = mid[0]
-    rotated[0][2] = top[0]
-    rotated[1][0] = btm[1]
-    rotated[1][1] = mid[1]
-    rotated[1][2] = top[1]
-    rotated[2][0] = btm[2]
-    rotated[2][1] = mid[2]
-    rotated[2][2] = top[2]
+    rotated = [
+        ["#", "#", "#"],
+        ["#", "#", "#"],
+        ["#", "#", "#"],
+    ]
 
-    rotated[0] = (*rotated[0],)
-    rotated[1] = (*rotated[1],)
-    rotated[2] = (*rotated[2],)
+    rotated[0][0], rotated[0][1], rotated[0][2] = btm[0], mid[0], top[0]
+    rotated[1][0], rotated[1][1], rotated[1][2] = btm[1], mid[1], top[1]
+    rotated[2][0], rotated[2][1], rotated[2][2] = btm[2], mid[2], top[2]
 
-    return (*rotated,)
+    return ((*rotated[0],), (*rotated[1],), (*rotated[2],))
 
 
-def rotate_symbols_in_grid(top_row, mid_row, btm_row) -> Grid:
-    top_left, top, top_right = rotate_symbols_in_row(top_row)
-    left, mid, right = rotate_symbols_in_row(mid_row)
-    btm_left, btm, btm_right = rotate_symbols_in_row(btm_row)
-
-    return ((top_left, top, top_right), (left, mid, right), (btm_left, btm, btm_right))
+def identity(t: T) -> T:
+    return t
 
 
-def rotate_symbols_in_row(row) -> tuple[str, str, str]:
-    l = row[0]
-    m = row[1]
-    r = row[2]
+class GridTransforms:
+    identity = Transform(identity)
+    ns_reflect = Transform(grid_ns_reflect)
+    rotate_once = Transform(lambda m: grid_rotate_cw(m))
+    rotate_twice = rotate_once * rotate_once
+    rotate_thrice = rotate_once * rotate_once * rotate_once
 
-    if l == "|":
-        l = "-"
-    elif l == "-":
-        l = "|"
+    @classmethod
+    def variations(cls, grid):
+        transforms = (
+            cls.identity,
+            cls.rotate_once,
+            cls.rotate_twice,
+            cls.rotate_thrice,
+            cls.ns_reflect,
+            cls.ns_reflect * cls.rotate_once,
+            cls.ns_reflect * cls.rotate_twice,
+            cls.ns_reflect * cls.rotate_thrice,
+        )
 
-    if m == "|":
-        m = "-"
-    elif m == "-":
-        m = "|"
-
-    if r == "|":
-        r = "-"
-    elif r == "-":
-        r = "|"
-
-    return l, m, r
+        return [transform(grid) for transform in transforms]
 
 
-grid = {
-    "-": ew,
-    "-m": ew,
-    "|": grid_rotate_cw(ew),
-    "|m": grid_rotate_cw(ew),
-    "¬": se,
-    "¬1": grid_rotate_cw(se),
-    "¬2": grid_rotate_cw(grid_rotate_cw(se)),
-    "¬3": grid_ns_reflect(se),
-    "+": nesw,
-    "#": grass,
-}
+def rotate_meta_grid_elements(rots, row, grid_row) -> list[CharTile]:
+    for symbol in row:
+        g = CharTiles.tiles[symbol]
+        if rots == 1:
+            g = GridTransforms.rotate_once(g)
+        if rots == 2:
+            g = GridTransforms.rotate_twice(g)
+        if rots == 3:
+            g = GridTransforms.rotate_thrice(g)
+        grid_row.append(g)
+    return grid_row
+
+
+def construct_grids_from_meta_grid(m_grid, rots: int = 0) -> CharTile:
+    top = m_grid[0]
+    mid = m_grid[1]
+    btm = m_grid[2]
+
+    top_grids = rotate_meta_grid_elements(rots, top, [])
+    mid_grids = rotate_meta_grid_elements(rots, mid, [])
+    btm_grids = rotate_meta_grid_elements(rots, btm, [])
+
+    return ((*top_grids,), (*mid_grids,), (*btm_grids,))
+
+
+###############
+adjacency = (
+    # --
+    (TextureTiles.ew, TextureTiles.ew),
+    # -¬
+    (TextureTiles.ew, TextureTiles.nw),
+    # +¬
+    (TextureTiles.nesw, TextureTiles.nw),
+    # +-
+    (TextureTiles.nesw, TextureTiles.ew),
+    # ++ - Omitted
+    # r¬
+    (TextureTiles.se, TextureTiles.sw),
+    # ~
+    (TextureTiles.se, TextureTiles.nw),
+)
+
+
+def _a(t: Texture) -> Texture:
+    tiles = {
+        "-": [TextureTiles.ew, TextureTiles.ns, TextureTiles.ew, TextureTiles.ns],
+        "+": [
+            TextureTiles.nesw,
+            TextureTiles.nesw,
+            TextureTiles.nesw,
+            TextureTiles.nesw,
+        ],
+        "¬": [TextureTiles.se, TextureTiles.ne, TextureTiles.nw, TextureTiles.sw],
+    }
+    family = None
+    for fam, members in tiles.items():
+        if t in members:
+            family = fam
+
+    target = (tiles[family].index(t) + 1) % 4
+    return tiles[family][target]
+
+
+def _b(t: Texture) -> Texture:
+    reflections = [
+        (TextureTiles.ns, TextureTiles.ns),
+        (TextureTiles.ew, TextureTiles.ew),
+        (TextureTiles.nesw, TextureTiles.nesw),
+        (TextureTiles.se, TextureTiles.sw),
+        (TextureTiles.ne, TextureTiles.nw),
+    ]
+
+    for one, tother in reflections:
+        if t == one:
+            return tother
+        else:
+            return one
+
+
+a = Transform(_a)
+b = Transform(_b)
+e = Transform(identity)
+
+
+def variations(tile):
+    transforms = (e, a, a * a, a * a * a, b, b * a, b * a * a, b * a * a * a)
+
+    return [transform(tile) for transform in transforms]
+
+
+class CharTiles:
+    grass = (
+        ("#", "#", "#"),
+        ("#", "#", "#"),
+        ("#", "#", "#"),
+    )
+
+    ew = (
+        ("#", "#", "#"),
+        ("-", "-", "-"),
+        ("#", "#", "#"),
+    )
+
+    se = (
+        ("#", "#", "#"),
+        ("#", "+", "-"),
+        ("#", "|", "#"),
+    )
+
+    nesw = (
+        ("#", "|", "#"),
+        ("-", "+", "-"),
+        ("#", "|", "#"),
+    )
+
+    tiles = {
+        "-": ew,
+        "-m": ew,
+        "|": GridTransforms.rotate_once(ew),
+        "|m": GridTransforms.rotate_once(ew),
+        "¬": se,
+        "¬1": GridTransforms.rotate_once(se),
+        "¬2": GridTransforms.rotate_twice(se),
+        "¬3": GridTransforms.ns_reflect(se),
+        "+": nesw,
+        "#": grass,
+    }
+
 
 meta_grid = (
     ("¬", "¬1", "#"),
@@ -367,64 +337,50 @@ meta_grid = (
 )
 
 
-def meta_grid_element_rotate(m_grid, rots: int = 0) -> Grid:
-    top = m_grid[0]
-    mid = m_grid[1]
-    btm = m_grid[2]
+def print_grid(grid: CharTile):
+    top = "".join(grid[0]) + "\n"
+    mid = "".join(grid[1]) + "\n"
+    btm = "".join(grid[2])
 
-    top_grids = element_rotate(rots, top, [])
-    mid_grids = element_rotate(rots, mid, [])
-    btm_grids = element_rotate(rots, btm, [])
-
-    return ((*top_grids,), (*mid_grids,), (*btm_grids,))
+    final = colorama.Fore.GREEN + f"{top}{mid}{btm}" + colorama.Style.RESET_ALL
+    print(final)
 
 
-def element_rotate(rots, row, grid_row) -> list[Grid]:
-    for symbol in row:
-        g = grid[symbol]
-        if rots == 1:
-            g = grid_rotate_cw(g)
-        if rots == 2:
-            g = grid_rotate_cw(grid_rotate_cw(g))
-        if rots == 3:
-            g = grid_rotate_cw(grid_rotate_cw(grid_rotate_cw(g)))
-        grid_row.append(g)
-    return grid_row
+def print_grids_horizontal(grids: list[CharTile]):
+    top = ""
+    mid = ""
+    btm = ""
+
+    for grid in grids:
+        top += "".join(grid[0]) + " "
+        mid += "".join(grid[1]) + " "
+        btm += "".join(grid[2]) + " "
+
+    final = colorama.Fore.GREEN + f"{top}\n{mid}\n{btm}" + colorama.Style.RESET_ALL
+    print(final)
 
 
-meta_grid_rotated = meta_grid_element_rotate(grid_rotate_cw(meta_grid), rots=1)
-meta_grid_rotated_twice = meta_grid_element_rotate(
-    grid_rotate_cw(grid_rotate_cw(meta_grid)), rots=2
-)
-meta_grid_rotated_thrice = meta_grid_element_rotate(
-    grid_rotate_cw(grid_rotate_cw(grid_rotate_cw(meta_grid))), rots=3
-)
-m_grid = meta_grid_element_rotate(meta_grid, rots=0)
+v = GridTransforms.variations(CharTiles.se)
 
-top_row = (
-    meta_grid_rotated[0] + meta_grid_rotated_twice[0] + meta_grid_rotated_thrice[0]
-)
-mid_row = (
-    meta_grid_rotated[1] + meta_grid_rotated_twice[1] + meta_grid_rotated_thrice[1]
-)
-btm_row = (
-    meta_grid_rotated[2] + meta_grid_rotated_twice[2] + meta_grid_rotated_thrice[2]
-)
+for grid in v:
+    print_grid(grid)
+    print()
 
-print_grids_horizontal(m_grid[0])
-print_grids_horizontal(m_grid[1])
-print_grids_horizontal(m_grid[2])
+m_grid_0 = construct_grids_from_meta_grid(meta_grid)
+
+m_rotated = GridTransforms.rotate_once(meta_grid)
+m_grid_1 = construct_grids_from_meta_grid(m_rotated, 1)
+
+m_rotated = GridTransforms.rotate_twice(meta_grid)
+m_grid_2 = construct_grids_from_meta_grid(m_rotated, 2)
+
+m_rotated = GridTransforms.rotate_thrice(meta_grid)
+m_grid_3 = construct_grids_from_meta_grid(m_rotated, 3)
+
+print_grids_horizontal(m_grid_0[0])
+print_grids_horizontal(m_grid_0[1] + (meta_grid,))
+print_grids_horizontal(m_grid_0[2])
 print()
-print_grids_horizontal(top_row)
-print_grids_horizontal(mid_row)
-print_grids_horizontal(btm_row)
-
-# row_one = [se, grid_rotate_cw(se)]
-# row_two = [grid_rotate_cw(grid_rotate_cw(se)), grid_ns_reflect(se)]
-
-
-# print("\n" + colorama.Fore.YELLOW + "Rotated Corners")
-# print(" E   A  ")
-# print_grids_horizontal(row_one)
-# print(colorama.Fore.YELLOW + " A2  B ")
-# print_grids_horizontal(row_two)
+print_grids_horizontal(m_grid_1[0] + m_grid_2[0] + m_grid_3[0])
+print_grids_horizontal(m_grid_1[1] + m_grid_2[1] + m_grid_3[1])
+print_grids_horizontal(m_grid_1[2] + m_grid_2[2] + m_grid_3[2])
