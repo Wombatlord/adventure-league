@@ -6,6 +6,7 @@ import colorama
 from arcade import Texture
 
 from src.textures.texture_data import SpriteSheetSpecs
+from wfc_tiling import TextureTiles, print_grid
 
 tiles = SpriteSheetSpecs.tiles.loaded
 
@@ -387,17 +388,20 @@ input_matrix = [
 ]
 
 input_matrix2 = [
-    ["A", "A", "A", "A"],
-    ["A", "A", "A", "A"],
-    ["A", "A", "A", "A"],
-    ["A", "C", "C", "A"],
-    ["C", "B", "B", "C"],
-    ["C", "B", "B", "C"],
-    ["A", "C", "C", "A"],
+    [" ", " ", "│", " ", " "],
+    [" ", " ", "└", "┐", " "],
+    ["─", "┐", " ", "└", "─"],
+    [" ", "│", " ", " ", " "],
+    ["─", "┼", "─", "┐", " "],
+    [" ", "│", " ", "│", " "],
+    [" ", "│", " ", "└", "─"],
+    ["─", "┘", " ", " ", " "],
+    [" ", " ", "┌", "─", "─"],
+    [" ", " ", "│", " ", " "],
 ]
 
 
-compatibilities, weights = parse_example_matrix(input_matrix)
+compatibilities, weights = parse_example_matrix(input_matrix2)
 compatibility_oracle = CompatibilityOracle(compatibilities)
 model = Model((10, 10), weights, compatibility_oracle)
 output = model.run()
@@ -421,6 +425,17 @@ mapping = {
     "T2": tiles[54],
 }
 
+tile_mapping = {
+    " ": TextureTiles.grass,
+    "┼": TextureTiles.nesw,
+    "┌": TextureTiles.nw,
+    "┐": TextureTiles.ne,
+    "┘": TextureTiles.se,
+    "└": TextureTiles.sw,
+    "─": TextureTiles.ew,
+    "│": TextureTiles.ns,
+}
+
 
 def prepare_textures(matrix: list[list[Tile]], mapping: dict[str, Texture]) -> None:
     final_matrix = []
@@ -432,7 +447,11 @@ def prepare_textures(matrix: list[list[Tile]], mapping: dict[str, Texture]) -> N
             output_row.append(texture)
 
         final_matrix.append(output_row)
+
     return final_matrix
 
 
-wfc_textures = prepare_textures(output, mapping)
+print_grid(output)
+from wfc_tiling import a, b
+
+wfc_textures = prepare_textures((a)(output), tile_mapping)

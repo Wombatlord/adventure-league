@@ -268,7 +268,7 @@ class Scene(arcade.Section):
             x = terrain_node.node.x
             y = terrain_node.node.y
 
-            self.encounter_room.room_texturer.apply_biome_textures()
+            # self.encounter_room.room_texturer.apply_biome_textures()
 
             sprite = BaseSprite(
                 wfc_textures[y][x],
