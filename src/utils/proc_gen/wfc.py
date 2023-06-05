@@ -374,18 +374,18 @@ def parse_example_matrix(
                 other_tile = matrix[y + d[0]][x + d[1]]
                 compatibilities.add((cur_tile, other_tile, d))
 
+    weights = {    
+        " ": 1.5,   
+        "─": 0.3,
+        "│": 0.3,
+        "┌": 0.2,
+        "┐": 0.2,
+        "┘": 0.2,
+        "└": 0.2,
+    }
+
     return compatibilities, weights
 
-
-input_matrix = [
-    ["L", "L", "L", "L"],
-    ["L", "L", "L", "L"],
-    ["L", "L", "L", "L"],
-    ["L", "C", "C", "L"],
-    ["C", "S", "S", "C"],
-    ["S", "S", "S", "S"],
-    ["S", "S", "S", "S"],
-]
 
 input_matrix2 = [
     [" ", " ", "│", " ", " "],
@@ -400,8 +400,21 @@ input_matrix2 = [
     [" ", " ", "│", " ", " "],
 ]
 
+height_matrix = [
+    [" ", "│", " ", " ", " "],
+    [" ", "└", "─", "─", "┐"],
+    ["─", "┐", " ", " ", "└"],
+    [" ", "└", "┐", " ", " "],
+    [" ", " ", "└", "┐", " "],
+    [" ", " ", " ", "│", " "],
+    [" ", " ", " ", "│", " "],
+    ["┌", "─", "┐", "│", " "],
+    ["│", " ", "│", "│", " "],
+    ["└", "─", "┘", "│", " "],
+]
 
-compatibilities, weights = parse_example_matrix(input_matrix2)
+
+compatibilities, weights = parse_example_matrix(height_matrix)
 compatibility_oracle = CompatibilityOracle(compatibilities)
 model = Model((10, 10), weights, compatibility_oracle)
 output = model.run()
@@ -454,4 +467,4 @@ def prepare_textures(matrix: list[list[Tile]], mapping: dict[str, Texture]) -> N
 print_grid(output)
 from wfc_tiling import a, b
 
-wfc_textures = prepare_textures((a)(output), tile_mapping)
+# wfc_textures = prepare_textures((a)(output), tile_mapping)

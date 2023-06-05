@@ -50,23 +50,6 @@ def identity(t: T) -> T:
 
 
 ###############
-adjacency = (
-    # --
-    (TextureTiles.ew, TextureTiles.ew),
-    # -¬
-    (TextureTiles.ew, TextureTiles.nw),
-    # +¬
-    (TextureTiles.nesw, TextureTiles.nw),
-    # +-
-    (TextureTiles.nesw, TextureTiles.ew),
-    # ++ - Omitted
-    # r¬
-    (TextureTiles.se, TextureTiles.sw),
-    # ~
-    (TextureTiles.se, TextureTiles.nw),
-)
-
-
 e = Transform(identity)
 
 
@@ -99,20 +82,6 @@ def print_grid(grid: CharTile):
         + f"{a}{b}{c}{d}{e}{f}{g}{h}{i}{j}"
         + colorama.Style.RESET_ALL
     )
-    print(final)
-
-
-def print_grids_horizontal(grids: list[CharTile]):
-    top = ""
-    mid = ""
-    btm = ""
-
-    for grid in grids:
-        top += "".join(grid[0]) + " "
-        mid += "".join(grid[1]) + " "
-        btm += "".join(grid[2]) + " "
-
-    final = colorama.Fore.GREEN + f"{top}\n{mid}\n{btm}" + colorama.Style.RESET_ALL
     print(final)
 
 
@@ -210,8 +179,3 @@ adjacency = (
     "┌┐",
     "┌┘",
 )
-
-
-# print_grid(meta_grid)
-# print()
-# print_grid((a)(meta_grid))

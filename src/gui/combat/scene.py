@@ -16,7 +16,6 @@ from src.utils.camera_controls import CameraController
 from src.world.isometry.transforms import Transform
 from src.world.level.room import Room
 from src.world.node import Node
-from wfc import wfc_textures
 
 
 def do_nothing():
@@ -267,11 +266,11 @@ class Scene(arcade.Section):
         for terrain_node in self.encounter_room.layout:
             x = terrain_node.node.x
             y = terrain_node.node.y
-
-            # self.encounter_room.room_texturer.apply_biome_textures()
+            
+            self.encounter_room.room_texturer.apply_biome_textures()
 
             sprite = BaseSprite(
-                wfc_textures[y][x],
+                terrain_node.texture,
                 scale=self.SPRITE_SCALE,
                 transform=self.transform,
             )
