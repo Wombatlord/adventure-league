@@ -98,6 +98,7 @@ def basic_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNod
     return tuple(sorted(floor + walls, key=draw_priority))
 
 
+
 @lru_cache(maxsize=1)
 def side_pillars(
     dimensions: tuple[int, int], height: int = 0
