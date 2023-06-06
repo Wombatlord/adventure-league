@@ -490,7 +490,7 @@ class JonnyCash(Visitor):
             Node(0, -1): {"│", "┌", "┐"},
             Node(1, 0): {"─", "┐", "┘"},
             Node(0, 1): {"│", "└", "┘"},
-            Node(1, 0): {"─", "┌", "└"},
+            Node(-1, 0): {"─", "┌", "└"},
         }
 
         if displacement not in allowed:
