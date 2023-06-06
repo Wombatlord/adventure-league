@@ -4,9 +4,9 @@ from typing import Literal, NamedTuple
 
 import colorama
 from arcade import Texture
+from wfc_tiling import TextureTiles, print_grid
 
 from src.textures.texture_data import SpriteSheetSpecs
-from wfc_tiling import TextureTiles, print_grid
 
 tiles = SpriteSheetSpecs.tiles.loaded
 
@@ -374,8 +374,8 @@ def parse_example_matrix(
                 other_tile = matrix[y + d[0]][x + d[1]]
                 compatibilities.add((cur_tile, other_tile, d))
 
-    weights = {    
-        " ": 1.5,   
+    weights = {
+        " ": 1.5,
         "─": 0.3,
         "│": 0.3,
         "┌": 0.2,
