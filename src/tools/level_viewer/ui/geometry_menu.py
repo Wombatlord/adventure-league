@@ -11,8 +11,7 @@ from src.tools.level_viewer.ui.hides import Hides
 if TYPE_CHECKING:
     from src.tools.level_viewer.ui.layout import LayoutSection
 
-from src.tools.level_viewer.model.layout import Block, _viewable_layouts
-from src.world.level.room_layouts import Terrain
+from src.tools.level_viewer.model.layout import Block, get_registered_layouts
 from src.world.node import Node
 
 NO_OP = lambda *_, **__: None
@@ -57,8 +56,10 @@ class GeometryMenu(arcade.Section, Hides):
                 width=self.width / 5,
                 height=self.height,
                 children=[
-                    self.factory_button(name, factory, 1 / len(_viewable_layouts))
-                    for name, factory in _viewable_layouts.items()
+                    self.factory_button(
+                        name, factory, 1 / len(get_registered_layouts())
+                    )
+                    for name, factory in get_registered_layouts().items()
                 ],
             )
         )

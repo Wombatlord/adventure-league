@@ -77,7 +77,6 @@ class LayoutView(arcade.View):
                 hider.hide()
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
-        print(f"{arcade.key.T=}, {symbol=}")
         {
             arcade.key.T: lambda: self.toggle_ui(self.geometry_menu),
             arcade.key.B: lambda: self.toggle_ui(self.biome_menu),
@@ -246,6 +245,8 @@ class LayoutSection(arcade.Section):
             yield self._last_clicked
 
     def show_layout(self, layout: list[Block]) -> None:
+        if not layout:
+            return
         self.layout = [b.with_biome(self.current_biome) for b in layout]
         self.pathing = PathingSpace.from_nodes([b.node for b in layout])
         self.level_to_sprite_list()
