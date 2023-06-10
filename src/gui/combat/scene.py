@@ -266,7 +266,7 @@ class Scene(arcade.Section):
         for terrain_node in self.encounter_room.layout:
             x = terrain_node.node.x
             y = terrain_node.node.y
-            
+
             self.encounter_room.room_texturer.apply_biome_textures()
 
             sprite = BaseSprite(

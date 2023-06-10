@@ -2,7 +2,7 @@ import unittest
 
 from parameterized import parameterized
 
-from src.world.level.room_layouts import TerrainNode
+from src.world.level.room_layouts import Terrain, TerrainNode
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
 
@@ -123,7 +123,7 @@ class TestConstructFromLevelGeometry(unittest.TestCase):
         geom = self.get_trivial_level()
 
         # Action
-        space = PathingSpace.from_level_geometry(geom)
+        space = PathingSpace.from_terrain(Terrain(geom))
 
         # Assert
         assert len(space) == 1
@@ -138,7 +138,7 @@ class TestConstructFromLevelGeometry(unittest.TestCase):
         geom = self.get_geometry_with_blocked_nodes(blocked, size=(5, 5))
 
         # Action
-        space = PathingSpace.from_level_geometry(geom)
+        space = PathingSpace.from_terrain(Terrain(geom))
 
         # Assert
         assert (
@@ -158,7 +158,7 @@ class TestConstructFromLevelGeometry(unittest.TestCase):
         geom = self.get_geometry_with_holes_in_floor(pit_locations, size=(5, 5))
 
         # Action
-        space = PathingSpace.from_level_geometry(geom)
+        space = PathingSpace.from_terrain(Terrain(geom))
 
         # Assert
         assert (

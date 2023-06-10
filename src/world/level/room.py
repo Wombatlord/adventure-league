@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import random
 from typing import TYPE_CHECKING, Generator, NamedTuple, Self
 
 from src.gui.biome_textures import BiomeName, biome_map
@@ -9,7 +8,7 @@ if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
 
 from src.entities.entity import Entity
-from src.world.level.room_layouts import TerrainNode, basic_room
+from src.world.level.room_layouts import Terrain, TerrainNode, basic_room
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
 
@@ -46,7 +45,7 @@ class Room:
     def set_layout(self, layout: tuple[TerrainNode, ...]) -> Self:
         self.layout = layout
         self.room_texturer = RoomTexturer(self.biome, self.layout)
-        self.space = PathingSpace.from_level_geometry(self.layout)
+        self.space = PathingSpace.from_terrain(Terrain(self.layout))
         return self
 
     def update_pathing_obstacles(self):
