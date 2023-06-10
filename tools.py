@@ -6,7 +6,6 @@ from src.tools import registered_tools
 def main(args: list[str]):
     args = args or [""]
     command_name = args.pop(0)
-    print(f"{args=}")
     print(f"Attempting to find subcommand {command_name}")
     command = subcommands.get(command_name, print_help)
     command(args)
