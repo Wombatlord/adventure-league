@@ -15,7 +15,7 @@ class BiomeName:
     PLAINS = "plains"
 
     @classmethod
-    def all_biomes(cls):
+    def all_biomes(cls) -> list[str]:
         return [cls.CASTLE, cls.DESERT, cls.SNOW, cls.PLAINS]
 
 
@@ -78,7 +78,7 @@ class BiomeTextures:
         )
 
 
-biome_map = {
+biome_map: dict[str, Biome] = {
     BiomeName.CASTLE: BiomeTextures.castle(),
     BiomeName.SNOW: BiomeTextures.snow(),
     BiomeName.DESERT: BiomeTextures.desert(),

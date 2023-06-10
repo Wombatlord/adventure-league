@@ -6,8 +6,7 @@ from typing import NamedTuple, Self
 
 from arcade import Texture
 
-from src.gui.biome_textures import Biome, BiomeName, BiomeTextures, TileTypes
-from src.textures.texture_data import SpriteSheetSpecs
+from src.gui.biome_textures import TileTypes
 from src.world.isometry.transforms import draw_priority
 from src.world.node import Node
 
@@ -40,7 +39,7 @@ class Terrain(NamedTuple):
 
 class TerrainNode:
     node: Node
-    tile_type: str
+    tile_type: int
     texture: Texture | None = None
 
     def __init__(self, node, tile_type) -> None:
@@ -56,7 +55,14 @@ class TerrainNode:
         return False
 
     @classmethod
-    def create(cls, x, y, z=0, offset=Node(0, 0), tile_type=None) -> Self:
+    def create(
+        cls,
+        x: int,
+        y: int,
+        z: int = 0,
+        offset: Node = Node(0, 0),
+        tile_type: int = TileTypes.FLOOR,
+    ) -> Self:
         return cls(node=Node(x, y, z) + offset, tile_type=tile_type)
 
 
@@ -98,7 +104,6 @@ def basic_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNod
     return tuple(sorted(floor + walls, key=draw_priority))
 
 
-
 @lru_cache(maxsize=1)
 def side_pillars(
     dimensions: tuple[int, int], height: int = 0
@@ -120,7 +125,7 @@ def side_pillars(
 @lru_cache(maxsize=1)
 def alternating_big_pillars(
     dimensions: tuple[int, int], height: int = 0
-) -> tuple[Node, ...]:
+) -> tuple[TerrainNode, ...]:
     min_width = 10
     room = basic_room(dimensions, height)
     if min(dimensions[0], dimensions[1]) < min_width:
@@ -140,7 +145,9 @@ def alternating_big_pillars(
 
 
 @lru_cache(maxsize=1)
-def one_big_pillar(dimensions: tuple[int, int], height: int = 0) -> tuple[Node, ...]:
+def one_big_pillar(
+    dimensions: tuple[int, int], height: int = 0
+) -> tuple[TerrainNode, ...]:
     min_width = 10
     room = basic_room(dimensions, height)
     if min(dimensions[0], dimensions[1]) < min_width:
@@ -156,7 +163,7 @@ def one_big_pillar(dimensions: tuple[int, int], height: int = 0) -> tuple[Node, 
 @lru_cache(maxsize=1)
 def one_block_corridor(
     dimensions: tuple[int, int], height: int = 0
-) -> tuple[Node, ...]:
+) -> tuple[TerrainNode, ...]:
     """
     Used as a stress test for congested pathing scenarios,
     not included in random room

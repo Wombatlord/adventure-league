@@ -1,12 +1,17 @@
-from typing import Iterable, Self
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Iterable, Self
 
 import arcade
 from pyglet.math import Vec2
 
 from src.entities.sprites import BaseSprite
 from src.world.isometry.transforms import Transform
-from src.world.level.room import Room
 from src.world.node import Node
+
+if TYPE_CHECKING:
+    from src.world.level.room import Room
+    from src.world.pathing.pathing_space import PathingSpace
 
 
 class HighlightLayer:
@@ -19,7 +24,7 @@ class HighlightLayer:
 
     _sprite_list: arcade.SpriteList | None
     _texture: arcade.Texture
-    _room: Room | None
+    _space: PathingSpace | None
     _scale: float
     _transform: Transform
     _sprite_refs: dict[Node, BaseSprite]
@@ -31,12 +36,12 @@ class HighlightLayer:
         offset: Vec2 | tuple[float, float],
         scale: float,
         transform: Transform,
-        draw_priority_bias: int = 0,
+        draw_priority_bias: float = 0,
     ):
         self._sprite_list = None
         self._texture = texture
         self._sprite_offset = offset
-        self._room = None
+        self._space = None
         self._scale = scale
         self._transform = transform
         self._sprite_refs = {}
@@ -50,7 +55,7 @@ class HighlightLayer:
         if self._sprite_list:
             raise ValueError("The display is already attached")
         self._sprite_list = sprite_list
-        if self._room:
+        if self._space:
             self._setup_sprites()
 
         return self
@@ -59,7 +64,11 @@ class HighlightLayer:
         """
         Call this when the room layout changes
         """
-        self._room = room
+        self.set_space(room.space)
+
+    def set_space(self, pathing_space: PathingSpace):
+        """This allows a pathing space to be set directly, so that we don't need a room"""
+        self._space = pathing_space
         if self._sprite_list:
             self._setup_sprites()
         self._visible_nodes = set()
@@ -69,14 +78,14 @@ class HighlightLayer:
         Does the bulk of the heavy lifting around setting up the various references etc.
         Implements a lazy approach to
         """
-        if self._room is None:
+        if self._space is None:
             raise ValueError("Cannot setup sprites if no room has been supplied")
 
         if self._sprite_list is None:
             raise ValueError("Cannot setup sprites if there is no display list")
 
         to_check = {*self._sprite_refs.keys()}
-        for node in self._room.space.all_included_nodes(exclude_dynamic=False):
+        for node in self._space.all_included_nodes(exclude_dynamic=False):
             to_check -= {node}
             if highlight := self._sprite_refs.get(node, self._build_tile()):
                 if highlight in self._sprite_list:

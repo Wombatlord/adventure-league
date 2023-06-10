@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import random
-from functools import lru_cache
 from random import randint
-from typing import Generator, Iterable, Sequence
+from typing import TYPE_CHECKING, Generator, Iterable, Sequence
 
 from astar import AStar
 
-from src.gui.biome_textures import BiomeName
-from src.world.level.room_layouts import Terrain, TerrainNode
+if TYPE_CHECKING:
+    from src.world.level.room_layouts import Terrain, TerrainNode
+
 from src.world.node import Node
 
 
@@ -17,8 +17,7 @@ class PathingSpace(AStar):
     maxima: Node
 
     @classmethod
-    def from_level_geometry(cls, geometry: tuple[TerrainNode], floor_level=0):
-        terrain = Terrain(geometry)
+    def from_terrain(cls, terrain: Terrain, floor_level=0):
         block_locations = terrain.nodes
         all_traversable = []
         for n in block_locations:
@@ -38,6 +37,30 @@ class PathingSpace(AStar):
             for x in range(minima.x, maxima.x)
             for y in range(minima.y, maxima.y)
         } - {*all_traversable}
+
+        return PathingSpace(minima, maxima, exclusions)
+
+    @classmethod
+    def from_nodes(cls, nodes: Iterable[Node], floor_level: int = 0):
+        minima = Node(min(n.x for n in nodes), min(n.y for n in nodes))
+        maxima = Node(max(n.x for n in nodes), max(n.y for n in nodes))
+
+        traversable = []
+        for n in nodes:
+            candidate = n.above
+            if candidate.z != floor_level:
+                continue
+
+            if candidate in nodes:
+                continue
+
+            traversable.append(candidate)
+
+        exclusions = {
+            Node(x, y, floor_level)
+            for x in range(minima.x, maxima.x)
+            for y in range(minima.y, maxima.y)
+        } - {*traversable}
 
         return PathingSpace(minima, maxima, exclusions)
 
