@@ -5,6 +5,8 @@ import random
 import time
 from typing import Callable, Hashable, NamedTuple, Self
 
+from src.config import DEBUG
+
 # breakpoint = lambda: None
 
 
@@ -192,7 +194,6 @@ class WaveFunction:
 
             if state_vec.is_collapsed():
                 continue
-            # print(f"{ts.entropy()=}")
 
             if lowest_entropy is None:
                 lowest_entropy = state_vec.entropy()
@@ -445,63 +446,19 @@ def iter_one_from(wf: WaveFunction, p: Pos) -> StateVec | None:
         return None
 
     if state_vec.total() == 0:
-        return None
+        raise StateResolutionError.contradictory_state(state_vec, [], wf)
 
     state_vec.observe(wf)
 
     return wf.get_next()
 
 
-class PathTile(NamedTuple):
-    north: bool = False
-    east: bool = False
-    south: bool = False
-    west: bool = False
-
-    def __str__(self) -> str:
-        return char_map[self]
-
-    @classmethod
-    def all(cls) -> list[Self]:
-        return [PathTile(*[(j >> i) % 2 == 0 for i in range(4)]) for j in range(16)]
-
-    def compatibilities(self, side: Side) -> set[Observation]:
-        # all possible states
-        all_states = self.all()
-
-        # filter down to just the ones that make sense next to this one
-        return {state for state in all_states if self[side] == state[side.opposite()]}
-
-
-char_map = dict(zip(reversed(PathTile.all()), " │─└││┌├─┘─┴┐┤┬┼"))
-
-
-class HeightTile(NamedTuple):
-    height: int
-
-    def __str__(self) -> str:
-        return f"{self.height}"
-
-    @classmethod
-    def all(cls) -> list[Self]:
-        return [i for i in range(10)]
-
-    def compatibilities(self, side: Side) -> set[Observation]:
-        compatible_heights = (-1, 0)
-
-        if side in (SOUTH, EAST):
-            compatible_heights = (0, 1)
-
-        return {HeightTile(self.height + i) for i in compatible_heights}
-
-
-def print_visited(visited: list[bool]):
-    v = [*visited]
-
-    while v:
-        row, v = v[: config.WIDTH], v[config.WIDTH :]
-        line = "".join(map(lambda b: "#" if b else " ", row))
-        print(line)
+def generate(
+    factory: Callable[[Pos], StateVec], max_retries: int = 3
+) -> CollapseResult:
+    return iterate_with_backtracking(
+        iterator=iter_one_from, factory=factory, max_retries=max_retries
+    )
 
 
 def iterate_with_backtracking(
@@ -557,7 +514,8 @@ def iterate_with_backtracking(
 
         # if we couldn't resolve state, begin decohere-constrain loop on expanding region
         while error is not None and attempt < max_retries:
-            print(f"BACKTRACKING: {iteration=} {attempt=}, {error=}")
+            if DEBUG:
+                print(f"BACKTRACKING: {iteration=} {attempt=}, {error=}")
             to_constrain = decohere_invalid_state(wave_function, next_vec.pos, attempt)
             attempt += 1
 
@@ -575,7 +533,8 @@ def iterate_with_backtracking(
         # if we get here and there's still an error, we give up.
         if error is not None:
             # Backtracking has reached maximum attempts and has failed to collapse the wavefunction without contradiction
-            print(f"FAILED: {attempt=}, {error=}")
+            if DEBUG:
+                print(f"FAILED: {attempt=}, {error=}")
             raise IrreconcilableStateError.create(wave_function)
 
         # This iteration was successful, on to the next!
@@ -591,74 +550,3 @@ def iterate_with_backtracking(
 
     # This is deterministic in the event that the above loop breaks without error (i.e. there's only one choice of state)
     return wave_function.choose_state()
-
-
-def test_robust_iter():
-    dist = {s: 1 for s in PathTile.all()}
-    dist[PathTile()] = 2
-    dist[PathTile(north=True, east=True, west=True)] = 0
-    dist[PathTile(south=True, east=True, west=True)] = 0
-    dist[PathTile(north=True, south=True, west=True)] = 0
-    dist[PathTile(north=True, east=True, south=True)] = 0
-    dist[PathTile(north=True, east=True, west=True, south=True)] = 0
-    dist[PathTile(north=True)] = 0
-    dist[PathTile(south=True)] = 0
-    dist[PathTile(east=True)] = 0
-    dist[PathTile(west=True)] = 0
-
-    # disallow horizontal lines
-    dist[PathTile(east=True, west=True)] = 0
-    dist[PathTile(north=True, south=True)] = 0
-
-    factory = from_distribution(dist)
-    wf = None
-    try:
-        result = iterate_with_backtracking(iter_one_from, factory)
-    except IrreconcilableStateError as e:
-        wf = e.wave_function
-        raise
-    finally:
-        if wf:
-            print(wf)
-
-    result = [*result.values()]
-
-    while result:
-        row, result = result[: config.WIDTH], result[config.WIDTH :]
-        print("".join([f"{t}" for t in row]))
-
-
-def height_map():
-    dist = {HeightTile(i): 1 for i in range(10)}
-
-    factory = from_distribution(dist)
-    wf = None
-    try:
-        result = iterate_with_backtracking(iter_one_from, factory)
-    except IrreconcilableStateError as e:
-        wf = e.wave_function
-        raise
-    finally:
-        if wf:
-            print(wf)
-
-    result = [*result.values()]
-
-    while result:
-        row, result = result[: config.WIDTH], result[config.WIDTH :]
-        print("".join([f"{t}" for t in row]))
-
-
-results = {"success": 0, "fail": 0}
-while results["success"] + results["fail"] < 100:
-    try:
-        height_map()
-        print("-" * 10)
-        results["success"] += 1
-    except IrreconcilableStateError:
-        results["fail"] += 1
-
-print("TEST COMPLETE:")
-print(f"{results=}")
-print(f"Success rate: {results['success']/100}")
-print(f"Fail rate: {results['fail']/100}")
