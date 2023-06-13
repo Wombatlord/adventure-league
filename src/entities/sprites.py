@@ -133,6 +133,10 @@ class BaseSprite(OffsetSprite, Sprite):
                     self.tex_idx = (self.tex_idx + 1) % len(self.textures)
                     self.animation_cycle = 0.75
 
+    @property
+    def node(self) -> Node:
+        return self._node
+
 
 class AnimatedSpriteAttribute:
     sprite: BaseSprite

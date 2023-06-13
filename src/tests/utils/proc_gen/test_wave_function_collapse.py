@@ -6,6 +6,7 @@ from parameterized import parameterized
 from src.utils.proc_gen.wave_function_collapse import (
     EAST,
     SOUTH,
+    CollapseResult,
     IrreconcilableStateError,
     Observation,
     Side,
@@ -78,15 +79,12 @@ class HeightTile(NamedTuple):
         return [i for i in range(10)]
 
     def compatibilities(self, side: Side) -> set[Observation]:
-        compatible_heights = (-1, 0)
-
-        if side in (SOUTH, EAST):
-            compatible_heights = (0, 1)
+        compatible_heights = (1, -1, 0)
 
         return {HeightTile(self.height + i) for i in compatible_heights}
 
 
-def height_map():
+def height_map() -> CollapseResult:
     dist = {HeightTile(i): 1 for i in range(10)}
 
     factory = from_distribution(dist)
@@ -95,7 +93,7 @@ def height_map():
     except IrreconcilableStateError:
         raise
 
-    result = [*result.values()]
+    return result
 
 
 class CollapseStressTest(TestCase):

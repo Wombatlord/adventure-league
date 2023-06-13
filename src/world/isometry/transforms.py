@@ -15,9 +15,9 @@ class Transform:
         return cls()
 
     def __init__(self, world_to_screen: Mat4 = Mat4(), translation: Vec2 = Vec2()):
-        self._world_to_screen = world_to_screen
-        self._screen_to_world = ~self._world_to_screen
+        self._set(world_to_screen)
         self.translate_image(translation)
+        self.angle = 0
 
     def on_resize(self, translation: Vec2):
         self.translate_image(translation)
@@ -63,11 +63,19 @@ class Transform:
         grid = Vec3(*block_dimensions) / 2
 
         # This matrix takes care of the entire isometric transform including any aspect ratio changes
+        grid_basis = Vec3(
+            Vec3(grid.x, grid.y, -grid.y), # a shift node.east
+            Vec3(-grid.x, grid.y, -grid.y), # node.north
+            Vec3(0, 2*grid.y, 2*grid.z), # node.above
+        )
+
+        print(f"{grid_basis=}")
+        g = grid_basis
         isometry = Mat3([
             # c1     c2                 c3       <-column labels
-            -grid.x, +grid.y,           0.0,    # c1 expresses the fact that screen x = world y - world x
-            +grid.x, +grid.y,           0.0,    # c2 expresses the fact that screen y = world x + world y + 2*world z
-             0.0,    +2*grid.z,         1.0,    # c3 expresses the fact that we don't care about screen z
+            g.x.x, g.x.y, g.x.z,    # c1 expresses the fact that screen x = world y - world x
+            g.y.x, g.y.y, g.y.z,    # c2 expresses the fact that screen y = world x + world y + 2*world z
+            g.z.x, g.z.y, g.z.z,    # c3 expresses the fact that we don't care about screen z
         ])
 
                                 # the determinant so that it preserves volumes
@@ -92,8 +100,11 @@ class Transform:
         self._set(self._world_to_screen @ Mat4().translate(Vec3(*node)))
         
     def rotate_grid(self, times_90: int):
+        angle = math.pi/10
+        self.angle += angle
         self.translate_grid(Node(4.5, 4.5))
-        self._set(self._world_to_screen @ round(Mat4().rotate(90 * times_90, Vec3(0, 0, 1))))
+        transform = Mat4().rotate(angle, Vec3(0, 0, 1))
+        self._set(self._world_to_screen @ transform)
         self.translate_grid(Node(-4.5, -4.5))
 
     def project(self, node: Node) -> Vec2:
@@ -107,12 +118,12 @@ class Transform:
         screen_xy_projection = screen_xyzw[:2]
         return Vec2(*screen_xy_projection)
     
-    def world_ray(self) -> Vec3:
-        embedded = Vec4(0, 0, 1, 1)
-        return Vec3((self._screen_to_world @ embedded)[:-1])
+    def world_ray(self, start: Vec2 = Vec2(-10, -10)) -> Vec3:
+        cam_z = Vec3(*self._screen_to_world.column(2)[:-1])
+        return cam_z
     
     def draw_priority(self, node: Node) -> float:
-        return -self.world_ray().dot(Vec3(*node))
+        return 10*self.world_ray().dot(Vec3(*node))
 
     def cast_ray(self, cam_coords: Vec2) -> Node:
         """We cast a ray"""

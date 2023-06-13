@@ -145,6 +145,7 @@ class LayoutSection(arcade.Section):
             absolute_scale=self.SPRITE_SCALE,
             translation=self.world_origin,
         )
+        print(self.transform.world_ray())
         self.debug_text = DebugText()
         self.last_mouse_node = Node(0, 0)
 
@@ -306,12 +307,7 @@ class LayoutSection(arcade.Section):
     def level_to_sprite_list(self):
         self.teardown_level()
 
-        hm = self.height_map()
-
-        for i, block in enumerate(self.layout):
-            if block.node.x < 10 and block.node.y < 10:
-                block.node = Node(block.node.x, block.node.y, 0.5 * hm[i].height)
-
+        for block in self.layout:
             sprite = BaseSprite(
                 block.texture,
                 scale=self.SPRITE_SCALE,
@@ -319,6 +315,7 @@ class LayoutSection(arcade.Section):
             )
             sprite.set_node(block.node)
             self.world_sprite_list.append(sprite)
+        self.refresh_draw_order()
 
     def teardown_level(self):
         self.world_sprite_list.clear()
@@ -370,6 +367,7 @@ class LayoutSection(arcade.Section):
 
     def rotate_level(self):
         self.transform.rotate_grid(1)
+        print(f"{self.transform.world_ray()}")
         self.update_scene()
 
     def on_key_press(self, symbol: int, modifiers: int):
