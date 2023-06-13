@@ -3,6 +3,7 @@ from typing import Callable, Literal, NamedTuple, Protocol, Self, TypeVar
 
 import colorama
 from arcade import Texture
+from pyglet.math import Mat3
 
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.dice import D
@@ -160,9 +161,10 @@ def do_transform(grid: Grid[Tile], transform):
 
     row = lambda i: rotated_grid[i]
 
-    return tuple(
-        tuple(transform.cell(cell) for cell in row(i)) for i in range(len(grid))
-    )
+    # return tuple(
+    #     tuple(transform.cell(cell) for cell in row(i)) for i in range(len(grid))
+    # )
+    return rotated_grid
 
 
 refl = lambda grid: do_transform(grid, transform=Reflection)

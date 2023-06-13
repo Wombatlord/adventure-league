@@ -82,26 +82,28 @@ def basic_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNod
         for y in range(dimensions[1])
     ]
 
-    walls = (
-        [
-            TerrainNode.create(x=dimensions[0], y=y, tile_type=TileTypes.WALL)
-            for y in range(dimensions[1])
-        ]
-        + [
-            TerrainNode.create(x=x, y=dimensions[1], z=height, tile_type=TileTypes.WALL)
-            for x in range(dimensions[0])
-        ]
-        + [
-            TerrainNode.create(
-                x=dimensions[0], y=dimensions[1], z=height, tile_type=TileTypes.WALL
-            ),
-            TerrainNode.create(
-                x=dimensions[0], y=dimensions[1], z=height + 1, tile_type=TileTypes.WALL
-            ),
-        ]
-    )
+    # walls = (
+    #     [
+    #         TerrainNode.create(x=dimensions[0], y=y, tile_type=TileTypes.WALL)
+    #         for y in range(dimensions[1])
+    #     ]
+    #     + [
+    #         TerrainNode.create(x=x, y=dimensions[1], z=height, tile_type=TileTypes.WALL)
+    #         for x in range(dimensions[0])
+    #     ]
+    #     + [
+    #         TerrainNode.create(
+    #             x=dimensions[0], y=dimensions[1], z=height, tile_type=TileTypes.WALL
+    #         ),
+    #         TerrainNode.create(
+    #             x=dimensions[0], y=dimensions[1], z=height + 1, tile_type=TileTypes.WALL
+    #         ),
+    #     ]
+    # )
 
-    return tuple(sorted(floor + walls, key=draw_priority))
+    # return tuple(sorted(floor + walls, key=draw_priority))
+
+    return tuple(floor)
 
 
 @lru_cache(maxsize=1)

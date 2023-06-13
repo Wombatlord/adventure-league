@@ -1,27 +1,26 @@
 import math
 from typing import Self
 
-from pyglet.math import Mat3, Mat4, Vec2, Vec3
+from pyglet.math import Mat3, Mat4, Vec2, Vec3, Vec4
 
 from src.world.node import Node
 
 
 class Transform:
-    _world_to_screen: Mat3
-    _screen_to_world: Mat3
-    _translation: Vec2
+    _world_to_screen: Mat4
+    _screen_to_world: Mat4
 
     @classmethod
     def trivial(cls) -> Self:
         return cls()
 
-    def __init__(self, world_to_screen: Mat3 = Mat3(), translation: Vec2 = Vec2()):
-        self._translation = translation
+    def __init__(self, world_to_screen: Mat4 = Mat4(), translation: Vec2 = Vec2()):
         self._world_to_screen = world_to_screen
-        self._screen_to_world = invert_mat3(world_to_screen)
+        self._screen_to_world = ~self._world_to_screen
+        self.translate_image(translation)
 
     def on_resize(self, translation: Vec2):
-        self._translation = translation
+        self.translate_image(translation)
 
     @classmethod
     def isometric(cls, block_dimensions: tuple[int, int, int] | Vec3, absolute_scale: float, translation: Vec2 = Vec2()):
@@ -80,32 +79,53 @@ class Transform:
 
         # pyglet Mat3 type can't be inverted to get the screen -> world matrix so we need to embed it in a
         # Mat4 to make use of their implementation of Mat4.__invert__
-        return cls(world_to_screen, translation=translation)
+        return cls(_embed_mat3_in_mat4(world_to_screen), translation=translation)
+    
+    def _set(self, wts: Mat4):
+        self._world_to_screen = wts
+        self._screen_to_world = ~self._world_to_screen
+    
+    def translate_image(self, translation: Vec2):
+        self._set(Mat4().translate(Vec3(*translation, 0)) @ self._world_to_screen)
+        
+    def translate_grid(self, node: Node):        
+        self._set(self._world_to_screen @ Mat4().translate(Vec3(*node)))
+        
+    def rotate_grid(self, times_90: int):
+        self.translate_grid(Node(4.5, 4.5))
+        self._set(self._world_to_screen @ round(Mat4().rotate(90 * times_90, Vec3(0, 0, 1))))
+        self.translate_grid(Node(-4.5, -4.5))
 
     def project(self, node: Node) -> Vec2:
         # Make sure the input has enough axes and is compatible with matmul (@)
-        world_xyz = Vec3(*node)
+        world_xyzw = Vec4(*node, 1)
 
         # apply our transform
-        screen_xyz = (self._world_to_screen @ world_xyz)
+        screen_xyzw = (self._world_to_screen @ world_xyzw)
 
         # here we grab the x and y parts to locate the grid point on the screen
-        screen_xy_projection = screen_xyz[:2]
-        return Vec2(*screen_xy_projection) + self._translation
+        screen_xy_projection = screen_xyzw[:2]
+        return Vec2(*screen_xy_projection)
+    
+    def world_ray(self) -> Vec3:
+        embedded = Vec4(0, 0, 1, 1)
+        return Vec3((self._screen_to_world @ embedded)[:-1])
+    
+    def draw_priority(self, node: Node) -> float:
+        return -self.world_ray().dot(Vec3(*node))
 
     def cast_ray(self, cam_coords: Vec2) -> Node:
         """We cast a ray"""
-        embedded = Vec3(*(cam_coords - self._translation), -1)
+        embedded = Vec4(*cam_coords, -1, 1)
         return Node(*[math.ceil(coord) for coord in (self._screen_to_world @ embedded)[:2]])
 
     def __eq__(self, other: Self) -> bool:
         if not isinstance(other, Transform):
             return False
 
-        same_translation = self._translation == other._translation
-        same_projection = self._world_to_screen == other._world_to_screen
+        same_matrix = self._world_to_screen == other._world_to_screen
 
-        return same_translation and same_projection
+        return same_matrix
 
     def is_trivial(self):
         return self == Transform.trivial()
@@ -127,6 +147,7 @@ def _extract_mat3_from_mat4(m4: Mat4) -> Mat3:
     ])
 
 
+
 def invert_mat3(m3: Mat3) -> Mat3:
     """
     Takes a Mat3 type and returns its inverse as a mat3 if possible
@@ -134,7 +155,7 @@ def invert_mat3(m3: Mat3) -> Mat3:
         m3: the matrix to invert
 
     Returns: the inverted matrix
-
+Mat4().rotate(90 * times_90, Vec3(0, 0, 1))
     """
     m4 = _embed_mat3_in_mat4(m3)
     return _extract_mat3_from_mat4(~m4)
@@ -177,7 +198,7 @@ def norm(m3: Mat3) -> Mat3:
 
 
 def draw_priority(node) -> float:
-    if not hasattr(node, "node"):
-        return -(node.x + node.y - 2*node.z)
-
-    return -(node.node.x + node.node.y - 2*node.node.z)
+    node_v = Vec3(*node)
+    ray = Vec3(-1, -1, 2)
+    return node_v.dot(ray)
+    
