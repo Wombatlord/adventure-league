@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import random
 from typing import Callable, Generator, Sequence
 
@@ -60,6 +61,7 @@ class DebugText:
 
 class LayoutView(arcade.View):
     hiders: list[Hides]
+    pathing: PathingSpace
 
     def __init__(self, parent_factory: Callable[[], arcade.View] | None = None):
         self.hiders = []
@@ -119,6 +121,7 @@ class LayoutSection(arcade.Section):
 
     layout: list[Block]
     pathing: PathingSpace | None
+    geometry_dims = (10, 10)
 
     def __init__(
         self,
@@ -145,7 +148,7 @@ class LayoutSection(arcade.Section):
             absolute_scale=self.SPRITE_SCALE,
             translation=self.world_origin,
         )
-        print(self.transform.world_ray())
+        print(self.transform.camera_z())
         self.debug_text = DebugText()
         self.last_mouse_node = Node(0, 0)
 
@@ -182,6 +185,9 @@ class LayoutSection(arcade.Section):
             transform=self.transform,
             draw_priority_bias=-0.01,
         ).attach_display(display)
+
+    def update_dims(self, x: int, y: int) -> None:
+        self.geometry_dims = x, y
 
     @property
     def world_origin(self) -> Vec2:
@@ -238,8 +244,7 @@ class LayoutSection(arcade.Section):
         self.grid_camera.update()
 
     def on_update(self, delta_time: float):
-        # self.update_camera()
-        pass
+        self.update_camera()
 
     def on_draw(self):
         self.grid_camera.use()
@@ -350,6 +355,9 @@ class LayoutSection(arcade.Section):
 
     def set_mouse_node(self, node: Node):
         self.last_mouse_node = node
+        self.highlight_layer_green.hide_all()
+        self.highlight_layer_green.set_visible_nodes([node])
+        self.highlight_layer_green.show_visible()
 
     def mouse_node_has_changed(self, new_node: Node) -> bool:
         return self.last_mouse_node != new_node
@@ -366,8 +374,12 @@ class LayoutSection(arcade.Section):
         self.update_scene()
 
     def rotate_level(self):
-        self.transform.rotate_grid(1)
-        print(f"{self.transform.world_ray()}")
+        if not self.layout:
+            return
+        self.transform.rotate_grid(
+            math.pi / 2,
+            (Vec2(*self.pathing.maxima[:2]) - Vec2(*self.pathing.minima[:2])) / 2,
+        )
         self.update_scene()
 
     def on_key_press(self, symbol: int, modifiers: int):

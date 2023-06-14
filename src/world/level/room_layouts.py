@@ -110,10 +110,10 @@ def basic_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNod
 def basic_geography(
     dimensions: tuple[int, int], height: int = 0
 ) -> tuple[TerrainNode, ...]:
-    hm = height_map()
+    hm = height_map(*dimensions)
     print(hm)
     floor = [
-        TerrainNode.create(x, y, hm[(x, y)].height / 3, tile_type=TileTypes.FLOOR)
+        TerrainNode.create(x, y, hm[(x, y)].height * 0.3, tile_type=TileTypes.FLOOR)
         for x in range(dimensions[0])
         for y in range(dimensions[1])
     ]

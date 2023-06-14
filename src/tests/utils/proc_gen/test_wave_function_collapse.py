@@ -9,7 +9,10 @@ from src.utils.proc_gen.wave_function_collapse import (
     CollapseResult,
     IrreconcilableStateError,
     Observation,
+    Pos,
     Side,
+    StateVec,
+    config,
     from_distribution,
     generate,
     iter_one_from,
@@ -76,20 +79,42 @@ class HeightTile(NamedTuple):
 
     @classmethod
     def all(cls) -> list[Self]:
-        return [i for i in range(10)]
+        return [HeightTile(i) for i in range(10)]
 
     def compatibilities(self, side: Side) -> set[Observation]:
-        compatible_heights = (1, -1, 0)
+        compatible_heights = (-3, -1, 0, 1, 3)
 
         return {HeightTile(self.height + i) for i in compatible_heights}
 
 
-def height_map() -> CollapseResult:
+def height_map(width: int, height: int) -> CollapseResult:
+    config.set_dims(width, height)
     dist = {HeightTile(i): 1 for i in range(10)}
 
     factory = from_distribution(dist)
+
+    def _seeded_factory(pos) -> StateVec:
+        max_height = min(pos.x, max(*[t.height for t in HeightTile.all()]))
+        if pos.y == 0:
+            return StateVec(
+                pos,
+                HeightTile.all(),
+                {
+                    s: 0
+                    if s
+                    in (
+                        HeightTile(min(max_height, pos.x)),
+                        HeightTile(min(max_height, pos.x + 1)),
+                    )
+                    else 1
+                    for s in HeightTile.all()
+                },
+            )
+
+        return factory(pos)
+
     try:
-        result = generate(factory)
+        result = generate(_seeded_factory, max_retries=100, start=Pos(0, 0))
     except IrreconcilableStateError:
         raise
 

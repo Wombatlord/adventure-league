@@ -38,8 +38,8 @@ _viewable_layouts: dict[str, BlockFactory] = {}
 
 def register_layout(layout_factory: LayoutFactory) -> LayoutFactory:
     global _viewable_layouts
-    _viewable_layouts[layout_factory.__name__] = lambda: from_terrain_nodes(
-        layout_factory((10, 10))
+    _viewable_layouts[layout_factory.__name__] = lambda dims: from_terrain_nodes(
+        layout_factory(dims)
     )
 
     return layout_factory

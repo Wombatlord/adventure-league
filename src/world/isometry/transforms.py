@@ -99,13 +99,12 @@ class Transform:
     def translate_grid(self, node: Node):        
         self._set(self._world_to_screen @ Mat4().translate(Vec3(*node)))
         
-    def rotate_grid(self, times_90: int):
-        angle = math.pi/10
+    def rotate_grid(self, angle: float, axis: Vec2 = Vec2(0, 0)):
         self.angle += angle
-        self.translate_grid(Node(4.5, 4.5))
+        self.translate_grid(axis)
         transform = Mat4().rotate(angle, Vec3(0, 0, 1))
         self._set(self._world_to_screen @ transform)
-        self.translate_grid(Node(-4.5, -4.5))
+        self.translate_grid(axis*-1)
 
     def project(self, node: Node) -> Vec2:
         # Make sure the input has enough axes and is compatible with matmul (@)
@@ -118,15 +117,16 @@ class Transform:
         screen_xy_projection = screen_xyzw[:2]
         return Vec2(*screen_xy_projection)
     
-    def world_ray(self, start: Vec2 = Vec2(-10, -10)) -> Vec3:
+    def camera_z(self) -> Vec3:
         cam_z = Vec3(*self._screen_to_world.column(2)[:-1])
         return cam_z
     
     def draw_priority(self, node: Node) -> float:
-        return 10*self.world_ray().dot(Vec3(*node))
+        return 10*self.camera_z().dot(Vec3(*node))
 
     def cast_ray(self, cam_coords: Vec2) -> Node:
         """We cast a ray"""
+        
         embedded = Vec4(*cam_coords, -1, 1)
         return Node(*[math.ceil(coord) for coord in (self._screen_to_world @ embedded)[:2]])
 
