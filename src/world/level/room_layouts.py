@@ -107,19 +107,18 @@ def basic_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNod
     return tuple(floor)
 
 
+Z_INCR = 0.25
+
+
 def basic_geography(
     dimensions: tuple[int, int], height: int = 0
 ) -> tuple[TerrainNode, ...]:
     hm = height_map(*dimensions)
-    print(hm)
     floor = [
-        TerrainNode.create(x, y, hm[(x, y)].height * 0.3, tile_type=TileTypes.FLOOR)
+        TerrainNode.create(x, y, hm[(x, y)].height * Z_INCR, tile_type=TileTypes.FLOOR)
         for x in range(dimensions[0])
         for y in range(dimensions[1])
     ]
-
-    for n in floor:
-        print(n.node)
 
     return tuple(floor)
 
@@ -210,8 +209,8 @@ def one_block_corridor(
 def test_layout(*args, **kwargs) -> tuple[TerrainNode, ...]:
     nodes = (Node(0, 0),)
     nodes += tuple([Node(x, 0) for x in range(1, 9)])
-    nodes += tuple([Node(0, y) for y in range(1, 6)])
-    nodes += tuple([Node(0, 0, z) for z in range(1, 3)])
+    # nodes += tuple([Node(0, y) for y in range(1, 6)])
+    # nodes += tuple([Node(0, 0, z) for z in range(1, 3)])
 
     return tuple(TerrainNode.create(*node) for node in nodes)
 

@@ -1,10 +1,42 @@
 from __future__ import annotations
 
-from typing import Callable, NamedTuple, TypeVar
+from typing import Callable, NamedTuple, Self, TypeVar
 
 import arcade
 from arcade import Texture
-from arcade.hitbox import BoundingHitBoxAlgorithm, HitBoxAlgorithm
+from arcade.hitbox import (
+    BoundingHitBoxAlgorithm,
+    HitBoxAlgorithm,
+    PymunkHitBoxAlgorithm,
+)
+from arcade.types import PointList
+from PIL.Image import Image
+
+
+class TileHitBoxAlgorithm(HitBoxAlgorithm):
+    name = "tile"
+    cache = False
+    tile_dims: tuple[int, int, int]
+
+    def __init__(self, tile_dims: tuple[int, int, int] = (16, 8, 8)) -> None:
+        self.tile_dims = tile_dims
+
+    def calculate(self, image: Image, **kwargs) -> PointList:
+        top = self.tile_dims[2]
+
+        return (
+            (-self.tile_dims[0] / 2, top - self.tile_dims[1] / 2),
+            (0, top),
+            (self.tile_dims[0] / 2, top - self.tile_dims[1] / 2),
+            (0, top - self.tile_dims[1]),
+        )
+
+    def __call__(self, *args, **kwargs) -> Self:
+        return super().__call__(*args, **kwargs)
+
+    @property
+    def param_str(self) -> str:
+        return f"{self.tile_dims}"
 
 
 class TextureSpec(NamedTuple):
@@ -61,7 +93,7 @@ class SpriteSheetSpecs:
                 "columns": 11,
                 "count": 111,
                 "margin": 0,
-                "hit_box_algorithm": BoundingHitBoxAlgorithm,
+                "hit_box_algorithm": TileHitBoxAlgorithm,
             }
         ),
     )

@@ -82,39 +82,19 @@ class HeightTile(NamedTuple):
         return [HeightTile(i) for i in range(10)]
 
     def compatibilities(self, side: Side) -> set[Observation]:
-        compatible_heights = (-3, -1, 0, 1, 3)
+        compatible_heights = (-1, 0, 1)
 
         return {HeightTile(self.height + i) for i in compatible_heights}
 
 
-def height_map(width: int, height: int) -> CollapseResult:
+def height_map(width: int = 10, height: int = 10) -> CollapseResult:
     config.set_dims(width, height)
     dist = {HeightTile(i): 1 for i in range(10)}
 
     factory = from_distribution(dist)
 
-    def _seeded_factory(pos) -> StateVec:
-        max_height = min(pos.x, max(*[t.height for t in HeightTile.all()]))
-        if pos.y == 0:
-            return StateVec(
-                pos,
-                HeightTile.all(),
-                {
-                    s: 0
-                    if s
-                    in (
-                        HeightTile(min(max_height, pos.x)),
-                        HeightTile(min(max_height, pos.x + 1)),
-                    )
-                    else 1
-                    for s in HeightTile.all()
-                },
-            )
-
-        return factory(pos)
-
     try:
-        result = generate(_seeded_factory, max_retries=100, start=Pos(0, 0))
+        result = generate(factory)
     except IrreconcilableStateError:
         raise
 
@@ -125,7 +105,7 @@ class CollapseStressTest(TestCase):
     @parameterized.expand(
         [
             ("height map", height_map, 90),
-            ("constrained path tiling", constrained_path_tiling, 95),
+            ("constrained path tiling", constrained_path_tiling, 90),
         ]
     )
     def test_stress_collapse(
@@ -140,7 +120,8 @@ class CollapseStressTest(TestCase):
             except IrreconcilableStateError:
                 results["fail"] += 1
 
-        success_percent = int(results["success"] / results["fail"] * 100)
+        attempts = results["success"] + results["fail"]
+        success_percent = int(results["success"] / attempts * 100)
 
         assert (
             success_percent > min_percent

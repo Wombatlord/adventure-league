@@ -5,9 +5,11 @@ import random
 from typing import Callable, Generator, Sequence
 
 import arcade
-from pyglet.math import Vec2
+from pyglet.math import Vec2, Vec3
 
 from src.config import DEBUG
+from src.world.level.room_layouts import Z_INCR
+from src.world.ray import Ray
 
 DEBUG = True
 from math import ceil
@@ -32,6 +34,7 @@ from src.world.isometry.transforms import Transform
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
 
+arcade.SpriteList
 NO_OP = lambda *_, **__: None
 
 
@@ -46,14 +49,27 @@ GOLD_EDGE = SelectionCursor(5)
 
 class DebugText:
     def __init__(self):
+        self.entries = {}
         self.text = arcade.Text(
-            text="", start_x=20, start_y=arcade.get_window().height - 20
+            text="",
+            start_x=200,
+            start_y=arcade.get_window().height * 0.75,
+            color=arcade.color.WHITE,
+            font_size=18,
+            multiline=True,
+            width=800,
         )
 
-    def update(self, text: str | None = None):
+    def update(self, id_: str, text: str | None = None):
         if text is None:
             return
-        self.text.text = text
+        self.entries[id_] = text
+
+        self.text.text = ""
+        for k, v in self.entries.items():
+            self.text.text += f"{k} = {v}\n"
+
+        self.text.x = arcade.get_window().width * 0.1
 
     def draw(self):
         self.text.draw()
@@ -97,6 +113,7 @@ class LayoutView(arcade.View):
                 hider.toggle()
             else:
                 hider.hide()
+            hider.on_update(1 / 60)
 
     def show_one(self, menu: arcade.Section | Hides):
         for hider in self.hiders:
@@ -104,6 +121,8 @@ class LayoutView(arcade.View):
                 hider.show()
             else:
                 hider.hide()
+
+            hider.on_update(1 / 60)
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         {
@@ -122,6 +141,7 @@ class LayoutSection(arcade.Section):
     layout: list[Block]
     pathing: PathingSpace | None
     geometry_dims = (10, 10)
+    geometry: list[Node]
 
     def __init__(
         self,
@@ -142,18 +162,23 @@ class LayoutSection(arcade.Section):
         self.grid_camera = arcade.Camera()
         self.grid_camera.zoom = 1.0
         self.cam_controls = CameraController(self.grid_camera)
+        self.debug_cam = arcade.Camera()
+        self.offset_vec = Vec2(0, 0)
 
         self.transform = Transform.isometric(
             block_dimensions=(16, 8, 8),
             absolute_scale=self.SPRITE_SCALE,
-            translation=self.world_origin,
+            translation=Vec2(0, 0),
         )
-        print(self.transform.camera_z())
+        print(self.transform.camera_z_axis())
         self.debug_text = DebugText()
         self.last_mouse_node = Node(0, 0)
 
         self.layout = []
         self.pathing = None
+        self.geometry = []
+
+        self._is_clickin = False
 
         self._focus = Node(4, 4)
         self._last_clicked = Node(4, 4)
@@ -162,7 +187,6 @@ class LayoutSection(arcade.Section):
         self.highlight_layer_red = None
         self.highlight_layer_green = None
         self.setup_highlight_layers(self.world_sprite_list)
-        self.follow(self.gen_last_clicked())
         self.current_biome = biome_map[random.choice(BiomeName.all_biomes())]
 
     def setup_highlight_layers(self, display: arcade.SpriteList):
@@ -183,7 +207,7 @@ class LayoutSection(arcade.Section):
             offset=(0, 4.5),
             scale=self.SPRITE_SCALE,
             transform=self.transform,
-            draw_priority_bias=-0.01,
+            draw_priority_bias=-10,
         ).attach_display(display)
 
     def update_dims(self, x: int, y: int) -> None:
@@ -223,6 +247,9 @@ class LayoutSection(arcade.Section):
 
         self.refresh_draw_order()
 
+    def geom_by_height(self, z: float) -> list[Node]:
+        return [n for n in self.geometry if n.z == z]
+
     def hide_path(self):
         self.clear_highlight()
 
@@ -237,30 +264,45 @@ class LayoutSection(arcade.Section):
 
     def update_camera(self):
         self.cam_controls.on_update()
-        self.update_focus()
-        self.cam_controls.look_at_world(
-            self.get_focus(), self.transform, distance_per_frame=0.2
-        )
+        if focus := self.get_focus():
+            self.cam_controls.look_at_world(
+                focus, self.transform, distance_per_frame=0.05
+            )
+
         self.grid_camera.update()
 
     def on_update(self, delta_time: float):
         self.update_camera()
+        self.update_debug_text()
+        self.highlight_cursor(*self._mouse_coords)
+
+    def update_debug_text(self):
+        self.debug_text.update("offset vec", f"{self.offset_vec}")
 
     def on_draw(self):
-        self.grid_camera.use()
+        if DEBUG:
+            self.debug_text.draw()
 
+        self.grid_camera.use()
         self.world_sprite_list.draw(pixelated=True)
+
         if DEBUG:
             l, r, b, t = self.grid_camera.projection
             arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
             arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
-            self.debug_text.draw()
+            for s in self.world_sprite_list:
+                s: arcade.Sprite
+                s.draw_hit_box(arcade.color.WHITE)
+                break
+
+        self.debug_cam.use()
 
     def on_resize(self, width: int, height: int):
         self.width, self.height = width, height
         self.transform.on_resize(self.world_origin)
         self.grid_camera.resize(width, height)
-        self.cam_controls.look_at_world(self.get_focus(), self.transform)
+
+        self.cam_controls.look_at_world(self.get_focus() or Node(4, 4), self.transform)
         for sprite in self.world_sprite_list:
             if isinstance(sprite, BaseSprite):
                 sprite.update_position()
@@ -270,16 +312,9 @@ class LayoutSection(arcade.Section):
     def follow(self, node_gen: Generator[Node | None, None, None]):
         self._follow = node_gen
 
-    def update_focus(self):
-        if self._follow:
-            self._focus = next(self._follow) or Node(4, 4)
-
     def get_focus(self) -> Node:
-        return self._focus or Node(4, 4)
-
-    def gen_last_clicked(self) -> Generator[Node | None, None, None]:
-        while True:
-            yield self._last_clicked
+        if self._is_clickin:
+            return self._last_clicked
 
     def show_layout(self, layout: list[Block]) -> None:
         if not layout:
@@ -288,9 +323,15 @@ class LayoutSection(arcade.Section):
         self.pathing = PathingSpace.from_nodes([b.node for b in layout])
         self.level_to_sprite_list()
 
-        self.highlight_layer_red.set_space(self.pathing)
-        self.highlight_layer_green.set_space(self.pathing)
-        self.highlight_layer_gold_edge.set_space(self.pathing)
+        nodes = [block.node.above for block in self.layout]
+
+        self.geometry = sorted(
+            [block.node for block in self.layout], key=lambda n: -n.z
+        )
+
+        self.highlight_layer_red.set_nodes(nodes)
+        self.highlight_layer_green.set_nodes(nodes)
+        self.highlight_layer_gold_edge.set_nodes(nodes)
 
     def height_map(self):
         dist = {HeightTile(i): 1 for i in range(3)}
@@ -325,26 +366,109 @@ class LayoutSection(arcade.Section):
     def teardown_level(self):
         self.world_sprite_list.clear()
 
-    def on_mouse_release(self, x: int, y: int, button: int, modifiers: int):
-        node = self.node_at_mouse()
-        if self.mouse_node_has_changed(node):
-            self._last_clicked = node
+    def highlight_cursor(self, x: int, y: int):
+        s: arcade.Sprite
+        mouse = x, y
+        click = self.cam_controls.image_px(
+            Vec2(*mouse) if mouse else self._mouse_coords
+        )
+        for s in self.world_sprite_list[::-1]:
+            if s.collides_with_point(click):
+                self._last_clicked = s.node
+                self.show_highlight(red=[self._last_clicked])
+                self.debug_text.update("ray_hit", f"{self._last_clicked}")
+                break
+
+    def sample(self, x: int, y: int, button: int, modifiers: int):
+        clicked_node = self.node_at_mouse((x, y))
+        self.debug_text.update("clicked_node", f"{clicked_node}")
+
+        if self._last_clicked != self.get_mouse_node():
+            ray_hit = self.cast_click_ray(0.0)
+            if not ray_hit:
+                return
+            self._last_clicked = ray_hit
+            self.show_highlight(red=[self._last_clicked])
+            self.debug_text.update("ray_hit", f"{ray_hit}")
+            print(f"{self._last_clicked=}")
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        self._is_clickin = True
+        pass
+
+    def on_mouse_release(self, *args):
+        self._is_clickin = False
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         self._mouse_coords = Vec2(float(x), float(y))
 
-    def node_at_mouse(self) -> Node:
-        return self.transform.cast_ray(self.cam_controls.image_px(self._mouse_coords))
+    def node_at_mouse(self, mouse: tuple[int, int] | None = None) -> Node:
+        projection_surface_coords = self.cam_controls.image_px(
+            Vec2(*mouse) if mouse else self._mouse_coords
+        )
+        world_click = self.transform.world_location(projection_surface_coords, 100)
+        return world_click
+
+    def column_of(self, node: Node) -> list[Node]:
+        return sorted(
+            [b.node for b in self.layout if b.node[:2] == node[:2]], key=lambda n: -n.z
+        )
+
+    def surface_geom(self) -> list[Node]:
+        return [b.node + Node(0, 0, 0.5) for b in self.layout]
+
+    def cast_click_ray(self, z_offset=0) -> Node | None:
+        world_click = self.node_at_mouse()
+        projection_surface_coords = self.cam_controls.image_px(
+            self._mouse_coords + self.offset_vec
+        )
+        toward_scene = self.transform.world_location(projection_surface_coords, z=-100)
+        print(f"RAY FROM {world_click} to {toward_scene}")
+        ray = Ray(start=world_click)
+
+        surface = self.surface_geom()
+
+        ray_z = world_click.z
+        stop = ray.interpolate_z(look_at=toward_scene, z_stop=ray_z)
+        snapped = lambda s: Node(round(s.x), round(s.y), s.z)
+
+        ray_nodes = [None] * 8
+
+        while (stop - world_click).mag < 50:
+            if (ray_node := snapped(stop)) in surface:
+                hit = ray_nodes[-1]
+                print(f"HIT {hit=}")
+                return hit
+            ray_nodes = ([ray_node] + ray_nodes)[:2]
+            print(f"CASTING {ray_node}")
+
+            ray_z -= Z_INCR
+            stop = ray.interpolate_z(look_at=toward_scene, z_stop=ray_z)
+
+        print("MISSED")
+        return None
+
+        # for node in ray.cast(toward_scene):
+        #     if (node - prev).z > 0:
+        #         raise ValueError("We're sposed to be going down not up ding dong")
+        #     print(f"RAY: {node=}")
+        #     if node in self.geometry:
+        #         return node
+        #     if node.z < 1:
+        #         return node
+
+        #     if node.z < 0:
+        #         return node.above
+
+        #     if node.z < -1:
+        #         return node.above.above
+        # return world_click
 
     def update_mouse_node(self, x: int, y: int, dx: int, dy: int) -> Node | None:
-        self.on_mouse_motion(x, y, dx, dy)
         if not self.layout:
             return
 
         node = self.node_at_mouse()
-
-        if not self.pathing.is_pathable(node):
-            return
 
         if self.mouse_node_has_changed(node):
             self.set_mouse_node(node)
@@ -355,9 +479,6 @@ class LayoutSection(arcade.Section):
 
     def set_mouse_node(self, node: Node):
         self.last_mouse_node = node
-        self.highlight_layer_green.hide_all()
-        self.highlight_layer_green.set_visible_nodes([node])
-        self.highlight_layer_green.show_visible()
 
     def mouse_node_has_changed(self, new_node: Node) -> bool:
         return self.last_mouse_node != new_node
@@ -381,6 +502,7 @@ class LayoutSection(arcade.Section):
             (Vec2(*self.pathing.maxima[:2]) - Vec2(*self.pathing.minima[:2])) / 2,
         )
         self.update_scene()
+        self.debug_text.update("screen origin", f"{self.transform.camera_origin()}")
 
     def on_key_press(self, symbol: int, modifiers: int):
         print(symbol)
@@ -392,7 +514,14 @@ class LayoutSection(arcade.Section):
             arcade.key.DOWN: lambda: self.translate_level(n.south),
             arcade.key.LEFT: lambda: self.translate_level(n.west),
             arcade.key.R: lambda: self.rotate_level(),
+            arcade.key.X: lambda: self.incr_offset_vec(Vec2(1, 0)),
+            arcade.key.C: lambda: self.incr_offset_vec(Vec2(-1, 0)),
+            arcade.key.Y: lambda: self.incr_offset_vec(Vec2(0, 1)),
+            arcade.key.U: lambda: self.incr_offset_vec(Vec2(0, -1)),
         }.get(symbol, NO_OP)()
+
+    def incr_offset_vec(self, by: Vec2):
+        self.offset_vec += by
 
     def on_key_release(self, _symbol: int, _modifiers: int):
         self.cam_controls.on_key_release(_symbol)

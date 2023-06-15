@@ -346,7 +346,9 @@ class Scene(arcade.Section):
         if not self.encounter_room:
             return
 
-        node = self.transform.cast_ray(self.cam_controls.image_px(self._mouse_coords))
+        node = self.transform.world_location(
+            self.cam_controls.image_px(self._mouse_coords)
+        )
 
         if not self.encounter_room.space.is_pathable(node):
             return
