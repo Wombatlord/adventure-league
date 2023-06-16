@@ -2,7 +2,7 @@ from typing import Sequence
 
 import arcade
 from pyglet.math import Vec2
-
+import math
 from src import config
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
@@ -193,7 +193,8 @@ class Scene(arcade.Section):
         self.refresh_draw_order()
 
     def refresh_draw_order(self):
-        self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
+        # self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
+        self.world_sprite_list.sort(key=lambda s: self.transform.draw_priority(s.node))
 
     def update_camera(self):
         self.cam_controls.on_update()
@@ -264,9 +265,6 @@ class Scene(arcade.Section):
     def level_to_sprite_list(self):
         self.world_sprite_list.clear()
         for terrain_node in self.encounter_room.layout:
-            x = terrain_node.node.x
-            y = terrain_node.node.y
-
             self.encounter_room.room_texturer.apply_biome_textures()
 
             sprite = BaseSprite(
@@ -365,3 +363,25 @@ class Scene(arcade.Section):
 
     def mouse_node_has_changed(self, new_node: Node) -> bool:
         return self.last_mouse_node != new_node
+
+    def rotate_level(self):
+        if not self.encounter_room.layout:
+            return
+        self.transform.rotate_grid(
+            math.pi / 2,
+            (Vec2(*self.encounter_room.space.maxima[:2]) - Vec2(*self.encounter_room.space.minima[:2])) / 2,
+        )
+        self.update_scene()
+    
+    def update_scene(self):
+        for tile in self.world_sprite_list:
+            if not hasattr(tile, "update_position"):
+                continue
+            tile.update_position()
+        self.refresh_draw_order()
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        print(symbol)
+        match symbol:
+            case arcade.key.R:
+                self.rotate_level()

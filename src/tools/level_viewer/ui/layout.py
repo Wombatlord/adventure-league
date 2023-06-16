@@ -17,19 +17,12 @@ from math import ceil
 from src.entities.sprites import BaseSprite
 from src.gui.biome_textures import Biome, BiomeName, biome_map
 from src.gui.combat.highlight import HighlightLayer
-from src.tests.utils.proc_gen.test_wave_function_collapse import HeightTile
 from src.textures.texture_data import SpriteSheetSpecs
 from src.tools.level_viewer.model.layout import Block
 from src.tools.level_viewer.ui.biome_menu import BiomeMenu
 from src.tools.level_viewer.ui.geometry_menu import GeometryMenu
 from src.tools.level_viewer.ui.hides import Hides
 from src.utils.camera_controls import CameraController
-from src.utils.proc_gen.wave_function_collapse import (
-    IrreconcilableStateError,
-    from_distribution,
-    generate,
-)
-from src.utils.proc_gen.wfc_tiling import rot
 from src.world.isometry.transforms import Transform
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
@@ -333,23 +326,6 @@ class LayoutSection(arcade.Section):
         self.highlight_layer_green.set_nodes(nodes)
         self.highlight_layer_gold_edge.set_nodes(nodes)
 
-    def height_map(self):
-        dist = {HeightTile(i): 1 for i in range(3)}
-
-        factory = from_distribution(dist)
-        try:
-            result = generate(factory)
-        except IrreconcilableStateError:
-            raise
-
-        result = [*result.values()]
-
-        return result
-
-    def chunk_into_n(self, lst, n):
-        size = ceil(len(lst) / n)
-        return list(map(lambda x: lst[x * size : x * size + size], list(range(n))))
-
     def level_to_sprite_list(self):
         self.teardown_level()
 
@@ -379,19 +355,6 @@ class LayoutSection(arcade.Section):
                 self.debug_text.update("ray_hit", f"{self._last_clicked}")
                 break
 
-    def sample(self, x: int, y: int, button: int, modifiers: int):
-        clicked_node = self.node_at_mouse((x, y))
-        self.debug_text.update("clicked_node", f"{clicked_node}")
-
-        if self._last_clicked != self.get_mouse_node():
-            ray_hit = self.cast_click_ray(0.0)
-            if not ray_hit:
-                return
-            self._last_clicked = ray_hit
-            self.show_highlight(red=[self._last_clicked])
-            self.debug_text.update("ray_hit", f"{ray_hit}")
-            print(f"{self._last_clicked=}")
-
     def on_mouse_press(self, x, y, button, modifiers):
         self._is_clickin = True
         pass
@@ -416,53 +379,6 @@ class LayoutSection(arcade.Section):
 
     def surface_geom(self) -> list[Node]:
         return [b.node + Node(0, 0, 0.5) for b in self.layout]
-
-    def cast_click_ray(self, z_offset=0) -> Node | None:
-        world_click = self.node_at_mouse()
-        projection_surface_coords = self.cam_controls.image_px(
-            self._mouse_coords + self.offset_vec
-        )
-        toward_scene = self.transform.world_location(projection_surface_coords, z=-100)
-        print(f"RAY FROM {world_click} to {toward_scene}")
-        ray = Ray(start=world_click)
-
-        surface = self.surface_geom()
-
-        ray_z = world_click.z
-        stop = ray.interpolate_z(look_at=toward_scene, z_stop=ray_z)
-        snapped = lambda s: Node(round(s.x), round(s.y), s.z)
-
-        ray_nodes = [None] * 8
-
-        while (stop - world_click).mag < 50:
-            if (ray_node := snapped(stop)) in surface:
-                hit = ray_nodes[-1]
-                print(f"HIT {hit=}")
-                return hit
-            ray_nodes = ([ray_node] + ray_nodes)[:2]
-            print(f"CASTING {ray_node}")
-
-            ray_z -= Z_INCR
-            stop = ray.interpolate_z(look_at=toward_scene, z_stop=ray_z)
-
-        print("MISSED")
-        return None
-
-        # for node in ray.cast(toward_scene):
-        #     if (node - prev).z > 0:
-        #         raise ValueError("We're sposed to be going down not up ding dong")
-        #     print(f"RAY: {node=}")
-        #     if node in self.geometry:
-        #         return node
-        #     if node.z < 1:
-        #         return node
-
-        #     if node.z < 0:
-        #         return node.above
-
-        #     if node.z < -1:
-        #         return node.above.above
-        # return world_click
 
     def update_mouse_node(self, x: int, y: int, dx: int, dy: int) -> Node | None:
         if not self.layout:
