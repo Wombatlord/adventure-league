@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+import operator
 from typing import Generator, NamedTuple
 
 
@@ -31,6 +33,12 @@ class Node(NamedTuple):
     @property
     def below(self) -> Node:
         return Node(x=self.x, y=self.y, z=self.z - 1)
+
+    def distance_to(self, other: Node) -> float:
+        return (self - other).mag()
+
+    def mag(self) -> float:
+        return math.sqrt(sum(coord**2 for coord in self))
 
     @property
     def adjacent(self) -> Generator[Node]:

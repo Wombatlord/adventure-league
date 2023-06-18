@@ -6,8 +6,10 @@ from typing import TYPE_CHECKING, Generator, Iterable, Sequence
 
 from astar import AStar
 
+from src.world.pathing.pathing_strategy import DefaultStrategy, PathingStrategy
+
 if TYPE_CHECKING:
-    from src.world.level.room_layouts import Terrain, TerrainNode
+    from src.world.level.room_layouts import Terrain
 
 from src.world.node import Node
 
@@ -15,6 +17,7 @@ from src.world.node import Node
 class PathingSpace(AStar):
     minima: Node
     maxima: Node
+    strategy: PathingStrategy
 
     @classmethod
     def from_terrain(cls, terrain: Terrain, floor_level=0):
@@ -68,10 +71,15 @@ class PathingSpace(AStar):
         if exclusions is None:
             exclusions = set()
 
+        self.strategy = DefaultStrategy(self)
+
         self.minima = minima
         self.maxima = maxima
         self.static_exclusions = exclusions
         self.dynamic_exclusions = set()
+
+    def set_strategy(self, strat: PathingStrategy):
+        self.strategy = strat
 
     def __contains__(self, item: Node) -> bool:
         return self.in_bounds(item) and item not in self.exclusions
@@ -90,15 +98,13 @@ class PathingSpace(AStar):
         return x_within and y_within
 
     def neighbors(self, node: Node) -> Generator[Node, None, None]:
-        for candidate in node.adjacent:
-            if candidate in self:
-                yield candidate
+        return self.strategy.neighbors(node)
 
     def distance_between(self, n1: Node, n2: Node) -> int:
-        return 1 if sum(abs(delta) for delta in (n1 - n2)) == 1 else 1.5
+        return self.strategy.distance_between(n1, n2)
 
-    def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int:
-        return 1
+    def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int | float:
+        return self.strategy.heuristic_cost_estimate(n1, n2)
 
     @property
     def height(self) -> int:
