@@ -104,24 +104,23 @@ def height_map(width: int = 10, height: int = 10) -> CollapseResult:
 class CollapseStressTest(TestCase):
     @parameterized.expand(
         [
-            ("height map", height_map, 90),
-            ("constrained path tiling", constrained_path_tiling, 90),
+            ("height map", height_map, 90, 50),
+            ("constrained path tiling", constrained_path_tiling, 95, 50),
         ]
     )
     def test_stress_collapse(
-        self, name: str, run_one: Callable[[], None], min_percent: int
+        self, name: str, run_one: Callable[[], None], min_percent: int, runs: int
     ):
         results = {"success": 0, "fail": 0}
 
-        while results["success"] + results["fail"] < 50:
+        while results["success"] + results["fail"] < runs:
             try:
                 run_one()
                 results["success"] += 1
             except IrreconcilableStateError:
                 results["fail"] += 1
 
-        attempts = results["success"] + results["fail"]
-        success_percent = int(results["success"] / attempts * 100)
+        success_percent = int(results["success"] / runs * 100)
 
         assert (
             success_percent > min_percent
