@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 import abc
-from typing import Callable, Generator, Protocol
+from typing import Callable, Generator, Iterable, Protocol
 
 from src.world.node import Node
 
 
 class Space(Protocol):
     def __contains__(self, node: Node) -> bool:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def x_range(self) -> Iterable[int]:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def y_range(self) -> Iterable[int]:
         pass
 
 
@@ -22,6 +32,10 @@ class PathingStrategy(abc.ABC):
 
     @abc.abstractmethod
     def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int | float:
+        pass
+
+    @abc.abstractmethod
+    def to_level_position(self, n: Node) -> Node:
         pass
 
 
@@ -58,6 +72,12 @@ class HeightMapStrategy(PathingStrategy):
     def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int | float:
         return n1.distance_to(n2)
 
+    def to_level_position(self, n: Node) -> Node:
+        level_pos = Node(*n[:2], z=self.height_map(n))
+        if level_pos.z == 0:
+            breakpoint()
+        return level_pos
+
 
 class DefaultStrategy(PathingStrategy):
     space: Space
@@ -75,3 +95,7 @@ class DefaultStrategy(PathingStrategy):
 
     def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int:
         return 1
+
+    def to_level_position(self, n: Node) -> Node:
+        raise Exception()
+        return n

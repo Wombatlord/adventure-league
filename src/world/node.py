@@ -6,9 +6,9 @@ from typing import Generator, NamedTuple
 
 
 class Node(NamedTuple):
-    x: int
-    y: int
-    z: int = 0
+    x: int | float
+    y: int | float
+    z: int | float = 0
 
     @property
     def east(self) -> Node:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generator, NamedTuple, Self
+from typing import TYPE_CHECKING, Generator, NamedTuple, Self, Sequence
 
 from src.gui.biome_textures import BiomeName, biome_map
 
@@ -8,16 +8,16 @@ if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
 
 from src.entities.entity import Entity
-from src.world.level.room_layouts import Terrain, TerrainNode, basic_room
+from src.world.level.room_layouts import Terrain, TerrainNode
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
 
 
 class RoomTexturer(NamedTuple):
-    biome_name: BiomeName
-    terrain_nodes: list[TerrainNode]
+    biome_name: str
+    terrain_nodes: Sequence[TerrainNode]
 
-    def apply_biome_textures(self) -> Self:
+    def apply_biome_textures(self):
         biome_textures = biome_map[self.biome_name]
         for terrain_node in self.terrain_nodes:
             terrain_node.texture = biome_textures.choose_tile_texture(
@@ -40,12 +40,22 @@ class Room:
         self.enemies: list[Entity] = []
         self.occupants: list[Entity] = []
         self._cleared = False
-        self.entry_door = Node(x=0, y=5) if size[1] > 5 else Node(0, 0)
+        self._size = size
+
+    @property
+    def entry_door(self) -> Node:
+        entry_door = Node(x=0, y=5) if self._size[1] > 5 else Node(0, 0)
+
+        if not self.space:
+            raise ValueError("Cannot locate entry door, the room has no pathing space")
+
+        return self.space.strategy.to_level_position(entry_door)
 
     def set_layout(self, layout: tuple[TerrainNode, ...]) -> Self:
         self.layout = layout
         self.room_texturer = RoomTexturer(self.biome, self.layout)
-        self.space = PathingSpace.from_terrain(Terrain(self.layout))
+        terrain = Terrain(self.layout)
+        self.space = PathingSpace.from_nodes(terrain.nodes)
         return self
 
     def update_pathing_obstacles(self):

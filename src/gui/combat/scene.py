@@ -1,8 +1,9 @@
+import math
 from typing import Sequence
 
 import arcade
 from pyglet.math import Vec2
-import math
+
 from src import config
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
@@ -238,7 +239,7 @@ class Scene(arcade.Section):
             if isinstance(sprite, BaseSprite):
                 sprite.update_position()
 
-        self.on_update(0)
+        self.update_camera()
 
     def follow(self, locatable: Locatable):
         self._follow = locatable
@@ -369,10 +370,14 @@ class Scene(arcade.Section):
             return
         self.transform.rotate_grid(
             math.pi / 2,
-            (Vec2(*self.encounter_room.space.maxima[:2]) - Vec2(*self.encounter_room.space.minima[:2])) / 2,
+            (
+                Vec2(*self.encounter_room.space.maxima[:2])
+                - Vec2(*self.encounter_room.space.minima[:2])
+            )
+            / 2,
         )
         self.update_scene()
-    
+
     def update_scene(self):
         for tile in self.world_sprite_list:
             if not hasattr(tile, "update_position"):

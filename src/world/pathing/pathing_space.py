@@ -1,17 +1,44 @@
 from __future__ import annotations
 
+import functools
 import random
 from random import randint
-from typing import TYPE_CHECKING, Generator, Iterable, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    NamedTuple,
+    Self,
+    Sequence,
+)
 
 from astar import AStar
 
-from src.world.pathing.pathing_strategy import DefaultStrategy, PathingStrategy
+from src.world.level.room_layouts import Z_INCR, Terrain
+from src.world.pathing.pathing_strategy import (
+    DefaultStrategy,
+    HeightMapStrategy,
+    PathingStrategy,
+)
 
 if TYPE_CHECKING:
-    from src.world.level.room_layouts import Terrain
+    pass
 
 from src.world.node import Node
+
+
+def _flat(n: Node) -> Node:
+    return Node(*n[:2])
+
+
+def _flattened(f: Callable[[Node, ...], Any]) -> Callable[[Node, ...], Any]:
+    @functools.wraps(f)
+    def decorated(*nodes):
+        return f(*[_flat(n) if isinstance(n, Node) else n for n in nodes])
+
+    return decorated
 
 
 class PathingSpace(AStar):
@@ -44,43 +71,46 @@ class PathingSpace(AStar):
         return PathingSpace(minima, maxima, exclusions)
 
     @classmethod
-    def from_nodes(cls, nodes: Iterable[Node], floor_level: int = 0):
+    def from_nodes(cls, nodes: Sequence[Node]):
         minima = Node(min(n.x for n in nodes), min(n.y for n in nodes))
         maxima = Node(max(n.x for n in nodes), max(n.y for n in nodes))
 
-        traversable = []
+        included = []
         for n in nodes:
-            candidate = n.above
-            if candidate.z != floor_level:
-                continue
+            included.append(_flat(n))
 
-            if candidate in nodes:
-                continue
+        def height_map(n_: Node) -> float:
+            col = [node for node in nodes if node[:2] == n_[:2]]
+            top = sorted(col, key=lambda node: node.z)[-1]
+            height = top.above.z
 
-            traversable.append(candidate)
+            return height
 
-        exclusions = {
-            Node(x, y, floor_level)
-            for x in range(minima.x, maxima.x)
-            for y in range(minima.y, maxima.y)
-        } - {*traversable}
+        space = PathingSpace(minima, maxima, {*()})
+        space.set_strategy(HeightMapStrategy(space, Z_INCR * 2, height_map))
+        return space
 
-        return PathingSpace(minima, maxima, exclusions)
-
-    def __init__(self, minima: Node, maxima: Node, exclusions: set[Node] | None = None):
+    def __init__(
+        self,
+        minima: Node,
+        maxima: Node,
+        exclusions: set[Node] | None = None,
+        strategy: PathingStrategy = None,
+    ):
         if exclusions is None:
             exclusions = set()
 
-        self.strategy = DefaultStrategy(self)
+        self.strategy = strategy or DefaultStrategy(self)
 
         self.minima = minima
         self.maxima = maxima
-        self.static_exclusions = exclusions
+        self.static_exclusions = {_flat(n) for n in exclusions}
         self.dynamic_exclusions = set()
 
     def set_strategy(self, strat: PathingStrategy):
         self.strategy = strat
 
+    @_flattened
     def __contains__(self, item: Node) -> bool:
         return self.in_bounds(item) and item not in self.exclusions
 
@@ -90,19 +120,23 @@ class PathingSpace(AStar):
 
     @exclusions.setter
     def exclusions(self, exc_set: set[Node]):
-        self.dynamic_exclusions = exc_set
+        self.dynamic_exclusions = {_flat(n) for n in exc_set}
 
+    @_flattened
     def in_bounds(self, node: Node) -> bool:
         x_within = self.minima.x <= node.x < self.maxima.x
         y_within = self.minima.y <= node.y < self.maxima.y
         return x_within and y_within
 
+    @_flattened
     def neighbors(self, node: Node) -> Generator[Node, None, None]:
         return self.strategy.neighbors(node)
 
+    @_flattened
     def distance_between(self, n1: Node, n2: Node) -> int:
         return self.strategy.distance_between(n1, n2)
 
+    @_flattened
     def heuristic_cost_estimate(self, n1: Node, n2: Node) -> int | float:
         return self.strategy.heuristic_cost_estimate(n1, n2)
 
@@ -118,6 +152,7 @@ class PathingSpace(AStar):
     def dimensions(self) -> tuple[int, int]:
         return (self.width, self.height)
 
+    @_flattened
     def get_path(self, start: Node, finish: Node) -> tuple[Node, ...] | None:
         # we exclude all occupied nodes so any paths from occupied nodes (i.e. all combat pathfinding)
         # will need to have the start/end node added back to the pathing space temporarily
@@ -129,7 +164,17 @@ class PathingSpace(AStar):
             if include:
                 self._include(include)
 
-        path = self.astar(start, finish)
+        path = None
+        try:
+            path = self.astar(start, finish)
+        except Exception as error:
+            print(
+                f"Astar couldn't resolve path for:\n"
+                f"{start=}\n"
+                f"{finish=}\n"
+                f"{error=}\n"
+            )
+            pass
 
         # after we've got the path, we make sure that if it wasn't in the space before we started
         # then it won't be after we return
@@ -142,12 +187,15 @@ class PathingSpace(AStar):
 
         return tuple(path)
 
+    @_flattened
     def _include(self, node: Node) -> None:
         self.dynamic_exclusions -= {node}  # idempotent remove from set
 
+    @_flattened
     def _exclude(self, node: Node) -> None:
         self.dynamic_exclusions.add(node)  # idempotent add to set
 
+    @_flattened
     def get_path_len(self, start: Node, end: Node) -> int | None:
         path = self.get_path(start, end)
 
@@ -159,10 +207,7 @@ class PathingSpace(AStar):
     def choose_random_node(self, excluding: set[Node] = ()) -> Node:
         # if there are extra exclusions create a temp space with those exclusions as well as the pre-existing exclusions
         tmp_space = self
-        if excluding:
-            tmp_space = PathingSpace(
-                self.minima, self.maxima, exclusions=self.exclusions | set(excluding)
-            )
+        excluding = {_flat(n) for n in excluding}
 
         def _try_node() -> Node:
             return Node(
@@ -170,10 +215,11 @@ class PathingSpace(AStar):
                 y=randint(tmp_space.minima.y, tmp_space.maxima.y),
             )
 
-        while (node := _try_node()) not in tmp_space:
-            continue
+        node = _try_node()
+        while node not in self and node not in excluding:
+            node = _try_node()
 
-        return node
+        return self.strategy.to_level_position(node)
 
     def __len__(self):
         """
@@ -181,6 +227,7 @@ class PathingSpace(AStar):
         """
         return self.width * self.height - len(self.exclusions)
 
+    @_flattened
     def choose_next_unoccupied(self, start_at: Node) -> Node | None:
         """
         Does a random walk from the passed node. Returns the first unoccupied
@@ -195,7 +242,7 @@ class PathingSpace(AStar):
         attempt = start_at
 
         if attempt in self:
-            return attempt
+            return self.strategy.to_level_position(attempt)
 
         tried = {attempt}  # will be empty if node not excluded
         try:
@@ -213,7 +260,7 @@ class PathingSpace(AStar):
                 f"Choose_next_unoccupied({start_at=}) was started at a location that is probably out of bounds"
             ) from e
 
-        return attempt
+        return self.strategy.to_level_position(attempt)
 
     @property
     def y_range(self) -> Iterable[int]:
@@ -229,12 +276,13 @@ class PathingSpace(AStar):
             node_check = lambda x, y: Node(x, y) not in self.static_exclusions
 
         return tuple(
-            Node(x, y)
+            self.strategy.to_level_position(Node(x, y))
             for x in range(self.minima.x, self.maxima.x)
             for y in range(self.minima.y, self.maxima.y)
             if node_check(x, y)
         )
 
+    @_flattened
     def is_pathable(self, node: Node) -> bool:
         return self.in_bounds(node) and node not in self.static_exclusions
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 from functools import lru_cache
-from typing import NamedTuple, Self
+from typing import Iterable, NamedTuple, Self, Sequence
 
 from arcade import Texture
 
@@ -13,15 +13,11 @@ from src.world.node import Node
 
 
 class Terrain(NamedTuple):
-    terrain_nodes: list[TerrainNode]
+    terrain_nodes: Sequence[TerrainNode]
 
     @property
     def nodes(self):
         return [block.node for block in self.terrain_nodes]
-
-    @property
-    def in_plane(self, height) -> list[TerrainNode]:
-        return [block for block in self.terrain_nodes if block.z == height]
 
     @property
     def minima(self) -> Node:
@@ -218,10 +214,11 @@ def test_layout(*args, **kwargs) -> tuple[TerrainNode, ...]:
 def random_room(
     dimensions: tuple[int, int], height: int = 0
 ) -> tuple[TerrainNode, ...]:
-    return random.choice(
-        [
-            basic_room,
-            side_pillars,
-            alternating_big_pillars,
-        ]
-    )(dimensions, height)
+    return basic_geography(dimensions, height)
+    # return random.choice(
+    #     [
+    #         basic_room,
+    #         side_pillars,
+    #         alternating_big_pillars,
+    #     ]
+    # )(dimensions, height)
