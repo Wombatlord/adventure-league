@@ -97,5 +97,4 @@ class DefaultStrategy(PathingStrategy):
         return 1
 
     def to_level_position(self, n: Node) -> Node:
-        raise Exception()
         return n
