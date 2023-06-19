@@ -110,6 +110,10 @@ class PathingSpace(AStar):
     def set_strategy(self, strat: PathingStrategy):
         self.strategy = strat
 
+    def astar(self, start: Node, goal: Node) -> Iterable[Node] | None:
+        path = super().astar(start, goal)
+        return [self.strategy.to_level_position(n) for n in path]
+
     @_flattened
     def __contains__(self, item: Node) -> bool:
         return self.in_bounds(item) and item not in self.exclusions
