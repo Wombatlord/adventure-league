@@ -251,7 +251,8 @@ class Fighter:
             self.owner.is_dead = True
 
             result.update(**{"dead": self})
-
+            result.update(**{"emit_exp": self.stats.exp_value})
+            
         final_hp = self.health.current
         result.update(
             {

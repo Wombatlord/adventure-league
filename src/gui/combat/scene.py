@@ -133,7 +133,7 @@ class Scene(arcade.Section):
             handler_id="CombatGrid.clear_retreating_sprites",
             handler=self.clear_retreating_sprites,
         )
-
+    
     def entity_at_node(self, node: Node) -> Entity | None:
         if node not in self.encounter_room.space.all_included_nodes(
             exclude_dynamic=False

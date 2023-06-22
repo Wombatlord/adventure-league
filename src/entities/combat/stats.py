@@ -70,7 +70,8 @@ class FighterStats(NamedTuple):
     power: int = 0
     level: int = 0
     speed: int = 0
-
+    exp_value: int = 50
+    
     def __add__(self, other):
         return namedtuple_add(self.__class__, self, other)
 
