@@ -15,6 +15,7 @@ from src.entities.action.actions import (
 from src.entities.action.magic_action import MagicAction
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
+from src.entities.combat.leveller import Leveller
 from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import FighterStats, HealthPool
 from src.entities.gear.gear import Gear
@@ -85,6 +86,7 @@ class Fighter:
         self.gear = Gear(owner=self)
         self.set_role(role)
         # -----State-----
+        self.leveller = Leveller(owner=self)
         self.action_points = ActionPoints()
         self._caster = caster
         self.on_retreat_hooks = []
