@@ -1,4 +1,6 @@
-from typing import Self
+from typing import Generator, Self
+
+from src.engine.engine import Event
 
 
 class Leveller:
@@ -17,10 +19,11 @@ class Leveller:
     def current_exp(self) -> int:
         return self._current_xp
 
-    def increase_level(self):
+    def increase_level(self) -> Generator[Event, None, None] | None:
         if self.current_exp >= self._xp_to_level_up:
             self._current_xp = 0
-        self._current_level += 1
+            self._current_level += 1
+            yield {"message": f"{self.owner.owner.name} gained a level!"}
 
     def gain_exp(self, amount: int):
         self._current_xp += amount

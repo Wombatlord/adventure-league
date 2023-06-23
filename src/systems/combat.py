@@ -151,7 +151,7 @@ class CombatRound:
 
                 yield result
 
-    def _resolve_experience(self, combatant: Fighter):
+    def _resolve_experience(self, combatant: Fighter) -> Generator[Event, None, None] | None:
         final = Experience(0)
         for experience in combatant.leveller.xp_to_resolve:
             final += experience
@@ -161,7 +161,7 @@ class CombatRound:
             yield {
                 "message": f"{combatant.owner.name} gained {final.xp_value} experience!"
             }
-            combatant.leveller.increase_level()
+            yield combatant.leveller.increase_level()
 
     def _purge_fighter(self, fighter: Fighter) -> None:
         team_id = 0 if fighter in self.teams[0] else 1
