@@ -15,7 +15,9 @@ class Damage:
     final_damage: int = 0
     originator: Fighter
 
-    def __init__(self, originator, raw_damage, crit_chance, damage_type="physical") -> None:
+    def __init__(
+        self, originator, raw_damage, crit_chance, damage_type="physical"
+    ) -> None:
         self.originator = originator
         self.damage_type = damage_type
         self.raw_damage = raw_damage
@@ -44,6 +46,9 @@ class Damage:
         yield from self._final_resolved_damage(target)
 
     def _attack_message(self, target) -> Event:
+        if self.damage_type == "magic":
+            # Spells implement their own attack messages
+            return
         originator_name = self.originator.owner.name
         weapon = self.originator.gear.weapon
         target_name = target.name
@@ -93,9 +98,8 @@ class Damage:
 
         damage_details = target.fighter.take_damage(damage)
         if damage_details.get("emit_exp", None):
-            self.originator.leveller.gain_exp(damage_details["emit_exp"])
-            damage_details.update(**{"message": f"{self.originator.owner.name} gained {damage_details['emit_exp']} experience!"})
-        
+            self.originator.leveller.xp_to_resolve.append(damage_details["emit_exp"])
+
         result.update(**damage_details)
         yield result
 

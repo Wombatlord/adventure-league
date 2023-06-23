@@ -4,6 +4,7 @@ from typing import Any, Callable, Generator, NamedTuple
 
 from src.entities.action.actions import EndTurnAction
 from src.entities.combat.fighter import Fighter
+from src.entities.combat.leveller import Experience
 from src.entities.entity import Entity
 from src.entities.item.items import HealingPotion
 
@@ -120,6 +121,7 @@ class CombatRound:
                 # otherwise do that action!
                 yield from combatant.act()
                 yield from self._check_for_death(enemies)
+                yield from self._resolve_experience(combatant)
                 yield from self._check_for_retreat(self.teams[0] + self.teams[1])
         self.current_combatant(pop=True)
         yield from combatant.on_turn_end()
@@ -148,6 +150,18 @@ class CombatRound:
                 )
 
                 yield result
+
+    def _resolve_experience(self, combatant: Fighter):
+        final = Experience(0)
+        for experience in combatant.leveller.xp_to_resolve:
+            final += experience
+
+        if final.xp_value > 0:
+            final.resolve_xp(combatant.leveller)
+            yield {
+                "message": f"{combatant.owner.name} gained {final.xp_value} experience!"
+            }
+            combatant.leveller.increase_level()
 
     def _purge_fighter(self, fighter: Fighter) -> None:
         team_id = 0 if fighter in self.teams[0] else 1

@@ -4,8 +4,8 @@ import abc
 from enum import Enum
 from random import randint
 from typing import TYPE_CHECKING, Any, Generator
-from src.entities.combat.damage import Damage
 
+from src.entities.combat.damage import Damage
 from src.entities.properties.meta_compendium import MetaCompendium
 
 if TYPE_CHECKING:
@@ -216,10 +216,13 @@ class Fireball(Spell, metaclass=SpellMeta):
         for entity in room.occupants:
             if entity.locatable.location in template:
                 damage_amount = randint(self._min_damage, self._max_damage)
-                damage = Damage(self.caster.owner, damage_amount, crit_chance=0, damage_type="magic")
+                damage = Damage(
+                    self.caster.owner, damage_amount, crit_chance=0, damage_type="magic"
+                )
+                yield {
+                    "message": f"{self.name} scorches {entity.name} with a fireball!\n"
+                }
                 yield from damage.resolve_damage(entity)
-                # yield entity.fighter.take_damage(damage)
-                yield {"message": f"{self.name} scorches {entity.name} for {int(damage.final_damage)}!\n"}
 
     def valid_target(self, target: Fighter | Node):
         if hasattr(target, "location"):

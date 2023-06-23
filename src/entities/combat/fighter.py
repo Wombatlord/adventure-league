@@ -15,7 +15,7 @@ from src.entities.action.actions import (
 from src.entities.action.magic_action import MagicAction
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
-from src.entities.combat.leveller import Leveller
+from src.entities.combat.leveller import Experience, Leveller
 from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import FighterStats, HealthPool
 from src.entities.gear.gear import Gear
@@ -251,8 +251,8 @@ class Fighter:
             self.owner.is_dead = True
 
             result.update(**{"dead": self})
-            result.update(**{"emit_exp": self.stats.exp_value})
-            
+            result.update(**{"emit_exp": Experience(self.stats.base_xp_value)})
+
         final_hp = self.health.current
         result.update(
             {
