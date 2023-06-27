@@ -60,6 +60,9 @@ class HealthPool:
     def increase_current(self, amount: int):
         self._current_hp = min(self._current_hp + amount, self._max_hp)
 
+    def full_heal(self):
+        self._current_hp = self.max_hp
+    
     def set_shield(self, amount: int):
         self._bonus_hp = amount
 

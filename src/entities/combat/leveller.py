@@ -40,6 +40,13 @@ class Leveller:
 
         self.owner.stats.power += 1
         self.owner.stats.defence += 1
+        self.owner.health.max_hp += 10
+        self.owner.health.full_heal()
+        
+        if self.owner.caster:
+            self.owner.caster.mp_pool.max += 5
+            self.owner.caster.mp_pool.recharge()
+        
         yield {
             "message": f"{self.owner.owner.name} power and defence increased to {self.owner.stats.power} and {self.owner.stats.defence}!"
         }
