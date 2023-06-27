@@ -163,7 +163,7 @@ class CombatRound:
             yield {
                 "message": f"{combatant.owner.name} gained {final.xp_value} experience!"
             }
-            yield combatant.leveller.increase_level()
+            yield combatant.leveller.should_level_up()
 
     def _purge_fighter(self, fighter: Fighter) -> None:
         team_id = 0 if fighter in self.teams[0] else 1
