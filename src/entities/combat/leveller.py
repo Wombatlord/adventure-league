@@ -1,6 +1,9 @@
-from typing import Generator, Self
+from __future__ import annotations
 
-from src.engine.engine import Event
+from typing import TYPE_CHECKING, Generator, Self
+
+if TYPE_CHECKING:
+    from src.engine.engine import Event
 
 
 class Leveller:
@@ -25,8 +28,8 @@ class Leveller:
             self._current_level += 1
             yield {"message": f"{self.owner.owner.name} gained a level!"}
 
-    def gain_exp(self, amount: int):
-        self._current_xp += amount
+    def gain_exp(self, amount: Experience):
+        self._current_xp += amount.xp_value
 
 
 class Experience:

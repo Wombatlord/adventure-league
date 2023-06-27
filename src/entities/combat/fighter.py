@@ -37,10 +37,12 @@ Event = dict[str, Any]
 class EncounterContext:
     def __init__(self, fighter: Fighter):
         self.encounter_context = None
+        self.dungeon = None
         self.fighter = fighter
 
-    def set(self, room: Room):
+    def set(self, room: Room, dungeon):
         self.encounter_context = room
+        self.dungeon = dungeon
         self.fighter.on_retreat_hooks.append(lambda f: f.encounter_context.clear())
         self.fighter.owner.on_death_hooks.append(
             lambda e: e.fighter.encounter_context.clear()

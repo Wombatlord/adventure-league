@@ -151,7 +151,9 @@ class CombatRound:
 
                 yield result
 
-    def _resolve_experience(self, combatant: Fighter) -> Generator[Event, None, None] | None:
+    def _resolve_experience(
+        self, combatant: Fighter
+    ) -> Generator[Event, None, None] | None:
         final = Experience(0)
         for experience in combatant.leveller.xp_to_resolve:
             final += experience

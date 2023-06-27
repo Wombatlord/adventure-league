@@ -82,12 +82,10 @@ def create_dungeon_with_boss_room(
     for _ in range(room_amount):
         e = randint(min_enemies_per_room, d.max_enemies_per_room)
         d.rooms.append(create_random_enemy_room(enemy_amount=e, biome=d.biome))
-
     d.rooms.append(create_random_boss_room(d.biome))
     d.boss = d.rooms[-1].enemies[0]
+
+    for room in d.rooms:
+        room.dungeon = d
+
     return d
-
-    # print(f"{d.rooms=}")
-
-    # for i, _ in enumerate(d.rooms):
-    #     print(f"{d.rooms[i].enemies=}")

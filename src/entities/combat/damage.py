@@ -98,7 +98,9 @@ class Damage:
 
         damage_details = target.fighter.take_damage(damage)
         if damage_details.get("emit_exp", None):
-            self.originator.leveller.xp_to_resolve.append(damage_details["emit_exp"])
+            # self.originator.leveller.xp_to_resolve.append(damage_details["emit_exp"])
+            dungeon = self.originator.encounter_context.get().dungeon
+            dungeon.loot.team_xp.append(damage_details["emit_exp"])
 
         result.update(**damage_details)
         yield result

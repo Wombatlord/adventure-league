@@ -68,7 +68,8 @@ class Guild:
 
     def claim_rewards(self, rewards: Loot):
         self.funds += rewards.claim_gp()
-        self.xp += rewards.claim_xp()
+        self.xp += rewards.claim_guild_xp()
+        rewards.claim_team_xp(team=self.team)
 
     @property
     def level(self) -> int:
