@@ -35,7 +35,6 @@ class Leveller:
     def _do_level_up(self):
         self._current_xp = 0
         self._current_level += 1
-        yield {"message": f"{self.owner.owner.name} gained a level!"}
 
         self.owner.stats.power += 1
         self.owner.stats.defence += 1
@@ -46,15 +45,11 @@ class Leveller:
             self.owner.caster.mp_pool.max += 5
             self.owner.caster.mp_pool.recharge()
 
-        yield {
-            "message": f"{self.owner.owner.name} power and defence increased to {self.owner.stats.power} and {self.owner.stats.defence}!"
-        }
-
-    def gain_exp(self, amount: Experience) -> Generator[Event, None, None]:
+    def gain_xp(self, amount: Experience) -> Generator[Event, None, None]:
         self._current_xp += amount.xp_value
-
+        print("calling gain_xp")
         if self.should_level_up():
-            yield from self._do_level_up()
+            self._do_level_up()
 
 
 class Experience:
@@ -72,4 +67,4 @@ class Experience:
             return Experience(self.xp_value // other.xp_value)
 
     def resolve_xp(self, leveller: Leveller):
-        leveller.gain_exp(self.xp_value)
+        leveller.gain_xp(self.xp_value)
