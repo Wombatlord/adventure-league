@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Generator, Self
 
-
 if TYPE_CHECKING:
     from src.engine.engine import Event
     from src.entities.combat.fighter import Fighter
@@ -27,11 +26,11 @@ class Leveller:
         return (self.current_level + 1) * 1000
 
     @property
-    def current_exp(self) -> int:
+    def current_xp(self) -> int:
         return self._current_xp
 
     def should_level_up(self) -> Generator[Event, None, None]:
-        return self.current_exp >= self.xp_to_level_up
+        return self.current_xp >= self.xp_to_level_up
 
     def _do_level_up(self):
         self._current_xp = 0
@@ -42,18 +41,18 @@ class Leveller:
         self.owner.stats.defence += 1
         self.owner.health.max_hp += 10
         self.owner.health.full_heal()
-        
+
         if self.owner.caster:
             self.owner.caster.mp_pool.max += 5
             self.owner.caster.mp_pool.recharge()
-        
+
         yield {
             "message": f"{self.owner.owner.name} power and defence increased to {self.owner.stats.power} and {self.owner.stats.defence}!"
         }
 
     def gain_exp(self, amount: Experience) -> Generator[Event, None, None]:
         self._current_xp += amount.xp_value
-        
+
         if self.should_level_up():
             yield from self._do_level_up()
 

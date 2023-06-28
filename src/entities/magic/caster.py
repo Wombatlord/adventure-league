@@ -43,7 +43,7 @@ class MpPool:
     @property
     def max(self) -> int:
         return self._max
-    
+
     @max.setter
     def max(self, max_increase_by):
         self._max += max_increase_by
