@@ -11,6 +11,7 @@ from src.entities.gear.weapons import sword
 from src.entities.item.inventory import Inventory
 from src.systems.combat import CombatRound
 from src.tests.fixtures import EncounterFactory, FighterFixtures
+from src.world.level.dungeon import Dungeon
 from src.world.level.room import Room
 from src.world.level.room_layouts import basic_room
 from src.world.node import Node
@@ -40,7 +41,8 @@ class CombatRoundTest(TestCase):
 
     @classmethod
     def get_encounter(cls, size=2) -> Room:
-        return Room(size=(size, size))
+        dungeon = Dungeon(0, 0, [], [], None, None)
+        return Room(size=(size, size), dungeon=dungeon)
 
     @classmethod
     def set_up_encounter(cls, room_size: int, e1: Entity, e2: Entity) -> Room:
