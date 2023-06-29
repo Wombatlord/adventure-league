@@ -54,6 +54,8 @@ class Loot(Rewarder):
         for member in team.members:
             member.fighter.leveller.gain_xp(final)
 
+        self.team_xp = []
+
     def team_xp_total(self) -> int:
         total = Experience(0)
         for xp in self.team_xp:

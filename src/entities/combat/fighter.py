@@ -70,7 +70,6 @@ class Fighter:
         hp: int = 0,
         defence: int = 0,
         power: int = 0,
-        level: int = 0,
         speed: int = 0,
         caster: Caster = None,
         is_enemy: bool = False,
@@ -81,9 +80,7 @@ class Fighter:
         self.owner: Optional[Entity] = None
         # -----Stats-----
         self.health = HealthPool(max=hp)
-        self.stats = FighterStats(
-            defence=defence, power=power, level=level, speed=speed
-        )
+        self.stats = FighterStats(defence=defence, power=power, speed=speed)
         self.modifiable_stats = ModifiableStats(FighterStats, base_stats=self.stats)
         self.gear = Gear(owner=self)
         self.set_role(role)

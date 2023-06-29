@@ -9,13 +9,14 @@ if TYPE_CHECKING:
 
 class Leveller:
     owner: Fighter
+    xp_to_resolve: list[Experience]
 
     def __init__(self, owner) -> None:
         self.owner = owner
         self._current_level = 0
         self._current_xp = 0
         self._xp_to_level_up = 1000
-        self.xp_to_resolve: list[Experience] | list[None] = []
+        self.xp_to_resolve = []
 
     @property
     def current_level(self) -> int:
@@ -36,8 +37,10 @@ class Leveller:
         self._current_xp = 0
         self._current_level += 1
 
-        self.owner.stats.power += 1
-        self.owner.stats.defence += 1
+        new_power = self.owner.stats.power + 1
+        new_def = self.owner.stats.defence + 1
+        self.owner.stats._replace(power=new_power)
+        self.owner.stats._replace(defence=new_def)
         self.owner.health.max_hp += 10
         self.owner.health.full_heal()
 
@@ -47,7 +50,7 @@ class Leveller:
 
     def gain_xp(self, amount: Experience) -> Generator[Event, None, None]:
         self._current_xp += amount.xp_value
-        print("calling gain_xp")
+
         if self.should_level_up():
             self._do_level_up()
 
