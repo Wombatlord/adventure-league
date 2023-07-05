@@ -39,7 +39,7 @@ def entity_observer_widget(get_entity: Callable[[], Entity | None]) -> UILabel:
 
         ui_label.text = (
             f"{merc.name.name_and_title} "
-            f"| LVL: {merc.fighter.stats.level} "
+            f"| LVL: {merc.fighter.leveller.current_level} "
             f"|  HP: {merc.fighter.health.current} "
             f"| ATK: {int(merc.fighter.modifiable_stats.current.power)} "
             f"| DEF: {int(merc.fighter.modifiable_stats.current.defence)} "

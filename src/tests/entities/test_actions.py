@@ -13,6 +13,7 @@ from src.entities.properties.meta_compendium import MetaCompendium
 from src.systems.combat import CombatRound
 from src.tests.ai_fixture import TestAI
 from src.tests.fixtures import EncounterFactory, FighterFixtures
+from src.world.level.dungeon import Dungeon
 from src.world.level.room import Room
 from src.world.level.room_layouts import basic_room
 from src.world.node import Node
@@ -77,8 +78,9 @@ class ActionsTest(unittest.TestCase):
         merc, enemy = self.get_entities()
         potion = self.get_potion()
         merc.inventory.add_item_to_inventory(potion)
+        dungeon = Dungeon(0, 0, [], [], None, None)
         room = self.set_up_encounter(10, merc, enemy)
-        merc.fighter.encounter_context.set(room)
+        merc.fighter.encounter_context.set(room, dungeon)
 
         # Action
         event = next(merc.fighter.request_action_choice())

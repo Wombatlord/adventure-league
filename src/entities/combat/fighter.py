@@ -15,6 +15,7 @@ from src.entities.action.actions import (
 from src.entities.action.magic_action import MagicAction
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype
+from src.entities.combat.leveller import Experience, Leveller
 from src.entities.combat.modifiable_stats import ModifiableStats
 from src.entities.combat.stats import FighterStats, HealthPool
 from src.entities.gear.gear import Gear
@@ -36,10 +37,12 @@ Event = dict[str, Any]
 class EncounterContext:
     def __init__(self, fighter: Fighter):
         self.encounter_context = None
+        self.dungeon = None
         self.fighter = fighter
 
-    def set(self, room: Room):
+    def set(self, room: Room, dungeon):
         self.encounter_context = room
+        self.dungeon = dungeon
         self.fighter.on_retreat_hooks.append(lambda f: f.encounter_context.clear())
         self.fighter.owner.on_death_hooks.append(
             lambda e: e.fighter.encounter_context.clear()
@@ -67,7 +70,6 @@ class Fighter:
         hp: int = 0,
         defence: int = 0,
         power: int = 0,
-        level: int = 0,
         speed: int = 0,
         caster: Caster = None,
         is_enemy: bool = False,
@@ -78,13 +80,12 @@ class Fighter:
         self.owner: Optional[Entity] = None
         # -----Stats-----
         self.health = HealthPool(max=hp)
-        self.stats = FighterStats(
-            defence=defence, power=power, level=level, speed=speed
-        )
+        self.stats = FighterStats(defence=defence, power=power, speed=speed)
         self.modifiable_stats = ModifiableStats(FighterStats, base_stats=self.stats)
         self.gear = Gear(owner=self)
         self.set_role(role)
         # -----State-----
+        self.leveller = Leveller(owner=self)
         self.action_points = ActionPoints()
         self._caster = caster
         self.on_retreat_hooks = []
@@ -249,6 +250,7 @@ class Fighter:
             self.owner.is_dead = True
 
             result.update(**{"dead": self})
+            result.update(**{"emit_exp": Experience(self.stats.base_xp_value)})
 
         final_hp = self.health.current
         result.update(

@@ -211,8 +211,5 @@ class SerialisationTest(TestCase):
                 original_entity_stats.power == rehydrated_entity_stats.power
             ), f"Modifiable Stat is not equal, Entity_A: {original_entity_stats.power=}, Entity_B: {rehydrated_entity_stats.power=}"
             assert (
-                original_entity_stats.level == rehydrated_entity_stats.level
-            ), f"Modifiable Stat is not equal, Entity_A: {original_entity_stats.level=}, Entity_B: {rehydrated_entity_stats.level=}"
-            assert (
                 original_entity_stats.speed == rehydrated_entity_stats.speed
             ), f"Modifiable Stat is not equal, Entity_A: {original_entity_stats.speed=}, Entity_B: {rehydrated_entity_stats.speed=}"
