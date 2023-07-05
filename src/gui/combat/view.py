@@ -4,6 +4,7 @@ import arcade
 from arcade.gui import UIManager
 
 from src.engine.init_engine import eng
+from src.gui.combat.action_report import ActionReport
 from src.gui.combat.hud import HUD
 from src.gui.combat.scene import Scene
 
@@ -18,9 +19,12 @@ class CombatView(arcade.View):
             left=0, bottom=0, width=window_dims[0], height=window_dims[1]
         )
         self.hud = HUD(scene=self.scene)
-
+        self.action_report = ActionReport(
+            left=0, bottom=0, width=window_dims[0], height=window_dims[1]
+        )
         self.add_section(self.hud)
         self.add_section(self.scene)
+        self.add_section(self.action_report)
         eng.init_combat()
 
     def on_draw(self):
@@ -36,3 +40,6 @@ class CombatView(arcade.View):
                 if eng.mission_in_progress is False:
                     eng.flush_subscriptions()
                     self.window.show_view(self.parent_factory())
+            
+            case arcade.key.X:
+                self.action_report.after_action()
