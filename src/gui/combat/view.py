@@ -20,7 +20,7 @@ class CombatView(arcade.View):
         )
         self.hud = HUD(scene=self.scene)
         self.action_report = ActionReport(
-            left=0, bottom=0, width=window_dims[0], height=window_dims[1]
+            left=window_dims[0] * 0.25, bottom=window_dims[1] * 0.25, width=window_dims[0] - window_dims[0] * 0.25, height=window_dims[1] - window_dims[1] * 0.25
         )
         self.add_section(self.hud)
         self.add_section(self.scene)
@@ -33,13 +33,3 @@ class CombatView(arcade.View):
     def on_resize(self, width: int, height: int):
         super().on_resize(width, height)
         self.hud.on_resize(width, height)
-
-    def on_key_press(self, symbol: int, modifiers: int) -> None:
-        match symbol:
-            case arcade.key.G:
-                if eng.mission_in_progress is False:
-                    eng.flush_subscriptions()
-                    self.window.show_view(self.parent_factory())
-            
-            case arcade.key.X:
-                self.action_report.after_action()

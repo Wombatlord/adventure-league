@@ -18,7 +18,7 @@ class Rewarder:
 
 class Loot(Rewarder):
     guild_xp: int
-    team_xp: list[Experience]
+    _team_xp_to_be_awarded: list[Experience]
     gp: int
     _text: str
 
@@ -29,7 +29,8 @@ class Loot(Rewarder):
     ):
         self.guild_xp = max(0, xp)
         self.gp = max(0, gp)
-        self.team_xp = []
+        self._team_xp_to_be_awarded = []
+        self.awarded_xp_per_member = 0
 
     @property
     def claimed(self) -> bool:
@@ -46,21 +47,27 @@ class Loot(Rewarder):
     def claim_team_xp(self, team: Team):
         member_count = len(team.members)
 
+        final = self.calculate_xp_per_member(member_count)
+        
+        for member in team.members:
+            member.fighter.leveller.gain_xp(final)
+            
+            if member.fighter.leveller.should_level_up():
+                member.fighter.leveller._do_level_up()
+        
+        self.awarded_xp_per_member = final.xp_value
+        self._team_xp_to_be_awarded = []
+
+    def calculate_xp_per_member(self, member_count):
         final = Experience(0)
-        for experience in self.team_xp:
+        for experience in self._team_xp_to_be_awarded:
             final += experience
 
         final = final // member_count
-        for member in team.members:
-            member.fighter.leveller.gain_xp(final)
+        return final
 
-        self.team_xp = []
-
-    def team_xp_total(self) -> int:
-        total = Experience(0)
-        for xp in self.team_xp:
-            total += xp
-        return total.xp_value
+    def team_xp_total(self, team: Team) -> int:
+        return self.awarded_xp_per_member * len(team.members)
 
     def __str__(self) -> str:
         if self.claimed:

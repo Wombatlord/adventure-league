@@ -32,7 +32,7 @@ class LevellerTest(unittest.TestCase):
         exp = Experience(50)
         exp2 = Experience(50)
         loot = Loot()
-        loot.team_xp.extend([exp, exp2])
+        loot._team_xp_to_be_awarded.extend([exp, exp2])
 
         # Action
         loot.claim_team_xp(team)
@@ -48,7 +48,7 @@ class LevellerTest(unittest.TestCase):
         exp = Experience(50)
         exp2 = Experience(50)
         loot = Loot()
-        loot.team_xp.extend([exp, exp2])
+        loot._team_xp_to_be_awarded.extend([exp, exp2])
 
         # Action
         loot.claim_team_xp(team)
@@ -64,13 +64,13 @@ class LevellerTest(unittest.TestCase):
         exp = Experience(999)
         loot = Loot()
 
-        loot.team_xp.append(exp)
+        loot._team_xp_to_be_awarded.append(exp)
         loot.claim_team_xp(team)
         assert team.members[0].fighter.leveller.current_xp == 999
         assert team.members[0].fighter.leveller.current_level == 0
 
         exp = Experience(1)
-        loot.team_xp.append(exp)
+        loot._team_xp_to_be_awarded.append(exp)
         loot.claim_team_xp(team)
 
         assert (

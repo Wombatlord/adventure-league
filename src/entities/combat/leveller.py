@@ -30,7 +30,7 @@ class Leveller:
     def current_xp(self) -> int:
         return self._current_xp
 
-    def should_level_up(self) -> Generator[Event, None, None]:
+    def should_level_up(self) -> bool:
         return self.current_xp >= self.xp_to_level_up
 
     def _do_level_up(self):

@@ -279,7 +279,6 @@ class Engine:
             (
                 f"{dungeon.boss.name.first_name.capitalize()} is vanquished and the evil within {dungeon.description} is no more!",
                 f"{guild.team.name} of the {guild.name} is victorious!\n",
-                f"{guild.team.name} splits {dungeon.loot.team_xp_total()} experience. Each member receives {dungeon.loot.team_xp_total() // len(guild.team.members)} xp!",
             )
         )
 

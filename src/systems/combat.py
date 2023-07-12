@@ -121,7 +121,6 @@ class CombatRound:
                 # otherwise do that action!
                 yield from combatant.act()
                 yield from self._check_for_death(enemies)
-                yield from self._resolve_experience(combatant)
                 yield from self._check_for_retreat(self.teams[0] + self.teams[1])
         self.current_combatant(pop=True)
         yield from combatant.on_turn_end()
@@ -150,20 +149,6 @@ class CombatRound:
                 )
 
                 yield result
-
-    def _resolve_experience(
-        self, combatant: Fighter
-    ) -> Generator[Event, None, None] | None:
-        final = Experience(0)
-        for experience in combatant.leveller.xp_to_resolve:
-            final += experience
-
-        if final.xp_value > 0:
-            final.resolve_xp(combatant.leveller)
-            yield {
-                "message": f"{combatant.owner.name} gained {final.xp_value} experience!"
-            }
-            yield combatant.leveller.should_level_up()
 
     def _purge_fighter(self, fighter: Fighter) -> None:
         team_id = 0 if fighter in self.teams[0] else 1

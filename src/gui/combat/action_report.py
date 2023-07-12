@@ -38,10 +38,13 @@ class ActionReport(arcade.Section):
             modal=modal,
             draw_order=draw_order,
         )
-        self.title = "Action Report"
-        self.title_text = None
+        title = "Action Report"
+        self.title_text = arcade.Text(
+            f"{title}", start_x=self.width/2 + self.left / 2, start_y=self.height - 50, anchor_x="center"
+        )
         self.surviving_fighters = []
         self.survivor_labels = []
+        self.xp_labels = []
 
         self._subscribe_to_events()
 
@@ -61,14 +64,13 @@ class ActionReport(arcade.Section):
 
         for i, survivor in enumerate(eng.game_state.team.members):
             y = 20 * i
-            t = arcade.Text(
-                    f"{survivor.name}", start_x=self.width / 2, start_y=self.height - 50 - y
+            survivor_name_text = arcade.Text(
+                    f"{survivor.name}", start_x=self.left + 100, start_y=self.height - 100 - y
                 )
-            self.survivor_labels.append(t)
-
-        self.title_text = arcade.Text(
-            f"{self.title}", start_x=self.width / 2, start_y=self.height - 50
-        )
+            xp_text = arcade.Text(f"{dungeon.loot.awarded_xp_per_member}", start_x=self.width - 100, start_y=self.height - 100 - y)
+            self.survivor_labels.append(survivor_name_text)
+            self.xp_labels.append(xp_text)
+        
         self.enable()
 
     def on_draw(self):
@@ -76,5 +78,14 @@ class ActionReport(arcade.Section):
             self.left, self.width, self.bottom, self.height, color=arcade.color.RED
         )
         self.title_text.draw()
-        for t in self.survivor_labels:
-            t.draw()
+        labels = zip(self.survivor_labels, self.xp_labels)
+        for label_pair in labels:
+            label_pair[0].draw()
+            label_pair[1].draw()
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        match symbol:
+            case arcade.key.G:
+                if eng.mission_in_progress is False:
+                    eng.flush_subscriptions()
+                    self.view.window.show_view(self.view.parent_factory())
