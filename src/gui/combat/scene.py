@@ -220,6 +220,19 @@ class Scene(arcade.Section):
             eng.reset_update_clock()
             hook()
         self.update_camera()
+        self.highlight_cursor(*self._mouse_coords)
+        
+    def highlight_cursor(self, x: int, y: int):
+        s: arcade.Sprite
+        mouse = x, y
+        click = self.cam_controls.image_px(
+            Vec2(*mouse) if mouse else self._mouse_coords
+        )
+        for s in self.world_sprite_list[::-1]:
+            if s.collides_with_point(click):
+                self._last_clicked = s.node
+                self.show_highlight(red=[self._last_clicked])
+                break
 
     def on_draw(self):
         self.grid_camera.use()
@@ -229,7 +242,12 @@ class Scene(arcade.Section):
             l, r, b, t = self.grid_camera.projection
             arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
             arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
-
+            
+            for s in self.world_sprite_list:
+                s: arcade.Sprite
+                s.draw_hit_box(arcade.color.WHITE)
+                break
+            
     def on_resize(self, width: int, height: int):
         self.width, self.height = width, height
         self.transform.on_resize(self.world_origin)
