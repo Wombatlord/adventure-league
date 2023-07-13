@@ -144,7 +144,7 @@ class CombatRound:
                 result.update(**fighter.owner.annotate_event({}))
                 result.update(
                     {
-                        Events.RETREAT: fighter,
+                        "retreat": fighter,
                         Events.MESSAGE: f"{fighter.owner.name.name_and_title} is retreating!",
                     }
                 )

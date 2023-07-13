@@ -130,7 +130,7 @@ class Scene(arcade.Section):
             handler=self.clear_dead_sprites,
         )
         eng.combat_dispatcher.volatile_subscribe(
-            topic=Events.RETREAT,
+            topic="retreat",
             handler_id="CombatGrid.clear_retreating_sprites",
             handler=self.clear_retreating_sprites,
         )
@@ -329,14 +329,14 @@ class Scene(arcade.Section):
         dude.entity_sprite.swap_idle_and_attack_textures()
 
     def clear_retreating_sprites(self, event):
-        retreating_dude = event.get(Events.DYING) or event.get(Events.RETREAT)
+        retreating_dude = event.get(Events.DYING) or event.get("retreat")
         retreating_dude.owner.entity_sprite.sprite.remove_from_sprite_lists()
 
     def clear_dead_sprites(self, event):
         """
         If a sprite is associated to a dead entity, remove the sprite from the sprite list.
         """
-        dead_dude: Entity = event.get(Events.DYING) or event.get(Events.RETREAT)
+        dead_dude: Entity = event.get(Events.DYING) or event.get("retreat")
         dead_dude.entity_sprite.sprite.remove_from_sprite_lists()
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):

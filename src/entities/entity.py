@@ -130,10 +130,10 @@ class Entity:
         return {
             **event,
             **{
-                Events.ENTITY_DATA: {
+                Events.ENTITY_DATA.value: {
                     "health": self.fighter.health.current if self.fighter else None,
                     "name": self.name.name_and_title,
-                    Events.RETREAT: self.fighter.retreating,
+                    "retreat": self.fighter.retreating,
                     "species": self.species,
                 }
             },
