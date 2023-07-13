@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING, Any, Generator
 
+from src.engine.events_enum import Events
 from src.entities.combat.attack_rules import AttackRules, RollOutcome
 from src.entities.combat.damage import Damage
 from src.entities.properties.meta_compendium import MetaCompendium
@@ -72,7 +73,7 @@ class NormalAttack(metaclass=WeaponAttackMeta):
 
         yield from self.fighter.gear.weapon.emit_damage().resolve_damage(target)
 
-        result.update({"attack": self._fighter.owner, "message": message})
+        result.update({Events.ATTACK: self._fighter.owner, Events.MESSAGE: message})
         yield result
 
     def valid_target(self, target: Fighter | Node) -> bool:

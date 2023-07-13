@@ -4,6 +4,7 @@ import arcade
 from pyglet.math import Vec2
 
 from src import config
+from src.engine.events_enum import Events
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
 from src.entities.properties.locatable import Locatable
@@ -100,36 +101,36 @@ class Scene(arcade.Section):
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
-            topic="new_encounter",
+            topic=Events.NEW_ENCOUNTER,
             handler_id="CombatGrid.set_encounter",
             handler=self.set_encounter,
         )
 
         eng.combat_dispatcher.volatile_subscribe(
-            topic="move",
+            topic=Events.MOVE,
             handler_id="CombatGrid.update_dudes",
             handler=self.update_dudes,
         )
 
         eng.combat_dispatcher.volatile_subscribe(
-            topic="cleanup",
+            topic=Events.CLEANUP,
             handler_id="CombatGrid.teardown_level",
             handler=self.teardown_level,
         )
 
         eng.combat_dispatcher.volatile_subscribe(
-            topic="attack",
+            topic=Events.ATTACK,
             handler_id="CombatGrid.swap_textures_for_attack",
             handler=self.idle_or_attack,
         )
 
         eng.combat_dispatcher.volatile_subscribe(
-            topic="dying",
+            topic=Events.DYING,
             handler_id="CombatGrid.clear_dead_sprites",
             handler=self.clear_dead_sprites,
         )
         eng.combat_dispatcher.volatile_subscribe(
-            topic="retreat",
+            topic=Events.RETREAT,
             handler_id="CombatGrid.clear_retreating_sprites",
             handler=self.clear_retreating_sprites,
         )
@@ -249,7 +250,7 @@ class Scene(arcade.Section):
         return self._focus or Node(4, 4)
 
     def set_encounter(self, event: dict) -> None:
-        encounter_room = event.get("new_encounter", None)
+        encounter_room = event.get(Events.NEW_ENCOUNTER, None)
         if encounter_room:
             self.floating_health_bars.flush()
             self.encounter_room = encounter_room
@@ -324,18 +325,18 @@ class Scene(arcade.Section):
         self.world_sprite_list.clear()
 
     def idle_or_attack(self, event):
-        dude = event["attack"]
+        dude = event[Events.ATTACK]
         dude.entity_sprite.swap_idle_and_attack_textures()
 
     def clear_retreating_sprites(self, event):
-        retreating_dude = event.get("dying") or event.get("retreat")
+        retreating_dude = event.get(Events.DYING) or event.get(Events.RETREAT)
         retreating_dude.owner.entity_sprite.sprite.remove_from_sprite_lists()
 
     def clear_dead_sprites(self, event):
         """
         If a sprite is associated to a dead entity, remove the sprite from the sprite list.
         """
-        dead_dude: Entity = event.get("dying") or event.get("retreat")
+        dead_dude: Entity = event.get(Events.DYING) or event.get(Events.RETREAT)
         dead_dude.entity_sprite.sprite.remove_from_sprite_lists()
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):

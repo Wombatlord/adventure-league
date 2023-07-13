@@ -1,5 +1,6 @@
 import unittest
 
+from src.engine.events_enum import Events
 from src.entities.action.actions import ConsumeItemAction, EndTurnAction, MoveAction
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.fighter import Fighter
@@ -60,7 +61,7 @@ class ActionsTest(unittest.TestCase):
 
     def test_action_compendium_has_registered_all_actions(self):
         # Arrange
-        keys = {"end turn", "weapon attack", "cast spell", "use item", "move"}
+        keys = {"end turn", "weapon attack", "cast spell", "use item", Events.MOVE}
         actions = MetaCompendium.all_actions
 
         # Assert
@@ -71,7 +72,7 @@ class ActionsTest(unittest.TestCase):
         assert actions.get("end turn") is EndTurnAction
         assert actions.get("weapon attack") is WeaponAttackAction
         assert actions.get("use item") is ConsumeItemAction
-        assert actions.get("move") is MoveAction
+        assert actions.get(Events.MOVE) is MoveAction
 
     def test_request_action_event_schema(self):
         # Arrange
@@ -141,7 +142,7 @@ class EndTurnActionTest(unittest.TestCase):
         assert current_fighter is not None
         assert current_fighter.is_ready_to_act()
 
-        _assert_keys(msg=next(turn), expected_keys={"message"})
+        _assert_keys(msg=next(turn), expected_keys={Events.MESSAGE})
         _assert_keys(msg=next(turn), expected_keys={"turn_end"})
 
 
@@ -205,10 +206,10 @@ class MoveActionTest(unittest.TestCase):
         step_event: dict | None = None
         for _ in range(len(trimmed_path[1:])):
             step_event = next(turn)
-            _assert_keys(msg=step_event, expected_keys={"move"})
+            _assert_keys(msg=step_event, expected_keys={Events.MOVE})
 
         # assertions about the final step
-        assert not step_event["move"][
+        assert not step_event[Events.MOVE][
             "in_motion"
         ], f"expected false from {step_event['move']['in_motion']=}"
 

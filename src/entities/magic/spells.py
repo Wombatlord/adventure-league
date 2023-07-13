@@ -5,6 +5,7 @@ from enum import Enum
 from random import randint
 from typing import TYPE_CHECKING, Any, Generator
 
+from src.engine.events_enum import Events
 from src.entities.combat.damage import Damage
 from src.entities.properties.meta_compendium import MetaCompendium
 
@@ -116,10 +117,10 @@ class MagicMissile(Spell, metaclass=SpellMeta):
             return
 
         yield {
-            "message": f"{self._caster.owner.owner.name} cast {self.name} at {target.owner.name}"
+            Events.MESSAGE: f"{self._caster.owner.owner.name} cast {self.name} at {target.owner.name}"
         }
         yield {
-            "message": f"{self.name} strikes {target.owner.name} for {self._damage}!"
+            Events.MESSAGE: f"{self.name} strikes {target.owner.name} for {self._damage}!"
         }
         yield target.take_damage(self._damage)
 
@@ -160,7 +161,7 @@ class Shield(Spell, metaclass=SpellMeta):
 
     def self_cast(self) -> Generator[Event]:
         self._caster.owner.health.set_shield(self._shield_value)
-        yield {"message": f"{self._caster.owner.owner.name} shielded themselves."}
+        yield {Events.MESSAGE: f"{self._caster.owner.owner.name} shielded themselves."}
 
     def valid_target(self, target: Fighter | Node) -> bool:
         if not isinstance(target, Fighter):
@@ -211,7 +212,7 @@ class Fireball(Spell, metaclass=SpellMeta):
         template = self.aoe_at_node(target)
         room = self._caster.owner.encounter_context.get()
 
-        yield {"message": f"{self._caster.owner.owner.name} cast {self.name}."}
+        yield {Events.MESSAGE: f"{self._caster.owner.owner.name} cast {self.name}."}
 
         for entity in room.occupants:
             if entity.locatable.location in template:
@@ -220,7 +221,7 @@ class Fireball(Spell, metaclass=SpellMeta):
                     self.caster.owner, damage_amount, crit_chance=0, damage_type="magic"
                 )
                 yield {
-                    "message": f"{self.name} scorches {entity.name} with a fireball!\n"
+                    Events.MESSAGE: f"{self.name} scorches {entity.name} with a fireball!\n"
                 }
                 yield from damage.resolve_damage(entity)
 

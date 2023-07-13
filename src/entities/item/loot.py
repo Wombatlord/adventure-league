@@ -48,13 +48,13 @@ class Loot(Rewarder):
         member_count = len(team.members)
 
         final = self.calculate_xp_per_member(member_count)
-        
+
         for member in team.members:
             member.fighter.leveller.gain_xp(final)
-            
+
             if member.fighter.leveller.should_level_up():
                 member.fighter.leveller._do_level_up()
-        
+
         self.awarded_xp_per_member = final.xp_value
         self._team_xp_to_be_awarded = []
 

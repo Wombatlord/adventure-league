@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Generator
 
+from src.engine.events_enum import Events
 from src.entities.action.actions import ActionMeta, BaseAction
 from src.entities.magic.spells import EffectType, Spell
 from src.world.node import Node
@@ -34,7 +35,7 @@ class MagicAction(BaseAction, metaclass=ActionMeta):
             yield from spell.cast(target)
 
         else:
-            yield {"message": f"Not enough mana to cast {spell.name}!"}
+            yield {Events.MESSAGE: f"Not enough mana to cast {spell.name}!"}
 
     @classmethod
     def details(cls, fighter: Fighter, spell: Spell) -> dict:

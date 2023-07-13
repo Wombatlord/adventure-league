@@ -7,6 +7,7 @@ from pyglet.math import Vec2
 from src import config
 from src.engine.describer import Describer
 from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
+from src.engine.events_enum import Events
 from src.engine.game_state import AwardSpoilsHandler, GameState
 from src.engine.mission_board import MissionBoard
 from src.engine.persistence.game_state_repository import Format, GuildRepository
@@ -63,7 +64,7 @@ class Engine:
     def new_game(self) -> None:
         self.game_state = GameState(self)
         self.static_subscribe(
-            topic="team triumphant",
+            topic=Events.VICTORY,
             handler_id="game_state",
             handler=AwardSpoilsHandler(self.game_state).handle,
         )
@@ -83,7 +84,7 @@ class Engine:
     def load_save_slot(self, slot: int):
         self.game_state = GameState(self)
         self.static_subscribe(
-            topic="team triumphant",
+            topic=Events.VICTORY,
             handler_id="game_state",
             handler=AwardSpoilsHandler(self.game_state).handle,
         )
@@ -137,17 +138,17 @@ class Engine:
             return False
 
     def process_one(self, event: Event) -> None:
-        if "cleanup" in event:
+        if Events.CLEANUP in event:
             self.flush_all()
             return
 
-        if "delay" in event:
+        if Events.DELAY in event:
             # Purely an instruction to the engine
             self._handle_delay_event(event)
-            del event["delay"]
+            del event[Events.DELAY]
 
-        if "message" in event:
-            self.messages.append(event["message"])
+        if Events.MESSAGE in event:
+            self.messages.append(event[Events.MESSAGE])
 
         if config.DEBUG:
             print(f"{event=}")
@@ -156,7 +157,7 @@ class Engine:
         self.combat_dispatcher.publish(event)
 
     def _handle_delay_event(self, event):
-        self.increase_update_clock_by_delay(event.get("delay", 0))
+        self.increase_update_clock_by_delay(event.get(Events.DELAY, 0))
 
     def reset_update_clock(self):
         self.update_clock = self.default_clock_value
@@ -231,12 +232,12 @@ class Engine:
     def _generate_combat_events(self) -> Generator[Event, None, None]:
         quest = self.game_state.dungeon.room_generator()
 
-        yield {"message": Describer.describe_entrance(self), "delay": 3}
+        yield {Events.MESSAGE: Describer.describe_entrance(self), Events.DELAY: 3}
 
         combat_round = None
         for encounter in quest:
             encounter.include_party(self.game_state.team.members)
-            yield {"new_encounter": encounter}
+            yield {Events.NEW_ENCOUNTER: encounter}
 
             yield from self.initial_health_values(
                 self.game_state.team.members, encounter.enemies
@@ -260,7 +261,10 @@ class Engine:
                 break
 
             if not self.game_state.dungeon.boss.is_dead:
-                yield {"message": Describer.describe_room_complete(self), "delay": 3}
+                yield {
+                    Events.MESSAGE: Describer.describe_room_complete(self),
+                    Events.DELAY: 3,
+                }
 
         if combat_round and combat_round.victor() == 0:
             win = True
@@ -269,7 +273,7 @@ class Engine:
 
         yield from self.end_of_combat(win=win)
 
-        yield {"cleanup": encounter}
+        yield {Events.CLEANUP: encounter}
 
     @staticmethod
     def team_triumphant_events(guild, dungeon: Dungeon) -> list[Event]:
@@ -282,15 +286,15 @@ class Engine:
             )
         )
 
-        results.append({"message": message})
-        results.append({"team triumphant": {"dungeon": dungeon}})
+        results.append({Events.MESSAGE: message})
+        results.append({Events.VICTORY: {Events.DUNGEON: dungeon}})
         return results
 
     @staticmethod
     def team_defeated(team) -> list[Event]:
         results = []
 
-        results.append({"message": f"{team.name} defeated!"})
+        results.append({Events.MESSAGE: f"{team.name} defeated!"})
 
         return results
 

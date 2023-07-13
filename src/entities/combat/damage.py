@@ -3,6 +3,8 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING, Any, Generator
 
+from src.engine.events_enum import Events
+
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
     from src.entities.entity import Entity
@@ -35,7 +37,7 @@ class Damage:
         ) and self.damage_type == "physical":
             self.final_damage = 0
             message = f"{target.name} evaded the attack!\n"
-            result.update({"message": message})
+            result.update({Events.MESSAGE: message})
 
             yield result
             return
@@ -54,21 +56,21 @@ class Damage:
         target_name = target.name
         if weapon.attack_verb == "melee":
             yield {
-                "message": f"{originator_name} swings at {target_name} with their {weapon.name}\n"
+                Events.MESSAGE: f"{originator_name} swings at {target_name} with their {weapon.name}\n"
             }
         elif weapon.attack_verb == "ranged":
             yield {
-                "message": f"{originator_name} shoots at {target_name} with their {weapon.name}\n"
+                Events.MESSAGE: f"{originator_name} shoots at {target_name} with their {weapon.name}\n"
             }
 
     def _critical_confirm(self):
         message = ""
         if random.randint(1, 100) <= self.crit_chance:
             self.raw_damage *= 2
-            yield {"message": "CRITICAL!"}
+            yield {Events.MESSAGE: "CRITICAL!"}
 
         else:
-            yield {"message": message}
+            yield {Events.MESSAGE: message}
 
     def _damage_reduction_by_defense(
         self, target: Entity
@@ -84,13 +86,13 @@ class Damage:
             f"{target.name}'s defence reduced the damage by {mitigation_percent}%!\n"
         )
 
-        yield {"message": message}
+        yield {Events.MESSAGE: message}
 
     def _final_resolved_damage(self, target: Entity):
         result = {}
         damage = int(self.final_damage)
         message = f"{target.name} takes {damage} damage!\n"
-        result.update({"message": message})
+        result.update({Events.MESSAGE: message})
 
         if target.fighter.health.current - self.final_damage <= 0:
             # If the attack will kill, we will no longer be "in combat" until the next attack.

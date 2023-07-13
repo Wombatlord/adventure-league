@@ -3,6 +3,7 @@ from typing import Generator
 import arcade
 from arcade.gui import Rect
 
+from src.engine.events_enum import Events
 from src.engine.init_engine import eng
 from src.gui.components.scroll_window import gen_heights
 from src.gui.window_data import WindowData
@@ -16,7 +17,7 @@ class CombatLog:
     def __init__(self, rect: Rect) -> None:
         self.rect = rect
         eng.subscribe(
-            topic="message",
+            topic=Events.MESSAGE,
             handler_id="combat_log.on_message_receieved",
             handler=self.on_message_receieved,
         )
@@ -70,7 +71,7 @@ class CombatLog:
         self.refresh_ui()
 
     def on_message_receieved(self, event: dict):
-        message = event.get("message", "")
+        message = event.get(Events.MESSAGE, "")
         if message:
             self.logs.append(message)
             self.logs = self.logs[-5:]

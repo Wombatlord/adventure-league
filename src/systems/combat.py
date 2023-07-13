@@ -2,6 +2,7 @@ from enum import Enum
 from random import shuffle
 from typing import Any, Callable, Generator, NamedTuple
 
+from src.engine.events_enum import Events
 from src.entities.action.actions import EndTurnAction
 from src.entities.combat.fighter import Fighter
 from src.entities.combat.leveller import Experience
@@ -59,7 +60,7 @@ class CombatRound:
         self._round_order = [combatant for combatant, _ in initiative_roll]
         events.append(
             {
-                "message": f"{self._round_order[0].owner.name.name_and_title} goes first this turn"
+                Events.MESSAGE: f"{self._round_order[0].owner.name.name_and_title} goes first this turn"
             }
         )
 
@@ -132,7 +133,7 @@ class CombatRound:
                 target.owner.die()
                 self._purge_fighter(target)
 
-                yield {"dying": target.owner, "message": f"{name} is dead!"}
+                yield {Events.DYING: target.owner, Events.MESSAGE: f"{name} is dead!"}
 
     def _check_for_retreat(self, team) -> Event:
         for fighter in team:
@@ -143,8 +144,8 @@ class CombatRound:
                 result.update(**fighter.owner.annotate_event({}))
                 result.update(
                     {
-                        "retreat": fighter,
-                        "message": f"{fighter.owner.name.name_and_title} is retreating!",
+                        Events.RETREAT: fighter,
+                        Events.MESSAGE: f"{fighter.owner.name.name_and_title} is retreating!",
                     }
                 )
 

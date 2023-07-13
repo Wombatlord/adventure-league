@@ -4,6 +4,7 @@ from enum import Enum
 from random import choice
 from typing import TYPE_CHECKING, Callable, Generator, Sequence
 
+from src.engine.events_enum import Events
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
 
@@ -41,7 +42,7 @@ class Locatable:
 
     def _no_move(self):
         return {
-            "move": {
+            Events.MOVE: {
                 "start": self.location,
                 "end": self.location,
                 "in_motion": False,
@@ -69,7 +70,7 @@ class Locatable:
 
     def _step_event(self, before: Node, after: Node, in_motion: bool) -> dict:
         return {
-            "move": {
+            Events.MOVE: {
                 "start": before,
                 "end": after,
                 "in_motion": in_motion,

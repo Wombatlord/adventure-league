@@ -20,7 +20,10 @@ class CombatView(arcade.View):
         )
         self.hud = HUD(scene=self.scene)
         self.action_report = ActionReport(
-            left=window_dims[0] * 0.25, bottom=window_dims[1] * 0.25, width=window_dims[0] - window_dims[0] * 0.25, height=window_dims[1] - window_dims[1] * 0.25
+            left=window_dims[0] * 0.25,
+            bottom=window_dims[1] * 0.25,
+            width=window_dims[0] - window_dims[0] * 0.25,
+            height=window_dims[1] - window_dims[1] * 0.25,
         )
         self.add_section(self.hud)
         self.add_section(self.scene)

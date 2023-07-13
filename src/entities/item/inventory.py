@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Self
 
+from src.engine.events_enum import Events
 from src.entities.item.items import HealingPotion
 
 if TYPE_CHECKING:
     from src.entities.entity import Entity
+
 from src.entities.item.inventory_item import Consumable, InventoryItem
 
 Event = dict[str, Any]
@@ -44,10 +46,10 @@ class Inventory:
                 break
 
         if not added_to_inventory:
-            results.append({"message": "Inventory is Full!"})
+            results.append({Events.MESSAGE: "Inventory is Full!"})
         else:
             item.on_add_to_inventory(self)
-            results.append({"message": f"{item.name} added to inventory."})
+            results.append({Events.MESSAGE: f"{item.name} added to inventory."})
 
         return results
 

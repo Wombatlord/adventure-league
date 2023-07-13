@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Self
 
+from src.engine.events_enum import Events
+
 if TYPE_CHECKING:
     from src.entities.entity import Entity
     from src.entities.item.inventory import Inventory
@@ -63,7 +65,7 @@ class Consumable(InventoryItem):
             event = inventory.owner.annotate_event(
                 {
                     **event,
-                    "message": f"{self.get_name()} used by {inventory.owner.name}",
+                    Events.MESSAGE: f"{self.get_name()} used by {inventory.owner.name}",
                 }
             )
 
@@ -87,7 +89,7 @@ class Throwable(InventoryItem):
 
         return inventory.owner.annotate_event(
             {
-                "message": f"{self.get_name()} used by {inventory.owner.name}",
+                Events.MESSAGE: f"{self.get_name()} used by {inventory.owner.name}",
                 "thowable_hit": {
                     "throwable": self,
                     "effect": {
