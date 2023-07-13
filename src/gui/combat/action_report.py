@@ -13,7 +13,7 @@ class ActionReport(arcade.Section):
     survivor_labels: list[arcade.Text]
     xp_labels: list[arcade.Text]
     dungeon_context: Dungeon | None
-    
+
     def __init__(
         self,
         left: int,
@@ -48,9 +48,9 @@ class ActionReport(arcade.Section):
         )
         title = "Action Report"
         self.dungeon_context = None
-        self.surviving_fighters = []
         self.survivor_labels = []
         self.xp_labels = []
+        self.zipped_labels = []
         self.xp_counter = 0
         self.window_dims = arcade.get_window().size
         self.bounds = Rectangle.from_limits(
@@ -93,7 +93,6 @@ class ActionReport(arcade.Section):
 
     def after_action(self, event):
         self.dungeon_context = event[Events.VICTORY][Events.DUNGEON]
-
         for i, survivor in enumerate(eng.game_state.team.members):
             y = 20 * i
             survivor_name_text = arcade.Text(
@@ -102,8 +101,8 @@ class ActionReport(arcade.Section):
                 start_y=self.bounds.t - 100 - y,
             )
             xp_text = arcade.Text(
-                f"{self.xp_counter}",
-                start_x=self.bounds.r - 100,
+                f"{self.xp_counter} / {survivor.fighter.leveller.xp_to_level_up}",
+                start_x=self.bounds.r - 150,
                 start_y=self.bounds.t - 100 - y,
             )
             self.survivor_labels.append(survivor_name_text)
@@ -112,36 +111,40 @@ class ActionReport(arcade.Section):
         self.enable()
 
     def animate_xp_counter(self):
-        for label in self.xp_labels:
-            if int(label.text) < self.dungeon_context.loot.awarded_xp_per_member:
-                label.text = int(label.text) + 1
+        for i, label in enumerate(self.xp_labels):
+            count = label.text.split("/")[0]
+            if int(count) < self.dungeon_context.loot.awarded_xp_per_member:
+                label.text = f"{int(count) + 1} / {eng.game_state.team.members[i].fighter.leveller.xp_to_level_up} xp"
 
-    
     def on_update(self, delta_time: float):
         if not self.enabled:
             return
-        
+
         self.count_down -= delta_time
         if self.count_down <= 0:
             self.animate_xp_counter()
             self.count_down = 0.025
-    
+
     def on_draw(self):
         arcade.draw_lrbt_rectangle_filled(
             self.left, self.width, self.bottom, self.height, color=arcade.color.RED
         )
         self.title_text.draw()
-        labels = zip(self.survivor_labels, self.xp_labels)
-        for label_pair in labels:
+
+        if not self.zipped_labels:
+            self.zipped_labels = zip(self.survivor_labels, self.xp_labels)
+
+        for label_pair in self.zipped_labels:
             label_pair[0].draw()
             label_pair[1].draw()
-        
+
     def on_resize(self, width, height):
         if not self._corner or not self._pin:
             return
 
         if not self.enabled:
             return
+
         self.window_dims = (width, height)
         self.left = width * 0.25
         self.bottom = height * 0.25
