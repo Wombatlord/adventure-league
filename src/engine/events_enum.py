@@ -11,6 +11,7 @@ class Events(Enum):
     DYING = "dying"
     RETREAT = "retreat"
     VICTORY = "team triumphant"
+    TEAM_XP = "guild xp"
     CLEANUP = "cleanup"
     ENTITY_DATA = "entity_data"
     HEALTH = "health"

@@ -35,7 +35,7 @@ class Loot(Rewarder):
     @property
     def claimed(self) -> bool:
         return self.guild_xp == 0 and self.gp == 0
-
+    
     def claim_gp(self) -> int:
         gp, self.gp = self.gp, 0
         return gp
@@ -58,7 +58,7 @@ class Loot(Rewarder):
         self.awarded_xp_per_member = final.xp_value
         self._team_xp_to_be_awarded = []
 
-    def calculate_xp_per_member(self, member_count):
+    def calculate_xp_per_member(self, member_count) -> Experience:
         final = Experience(0)
         for experience in self._team_xp_to_be_awarded:
             final += experience

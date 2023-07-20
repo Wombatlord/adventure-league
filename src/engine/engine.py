@@ -287,7 +287,17 @@ class Engine:
         )
 
         results.append({Events.MESSAGE: message})
-        results.append({Events.VICTORY: {Events.DUNGEON: dungeon}})
+        results.append(
+            {
+                Events.VICTORY: {
+                    Events.DUNGEON: dungeon,
+                    Events.TEAM_XP: {
+                        e.name: e.fighter.leveller.disown_clone()
+                        for e in guild.team.members
+                    },
+                }
+            }
+        )
         return results
 
     @staticmethod

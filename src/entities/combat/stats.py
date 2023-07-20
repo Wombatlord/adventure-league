@@ -76,7 +76,7 @@ class FighterStats(NamedTuple):
     defence: int = 0
     power: int = 0
     speed: int = 0
-    base_xp_value: int = 50
+    base_xp_value: int = 1000
 
     def __add__(self, other):
         return namedtuple_add(self.__class__, self, other)
