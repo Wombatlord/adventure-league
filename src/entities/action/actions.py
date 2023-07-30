@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Self
 
-from src.engine.events_enum import Events
+from src.engine.events_enum import EventTopic
 from src.entities.properties.meta_compendium import MetaCompendium
 
 if TYPE_CHECKING:
@@ -177,7 +177,7 @@ class EndTurnAction(BaseAction, metaclass=ActionMeta):
     @classmethod
     def execute(cls, fighter: Fighter, *args):
         fighter.action_points.deduct_cost(cls.cost(fighter))
-        yield {Events.MESSAGE: f"{fighter.owner.name} whistles a tune"}
+        yield {EventTopic.MESSAGE: f"{fighter.owner.name} whistles a tune"}
 
     @classmethod
     def details(cls, fighter: Fighter):

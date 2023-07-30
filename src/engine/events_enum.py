@@ -1,9 +1,10 @@
 from enum import Enum
 
 
-class Events(Enum):
+class EventTopic(Enum):
     NEW_ENCOUNTER = "new encounter"
     DUNGEON = "dungeon context"
+    COMBAT_START = "combat start"
     DELAY = "delay"
     MESSAGE = "message"
     MOVE = "move"
@@ -17,3 +18,9 @@ class Events(Enum):
     HEALTH = "health"
     NAME = "name"
     SPECIES = "species"
+    ROLL_ITEM_DROP = "roll item drop"
+
+
+class EventFields(Enum):
+    TEAM_XP = "guild xp"
+    DUNGEON = "dungeon context"

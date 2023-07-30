@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class Leveller:
     owner: Fighter
     xp_to_resolve: list[Experience]
-    
+
     @staticmethod
     def delta_xp(from_level) -> int:
         if from_level < 0:
@@ -33,14 +33,14 @@ class Leveller:
     @property
     def xp_to_level_up(self):
         return self.delta_xp(self.current_level)
-    
+
     @property
     def total_xp(self) -> int:
         lvl = self.current_level
         xp_acc = self.current_xp
-        while (lvl := lvl-1) >= -1:
+        while (lvl := lvl - 1) > -1:
             xp_acc += self.delta_xp(lvl)
-            
+
         return xp_acc
 
     @property
@@ -70,22 +70,23 @@ class Leveller:
         xp_change = amount
         if isinstance(xp_change, Experience):
             xp_change = xp_change.xp_value
-        
+
         self._current_xp += xp_change
 
         if self.should_level_up():
             self._do_level_up()
-            
+
     def disown_clone(self) -> Leveller:
         instance = Leveller(None)
         # should not modify the fighter if we want to use xp/levelling logic
         instance.__dict__ = {**deep_copy.copy(self.__dict__), "owner": None}
-        
+
         return instance
 
 
 class Experience:
     xp_value: int
+
     def __init__(self, xp_value: int = 50) -> None:
         self.xp_value = xp_value
 

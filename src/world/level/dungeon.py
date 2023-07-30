@@ -9,6 +9,7 @@ from src.world.level.room import Room
 
 class Dungeon(Rewarder):
     loot: Loot
+
     def __init__(
         self,
         max_enemies_per_room: int,

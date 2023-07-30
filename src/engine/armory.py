@@ -30,6 +30,9 @@ class Armory(Storage):
     def store(self, item: EquippableItem) -> None:
         self.storage.append(item)
 
+    def store_all(self, items: list[EquippableItem]):
+        self.storage.extend(items)
+
     def remove(self, item: EquippableItem) -> None:
         self.storage.remove(item)
 

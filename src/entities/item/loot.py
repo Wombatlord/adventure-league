@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.engine.guild import Team
+    from src.entities.gear.equippable_item import EquippableItem
 
 from src.entities.combat.leveller import Experience
 
@@ -21,6 +22,7 @@ class Loot(Rewarder):
     _team_xp_to_be_awarded: list[Experience]
     gp: int
     _text: str
+    item_drops: list[EquippableItem]
 
     def __init__(
         self,
@@ -31,11 +33,12 @@ class Loot(Rewarder):
         self.gp = max(0, gp)
         self._team_xp_to_be_awarded = []
         self.awarded_xp_per_member = 0
+        self.item_drops = []
 
     @property
     def claimed(self) -> bool:
         return self.guild_xp == 0 and self.gp == 0
-    
+
     def claim_gp(self) -> int:
         gp, self.gp = self.gp, 0
         return gp
@@ -43,6 +46,10 @@ class Loot(Rewarder):
     def claim_guild_xp(self) -> int:
         xp, self.guild_xp = self.guild_xp, 0
         return xp
+
+    def claim_items(self) -> list[EquippableItem]:
+        items, self.item_drops = self.item_drops, []
+        return items
 
     def claim_team_xp(self, team: Team):
         member_count = len(team.members)

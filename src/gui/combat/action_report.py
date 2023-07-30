@@ -1,25 +1,22 @@
 from __future__ import annotations
-import math
 
-from typing import Callable, Iterable, TYPE_CHECKING
+import math
+from typing import TYPE_CHECKING, Callable, Iterable
 
 import arcade
 from pyglet.math import Vec2
 
-from src.engine.events_enum import Events
+from src.engine.events_enum import EventTopic
 from src.engine.init_engine import eng
 from src.entities.combat.leveller import Leveller
 from src.entities.item.loot import Loot
 from src.utils.rectangle import Corner, Rectangle
 from src.world.level.dungeon import Dungeon
 
-if TYPE_CHECKING:
-    from src.entities.combat.fighter import Fighter
-    
 
 def linear_up_to_max(max_val: float, reached_at: float) -> Callable[[float], float]:
-    gradient = max_val/reached_at
-    return lambda x: max(0, min(x*gradient, max_val))
+    gradient = max_val / reached_at
+    return lambda x: max(0, min(x * gradient, max_val))
 
 
 class XPGainWidget:
@@ -30,34 +27,34 @@ class XPGainWidget:
     _intial_lvl: int
     _initial_xp: int
     _countdown_ms: float
-    
+
     _display_xp: Callable[[float], float]
-    
+
     ANIMATION_TIME_MS = 2500.0
-    
+
     def __init__(self, dungeon: Dungeon, text: arcade.Text, leveller: Leveller):
         self._leveller = leveller
         self._loot = dungeon.loot
-        
-        self._xp_gain = dungeon.loot.calculate_xp_per_member(len(eng.game_state.team.members)).xp_value
+
+        self._xp_gain = dungeon.loot.calculate_xp_per_member(
+            len(eng.game_state.team.members)
+        ).xp_value
         if self._xp_gain == 0:
             self._xp_gain = dungeon.loot.awarded_xp_per_member
-        
+
         self._initial_level = self._leveller.current_level
         self._initial_xp = self._leveller.total_xp
-            
         self._text = text
         self._countdown_ms = self.ANIMATION_TIME_MS
         self._display_xp = linear_up_to_max(self._xp_gain, self.ANIMATION_TIME_MS)
-        
+
     def update(self, dt: float) -> None:
         self.tick_xp()
         if self._countdown_ms < 0:
-            # breakpoint()
             return
-     
-        self._countdown_ms -= dt*1000.0
-            
+
+        self._countdown_ms -= dt * 1000.0
+
     def tick_xp(self) -> None:
         time_left = self.ANIMATION_TIME_MS - self._countdown_ms
         delta_xp = int(self._display_xp(time_left)) - self._leveller.total_xp
@@ -66,9 +63,10 @@ class XPGainWidget:
             self._leveller.gain_xp(delta_xp)
         levels = self._leveller.current_level - self._initial_level
         lvl_up = f"{' + ' + str(levels)}!" if levels else ""
-        self._text.text = f"{self._leveller.current_xp} / {self._leveller.xp_to_level_up} xp{lvl_up}"
+        self._text.text = (
+            f"{self._leveller.current_xp} / {self._leveller.xp_to_level_up} xp{lvl_up}"
+        )
 
-        
     def draw(self) -> None:
         self._text.draw()
 
@@ -141,7 +139,7 @@ class ActionReport(arcade.Section):
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
-            topic=Events.VICTORY,
+            topic=EventTopic.VICTORY,
             handler_id="ActionReport.after_action",
             handler=self.after_action,
         )
@@ -158,8 +156,10 @@ class ActionReport(arcade.Section):
             self.enabled = True
 
     def after_action(self, event):
-        self.dungeon_context = event[Events.VICTORY][Events.DUNGEON]
-        xp_pre_victory: dict[str, Leveller] = event[Events.VICTORY][Events.TEAM_XP]
+        self.dungeon_context = event[EventTopic.VICTORY][EventTopic.DUNGEON]
+        xp_pre_victory: dict[str, Leveller] = event[EventTopic.VICTORY][
+            EventTopic.TEAM_XP
+        ]
         for i, survivor in enumerate(eng.game_state.team.members):
             y = 20 * i
             survivor_name_text = arcade.Text(
@@ -173,7 +173,9 @@ class ActionReport(arcade.Section):
                 start_y=self.bounds.t - 100 - y,
             )
             self._xp_labels.append(
-                XPGainWidget(self.dungeon_context, xp_text, xp_pre_victory[survivor.name])
+                XPGainWidget(
+                    self.dungeon_context, xp_text, xp_pre_victory[survivor.name]
+                )
             )
             self.survivor_labels.append(survivor_name_text)
             self.xp_labels.append(xp_text)
@@ -191,18 +193,17 @@ class ActionReport(arcade.Section):
             return
         for xp_widget in self._xp_labels:
             xp_widget.update(delta_time)
-        # self.count_down -= delta_time
-        # if self.count_down <= 0:
-        #     self.animate_xp_counter()
-        #     self.count_down = 0.032
 
     def on_draw(self):
         arcade.draw_lrbt_rectangle_filled(
-            self.left, self.width, self.bottom, self.height, color=(*arcade.color.RED[:3], 128)
+            self.left,
+            self.width,
+            self.bottom,
+            self.height,
+            color=(*arcade.color.RED[:3], 128),
         )
         self.title_text.draw()
 
-        
         zipped_labels = zip(self.survivor_labels, self._xp_labels)
 
         for label_pair in zipped_labels:

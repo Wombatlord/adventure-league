@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 
 import yaml
 
-from src.engine.events_enum import Events
+from src.engine.events_enum import EventTopic
 from src.entities.action.actions import (
     ActionMeta,
     ActionPoints,
@@ -196,7 +196,7 @@ class Fighter:
         event = {}
         if not self.is_enemy:
             event[
-                Events.MESSAGE
+                EventTopic.MESSAGE
             ] = f"{self.owner.name.name_and_title} requires your input milord"
 
         yield {
