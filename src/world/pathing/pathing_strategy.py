@@ -74,8 +74,6 @@ class HeightMapStrategy(PathingStrategy):
 
     def to_level_position(self, n: Node) -> Node:
         level_pos = Node(*n[:2], z=self.height_map(n))
-        if level_pos.z == 0:
-            breakpoint()
         return level_pos
 
 

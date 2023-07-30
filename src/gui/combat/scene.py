@@ -52,10 +52,11 @@ class Scene(arcade.Section):
             left, bottom, width, height, prevent_dispatch_view={False}, **kwargs
         )
         self._mouse_coords = Vec2(0, 0)
-
+        self._last_mouse_node_sprite = None
         self.encounter_room = None
         self._original_dims = width, height
 
+        self.terrain_sprite_list = arcade.SpriteList()
         self.world_sprite_list = arcade.SpriteList()
         self.dudes_sprite_list = arcade.SpriteList()
         self.grid_camera = arcade.Camera()
@@ -92,7 +93,7 @@ class Scene(arcade.Section):
             offset=(0, 4.5),
             scale=self.SPRITE_SCALE,
             transform=self.transform,
-            draw_priority_bias=-0.01,
+            draw_priority_bias=0.01,
         ).attach_display(self.world_sprite_list)
 
         self.floating_health_bars = FloatingHealthBars(
@@ -220,19 +221,12 @@ class Scene(arcade.Section):
             eng.reset_update_clock()
             hook()
         self.update_camera()
-        self.highlight_cursor(*self._mouse_coords)
-        
-    def highlight_cursor(self, x: int, y: int):
-        s: arcade.Sprite
-        mouse = x, y
-        click = self.cam_controls.image_px(
-            Vec2(*mouse) if mouse else self._mouse_coords
-        )
-        for s in self.world_sprite_list[::-1]:
-            if s.collides_with_point(click):
-                self._last_clicked = s.node
-                self.show_highlight(red=[self._last_clicked])
-                break
+
+    def highlight_cursor(self):
+        if not (room := self.encounter_room):
+            return
+        if room.space.is_pathable(self.last_mouse_node):
+            self.show_highlight(red=[self.last_mouse_node])
 
     def on_draw(self):
         self.grid_camera.use()
@@ -242,12 +236,11 @@ class Scene(arcade.Section):
             l, r, b, t = self.grid_camera.projection
             arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
             arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
-            
-            for s in self.world_sprite_list:
-                s: arcade.Sprite
-                s.draw_hit_box(arcade.color.WHITE)
-                break
-            
+            if not self.world_sprite_list:
+                return
+            if self._last_mouse_node_sprite:
+                self._last_mouse_node_sprite.draw_hit_box()
+
     def on_resize(self, width: int, height: int):
         self.width, self.height = width, height
         self.transform.on_resize(self.world_origin)
@@ -292,7 +285,10 @@ class Scene(arcade.Section):
                 transform=self.transform,
             )
             sprite.set_node(terrain_node.node)
+            self.terrain_sprite_list.append(sprite)
             self.world_sprite_list.append(sprite)
+
+        self.terrain_sprite_list.sort(key=lambda s: s.get_draw_priority())
 
     def prepare_dude_sprites(self):
         """
@@ -339,6 +335,7 @@ class Scene(arcade.Section):
     def teardown_level(self):
         self.dudes_sprite_list.clear()
         self.world_sprite_list.clear()
+        self.terrain_sprite_list.clear()
 
     def idle_or_attack(self, event):
         dude = event["attack"]
@@ -363,14 +360,24 @@ class Scene(arcade.Section):
         if not self.encounter_room:
             return
 
-        node = self.transform.world_location(
-            self.cam_controls.image_px(self._mouse_coords)
-        )
+        node = None
+        canvas_loc = self.cam_controls.image_px(Vec2(x, y))
+        for s in self.terrain_sprite_list[::-1]:
+            if getattr(s, "owner", None):
+                # we only want terrain
+                continue
+            if s.collides_with_point(tuple(canvas_loc)):
+                node = s.node.above
+                self._last_mouse_node_sprite = s
+                break
+
+        if node is None:
+            return
 
         if not self.encounter_room.space.is_pathable(node):
             return
 
-        if self.mouse_node_has_changed(node):
+        if self.mouse_node_change(node):
             self.set_mouse_node(node)
             return node
 
@@ -379,9 +386,13 @@ class Scene(arcade.Section):
 
     def set_mouse_node(self, node: Node):
         self.last_mouse_node = node
+        self.highlight_cursor()
 
-    def mouse_node_has_changed(self, new_node: Node) -> bool:
-        return self.last_mouse_node != new_node
+    def mouse_node_change(self, new_node: Node) -> Node:
+        if not self.last_mouse_node:
+            return new_node
+
+        return new_node - self.last_mouse_node
 
     def rotate_level(self):
         if not self.encounter_room.layout:

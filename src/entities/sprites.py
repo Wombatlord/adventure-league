@@ -98,7 +98,10 @@ class BaseSprite(OffsetSprite, Sprite):
         self.scale = scale
 
     def get_draw_priority(self) -> float:
-        return self._draw_priority - self._draw_priority_offset
+        priority = self._draw_priority
+        if self._node:
+            priority = self.transform.draw_priority(self._node)
+        return priority - self._draw_priority_offset
 
     def set_node(self, node: Node) -> Self:
         self._node = node

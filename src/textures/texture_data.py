@@ -11,6 +11,7 @@ from arcade.hitbox import (
 )
 from arcade.types import PointList
 from PIL.Image import Image
+from pyglet.math import Vec2
 
 
 class TileHitBoxAlgorithm(HitBoxAlgorithm):
@@ -23,13 +24,16 @@ class TileHitBoxAlgorithm(HitBoxAlgorithm):
 
     def calculate(self, image: Image, **kwargs) -> PointList:
         top = self.tile_dims[2]
-
-        return (
-            (-self.tile_dims[0] / 2, top - self.tile_dims[1] / 2),
-            (0, top),
-            (self.tile_dims[0] / 2, top - self.tile_dims[1] / 2),
-            (0, top - self.tile_dims[1]),
+        width = self.tile_dims[0]
+        points = (
+            Vec2(-width / 2, top - self.tile_dims[1] / 2),
+            Vec2(0, top),
+            Vec2(width / 2, top - self.tile_dims[1] / 2),
+            Vec2(0, top - self.tile_dims[1]),
         )
+        scale_factor = 17 / 16
+        translation = Vec2(0, -0.5)
+        return [tuple(v * scale_factor + translation) for v in points]
 
     def __call__(self, *args, **kwargs) -> Self:
         return super().__call__(*args, **kwargs)

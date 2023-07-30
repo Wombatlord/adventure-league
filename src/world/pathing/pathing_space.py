@@ -71,23 +71,44 @@ class PathingSpace(AStar):
         return PathingSpace(minima, maxima, exclusions)
 
     @classmethod
-    def from_nodes(cls, nodes: Sequence[Node]):
-        minima = Node(min(n.x for n in nodes), min(n.y for n in nodes))
-        maxima = Node(max(n.x for n in nodes), max(n.y for n in nodes))
+    def from_nodes(cls, level_geom: Sequence[Node], use_height_map: bool = False):
+        minima = Node(
+            min(n.x for n in level_geom),
+            min(n.y for n in level_geom),
+        )
+        maxima = Node(
+            max(n.x for n in level_geom) + 1,
+            max(n.y for n in level_geom) + 1,
+        )
 
         included = []
-        for n in nodes:
-            included.append(_flat(n))
 
-        def height_map(n_: Node) -> float:
-            col = [node for node in nodes if node[:2] == n_[:2]]
-            top = sorted(col, key=lambda node: node.z)[-1]
-            height = top.above.z
+        if use_height_map:
+            for n in level_geom:
+                included.append(_flat(n))
+            space = PathingSpace(minima, maxima, {*()})
 
-            return height
+            def height_map(n_: Node) -> float:
+                col = [node for node in level_geom if node[:2] == n_[:2]]
+                top = sorted(col, key=lambda node: node.z)[-1]
+                height = top.above.z
 
-        space = PathingSpace(minima, maxima, {*()})
-        space.set_strategy(HeightMapStrategy(space, Z_INCR * 2, height_map))
+                return height
+
+            space.set_strategy(HeightMapStrategy(space, Z_INCR * 2, height_map))
+
+        else:
+            ground = {
+                Node(x, y)
+                for x in range(minima.x, maxima.x)
+                for y in range(minima.y, maxima.y)
+            }
+            pits = {n for n in ground if n.below not in level_geom}
+            walls = {n for n in ground if n in level_geom}
+            excluded = pits | walls
+
+            space = PathingSpace(minima, maxima, excluded)
+
         return space
 
     def __init__(
@@ -210,19 +231,11 @@ class PathingSpace(AStar):
 
     def choose_random_node(self, excluding: set[Node] = ()) -> Node:
         # if there are extra exclusions create a temp space with those exclusions as well as the pre-existing exclusions
-        tmp_space = self
         excluding = {_flat(n) for n in excluding}
-
-        def _try_node() -> Node:
-            return Node(
-                x=randint(tmp_space.minima.x, tmp_space.maxima.x),
-                y=randint(tmp_space.minima.y, tmp_space.maxima.y),
-            )
-
-        node = _try_node()
-        while node not in self and node not in excluding:
-            node = _try_node()
-
+        possible = {*self.all_included_nodes(exclude_dynamic=True)} - excluding
+        if not possible:
+            raise RuntimeError("The level is full")
+        node = random.choice([*possible])
         return self.strategy.to_level_position(node)
 
     def __len__(self):

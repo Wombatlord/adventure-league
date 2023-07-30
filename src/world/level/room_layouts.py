@@ -214,11 +214,10 @@ def test_layout(*args, **kwargs) -> tuple[TerrainNode, ...]:
 def random_room(
     dimensions: tuple[int, int], height: int = 0
 ) -> tuple[TerrainNode, ...]:
-    return basic_geography(dimensions, height)
-    # return random.choice(
-    #     [
-    #         basic_room,
-    #         side_pillars,
-    #         alternating_big_pillars,
-    #     ]
-    # )(dimensions, height)
+    return random.choice(
+        [
+            basic_room,
+            side_pillars,
+            alternating_big_pillars,
+        ]
+    )(dimensions, height)

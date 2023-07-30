@@ -148,6 +148,7 @@ class LayoutSection(arcade.Section):
             left, bottom, width, height, prevent_dispatch_view={False}, **kwargs
         )
         self._mouse_coords = Vec2(0, 0)
+        self._canvas_coords = Vec2(0, 0)
 
         self._original_dims = width, height
 
@@ -283,6 +284,9 @@ class LayoutSection(arcade.Section):
             l, r, b, t = self.grid_camera.projection
             arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
             arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
+            arcade.draw_point(
+                self._canvas_coords.x, self._canvas_coords.y, arcade.color.RED, 30
+            )
             for s in self.world_sprite_list:
                 s: arcade.Sprite
                 s.draw_hit_box(arcade.color.WHITE)
@@ -348,6 +352,7 @@ class LayoutSection(arcade.Section):
         click = self.cam_controls.image_px(
             Vec2(*mouse) if mouse else self._mouse_coords
         )
+        self._canvas_coords = click
         for s in self.world_sprite_list[::-1]:
             if s.collides_with_point(click):
                 self._last_clicked = s.node
@@ -366,6 +371,12 @@ class LayoutSection(arcade.Section):
         self._mouse_coords = Vec2(float(x), float(y))
 
     def node_at_mouse(self, mouse: tuple[int, int] | None = None) -> Node:
+        for s in self.world_sprite_list[::-1]:
+            if s.collides_with_point(mouse):
+                self._last_clicked = s.node
+                self.show_highlight(red=[self._last_clicked])
+                self.debug_text.update("ray_hit", f"{self._last_clicked}")
+                return s.node
         projection_surface_coords = self.cam_controls.image_px(
             Vec2(*mouse) if mouse else self._mouse_coords
         )
