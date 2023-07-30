@@ -113,7 +113,7 @@ class HighlightLayer:
             self._texture,
             scale=self._scale,
             transform=self._transform,
-            draw_priority_offset=0.1 + self._draw_priority_bias,
+            draw_priority_offset=-0.1 + self._draw_priority_bias,
         ).offset_anchor(tuple(self._sprite_offset))
 
     def _include_in_display(self, sprite: BaseSprite, node: Node):

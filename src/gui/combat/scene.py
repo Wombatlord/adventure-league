@@ -93,7 +93,7 @@ class Scene(arcade.Section):
             offset=(0, 4.5),
             scale=self.SPRITE_SCALE,
             transform=self.transform,
-            draw_priority_bias=0.01,
+            draw_priority_bias=-0.01,
         ).attach_display(self.world_sprite_list)
 
         self.floating_health_bars = FloatingHealthBars(
@@ -195,8 +195,7 @@ class Scene(arcade.Section):
         self.refresh_draw_order()
 
     def refresh_draw_order(self):
-        # self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
-        self.world_sprite_list.sort(key=lambda s: self.transform.draw_priority(s.node))
+        self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
 
     def update_camera(self):
         self.cam_controls.on_update()

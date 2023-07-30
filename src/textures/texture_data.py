@@ -16,11 +16,12 @@ from pyglet.math import Vec2
 
 class TileHitBoxAlgorithm(HitBoxAlgorithm):
     name = "tile"
-    cache = False
+    cache = True
     tile_dims: tuple[int, int, int]
 
     def __init__(self, tile_dims: tuple[int, int, int] = (16, 8, 8)) -> None:
         self.tile_dims = tile_dims
+        self._cache_name = f"{self.__class__.__name__}{tile_dims}"
 
     def calculate(self, image: Image, **kwargs) -> PointList:
         top = self.tile_dims[2]

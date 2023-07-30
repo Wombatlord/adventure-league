@@ -101,3 +101,6 @@ class Node(NamedTuple):
         if not isinstance(other, Node):
             raise TypeError(f"Expected a node, got: {other=}")
         return Node(self.x + other.x, self.y + other.y, self.z + other.z)
+
+    def __bool__(self) -> bool:
+        return any(element != 0 for element in self)
