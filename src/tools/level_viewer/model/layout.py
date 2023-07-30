@@ -19,7 +19,7 @@ class Block:
 
     @property
     def texture(self) -> arcade.Texture:
-        return self.biome.choose_tile_texture(self.terrain_node.tile_type)
+        return self.biome.choose_texture_for_node(self.node, self.terrain_node.tile_type)
 
     def with_biome(self, biome: Biome) -> Block:
         self.biome = biome

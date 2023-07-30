@@ -1,14 +1,22 @@
 from __future__ import annotations
 
-from typing import Callable, NamedTuple, TypeVar
+from typing import Callable, NamedTuple, TypeVar, Any
 
 import arcade
+from PIL.Image import Image
 from arcade import Texture
 from arcade.hitbox import BoundingHitBoxAlgorithm, HitBoxAlgorithm
+from arcade.types import PointList
+from pyglet.math import Vec2
+
+
+def _hashable(**d) -> tuple[tuple[str, int | tuple | HitBoxAlgorithm], ...]:
+    return tuple(d.items())
 
 
 class TextureSpec(NamedTuple):
-    path: str
+    args: tuple[Any]
+    kwargs: tuple[tuple[str, int | tuple | HitBoxAlgorithm], ...] = _hashable()
 
     @property
     def loaded(self) -> Texture:
@@ -27,27 +35,57 @@ class SheetSpec(NamedTuple):
         return self.loaded[idx]
 
 
-def _hashable(**d) -> tuple[tuple[str, int | tuple | HitBoxAlgorithm], ...]:
-    return tuple(d.items())
+
+
+
+class ExplicitHitBox(HitBoxAlgorithm):
+    points: PointList = ()
+
+    def __init__(self):
+        super().__init__()
+
+    def calculate(self, image: Image, **kwargs) -> PointList:
+        return self.points
+
+
+class NormalsHitBox(ExplicitHitBox):
+    points = [
+        tuple(offset)
+        for offset in [
+            Vec2(i*16, j*17)/2
+            for i in (-1, 1)
+            for j in (-1, 1)
+        ]
+    ]
 
 
 class SingleTextureSpecs:
     _cache: dict[TextureSpec, Texture] = {}
     title_background = TextureSpec(
-        "./assets/background_glacial_mountains.png",
+        args=("./assets/background_glacial_mountains.png",)
     )
 
     title_banner = TextureSpec(
-        "./assets/sprites/banner.png",
+        args=("./assets/sprites/banner.png",),
     )
 
-    start_banner = TextureSpec("./assets/sprites/start_banner.png")
-    panel_highlighted = TextureSpec("./assets/sprites/panel.png")
-    panel_darkened = TextureSpec("./assets/sprites/panel_dark.png")
-    mercenaries_banner = TextureSpec("./assets/sprites/mercenaries_banner.png")
-    mission_banner = TextureSpec("./assets/sprites/mission_banner.png")
-    mission_banner_dark = TextureSpec("./assets/sprites/mission_banner.png")
-    health_bar = TextureSpec("./assets/sprites/health_bar.png")
+    start_banner = TextureSpec(args=("./assets/sprites/start_banner.png",))
+    panel_highlighted = TextureSpec(args=("./assets/sprites/panel.png",))
+    panel_darkened = TextureSpec(args=("./assets/sprites/panel_dark.png",))
+    mercenaries_banner = TextureSpec(args=("./assets/sprites/mercenaries_banner.png",))
+    mission_banner = TextureSpec(args=("./assets/sprites/mission_banner.png",))
+    mission_banner_dark = TextureSpec(args=("./assets/sprites/mission_banner.png",))
+    health_bar = TextureSpec(args=("./assets/sprites/health_bar.png",))
+    tile_normals = TextureSpec(
+        args=("./assets/sprites/tile_normals_alt.png",),
+        kwargs=_hashable(
+            x=0,
+            y=0,
+            width=16,
+            height=17,
+            hit_box_algorithm=BoundingHitBoxAlgorithm,
+        )
+    )
 
 
 class SpriteSheetSpecs:
@@ -60,6 +98,20 @@ class SpriteSheetSpecs:
                 "sprite_width": 16,
                 "columns": 11,
                 "count": 111,
+                "margin": 0,
+                "hit_box_algorithm": BoundingHitBoxAlgorithm,
+            }
+        ),
+    )
+
+    tile_normals_2_layer = SheetSpec(
+        args=("./assets/sprites/tile_normals_2_layer.png",),
+        kwargs=_hashable(
+            **{
+                "sprite_height": 17,
+                "sprite_width": 16,
+                "columns": 2,
+                "count": 2,
                 "margin": 0,
                 "hit_box_algorithm": BoundingHitBoxAlgorithm,
             }
@@ -160,4 +212,7 @@ def _load_sheet_from_spec(spec: SheetSpec) -> list[Texture]:
 
 
 def _load_texture_from_spec(spec: TextureSpec) -> Texture:
-    return arcade.load_texture(*spec)
+    kwargs = dict(spec.kwargs)
+    if "hit_box_algorithm" in kwargs:
+        kwargs["hit_box_algorithm"] = kwargs["hit_box_algorithm"]()
+    return arcade.load_texture(*spec.args, **kwargs)

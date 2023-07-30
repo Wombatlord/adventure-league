@@ -76,14 +76,18 @@ class BaseSprite(OffsetSprite, Sprite):
         angle: float = 0.0,
         **kwargs,
     ):
-        super().__init__(
-            path_or_texture,
-            scale,
-            center_x,
-            center_y,
-            angle,
-            **kwargs,
-        )
+        try:
+            super().__init__(
+                path_or_texture,
+                scale,
+                center_x,
+                center_y,
+                angle,
+                **kwargs,
+            )
+        except:
+            breakpoint()
+            raise
 
         self.animation_cycle = 0.75
         self.tex_idx = 0

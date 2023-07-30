@@ -4,6 +4,7 @@ import random
 from typing import Callable, Generator, Sequence
 
 import arcade
+from arcade.gl import geometry
 from pyglet.math import Vec2
 
 from src import config
@@ -81,6 +82,51 @@ class LayoutView(arcade.View):
             arcade.key.T: lambda: self.toggle_ui(self.geometry_menu),
             arcade.key.B: lambda: self.toggle_ui(self.biome_menu),
         }.get(symbol, NO_OP)()
+
+
+class SurfaceBuffer:
+    width: int
+    height: int
+    ctx: arcade.ArcadeContext
+
+    def __init__(self, width: int, height: int, window: arcade.Window):
+        self.width = width
+        self.height = height
+        self.quad_fs = geometry.quad_2d_fs()
+        self.ctx = window.ctx
+        self.texture = self.ctx.texture(
+            (self.width, self.height),
+            components=3,
+            filter=(self.ctx.NEAREST, self.ctx.NEAREST)
+        )
+        self.display_program = self.ctx.program(
+            vertex_shader="""
+            #version 330
+            
+            in vec2 in_vert;
+            in vec2 in_uv;
+            out vec2 uv;
+
+            void main() {
+                gl_Position = vec4(in_vert, 0.0, 1.0);
+                uv = in_uv;
+            }
+            """,
+            fragment_shader="""
+            #version 330
+
+            uniform sampler2D texture0;
+            out vec4 fragColor;
+            in vec2 uv;
+
+            void main() {
+
+                fragColor = texture(texture0, uv);
+
+            }
+            """
+        )
+
 
 
 class LayoutSection(arcade.Section):
@@ -259,6 +305,8 @@ class LayoutSection(arcade.Section):
         self.teardown_level()
 
         for block in self.layout:
+            if not isinstance(block.texture, arcade.Texture):
+                breakpoint()
             sprite = BaseSprite(
                 block.texture,
                 scale=self.SPRITE_SCALE,
