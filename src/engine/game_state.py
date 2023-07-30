@@ -96,4 +96,4 @@ class AwardSpoilsHandler:
         if dungeon is None:
             return
         dungeon.cleared = True
-        self.state.guild.claim_rewards(dungeon)
+        self.state.guild.claim_rewards(dungeon.loot)

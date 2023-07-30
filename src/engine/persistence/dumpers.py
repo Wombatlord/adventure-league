@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from src.engine.armory import Armory
+from src.entities.combat.leveller import Leveller
 
 if TYPE_CHECKING:
     from src.engine.guild import Guild, Team
@@ -66,9 +67,17 @@ class GameStateDumpers:
             "role": fighter.role.name,
             "health": cls.health_pool_to_dict(fighter.health),
             "stats": fighter.stats._asdict(),
+            "leveller": cls.leveller_to_dict(fighter.leveller),
             "action_points": cls.action_points_to_dict(fighter.action_points),
             "gear": cls.gear_to_dict(fighter.gear),
             "caster": cls.caster_to_dict(fighter.caster) if fighter.caster else None,
+        }
+
+    @classmethod
+    def leveller_to_dict(cls, leveller: Leveller):
+        return {
+            "current_level": leveller.current_level,
+            "current_xp": leveller.current_xp,
         }
 
     @classmethod

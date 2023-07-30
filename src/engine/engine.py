@@ -12,6 +12,7 @@ from src.engine.mission_board import MissionBoard
 from src.engine.persistence.game_state_repository import Format, GuildRepository
 from src.entities.combat.fighter_factory import RecruitmentPool
 from src.systems.combat import CombatRound
+from src.world.level.dungeon import Dungeon
 
 
 class MessagesWithAlphas(NamedTuple):
@@ -180,7 +181,7 @@ class Engine:
 
         if win:
             events = self.team_triumphant_events(guild, dungeon)
-            self.game_state.guild.claim_rewards(dungeon)
+            self.game_state.guild.claim_rewards(dungeon.loot)
         else:
             events = self.team_defeated(guild.team)
 
@@ -271,13 +272,14 @@ class Engine:
         yield {"cleanup": encounter}
 
     @staticmethod
-    def team_triumphant_events(guild, dungeon) -> list[Event]:
+    def team_triumphant_events(guild, dungeon: Dungeon) -> list[Event]:
         results = []
 
         message = "\n".join(
             (
                 f"{dungeon.boss.name.first_name.capitalize()} is vanquished and the evil within {dungeon.description} is no more!",
-                f"{guild.team.name} of the {guild.name} is victorious!",
+                f"{guild.team.name} of the {guild.name} is victorious!\n",
+                f"{guild.team.name} splits {dungeon.loot.team_xp_total()} experience. Each member receives {dungeon.loot.team_xp_total() // len(guild.team.members)} xp!",
             )
         )
 

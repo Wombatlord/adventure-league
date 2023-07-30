@@ -20,6 +20,10 @@ class HealthPool:
     def max_hp(self):
         return self._max_hp
 
+    @max_hp.setter
+    def max_hp(self, value: int):
+        self._max_hp = value
+
     @property
     def current(self):
         return self._current_hp
@@ -60,6 +64,9 @@ class HealthPool:
     def increase_current(self, amount: int):
         self._current_hp = min(self._current_hp + amount, self._max_hp)
 
+    def full_heal(self):
+        self._current_hp = self.max_hp
+
     def set_shield(self, amount: int):
         self._bonus_hp = amount
 
@@ -68,8 +75,8 @@ class FighterStats(NamedTuple):
     name = "FighterStats"
     defence: int = 0
     power: int = 0
-    level: int = 0
     speed: int = 0
+    base_xp_value: int = 50
 
     def __add__(self, other):
         return namedtuple_add(self.__class__, self, other)

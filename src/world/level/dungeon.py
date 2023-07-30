@@ -48,8 +48,8 @@ class Dungeon(Rewarder):
     def peek_reward(self) -> str:
         return str(self.loot)
 
-    def claim_xp(self) -> int:
-        return self.loot.claim_xp()
+    def claim_guild_xp(self) -> int:
+        return self.loot.claim_guild_xp()
 
     def claim_gp(self) -> int:
         return self.loot.claim_gp()

@@ -3,6 +3,7 @@ from src.engine.guild import Guild
 from src.entities.action.actions import ActionPoints
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import EncounterContext, Fighter
+from src.entities.combat.leveller import Leveller
 from src.entities.combat.modifiable_stats import ModifiableStats, Modifier
 from src.entities.combat.stats import (
     EquippableItemStats,
@@ -92,6 +93,9 @@ class GameStateLoaders:
             **serialised_fighter,
             "owner": owner,
             "health": cls.health_pool_from_dict(serialised_fighter.get("health")),
+            "leveller": cls.leveller_from_dict(
+                serialised_fighter.get("leveller"), owner=instance
+            ),
             "stats": FighterStats(**serialised_fighter.get("stats")),
             "gear": cls.gear_from_dict(serialised_fighter.get("gear"), owner=instance),
             "action_points": cls.action_points_from_dict(
@@ -135,6 +139,14 @@ class GameStateLoaders:
         instance.gear.equip_item(instance.gear.weapon)
         instance.gear.equip_item(instance.gear.helmet)
         instance.gear.equip_item(instance.gear.body)
+
+        return instance
+
+    @classmethod
+    def leveller_from_dict(cls, serialised_leveller, owner) -> Leveller:
+        instance = Leveller(owner)
+        instance._current_level = serialised_leveller["current_level"]
+        instance._current_xp = serialised_leveller["current_xp"]
 
         return instance
 

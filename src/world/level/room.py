@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Generator, NamedTuple, Self, Sequence
 from src.gui.biome_textures import BiomeName, biome_map
 
 if TYPE_CHECKING:
+    from src.world.level.dungeon import Dungeon
     from src.entities.combat.fighter import Fighter
 
 from src.entities.entity import Entity
@@ -32,7 +33,9 @@ class Room:
         self,
         size: tuple[int, int] = (10, 10),
         biome: str = BiomeName.CASTLE,
+        dungeon=None,
     ) -> None:
+        self.dungeon: Dungeon = dungeon
         self.layout = None
         self.space = None
         self.biome = biome
@@ -100,7 +103,7 @@ class Room:
         )
 
         fighter: Fighter = entity.fighter
-        fighter.encounter_context.set(self)
+        fighter.encounter_context.set(self, dungeon=self.dungeon)
 
     def include_party(self, party: list[Entity]) -> list[Entity]:
         for member in party:

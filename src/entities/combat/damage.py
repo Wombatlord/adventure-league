@@ -15,8 +15,11 @@ class Damage:
     final_damage: int = 0
     originator: Fighter
 
-    def __init__(self, originator, raw_damage, crit_chance) -> None:
+    def __init__(
+        self, originator, raw_damage, crit_chance, damage_type="physical"
+    ) -> None:
         self.originator = originator
+        self.damage_type = damage_type
         self.raw_damage = raw_damage
         self.crit_chance = crit_chance
         self.final_damage = 0
@@ -29,7 +32,7 @@ class Damage:
         if (
             random.randint(0, 100)
             <= target.fighter.gear.modifiable_equipped_stats.current.evasion * 100
-        ):
+        ) and self.damage_type == "physical":
             self.final_damage = 0
             message = f"{target.name} evaded the attack!\n"
             result.update({"message": message})
@@ -43,6 +46,9 @@ class Damage:
         yield from self._final_resolved_damage(target)
 
     def _attack_message(self, target) -> Event:
+        if self.damage_type == "magic":
+            # Spells implement their own attack messages
+            return
         originator_name = self.originator.owner.name
         weapon = self.originator.gear.weapon
         target_name = target.name
@@ -80,7 +86,7 @@ class Damage:
 
         yield {"message": message}
 
-    def _final_resolved_damage(self, target):
+    def _final_resolved_damage(self, target: Entity):
         result = {}
         damage = int(self.final_damage)
         message = f"{target.name} takes {damage} damage!\n"
@@ -91,6 +97,11 @@ class Damage:
             self.originator.in_combat = False
 
         damage_details = target.fighter.take_damage(damage)
+        if damage_details.get("emit_exp", None):
+            # self.originator.leveller.xp_to_resolve.append(damage_details["emit_exp"])
+            dungeon = self.originator.encounter_context.get().dungeon
+            dungeon.loot.team_xp.append(damage_details["emit_exp"])
+
         result.update(**damage_details)
         yield result
 

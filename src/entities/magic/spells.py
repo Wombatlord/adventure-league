@@ -5,6 +5,7 @@ from enum import Enum
 from random import randint
 from typing import TYPE_CHECKING, Any, Generator
 
+from src.entities.combat.damage import Damage
 from src.entities.properties.meta_compendium import MetaCompendium
 
 if TYPE_CHECKING:
@@ -114,13 +115,13 @@ class MagicMissile(Spell, metaclass=SpellMeta):
         if target is None:
             return
 
-        yield target.take_damage(self._damage)
         yield {
             "message": f"{self._caster.owner.owner.name} cast {self.name} at {target.owner.name}"
         }
         yield {
             "message": f"{self.name} strikes {target.owner.name} for {self._damage}!"
         }
+        yield target.take_damage(self._damage)
 
     def valid_target(self, target: Fighter | Node) -> bool:
         if not hasattr(target, "location"):
@@ -214,9 +215,14 @@ class Fireball(Spell, metaclass=SpellMeta):
 
         for entity in room.occupants:
             if entity.locatable.location in template:
-                damage = randint(self._min_damage, self._max_damage)
-                yield entity.fighter.take_damage(damage)
-                yield {"message": f"{self.name} scorches {entity.name} for {damage}!\n"}
+                damage_amount = randint(self._min_damage, self._max_damage)
+                damage = Damage(
+                    self.caster.owner, damage_amount, crit_chance=0, damage_type="magic"
+                )
+                yield {
+                    "message": f"{self.name} scorches {entity.name} with a fireball!\n"
+                }
+                yield from damage.resolve_damage(entity)
 
     def valid_target(self, target: Fighter | Node):
         if hasattr(target, "location"):
