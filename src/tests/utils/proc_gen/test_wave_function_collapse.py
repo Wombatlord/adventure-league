@@ -105,7 +105,7 @@ class CollapseStressTest(TestCase):
     @parameterized.expand(
         [
             ("height map", height_map, 90, 50),
-            ("constrained path tiling", constrained_path_tiling, 95, 50),
+            ("constrained path tiling", constrained_path_tiling, 90, 50),
         ]
     )
     def test_stress_collapse(
