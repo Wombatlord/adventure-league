@@ -6,3 +6,4 @@ ptpython
 requests
 pydrive2
 viztracer
+pytest

@@ -2,25 +2,22 @@ from __future__ import annotations
 
 import random
 from functools import lru_cache
-from typing import NamedTuple, Self
+from typing import Iterable, NamedTuple, Self, Sequence
 
 from arcade import Texture
 
 from src.gui.biome_textures import TileTypes
+from src.tests.utils.proc_gen.test_wave_function_collapse import height_map
 from src.world.isometry.transforms import draw_priority
 from src.world.node import Node
 
 
 class Terrain(NamedTuple):
-    terrain_nodes: list[TerrainNode]
+    terrain_nodes: Sequence[TerrainNode]
 
     @property
     def nodes(self):
         return [block.node for block in self.terrain_nodes]
-
-    @property
-    def in_plane(self, height) -> list[TerrainNode]:
-        return [block for block in self.terrain_nodes if block.z == height]
 
     @property
     def minima(self) -> Node:
@@ -82,26 +79,44 @@ def basic_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNod
         for y in range(dimensions[1])
     ]
 
-    walls = (
-        [
-            TerrainNode.create(x=dimensions[0], y=y, tile_type=TileTypes.WALL)
-            for y in range(dimensions[1])
-        ]
-        + [
-            TerrainNode.create(x=x, y=dimensions[1], z=height, tile_type=TileTypes.WALL)
-            for x in range(dimensions[0])
-        ]
-        + [
-            TerrainNode.create(
-                x=dimensions[0], y=dimensions[1], z=height, tile_type=TileTypes.WALL
-            ),
-            TerrainNode.create(
-                x=dimensions[0], y=dimensions[1], z=height + 1, tile_type=TileTypes.WALL
-            ),
-        ]
-    )
+    # walls = (
+    #     [
+    #         TerrainNode.create(x=dimensions[0], y=y, tile_type=TileTypes.WALL)
+    #         for y in range(dimensions[1])
+    #     ]
+    #     + [
+    #         TerrainNode.create(x=x, y=dimensions[1], z=height, tile_type=TileTypes.WALL)
+    #         for x in range(dimensions[0])
+    #     ]
+    #     + [
+    #         TerrainNode.create(
+    #             x=dimensions[0], y=dimensions[1], z=height, tile_type=TileTypes.WALL
+    #         ),
+    #         TerrainNode.create(
+    #             x=dimensions[0], y=dimensions[1], z=height + 1, tile_type=TileTypes.WALL
+    #         ),
+    #     ]
+    # )
 
-    return tuple(sorted(floor + walls, key=draw_priority))
+    # return tuple(sorted(floor + walls, key=draw_priority))
+
+    return tuple(floor)
+
+
+Z_INCR = 0.25
+
+
+def basic_geography(
+    dimensions: tuple[int, int], height: int = 0
+) -> tuple[TerrainNode, ...]:
+    hm = height_map(*dimensions)
+    floor = [
+        TerrainNode.create(x, y, hm[(x, y)].height * Z_INCR, tile_type=TileTypes.FLOOR)
+        for x in range(dimensions[0])
+        for y in range(dimensions[1])
+    ]
+
+    return tuple(floor)
 
 
 @lru_cache(maxsize=1)
@@ -119,7 +134,7 @@ def side_pillars(
         for x in range(1, w, 2)
         for y in (1, h - 2)
     ]
-    return tuple(sorted(pillars + list(room), key=draw_priority))
+    return tuple(pillars + list(room))
 
 
 @lru_cache(maxsize=1)
@@ -141,7 +156,7 @@ def alternating_big_pillars(
     for pillar in pillars:
         pillar.tile_type = TileTypes.WALL
 
-    return tuple(sorted(pillars + list(room), key=draw_priority))
+    return tuple(pillars + list(room))
 
 
 @lru_cache(maxsize=1)
@@ -157,7 +172,7 @@ def one_big_pillar(
         *rectangle(4, 4, offset=Node(3, 3)),
     ]
 
-    return tuple(sorted(pillars + list(room), key=draw_priority))
+    return tuple(pillars + list(room))
 
 
 @lru_cache(maxsize=1)
@@ -184,10 +199,21 @@ def one_block_corridor(
         *rectangle(10, 4, offset=Node(0, 6)),
     ]
 
-    return tuple(sorted(pillars + list(room), key=draw_priority))
+    return tuple(pillars + list(room))
 
 
-def random_room(dimensions: tuple[int, int], height: int = 0) -> tuple[TerrainNode]:
+def test_layout(*args, **kwargs) -> tuple[TerrainNode, ...]:
+    nodes = (Node(0, 0),)
+    nodes += tuple([Node(x, 0) for x in range(1, 9)])
+    # nodes += tuple([Node(0, y) for y in range(1, 6)])
+    # nodes += tuple([Node(0, 0, z) for z in range(1, 3)])
+
+    return tuple(TerrainNode.create(*node) for node in nodes)
+
+
+def random_room(
+    dimensions: tuple[int, int], height: int = 0
+) -> tuple[TerrainNode, ...]:
     return random.choice(
         [
             basic_room,

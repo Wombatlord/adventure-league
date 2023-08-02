@@ -1,27 +1,25 @@
 import math
 from typing import Self
 
-from pyglet.math import Mat3, Mat4, Vec2, Vec3
+from pyglet.math import Mat3, Mat4, Vec2, Vec3, Vec4
 
 from src.world.node import Node
 
 
 class Transform:
-    _world_to_screen: Mat3
-    _screen_to_world: Mat3
-    _translation: Vec2
+    _world_to_screen: Mat4
+    _screen_to_world: Mat4
 
     @classmethod
     def trivial(cls) -> Self:
         return cls()
 
-    def __init__(self, world_to_screen: Mat3 = Mat3(), translation: Vec2 = Vec2()):
-        self._translation = translation
-        self._world_to_screen = world_to_screen
-        self._screen_to_world = invert_mat3(world_to_screen)
+    def __init__(self, world_to_screen: Mat4 = Mat4(), translation: Vec2 = Vec2()):
+        self._set(world_to_screen)
+        self.translate_image(translation)
 
     def on_resize(self, translation: Vec2):
-        self._translation = translation
+        self.translate_image(translation)
 
     @classmethod
     def isometric(cls, block_dimensions: tuple[int, int, int] | Vec3, absolute_scale: float, translation: Vec2 = Vec2()):
@@ -64,13 +62,18 @@ class Transform:
         grid = Vec3(*block_dimensions) / 2
 
         # This matrix takes care of the entire isometric transform including any aspect ratio changes
-        isometry = Mat3([
-            # c1     c2                 c3       <-column labels
-            -grid.x, +grid.y,           0.0,    # c1 expresses the fact that screen x = world y - world x
-            +grid.x, +grid.y,           0.0,    # c2 expresses the fact that screen y = world x + world y + 2*world z
-             0.0,    +2*grid.z,         1.0,    # c3 expresses the fact that we don't care about screen z
-        ])
+        cam_basis = Vec3(
+            Vec3(grid.x, -grid.x, 0), # screen right
+            Vec3(grid.y, grid.y, 2*grid.y), # screen up
+            Vec3(0, 0, 2*grid.z), #screen out
+        )
+        cx, cy, cz = cam_basis
 
+        isometry = Mat3([
+            cx.x, cy.x, cz.x,    # cx expresses the fact that screen x = world y - world x
+            cx.y, cy.y, cz.y,    # cy expresses the fact that screen y = world x + world y + 2*world z
+            cx.z, cy.z, cz.z,    # cz expresses the fact that we don't care about screen z
+        ])
                                 # the determinant so that it preserves volumes
 
         world_to_screen = (   # The order of operations (bottom to top) T2(T1(v))
@@ -80,32 +83,69 @@ class Transform:
 
         # pyglet Mat3 type can't be inverted to get the screen -> world matrix so we need to embed it in a
         # Mat4 to make use of their implementation of Mat4.__invert__
-        return cls(world_to_screen, translation=translation)
+        transform = cls(_embed_mat3_in_mat4(world_to_screen), translation=translation)
+        return transform
+    
+    def _set(self, wts: Mat4):
+        self._world_to_screen = wts
+        self._screen_to_world = ~self._world_to_screen
+    
+    def translate_image(self, translation: Vec2):
+        self._set(Mat4().translate(Vec3(*translation, 0)) @ self._world_to_screen)
+        
+    def translate_grid(self, node: Node):        
+        self._set(self._world_to_screen @ Mat4().translate(Vec3(*node)))
+        
+    def rotate_grid(self, angle: float, pivot_point: Vec2 = Vec2(0, 0)):
+        self.translate_grid(pivot_point)
+        transform = Mat4().rotate(angle, Vec3(0, 0, 1))
+        self._set(self._world_to_screen @ transform)
+        self.translate_grid(pivot_point*-1)
 
-    def project(self, node: Node) -> Vec2:
+    def project(self, node: Node, z_offset: int = 0) -> Vec2:
         # Make sure the input has enough axes and is compatible with matmul (@)
-        world_xyz = Vec3(*node)
+        world_xyzw = Vec4(*(node + Node(0, 0, z=z_offset)), 1)
 
         # apply our transform
-        screen_xyz = (self._world_to_screen @ world_xyz)
+        screen_xyzw = (self._world_to_screen @ world_xyzw)
 
         # here we grab the x and y parts to locate the grid point on the screen
-        screen_xy_projection = screen_xyz[:2]
-        return Vec2(*screen_xy_projection) + self._translation
+        screen_xy_projection = screen_xyzw[:2]
+        return Vec2(*screen_xy_projection)
+    
+    def camera_z_axis(self) -> Vec3:
+        cam_z = Vec3(*self._screen_to_world.column(2)[:-1])
+        return cam_z
+    
+    def camera_x_axis(self) -> Vec3:
+        cam_x = Vec3(*self._screen_to_world.column(0)[:-1])
+        return cam_x
+    
+    def camera_y_axis(self) -> Vec3:
+        cam_y = Vec3(*self._screen_to_world.column(1)[:-1])
+        return cam_y
+    
+    def draw_priority(self, node: Node) -> float:
+        return 10*self.camera_z_axis().dot(Vec3(*node))
 
-    def cast_ray(self, cam_coords: Vec2) -> Node:
+    def world_location(self, cam_xy: Vec2, z: float | int = 0) -> Node:
         """We cast a ray"""
-        embedded = Vec3(*(cam_coords - self._translation), -1)
-        return Node(*[math.ceil(coord) for coord in (self._screen_to_world @ embedded)[:2]])
+        screen_location = Vec4(*cam_xy, z, 1)
+        
+        node = Node(*[math.ceil(coord) for coord in (self._screen_to_world @ screen_location)[:3]])
+        
+        return node
+    
+    def camera_origin(self) -> Vec3:
+        return self.world_location(Vec2(0, 0), 0)
 
     def __eq__(self, other: Self) -> bool:
         if not isinstance(other, Transform):
             return False
 
-        same_translation = self._translation == other._translation
-        same_projection = self._world_to_screen == other._world_to_screen
+        same_matrix = self._world_to_screen == other._world_to_screen
 
-        return same_translation and same_projection
+        return same_matrix
 
     def is_trivial(self):
         return self == Transform.trivial()
@@ -127,6 +167,7 @@ def _extract_mat3_from_mat4(m4: Mat4) -> Mat3:
     ])
 
 
+
 def invert_mat3(m3: Mat3) -> Mat3:
     """
     Takes a Mat3 type and returns its inverse as a mat3 if possible
@@ -134,7 +175,7 @@ def invert_mat3(m3: Mat3) -> Mat3:
         m3: the matrix to invert
 
     Returns: the inverted matrix
-
+Mat4().rotate(90 * times_90, Vec3(0, 0, 1))
     """
     m4 = _embed_mat3_in_mat4(m3)
     return _extract_mat3_from_mat4(~m4)
@@ -177,7 +218,7 @@ def norm(m3: Mat3) -> Mat3:
 
 
 def draw_priority(node) -> float:
-    if not hasattr(node, "node"):
-        return -(node.x + node.y - 2*node.z)
-
-    return -(node.node.x + node.node.y - 2*node.node.z)
+    node_v = Vec3(*node)
+    ray = Vec3(-1, -1, 2)
+    return node_v.dot(ray)
+    

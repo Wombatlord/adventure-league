@@ -1,6 +1,9 @@
+import os
 import sys
 
 from src.tools import registered_tools
+
+os.environ["DEBUG"] = "1"
 
 
 def main(args: list[str]):
