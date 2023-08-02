@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Callable, NamedTuple, TypeVar, Any
+from typing import Any, Callable, NamedTuple, TypeVar
 
 import arcade
-from PIL.Image import Image
 from arcade import Texture
 from arcade.hitbox import BoundingHitBoxAlgorithm, HitBoxAlgorithm
 from arcade.types import PointList
+from PIL.Image import Image
 from pyglet.math import Vec2
 
 
@@ -35,9 +35,6 @@ class SheetSpec(NamedTuple):
         return self.loaded[idx]
 
 
-
-
-
 class ExplicitHitBox(HitBoxAlgorithm):
     points: PointList = ()
 
@@ -51,19 +48,13 @@ class ExplicitHitBox(HitBoxAlgorithm):
 class NormalsHitBox(ExplicitHitBox):
     points = [
         tuple(offset)
-        for offset in [
-            Vec2(i*16, j*17)/2
-            for i in (-1, 1)
-            for j in (-1, 1)
-        ]
+        for offset in [Vec2(i * 16, j * 17) / 2 for i in (-1, 1) for j in (-1, 1)]
     ]
 
 
 class SingleTextureSpecs:
     _cache: dict[TextureSpec, Texture] = {}
-    title_background = TextureSpec(
-        args=("./assets/background_glacial_mountains.png",)
-    )
+    title_background = TextureSpec(args=("./assets/background_glacial_mountains.png",))
 
     title_banner = TextureSpec(
         args=("./assets/sprites/banner.png",),
@@ -84,7 +75,7 @@ class SingleTextureSpecs:
             width=16,
             height=17,
             hit_box_algorithm=BoundingHitBoxAlgorithm,
-        )
+        ),
     )
 
 
@@ -105,13 +96,13 @@ class SpriteSheetSpecs:
     )
 
     tile_normals_2_layer = SheetSpec(
-        args=("./assets/sprites/tile_normals_2_layer.png",),
+        args=("./assets/sprites/tile_normals_saturation_gradient.png",),
         kwargs=_hashable(
             **{
                 "sprite_height": 17,
                 "sprite_width": 16,
-                "columns": 2,
-                "count": 2,
+                "columns": 1,
+                "count": 8,
                 "margin": 0,
                 "hit_box_algorithm": BoundingHitBoxAlgorithm,
             }

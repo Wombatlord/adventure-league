@@ -303,7 +303,7 @@ class RosterAndTeamPaneSection(arcade.Section):
             )
         )
 
-        self.highlighted_tex, self.darkened_tex = [ref.texture for ref in references]
+        self.highlighted_tex, self.darkened_tex = [ref.normal_tex for ref in references]
         self.left_pane, self.right_pane = references
         self.tex_panes = references
         self.update_highlights()

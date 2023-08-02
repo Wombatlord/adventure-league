@@ -3,7 +3,7 @@ from typing import NamedTuple
 
 from arcade import Texture
 
-from src.textures.texture_data import SpriteSheetSpecs, SingleTextureSpecs
+from src.textures.texture_data import SingleTextureSpecs, SpriteSheetSpecs
 from src.world.node import Node
 
 tiles = SpriteSheetSpecs.tiles.loaded
@@ -43,9 +43,7 @@ class Biome(NamedTuple):
     def choose_texture_for_node(self, node: Node, tile_type: int) -> Texture:
         if self.name != BiomeName.NORMALS:
             return random.choice(self.get_tile_textures(tile_type))
-        if node.z < 0:
-            return self.floor_tiles[0]
-        return self.floor_tiles[1]
+        return self.floor_tiles[0]
 
 
 class BiomeTextures:
@@ -98,7 +96,7 @@ class BiomeTextures:
             name=BiomeName.NORMALS,
             floor_tiles=normals_tiles,
             wall_tiles=normals_tiles,
-            pillar_tiles=normals_tiles
+            pillar_tiles=normals_tiles,
         )
 
 

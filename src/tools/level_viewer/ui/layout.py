@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import contextlib
 import random
+import time
 from typing import Callable, Generator, Sequence
 
 import arcade
 from arcade.gl import geometry
+from pyglet import gl
 from pyglet.math import Vec2
 
 from src import config
@@ -12,7 +15,7 @@ from src.entities.sprites import BaseSprite
 from src.gui.biome_textures import Biome, BiomeName, biome_map
 from src.gui.combat.highlight import HighlightLayer
 from src.textures.texture_data import SpriteSheetSpecs
-from src.tools.level_viewer.model.layout import Block
+from src.tools.level_viewer.model.viewer_state import Block
 from src.tools.level_viewer.ui.biome_menu import BiomeMenu
 from src.tools.level_viewer.ui.geometry_menu import GeometryMenu
 from src.tools.level_viewer.ui.hides import Hides
@@ -84,22 +87,72 @@ class LayoutView(arcade.View):
         }.get(symbol, NO_OP)()
 
 
-class SurfaceBuffer:
+class NormalShader:
     width: int
     height: int
     ctx: arcade.ArcadeContext
+    terrain_nodes: list[Node]
 
     def __init__(self, width: int, height: int, window: arcade.Window):
         self.width = width
         self.height = height
-        self.quad_fs = geometry.quad_2d_fs()
         self.ctx = window.ctx
-        self.texture = self.ctx.texture(
+        self.time = time.time()
+
+        # render surface
+        self.quad_fs = geometry.quad_2d_fs()
+
+        # set up normal map texture/framebuffer pair
+        self.normal_tex = self.ctx.texture(
             (self.width, self.height),
-            components=3,
-            filter=(self.ctx.NEAREST, self.ctx.NEAREST)
+            components=4,
+            filter=(self.ctx.NEAREST, self.ctx.NEAREST),
+            dtype="f4",
         )
-        self.display_program = self.ctx.program(
+        self.normal_framebuffer = self.ctx.framebuffer(
+            color_attachments=[self.normal_tex]
+        )
+
+        # set up scene map texture/framebuffer pair
+        self.scene_tex = self.ctx.texture(
+            (self.width, self.height),
+            components=4,
+            filter=(self.ctx.NEAREST, self.ctx.NEAREST),
+            dtype="f4",
+        )
+        self.scene_framebuffer = self.ctx.framebuffer(
+            color_attachments=[self.scene_tex]
+        )
+
+        r = range(0, 2)
+        macros = "\n".join(f"#define T{i} texture{i}" for i in r)
+        uniforms = "\n".join(f"uniform sampler2D T{i};" for i in r)
+        overlays = "\n".join(f"RGBA += texture(T{i}, uv+{i/20:3f});" for i in r)
+        frag = (
+            """
+        #version 330
+        """
+            + macros
+            + """
+        """
+            + uniforms
+            + """
+        
+        out vec4 fragColor;
+        in vec2 uv;
+
+        void main() {
+            vec4 RGBA = vec4(0.,0.,0.,1.);
+            """
+            + overlays
+            + """
+            
+            fragColor = RGBA;
+        }
+        """
+        )
+
+        self.shader = self.ctx.program(
             vertex_shader="""
             #version 330
             
@@ -114,19 +167,66 @@ class SurfaceBuffer:
             """,
             fragment_shader="""
             #version 330
-
-            uniform sampler2D texture0;
-            out vec4 fragColor;
+            uniform sampler2D norm;
+            uniform sampler2D scen;
+            uniform float time;
             in vec2 uv;
-
+            out vec4 rgba;
             void main() {
-
-                fragColor = texture(texture0, uv);
-
+                float s = sin(time);
+                
+                
+                float c = cos(time);
+                float radius = 2.;
+                vec3 circ = radius*vec3(c, s, 0);
+                vec3 offset = -1.*vec3(3., 3., 2.);
+                vec3 light_loc = circ+offset;
+                
+                
+                vec3 light = normalize(vec3(0.) - light_loc);
+                vec4 normal = texture(norm, uv);
+                vec3 light_col = vec3(c, s, (c-s)/2.)/2. + 0.5;
+                vec3 illum = light_col*(dot(light, normal.xyz));
+        
+                rgba = vec4(texture(scen, uv).rgb*illum, 1.);
             }
-            """
+            """,
         )
 
+        self.shader["norm"] = 0
+        self.shader["scen"] = 1
+        self.normal_biome = biome_map[BiomeName.NORMALS]
+        self.terrain_nodes = []
+        self.normal_sprites = arcade.SpriteList()
+        self.mouse = (0.0, 0.0)
+
+    def update_terrain_nodes(self, sprites: arcade.SpriteList):
+        self.normal_sprites.clear()
+        for sprite in sprites:
+            if not hasattr(sprite, "clone") or not getattr(sprite, "node", None):
+                continue
+            clone = sprite.clone()
+            clone.texture = self.normal_biome.choose_texture_for_node(clone.node, 0)
+            self.normal_sprites.append(clone)
+
+    def update_mouse(self, v: Vec2):
+        self.mouse = tuple([v.x / self.width, v.y / self.height])
+
+    def draw_context(self, sprite_list: arcade.SpriteList):
+        self.scene_framebuffer.clear()
+        self.scene_framebuffer.use()
+        sprite_list.draw(pixelated=True)
+
+        self.normal_framebuffer.clear()
+        self.normal_framebuffer.use()
+        self.normal_sprites.draw(pixelated=True)
+
+        self.ctx.screen.use()
+        self.shader["time"] = time.time() - self.time
+        self.scene_tex.use(1)
+        self.normal_tex.use(0)
+
+        self.quad_fs.render(self.shader)
 
 
 class LayoutSection(arcade.Section):
@@ -177,6 +277,7 @@ class LayoutSection(arcade.Section):
         self.setup_highlight_layers(self.world_sprite_list)
         self.follow(self.gen_last_clicked())
         self.current_biome = biome_map[random.choice(BiomeName.all_biomes())]
+        self.normal_shader = NormalShader(self.width, self.height, arcade.get_window())
 
     def setup_highlight_layers(self, display: arcade.SpriteList):
         self.highlight_layer_gold_edge = HighlightLayer(
@@ -258,8 +359,8 @@ class LayoutSection(arcade.Section):
 
     def on_draw(self):
         self.grid_camera.use()
+        self.normal_shader.draw_context(self.world_sprite_list)
 
-        self.world_sprite_list.draw(pixelated=True)
         if config.DEBUG:
             l, r, b, t = self.grid_camera.projection
             arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
@@ -303,10 +404,7 @@ class LayoutSection(arcade.Section):
 
     def level_to_sprite_list(self):
         self.teardown_level()
-
         for block in self.layout:
-            if not isinstance(block.texture, arcade.Texture):
-                breakpoint()
             sprite = BaseSprite(
                 block.texture,
                 scale=self.SPRITE_SCALE,
@@ -314,6 +412,7 @@ class LayoutSection(arcade.Section):
             )
             sprite.set_node(block.node)
             self.world_sprite_list.append(sprite)
+        self.normal_shader.update_terrain_nodes(self.world_sprite_list)
 
     def teardown_level(self):
         self.world_sprite_list.clear()
@@ -325,6 +424,7 @@ class LayoutSection(arcade.Section):
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         self._mouse_coords = Vec2(float(x), float(y))
+        self.normal_shader.update_mouse(self._mouse_coords)
 
     def node_at_mouse(self) -> Node:
         return self.transform.cast_ray(self.cam_controls.image_px(self._mouse_coords))
@@ -354,6 +454,8 @@ class LayoutSection(arcade.Section):
 
     def on_key_press(self, symbol: int, modifiers: int):
         self.cam_controls.on_key_press(symbol)
+        if symbol == arcade.key.L:
+            breakpoint()
 
     def on_key_release(self, _symbol: int, _modifiers: int):
         self.cam_controls.on_key_release(_symbol)

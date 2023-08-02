@@ -76,18 +76,14 @@ class BaseSprite(OffsetSprite, Sprite):
         angle: float = 0.0,
         **kwargs,
     ):
-        try:
-            super().__init__(
-                path_or_texture,
-                scale,
-                center_x,
-                center_y,
-                angle,
-                **kwargs,
-            )
-        except:
-            breakpoint()
-            raise
+        super().__init__(
+            path_or_texture,
+            scale,
+            center_x,
+            center_y,
+            angle,
+            **kwargs,
+        )
 
         self.animation_cycle = 0.75
         self.tex_idx = 0
@@ -97,6 +93,10 @@ class BaseSprite(OffsetSprite, Sprite):
         self._draw_priority = 0
         self._draw_priority_offset = kwargs.get("draw_priority_offset", 0)
         self._node = None
+
+    @property
+    def node(self) -> Node | None:
+        return self._node
 
     def set_scale(self, scale: int):
         self.scale = scale
@@ -136,6 +136,18 @@ class BaseSprite(OffsetSprite, Sprite):
                     self.texture = self.textures[self.tex_idx]
                     self.tex_idx = (self.tex_idx + 1) % len(self.textures)
                     self.animation_cycle = 0.75
+
+    def clone(self) -> Self:
+        clone = BaseSprite(
+            self.texture, self.scale, self.position[0], self.position[1], self.angle
+        )
+        if self._node:
+            clone.set_node(self._node)
+
+        if self.transform:
+            clone.set_transform(self.transform)
+
+        return clone
 
 
 class AnimatedSpriteAttribute:

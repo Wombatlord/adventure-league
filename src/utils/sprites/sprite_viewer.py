@@ -360,11 +360,11 @@ class MyGame(arcade.Window):
             for s in sprite:
                 if abs(s.tex_idx) == len(s.textures):
                     s.tex_idx = 0
-                    s.texture = s.textures[s.tex_idx]
+                    s.normal_tex = s.textures[s.tex_idx]
 
                 else:
                     s.tex_idx -= 1
-                    s.texture = s.textures[s.tex_idx]
+                    s.normal_tex = s.textures[s.tex_idx]
 
         else:
             if abs(sprite.tex_idx) == len(sprite.textures):
@@ -380,11 +380,11 @@ class MyGame(arcade.Window):
             for s in sprite:
                 if abs(s.tex_idx) == len(s.textures) - 1:
                     s.tex_idx = 0
-                    s.texture = s.textures[s.tex_idx]
+                    s.normal_tex = s.textures[s.tex_idx]
 
                 else:
                     s.tex_idx += 1
-                    s.texture = s.textures[s.tex_idx]
+                    s.normal_tex = s.textures[s.tex_idx]
 
         else:
             if sprite.tex_idx == len(sprite.textures) - 1:
