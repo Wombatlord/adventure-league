@@ -19,6 +19,7 @@ from src.tools.level_viewer.ui.biome_menu import BiomeMenu
 from src.tools.level_viewer.ui.geometry_menu import GeometryMenu
 from src.tools.level_viewer.ui.hides import Hides
 from src.utils.camera_controls import CameraController
+from src.utils.shader_program import Shader
 from src.world.isometry.transforms import Transform
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
@@ -155,82 +156,22 @@ class NormalShader:
         self.scene_framebuffer = self.ctx.framebuffer(
             color_attachments=[self.scene_tex]
         )
-
-        r = range(0, 2)
-        macros = "\n".join(f"#define T{i} texture{i}" for i in r)
-        uniforms = "\n".join(f"uniform sampler2D T{i};" for i in r)
-        overlays = "\n".join(f"RGBA += texture(T{i}, uv+{i/20:3f});" for i in r)
-        frag = (
-            """
-        #version 330
-        """
-            + macros
-            + """
-        """
-            + uniforms
-            + """
-        
-        out vec4 fragColor;
-        in vec2 uv;
-
-        void main() {
-            vec4 RGBA = vec4(0.,0.,0.,1.);
-            """
-            + overlays
-            + """
-            
-            fragColor = RGBA;
-        }
-        """
+        self.shader = Shader(ctx=self.ctx)
+        self.shader.load_sources(
+            "./assets/shaders/disco/frag.glsl",
+            "./assets/shaders/disco/vert.glsl",
         )
+        self.shader.bind(self.normal_tex, "norm")
+        self.shader.bind(self.scene_tex, "scene")
+        self.shader.attach_uniform("time", self.get_time)
 
-        self.shader = self.ctx.program(
-            vertex_shader="""
-            #version 330
-            
-            in vec2 in_vert;
-            in vec2 in_uv;
-            out vec2 uv;
-
-            void main() {
-                gl_Position = vec4(in_vert, 0.0, 1.0);
-                uv = in_uv;
-            }
-            """,
-            fragment_shader="""
-            #version 330
-            uniform sampler2D norm;
-            uniform sampler2D scen;
-            uniform float time;
-            in vec2 uv;
-            out vec4 rgba;
-            void main() {
-                float s = sin(time);
-                
-                
-                float c = cos(time);
-                float radius = 2.;
-                vec3 circ = radius*vec3(c, s, 0);
-                vec3 offset = -1.*vec3(3., 3., 2.);
-                vec3 light_loc = circ+offset;
-                
-                
-                vec3 light = normalize(vec3(0.) - light_loc);
-                vec4 normal = texture(norm, uv);
-                vec3 light_col = vec3(c, s, (c-s)/2.)/2. + 0.5;
-                vec3 illum = light_col*(dot(light, normal.xyz));
-        
-                rgba = vec4(texture(scen, uv).rgb*illum, 1.);
-            }
-            """,
-        )
-
-        self.shader["norm"] = 0
-        self.shader["scen"] = 1
         self.normal_biome = biome_map[BiomeName.NORMALS]
         self.terrain_nodes = []
         self.normal_sprites = arcade.SpriteList()
         self.mouse = (0.0, 0.0)
+
+    def get_time(self) -> float:
+        return time.time() - self.time
 
     def update_terrain_nodes(self, sprites: arcade.SpriteList):
         self.normal_sprites.clear()
@@ -244,7 +185,7 @@ class NormalShader:
     def update_mouse(self, v: Vec2):
         self.mouse = tuple([v.x / self.width, v.y / self.height])
 
-    def draw_context(self, sprite_list: arcade.SpriteList):
+    def render_scene(self, sprite_list: arcade.SpriteList):
         self.scene_framebuffer.clear()
         self.scene_framebuffer.use()
         sprite_list.draw(pixelated=True)
@@ -254,11 +195,8 @@ class NormalShader:
         self.normal_sprites.draw(pixelated=True)
 
         self.ctx.screen.use()
-        self.shader["time"] = time.time() - self.time
-        self.scene_tex.use(1)
-        self.normal_tex.use(0)
-
-        self.quad_fs.render(self.shader)
+        with self.shader as program:
+            self.quad_fs.render(program)
 
 
 class LayoutSection(arcade.Section):
@@ -413,7 +351,7 @@ class LayoutSection(arcade.Section):
 
     def on_draw(self):
         self.grid_camera.use()
-        self.normal_shader.draw_context(self.world_sprite_list)
+        self.normal_shader.render_scene(self.world_sprite_list)
 
         if config.DEBUG:
             l, r, b, t = self.grid_camera.projection
