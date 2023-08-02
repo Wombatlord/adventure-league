@@ -454,10 +454,12 @@ def iter_one_from(wf: WaveFunction, p: Pos) -> StateVec | None:
 
 
 def generate(
-    factory: Callable[[Pos], StateVec], max_retries: int = 3
+    factory: Callable[[Pos], StateVec],
+    max_retries: int = 3,
+    start: Pos | None = None,
 ) -> CollapseResult:
     return iterate_with_backtracking(
-        iterator=iter_one_from, factory=factory, max_retries=max_retries
+        iterator=iter_one_from, factory=factory, max_retries=max_retries, start=start
     )
 
 
@@ -465,9 +467,10 @@ def iterate_with_backtracking(
     iterator: Callable[[WaveFunction, Pos], StateVec | None],
     factory: Callable[[Pos], StateVec],
     max_retries=3,
+    start: Pos | None = None,
 ) -> CollapseResult:
     wave_function = WaveFunction.from_factory(factory)
-    current_pos = wave_function.get_next().pos
+    current_pos = start or wave_function.get_next().pos
 
     def _robust_iterator(
         wf: WaveFunction, pos: Pos

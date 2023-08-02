@@ -15,12 +15,16 @@ from src.tools.level_viewer.model.viewer_state import Block, get_registered_layo
 from src.world.node import Node
 
 NO_OP = lambda *_, **__: None
-BlockFactory = Callable[[], list[Block]]
+BlockFactory = Callable[[tuple[int, int]], list[Block]]
 
 
 class GeometryMenu(arcade.Section, Hides):
     layout: LayoutSection
     dispatch_mouse: Callable[[int, int, int, int], Node | None]
+
+    def _cache_factory(self, factory):
+        self._factory = factory
+        return factory
 
     def __init__(
         self,
@@ -37,18 +41,21 @@ class GeometryMenu(arcade.Section, Hides):
         )
         self.layout = layout
         self.ui_manager = UIManager()
+        self._factory = None
 
         self.setup_ui()
 
     def factory_button(
-        self, name: str, factories: BlockFactory, height_hint: float
+        self, name: str, factory: BlockFactory, height_hint: float
     ) -> gui.UIFlatButton:
         btn = gui.UIFlatButton(text=name, size_hint=(1, height_hint))
-        layout = factories
-        btn.on_click = lambda *_: self.layout.show_layout(layout())
+        btn.on_click = lambda *_: self.layout.show_layout(
+            self._cache_factory(factory)(self.layout.geometry_dims)
+        )
         return btn
 
     def setup_ui(self):
+        btn_count = len(get_registered_layouts()) + 2
         self.ui_manager.add(
             gui.UIBoxLayout(
                 x=0,
@@ -56,13 +63,36 @@ class GeometryMenu(arcade.Section, Hides):
                 width=self.width / 5,
                 height=self.height,
                 children=[
-                    self.factory_button(
-                        name, factory, 1 / len(get_registered_layouts())
-                    )
+                    self.factory_button(name, factory, 1 / btn_count)
                     for name, factory in get_registered_layouts().items()
-                ],
+                ]
+                + [self.bigger_btn(1 / btn_count), self.smaller_btn(1 / btn_count)],
             )
         )
+
+    def bigger_btn(self, height_hint: float) -> gui.UIFlatButton:
+        btn = gui.UIFlatButton(text="bigger", size_hint=(1, height_hint))
+
+        def _on_click(*_):
+            self.layout.update_dims(
+                self.layout.geometry_dims[0] + 1, self.layout.geometry_dims[1] + 1
+            )
+            self.layout.show_layout(self._factory(self.layout.geometry_dims))
+
+        btn.on_click = _on_click
+        return btn
+
+    def smaller_btn(self, height_hint: float) -> gui.UIFlatButton:
+        btn = gui.UIFlatButton(text="smaller", size_hint=(1, height_hint))
+
+        def _on_click(*_):
+            self.layout.update_dims(
+                self.layout.geometry_dims[0] - 1, self.layout.geometry_dims[1] - 1
+            )
+            self.layout.show_layout(self._factory(self.layout.geometry_dims))
+
+        btn.on_click = _on_click
+        return btn
 
     def on_update(self, delta_time: float):
         self.ui_manager.on_update(delta_time)

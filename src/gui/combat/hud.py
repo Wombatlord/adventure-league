@@ -45,7 +45,9 @@ class HUD(arcade.Section):
         self.scene = scene
         self.combat_log = CombatLog(_subdivision(3, (self.width, self.height), (2, 2)))
         self.combat_menu = empty()
-        self.dispatch_mouse = lambda *_: None
+        self.dispatch_mouse: Callable[
+            [int, int, int, int], Node | None
+        ] = lambda *_: None
         self.debug_text = arcade.Text(
             text="",
             font_size=12,
