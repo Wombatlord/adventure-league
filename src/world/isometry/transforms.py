@@ -135,6 +135,9 @@ class Transform:
         node = Node(*[math.ceil(coord) for coord in (self._screen_to_world @ screen_location)[:3]])
         
         return node
+
+    def screen_to_world(self) -> Mat4:
+        return self._screen_to_world
     
     def camera_origin(self) -> Vec3:
         return self.world_location(Vec2(0, 0), 0)

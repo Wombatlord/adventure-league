@@ -125,7 +125,7 @@ class SpriteSheetSpecs:
         ),
     )
 
-    tile_normals_2_layer = SheetSpec(
+    tile_saturation_gradient = SheetSpec(
         args=("./assets/sprites/tile_normals_saturation_gradient.png",),
         kwargs=_hashable(
             **{
@@ -133,6 +133,32 @@ class SpriteSheetSpecs:
                 "sprite_width": 16,
                 "columns": 1,
                 "count": 8,
+                "margin": 0,
+                "hit_box_algorithm": BoundingHitBoxAlgorithm,
+            }
+        ),
+    )
+    tile_height_map_sheet = SheetSpec(
+        args=("./assets/sprites/tile_height_map_sheet.png",),
+        kwargs=_hashable(
+            **{
+                "sprite_height": 17,
+                "sprite_width": 16,
+                "columns": 1,
+                "count": 8,
+                "margin": 0,
+                "hit_box_algorithm": BoundingHitBoxAlgorithm,
+            }
+        ),
+    )
+    tile_normals_2_layer = SheetSpec(
+        args=("./assets/sprites/tile_normals_2_layer.png",),
+        kwargs=_hashable(
+            **{
+                "sprite_height": 17,
+                "sprite_width": 16,
+                "columns": 2,
+                "count": 2,
                 "margin": 0,
                 "hit_box_algorithm": BoundingHitBoxAlgorithm,
             }

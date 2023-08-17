@@ -7,7 +7,7 @@ from typing import Callable, Generator, Sequence
 
 import arcade
 from arcade.gl import geometry
-from pyglet.math import Vec2
+from pyglet.math import Mat4, Vec2, Vec3
 
 from src import config
 from src.entities.sprites import BaseSprite
@@ -120,54 +120,71 @@ class LayoutView(arcade.View):
         }.get(symbol, NO_OP)()
 
 
-class NormalShader:
+def gen_tx_buf(
+    ctx: arcade.ArcadeContext, size: tuple[int, int]
+) -> tuple[arcade.gl.Texture2D, arcade.gl.Framebuffer]:
+    tx = ctx.texture(
+        size,
+        components=4,
+        filter=(ctx.NEAREST, ctx.NEAREST),
+        dtype="f4",
+    )
+    buf = ctx.framebuffer(color_attachments=[tx])
+    return tx, buf
+
+
+class ShaderPipeline:
     width: int
     height: int
     ctx: arcade.ArcadeContext
     terrain_nodes: list[Node]
 
-    def __init__(self, width: int, height: int, window: arcade.Window):
+    def __init__(
+        self, width: int, height: int, window: arcade.Window, transform: Transform
+    ):
         self.width = width
         self.height = height
         self.ctx = window.ctx
         self.time = time.time()
+        self.transform = transform
 
         # render surface
         self.quad_fs = geometry.quad_2d_fs()
 
         # set up normal map texture/framebuffer pair
-        self.normal_tex = self.ctx.texture(
-            (self.width, self.height),
-            components=4,
-            filter=(self.ctx.NEAREST, self.ctx.NEAREST),
-            dtype="f4",
-        )
-        self.normal_framebuffer = self.ctx.framebuffer(
-            color_attachments=[self.normal_tex]
+        self.normal_tex, self.normal_framebuffer = gen_tx_buf(
+            self.ctx, (self.width, self.height)
         )
 
         # set up scene map texture/framebuffer pair
-        self.scene_tex = self.ctx.texture(
-            (self.width, self.height),
-            components=4,
-            filter=(self.ctx.NEAREST, self.ctx.NEAREST),
-            dtype="f4",
+        self.scene_tex, self.scene_framebuffer = gen_tx_buf(
+            self.ctx, (self.width, self.height)
         )
-        self.scene_framebuffer = self.ctx.framebuffer(
-            color_attachments=[self.scene_tex]
+
+        # set up height map texture/frambuffer pair
+        self.height_tex, self.height_framebuffer = gen_tx_buf(
+            self.ctx, (self.width, self.height)
         )
+
         self.shader = Shader(ctx=self.ctx)
         self.shader.load_sources(
-            "./assets/shaders/disco/frag.glsl",
-            "./assets/shaders/disco/vert.glsl",
+            "./assets/shaders/height_mapped/frag.glsl",
+            "./assets/shaders/height_mapped/vert.glsl",
         )
         self.shader.bind(self.normal_tex, "norm")
         self.shader.bind(self.scene_tex, "scene")
-        self.shader.attach_uniform("time", self.get_time)
+        self.shader.bind(self.height_tex, "height")
+
+        s2w = lambda: self.transform.screen_to_world() @ Mat4().scale(
+            Vec3(self.width, self.height, 1.0)
+        )
+        self.shader.attach_uniform("transform", s2w)
+        self.shader.attach_uniform("mouse", self.get_mouse)
 
         self.normal_biome = biome_map[BiomeName.NORMALS]
         self.terrain_nodes = []
         self.normal_sprites = arcade.SpriteList()
+        self.height_sprites = arcade.SpriteList()
         self.mouse = (0.0, 0.0)
 
     def get_time(self) -> float:
@@ -181,9 +198,17 @@ class NormalShader:
             clone = sprite.clone()
             clone.texture = self.normal_biome.choose_texture_for_node(clone.node, 0)
             self.normal_sprites.append(clone)
+            height_clone = sprite.clone()
+            height_clone.texture = SpriteSheetSpecs.tile_height_map_sheet.loaded[
+                height_clone.node.z + 1
+            ]
+            self.height_sprites.append(height_clone)
 
     def update_mouse(self, v: Vec2):
         self.mouse = tuple([v.x / self.width, v.y / self.height])
+
+    def get_mouse(self):
+        return self.mouse
 
     def render_scene(self, sprite_list: arcade.SpriteList):
         self.scene_framebuffer.clear()
@@ -193,6 +218,10 @@ class NormalShader:
         self.normal_framebuffer.clear()
         self.normal_framebuffer.use()
         self.normal_sprites.draw(pixelated=True)
+
+        self.height_framebuffer.clear()
+        self.height_framebuffer.use()
+        self.height_sprites.draw(pixelated=True)
 
         self.ctx.screen.use()
         with self.shader as program:
@@ -257,7 +286,9 @@ class LayoutSection(arcade.Section):
         self.highlight_layer_green = None
         self.setup_highlight_layers(self.world_sprite_list)
         self.current_biome = biome_map[random.choice(BiomeName.all_biomes())]
-        self.normal_shader = NormalShader(self.width, self.height, arcade.get_window())
+        self.shader_pipeline = ShaderPipeline(
+            self.width, self.height, arcade.get_window(), self.transform
+        )
 
     def setup_highlight_layers(self, display: arcade.SpriteList):
         self.highlight_layer_gold_edge = HighlightLayer(
@@ -351,7 +382,7 @@ class LayoutSection(arcade.Section):
 
     def on_draw(self):
         self.grid_camera.use()
-        self.normal_shader.render_scene(self.world_sprite_list)
+        self.shader_pipeline.render_scene(self.world_sprite_list)
 
         if config.DEBUG:
             l, r, b, t = self.grid_camera.projection
@@ -414,7 +445,7 @@ class LayoutSection(arcade.Section):
             sprite.set_node(block.node)
             self.world_sprite_list.append(sprite)
         self.refresh_draw_order()
-        self.normal_shader.update_terrain_nodes(self.world_sprite_list)
+        self.shader_pipeline.update_terrain_nodes(self.world_sprite_list)
 
     def teardown_level(self):
         self.world_sprite_list.clear()
@@ -442,7 +473,7 @@ class LayoutSection(arcade.Section):
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         self._mouse_coords = Vec2(float(x), float(y))
-        self.normal_shader.update_mouse(self._mouse_coords)
+        self.shader_pipeline.update_mouse(self._mouse_coords)
 
     def node_at_mouse(self, mouse: tuple[int, int] | None = None) -> Node:
         for s in self.world_sprite_list[::-1]:

@@ -2,6 +2,7 @@
 uniform sampler2D norm;
 uniform sampler2D scene;
 uniform float time;
+uniform vec2 mouse;
 in vec2 uv;
 out vec4 rgba;
 void main() {
@@ -10,7 +11,7 @@ void main() {
     float c = cos(time);
     float radius = 2.;
     vec3 circ = radius*vec3(c, s, 0);
-    vec3 offset = -1.*vec3(3., 3., 2.);
+    vec3 offset = -1.*vec3(1.+2*mouse, 2.);
     vec3 light_loc = circ+offset;
 
 

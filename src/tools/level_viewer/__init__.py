@@ -5,7 +5,7 @@ from src.tools.level_viewer.model.viewer_state import register_layout
 from src.tools.level_viewer.ui.layout import LayoutView
 
 
-def start(_: list[str]):
+def start(*_: list[str]):
     """Startup"""
     window = arcade.Window(
         WindowData.width,
