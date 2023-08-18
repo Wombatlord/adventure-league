@@ -107,6 +107,7 @@ class SingleTextureSpecs:
             hit_box_algorithm=BoundingHitBoxAlgorithm,
         ),
     )
+    tile_normals_hi_res = TextureSpec(args=("./assets/sprites/tile_normals_hi_res.png",))
 
 
 class SpriteSheetSpecs:
