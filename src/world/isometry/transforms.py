@@ -153,6 +153,9 @@ class Transform:
     def is_trivial(self):
         return self == Transform.trivial()
 
+    def clone(self) -> Self:
+        return Transform(self._world_to_screen)
+
 def _embed_mat3_in_mat4(embedded: Mat3) -> Mat4:
     return Mat4([
         *embedded[0:3], 0.0,

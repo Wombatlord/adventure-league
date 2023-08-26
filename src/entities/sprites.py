@@ -152,10 +152,6 @@ class BaseSprite(OffsetSprite, Sprite):
 
         return clone
 
-    @property
-    def node(self) -> Node:
-        return self._node
-
 
 class AnimatedSpriteAttribute:
     sprite: BaseSprite

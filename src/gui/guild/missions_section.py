@@ -191,14 +191,14 @@ class MissionsSection(arcade.Section):
         )
 
         self.highlighted_tex, self.darkened_tex = [
-            ref.normal_tex for ref in tex_references[:2]
+            ref.texture for ref in tex_references[:2]
         ]
 
         self.top_pane, self.mid_pane, self.bottom_pane = tex_references
         self.tex_panes = tex_references
 
         self.highlighted_banner, self.darkened_banner = [
-            ref.normal_tex for ref in banner_references[:2]
+            ref.texture for ref in banner_references[:2]
         ]
 
         self.banners = banner_references
@@ -217,11 +217,11 @@ class MissionsSection(arcade.Section):
         )
 
     def _highlight_selected_pane(self, highlighted, normal, _normal):
-        self.tex_panes[highlighted].normal_tex = self.highlighted_tex
+        self.tex_panes[highlighted].texture = self.highlighted_tex
         self.tex_panes[normal].texture = self.darkened_tex
         self.tex_panes[_normal].texture = self.darkened_tex
 
-        self.banners[highlighted].normal_tex = self.highlighted_banner
+        self.banners[highlighted].texture = self.highlighted_banner
         self.banners[normal].texture = self.darkened_banner
         self.banners[_normal].texture = self.darkened_banner
 

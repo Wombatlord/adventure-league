@@ -2,7 +2,7 @@ import math
 from typing import Sequence
 
 import arcade
-from pyglet.math import Vec2
+from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from src import config
 from src.engine.init_engine import eng
@@ -11,6 +11,7 @@ from src.entities.properties.locatable import Locatable
 from src.entities.sprites import BaseSprite
 from src.gui.combat.health_bar import FloatingHealthBars
 from src.gui.combat.highlight import HighlightLayer
+from src.gui.components.lighting_shader import ShaderPipeline
 from src.gui.components.menu import Menu
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
@@ -99,6 +100,27 @@ class Scene(arcade.Section):
         self.floating_health_bars = FloatingHealthBars(
             self.world_sprite_list, self.transform
         )
+
+        self.shader_pipeline = ShaderPipeline(
+            self.width, self.height, arcade.get_window(), self.transform
+        )
+        self.shader_pipeline.take_transform_from(self.get_full_transform)
+        self.shader_pipeline.locate_light_with(self.get_light_location)
+        self.shader_pipeline.set_directional_light(
+            colour=Vec4(1.0, 1.0, 1.0, 1.0), direction=Vec3(1, 1, 0.5)
+        )
+        self.shader_pipeline.set_light_balance(ambient=0)
+
+    def get_full_transform(self) -> Mat4:
+        result = self.transform.clone()
+        result.translate_image(-Vec2(*self.cam_controls._camera.position))
+        return (result.screen_to_world()) @ Mat4().scale(
+            Vec3(self.width, self.height, 1)
+        )
+
+    def get_light_location(self) -> Vec3:
+        focus = self.get_focus()
+        return Vec3(focus.x, focus.y, focus.z + 0.5)
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -230,7 +252,7 @@ class Scene(arcade.Section):
     def on_draw(self):
         self.grid_camera.use()
 
-        self.world_sprite_list.draw(pixelated=True)
+        self.shader_pipeline.render_scene(self.world_sprite_list)
         if config.DEBUG:
             l, r, b, t = self.grid_camera.projection
             arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
@@ -275,11 +297,12 @@ class Scene(arcade.Section):
 
     def level_to_sprite_list(self):
         self.world_sprite_list.clear()
+        self.terrain_sprite_list.clear()
         for terrain_node in self.encounter_room.layout:
             self.encounter_room.room_texturer.apply_biome_textures()
 
             sprite = BaseSprite(
-                terrain_node.normal_tex,
+                terrain_node.texture,
                 scale=self.SPRITE_SCALE,
                 transform=self.transform,
             )
@@ -288,6 +311,7 @@ class Scene(arcade.Section):
             self.world_sprite_list.append(sprite)
 
         self.terrain_sprite_list.sort(key=lambda s: s.get_draw_priority())
+        self.shader_pipeline.update_terrain_nodes(self.terrain_sprite_list)
 
     def prepare_dude_sprites(self):
         """
@@ -412,6 +436,7 @@ class Scene(arcade.Section):
                 continue
             tile.update_position()
         self.refresh_draw_order()
+        self.shader_pipeline.update_terrain_nodes(self.terrain_sprite_list)
 
     def on_key_press(self, symbol: int, modifiers: int):
         print(symbol)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import NamedTuple, Sequence, TypeVar
+from typing import Generator, NamedTuple, Sequence, TypeVar
 
 import numpy as np
 from skimage import io, util
@@ -205,16 +205,16 @@ class Printer:
     def apply_rgb(self, s: str, rgba: np.array):
         *rgb, a = tuple(rgba)
         if a < 200:
-            return " "
+            return " " * 2
         else:
             return self.paint(s, *rgb)
 
     def print(self, image: np.array):
-        print("\t" + "".join(f"{x%10}" for x in range(image.shape[1])))
+        print("\t" + "".join(f"{x:>#2d}" for x in range(image.shape[1])))
         for i, row in enumerate(image):
             print(f"{i=}", end="\t")
             for rgba in row:
-                print(self.apply_rgb("#", rgba), end="")
+                print(self.apply_rgb("█" * 2, rgba), end="")
             print("")
 
 
@@ -252,6 +252,7 @@ def swap_rg(path: str = SingleTextureSpecs.tile_normals_hi_res.args[0]):
     dst[is_red, :] = [0, 255, 0, 255]
     dst[is_green, :] = [255, 0, 0, 255]
     dst[is_blue, :] = [0, 0, 255, 255]
+    Printer().print(dst)
 
     io.imsave("./test.png", dst)
 

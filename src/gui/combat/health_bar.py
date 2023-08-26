@@ -148,7 +148,7 @@ class FloatingHealthBar:
 
         self._sprite = (
             BaseSprite(
-                self._health_bar.sprite.normal_tex,
+                self._health_bar.sprite.texture,
                 scale=self._health_bar.sprite.scale,
             )
             .offset_anchor((0, 16))
@@ -166,7 +166,7 @@ class FloatingHealthBar:
             self._sprite.visible = True
 
         self._health_bar.update()
-        self._sprite.texture = self._health_bar.sprite.normal_tex
+        self._sprite.texture = self._health_bar.sprite.texture
         self._sprite.set_node(self._fighter.location)
 
     @property

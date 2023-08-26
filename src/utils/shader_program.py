@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from typing import Any, Callable, NamedTuple
 
+import arcade
 from arcade import gl
 
 
@@ -29,6 +32,12 @@ class Sources(NamedTuple):
 class Binding(NamedTuple):
     bind_offset: int
     texture: gl.Texture2D
+    framebuffer: arcade.gl.Framebuffer
+
+    def capture(self, draw_func: Callable):
+        self.framebuffer.clear()
+        self.framebuffer.use()
+        draw_func()
 
     def use(self):
         self.texture.use(self.bind_offset)
@@ -48,6 +57,22 @@ class Shader:
     _ctx: gl.Context
     _on_use: list[Callable[[gl.Program], None]]
 
+    @staticmethod
+    def gen_tx_buf(
+        ctx: gl.Context,
+        size: tuple[int, int],
+        components=4,
+        dtype="f4",
+    ) -> tuple[arcade.gl.Texture2D, arcade.gl.Framebuffer]:
+        tx = ctx.texture(
+            size,
+            components=components,
+            filter=(ctx.NEAREST, ctx.NEAREST),
+            dtype=dtype,
+        )
+        buf = ctx.framebuffer(color_attachments=[tx])
+        return tx, buf
+
     def __init__(self, ctx: gl.Context):
         self._ctx = ctx
         self._bindings = {}
@@ -66,7 +91,7 @@ class Shader:
     def _preprocess(self):
         bindings = {}
         for uniform in self._sources.uniforms().values():
-            if uniform.type_name == "sampler2D":
+            if uniform.type_name.endswith("sampler2D"):
                 bindings[uniform.name] = NoBinding(len(bindings))
 
         self._bindings = bindings
@@ -78,16 +103,25 @@ class Shader:
         for name, (offset, *_) in self._bindings.items():
             self._program[name] = offset
 
-    def bind(self, tex: gl.Texture2D, name: str):
+    def bind(
+        self, name: str, size: tuple[int, int], components=4, dtype="f4"
+    ) -> Binding:
         names = [*self._bindings.keys()]
         if self._bindings.get(name) is None:
             raise ValueError(
                 f"There is no uniform sampler2D named {name}. Names found were: {', '.join(names)}."
             )
 
-        else:
-            (bind_offset, *_) = self._bindings[name]
-            self._bindings[name] = Binding(bind_offset, tex)
+        (bind_offset, *_) = self._bindings[name]
+
+        self._bindings[name] = (  # 😲 Spicy!
+            bound := Binding(
+                bind_offset,
+                *self.gen_tx_buf(self._ctx, size, components=components, dtype=dtype),
+            )
+        )
+
+        return bound
 
     def attach_uniform(self, name: str, get_value: Callable[[], Any]):
         def _update(prog: gl.Program):

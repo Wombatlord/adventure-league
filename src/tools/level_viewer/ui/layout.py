@@ -2,24 +2,22 @@ from __future__ import annotations
 
 import math
 import random
-import time
 from typing import Callable, Generator, Sequence
 
 import arcade
-from arcade.gl import geometry
 from pyglet.math import Mat4, Vec2, Vec3
 
 from src import config
 from src.entities.sprites import BaseSprite
 from src.gui.biome_textures import Biome, BiomeName, biome_map
 from src.gui.combat.highlight import HighlightLayer
+from src.gui.components.lighting_shader import ShaderPipeline
 from src.textures.texture_data import SpriteSheetSpecs
 from src.tools.level_viewer.model.viewer_state import Block
 from src.tools.level_viewer.ui.biome_menu import BiomeMenu
 from src.tools.level_viewer.ui.geometry_menu import GeometryMenu
 from src.tools.level_viewer.ui.hides import Hides
 from src.utils.camera_controls import CameraController
-from src.utils.shader_program import Shader
 from src.world.isometry.transforms import Transform
 from src.world.node import Node
 from src.world.pathing.pathing_space import PathingSpace
@@ -120,114 +118,6 @@ class LayoutView(arcade.View):
         }.get(symbol, NO_OP)()
 
 
-def gen_tx_buf(
-    ctx: arcade.ArcadeContext, size: tuple[int, int]
-) -> tuple[arcade.gl.Texture2D, arcade.gl.Framebuffer]:
-    tx = ctx.texture(
-        size,
-        components=4,
-        filter=(ctx.NEAREST, ctx.NEAREST),
-        dtype="f4",
-    )
-    buf = ctx.framebuffer(color_attachments=[tx])
-    return tx, buf
-
-
-class ShaderPipeline:
-    width: int
-    height: int
-    ctx: arcade.ArcadeContext
-    terrain_nodes: list[Node]
-
-    def __init__(
-        self, width: int, height: int, window: arcade.Window, transform: Transform
-    ):
-        self.width = width
-        self.height = height
-        self.ctx = window.ctx
-        self.time = time.time()
-        self.transform = transform
-
-        # render surface
-        self.quad_fs = geometry.quad_2d_fs()
-
-        # set up normal map texture/framebuffer pair
-        self.normal_tex, self.normal_framebuffer = gen_tx_buf(
-            self.ctx, (self.width, self.height)
-        )
-
-        # set up scene map texture/framebuffer pair
-        self.scene_tex, self.scene_framebuffer = gen_tx_buf(
-            self.ctx, (self.width, self.height)
-        )
-
-        # set up height map texture/frambuffer pair
-        self.height_tex, self.height_framebuffer = gen_tx_buf(
-            self.ctx, (self.width, self.height)
-        )
-
-        self.shader = Shader(ctx=self.ctx)
-        self.shader.load_sources(
-            "./assets/shaders/height_mapped/frag.glsl",
-            "./assets/shaders/height_mapped/vert.glsl",
-        )
-        self.shader.bind(self.normal_tex, "norm")
-        self.shader.bind(self.scene_tex, "scene")
-        self.shader.bind(self.height_tex, "height")
-
-        s2w = lambda: self.transform.screen_to_world() @ Mat4().scale(
-            Vec3(self.width, self.height, 1.0)
-        )
-        self.shader.attach_uniform("transform", s2w)
-        self.shader.attach_uniform("mouse", self.get_mouse)
-
-        self.normal_biome = biome_map[BiomeName.NORMALS]
-        self.terrain_nodes = []
-        self.normal_sprites = arcade.SpriteList()
-        self.height_sprites = arcade.SpriteList()
-        self.mouse = (0.0, 0.0)
-
-    def get_time(self) -> float:
-        return time.time() - self.time
-
-    def update_terrain_nodes(self, sprites: arcade.SpriteList):
-        self.normal_sprites.clear()
-        for sprite in sprites:
-            if not hasattr(sprite, "clone") or not getattr(sprite, "node", None):
-                continue
-            clone = sprite.clone()
-            clone.texture = self.normal_biome.choose_texture_for_node(clone.node, 0)
-            self.normal_sprites.append(clone)
-            height_clone = sprite.clone()
-            height_clone.texture = SpriteSheetSpecs.tile_height_map_sheet.loaded[
-                height_clone.node.z + 1
-            ]
-            self.height_sprites.append(height_clone)
-
-    def update_mouse(self, v: Vec2):
-        self.mouse = tuple([v.x / self.width, v.y / self.height])
-
-    def get_mouse(self):
-        return self.mouse
-
-    def render_scene(self, sprite_list: arcade.SpriteList):
-        self.scene_framebuffer.clear()
-        self.scene_framebuffer.use()
-        sprite_list.draw(pixelated=True)
-
-        self.normal_framebuffer.clear()
-        self.normal_framebuffer.use()
-        self.normal_sprites.draw(pixelated=True)
-
-        self.height_framebuffer.clear()
-        self.height_framebuffer.use()
-        self.height_sprites.draw(pixelated=True)
-
-        self.ctx.screen.use()
-        with self.shader as program:
-            self.quad_fs.render(program)
-
-
 class LayoutSection(arcade.Section):
     TILE_BASE_DIMS = (16, 17)
     SET_ENCOUNTER_HANDLER_ID = "set_encounter"
@@ -239,6 +129,14 @@ class LayoutSection(arcade.Section):
     pathing: PathingSpace | None
     geometry_dims = (10, 10)
     geometry: list[Node]
+    tracked_keys = {
+        arcade.key.W,
+        arcade.key.S,
+        arcade.key.A,
+        arcade.key.D,
+        arcade.key.Q,
+        arcade.key.E,
+    }
 
     def __init__(
         self,
@@ -256,6 +154,7 @@ class LayoutSection(arcade.Section):
 
         self._original_dims = width, height
 
+        self.terrain_sprite_list = arcade.SpriteList()
         self.world_sprite_list = arcade.SpriteList()
         self.grid_camera = arcade.Camera()
         self.grid_camera.zoom = 1.0
@@ -289,6 +188,24 @@ class LayoutSection(arcade.Section):
         self.shader_pipeline = ShaderPipeline(
             self.width, self.height, arcade.get_window(), self.transform
         )
+        self.shader_pipeline.take_transform_from(self.get_full_transform)
+        self.shader_pipeline.locate_light_with(self.get_light_location)
+        self.light_loc = Vec3(4, 4, 0.2)
+        self.light_vel = Vec3()
+        self.pressed_keys = {*[]}
+
+    def incr_light_loc(self, direction: int, amt: float):
+        self.light_loc += (Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(0, 0, 1))[direction] * amt
+
+    def get_full_transform(self) -> Mat4:
+        result = self.transform.clone()
+        result.translate_image(-Vec2(*self.cam_controls._camera.position))
+        return (result.screen_to_world()) @ Mat4().scale(
+            Vec3(self.width, self.height, 1)
+        )
+
+    def get_light_location(self) -> Vec3:
+        return self.light_loc
 
     def setup_highlight_layers(self, display: arcade.SpriteList):
         self.highlight_layer_gold_edge = HighlightLayer(
@@ -362,29 +279,53 @@ class LayoutSection(arcade.Section):
 
     def refresh_draw_order(self):
         self.world_sprite_list.sort(key=lambda s: self.transform.draw_priority(s.node))
+        self.terrain_sprite_list.sort(
+            key=lambda s: self.transform.draw_priority(s.node)
+        )
 
     def update_camera(self):
         self.cam_controls.on_update()
         if focus := self.get_focus():
+            self._focus = focus
             self.cam_controls.look_at_world(
                 focus, self.transform, distance_per_frame=0.05
             )
 
         self.grid_camera.update()
 
+    def update_light_vel(self):
+        vel = Vec3(0, 0, 0)
+        spd = 1 / 30
+        x, y, z = Vec3(x=spd), Vec3(y=spd), Vec3(z=spd)
+        for symbol in self.pressed_keys:
+            vel = {
+                arcade.key.W: lambda: vel + x,
+                arcade.key.S: lambda: vel - x,
+                arcade.key.A: lambda: vel + y,
+                arcade.key.D: lambda: vel - y,
+                arcade.key.Q: lambda: vel + z,
+                arcade.key.E: lambda: vel - z,
+            }.get(symbol, lambda: vel)()
+        self.light_vel = vel
+
     def on_update(self, delta_time: float):
         self.update_camera()
         self.update_debug_text()
         self.highlight_cursor(*self._mouse_coords)
+        self.light_loc += self.light_vel
 
     def update_debug_text(self):
         self.debug_text.update("offset vec", f"{self.offset_vec}")
+        self.debug_text.update(
+            "light loc", f"{Vec3(*map(lambda x: round(x, 2), self.light_loc))}"
+        )
 
     def on_draw(self):
         self.grid_camera.use()
         self.shader_pipeline.render_scene(self.world_sprite_list)
 
         if config.DEBUG:
+            self.debug_text.draw()
             l, r, b, t = self.grid_camera.projection
             arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
             arcade.draw_line(l, b, l, t, arcade.color.GREEN, line_width=4)
@@ -396,7 +337,7 @@ class LayoutSection(arcade.Section):
                 s.draw_hit_box(arcade.color.WHITE)
                 break
 
-        self.debug_cam.use()
+        # self.debug_cam.use()
 
     def on_resize(self, width: int, height: int):
         self.width, self.height = width, height
@@ -444,11 +385,13 @@ class LayoutSection(arcade.Section):
             )
             sprite.set_node(block.node)
             self.world_sprite_list.append(sprite)
+            self.terrain_sprite_list.append(sprite)
         self.refresh_draw_order()
-        self.shader_pipeline.update_terrain_nodes(self.world_sprite_list)
+        self.shader_pipeline.update_terrain_nodes(self.terrain_sprite_list)
 
     def teardown_level(self):
         self.world_sprite_list.clear()
+        self.terrain_sprite_list.clear()
 
     def highlight_cursor(self, x: int, y: int):
         s: arcade.Sprite
@@ -473,20 +416,6 @@ class LayoutSection(arcade.Section):
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         self._mouse_coords = Vec2(float(x), float(y))
-        self.shader_pipeline.update_mouse(self._mouse_coords)
-
-    def node_at_mouse(self, mouse: tuple[int, int] | None = None) -> Node:
-        for s in self.world_sprite_list[::-1]:
-            if s.collides_with_point(mouse):
-                self._last_clicked = s.node
-                self.show_highlight(red=[self._last_clicked])
-                self.debug_text.update("ray_hit", f"{self._last_clicked}")
-                return s.node
-        projection_surface_coords = self.cam_controls.image_px(
-            Vec2(*mouse) if mouse else self._mouse_coords
-        )
-        world_click = self.transform.world_location(projection_surface_coords, 100)
-        return world_click
 
     def column_of(self, node: Node) -> list[Node]:
         return sorted(
@@ -496,31 +425,13 @@ class LayoutSection(arcade.Section):
     def surface_geom(self) -> list[Node]:
         return [b.node + Node(0, 0, 0.5) for b in self.layout]
 
-    def update_mouse_node(self, x: int, y: int, dx: int, dy: int) -> Node | None:
-        if not self.layout:
-            return
-
-        node = self.node_at_mouse()
-
-        if self.mouse_node_has_changed(node):
-            self.set_mouse_node(node)
-            return node
-
-    def get_mouse_node(self) -> Node | None:
-        return self.last_mouse_node
-
-    def set_mouse_node(self, node: Node):
-        self.last_mouse_node = node
-
-    def mouse_node_has_changed(self, new_node: Node) -> bool:
-        return self.last_mouse_node != new_node
-
     def update_scene(self):
         for tile in self.world_sprite_list:
             if not hasattr(tile, "update_position"):
                 continue
             tile.update_position()
         self.refresh_draw_order()
+        self.shader_pipeline.update_terrain_nodes(self.terrain_sprite_list)
 
     def translate_level(self, translation: Node):
         self.transform.translate_grid(translation)
@@ -537,28 +448,44 @@ class LayoutSection(arcade.Section):
         self.debug_text.update("screen origin", f"{self.transform.camera_origin()}")
 
     def on_key_press(self, symbol: int, modifiers: int):
-        print(symbol)
-        self.cam_controls.on_key_press(symbol)
+        change = self.tracked_keys & {symbol}
+        self.pressed_keys |= change
+        if change:
+            self.update_light_vel()
+        # self.cam_controls.on_key_press(symbol)
         if symbol == arcade.key.L:
             breakpoint()
+        if symbol == arcade.key.M:
+            self.shader_pipeline.debug()
         n = Node(0, 0)
         {
             arcade.key.UP: lambda: self.translate_level(n.north),
             arcade.key.RIGHT: lambda: self.translate_level(n.east),
             arcade.key.DOWN: lambda: self.translate_level(n.south),
             arcade.key.LEFT: lambda: self.translate_level(n.west),
-            arcade.key.R: lambda: self.rotate_level(),
-            arcade.key.X: lambda: self.incr_offset_vec(Vec2(1, 0)),
-            arcade.key.C: lambda: self.incr_offset_vec(Vec2(-1, 0)),
-            arcade.key.Y: lambda: self.incr_offset_vec(Vec2(0, 1)),
-            arcade.key.U: lambda: self.incr_offset_vec(Vec2(0, -1)),
+            # arcade.key.R: lambda: self.rotate_level(),
+            # light controls
+            arcade.key.W: lambda: self.incr_light_loc(0, 0.2),
+            arcade.key.S: lambda: self.incr_light_loc(0, -0.2),
+            arcade.key.A: lambda: self.incr_light_loc(1, 0.2),
+            arcade.key.D: lambda: self.incr_light_loc(1, -0.2),
+            arcade.key.Q: lambda: self.incr_light_loc(2, 0.2),
+            arcade.key.E: lambda: self.incr_light_loc(2, -0.2),
+            arcade.key.KEY_1: self.shader_pipeline.toggle_scene,
+            arcade.key.KEY_2: self.shader_pipeline.toggle_height,
+            arcade.key.KEY_3: self.shader_pipeline.toggle_normal,
+            arcade.key.KEY_4: self.shader_pipeline.toggle_ray,
         }.get(symbol, NO_OP)()
 
     def incr_offset_vec(self, by: Vec2):
         self.offset_vec += by
 
     def on_key_release(self, _symbol: int, _modifiers: int):
-        self.cam_controls.on_key_release(_symbol)
+        # self.cam_controls.on_key_release(_symbol)
+        change = self.tracked_keys & {_symbol}
+        self.pressed_keys -= change
+        if change:
+            self.update_light_vel()
 
     def switch_biome(self, biome: Biome):
         self.current_biome = biome
