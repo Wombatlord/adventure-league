@@ -25,6 +25,8 @@ def start(_: list[str]):
     register_layout(room_layouts.one_block_corridor)
     register_layout(room_layouts.side_pillars)
     register_layout(room_layouts.random_room)
+    register_layout(room_layouts.test_layout)
+    register_layout(room_layouts.basic_geography)
     title_view = LayoutView()
     window.show_view(title_view)
 

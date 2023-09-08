@@ -6,7 +6,7 @@ from arcade.sprite import Sprite
 from arcade.texture import Texture
 from arcade.types import PathOrTexture, Point
 
-from src.world.isometry.transforms import Transform, draw_priority
+from src.world.isometry.transforms import Transform
 from src.world.node import Node
 
 
@@ -98,7 +98,10 @@ class BaseSprite(OffsetSprite, Sprite):
         self.scale = scale
 
     def get_draw_priority(self) -> float:
-        return self._draw_priority - self._draw_priority_offset
+        priority = self._draw_priority
+        if self._node:
+            priority = self.transform.draw_priority(self._node)
+        return priority + self._draw_priority_offset
 
     def set_node(self, node: Node) -> Self:
         self._node = node
@@ -116,7 +119,7 @@ class BaseSprite(OffsetSprite, Sprite):
 
     def update_position(self):
         self.center_x, self.center_y = self.transform.project(self._node)
-        self._draw_priority = draw_priority(self._node)
+        self._draw_priority = self.transform.draw_priority(self._node)
 
     def update_animation(self, delta_time: float = 1 / 60) -> None:
         self.animation_cycle -= delta_time
@@ -132,6 +135,10 @@ class BaseSprite(OffsetSprite, Sprite):
                     self.texture = self.textures[self.tex_idx]
                     self.tex_idx = (self.tex_idx + 1) % len(self.textures)
                     self.animation_cycle = 0.75
+
+    @property
+    def node(self) -> Node:
+        return self._node
 
 
 class AnimatedSpriteAttribute:

@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import math
+import operator
 from typing import Generator, NamedTuple
 
 
 class Node(NamedTuple):
-    x: int
-    y: int
-    z: int = 0
+    x: int | float
+    y: int | float
+    z: int | float = 0
 
     @property
     def east(self) -> Node:
@@ -31,6 +33,12 @@ class Node(NamedTuple):
     @property
     def below(self) -> Node:
         return Node(x=self.x, y=self.y, z=self.z - 1)
+
+    def distance_to(self, other: Node) -> float:
+        return (self - other).mag()
+
+    def mag(self) -> float:
+        return math.sqrt(sum(coord**2 for coord in self))
 
     @property
     def adjacent(self) -> Generator[Node]:
@@ -93,3 +101,6 @@ class Node(NamedTuple):
         if not isinstance(other, Node):
             raise TypeError(f"Expected a node, got: {other=}")
         return Node(self.x + other.x, self.y + other.y, self.z + other.z)
+
+    def __bool__(self) -> bool:
+        return any(element != 0 for element in self)

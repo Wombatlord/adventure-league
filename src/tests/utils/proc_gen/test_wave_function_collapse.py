@@ -6,9 +6,13 @@ from parameterized import parameterized
 from src.utils.proc_gen.wave_function_collapse import (
     EAST,
     SOUTH,
+    CollapseResult,
     IrreconcilableStateError,
     Observation,
+    Pos,
     Side,
+    StateVec,
+    config,
     from_distribution,
     generate,
     iter_one_from,
@@ -75,49 +79,48 @@ class HeightTile(NamedTuple):
 
     @classmethod
     def all(cls) -> list[Self]:
-        return [i for i in range(10)]
+        return [HeightTile(i) for i in range(10)]
 
     def compatibilities(self, side: Side) -> set[Observation]:
-        compatible_heights = (-1, 0)
-
-        if side in (SOUTH, EAST):
-            compatible_heights = (0, 1)
+        compatible_heights = (-1, 0, 1)
 
         return {HeightTile(self.height + i) for i in compatible_heights}
 
 
-def height_map():
+def height_map(width: int = 10, height: int = 10) -> CollapseResult:
+    config.set_dims(width, height)
     dist = {HeightTile(i): 1 for i in range(10)}
 
     factory = from_distribution(dist)
+
     try:
         result = generate(factory)
     except IrreconcilableStateError:
         raise
 
-    result = [*result.values()]
+    return result
 
 
 class CollapseStressTest(TestCase):
     @parameterized.expand(
         [
-            ("height map", height_map, 90),
-            ("constrained path tiling", constrained_path_tiling, 95),
+            ("height map", height_map, 90, 50),
+            ("constrained path tiling", constrained_path_tiling, 90, 50),
         ]
     )
     def test_stress_collapse(
-        self, name: str, run_one: Callable[[], None], min_percent: int
+        self, name: str, run_one: Callable[[], None], min_percent: int, runs: int
     ):
         results = {"success": 0, "fail": 0}
 
-        while results["success"] + results["fail"] < 50:
+        while results["success"] + results["fail"] < runs:
             try:
                 run_one()
                 results["success"] += 1
             except IrreconcilableStateError:
                 results["fail"] += 1
 
-        success_percent = int(results["success"] / results["fail"] * 100)
+        success_percent = int(results["success"] / runs * 100)
 
         assert (
             success_percent > min_percent

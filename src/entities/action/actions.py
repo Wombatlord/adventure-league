@@ -70,7 +70,9 @@ class MoveAction(BaseAction, metaclass=ActionMeta):
     menu_pos = 2
 
     @classmethod
-    def cost(cls, fighter: Fighter, destination: Node | None = None) -> int:
+    def cost(
+        cls, fighter: Fighter, destination: Node | None = None
+    ) -> tuple[int, tuple[Node]]:
         # by default, the move is trivial
         if destination is None:
             destination = fighter.locatable.location

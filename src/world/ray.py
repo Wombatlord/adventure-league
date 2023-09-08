@@ -9,7 +9,7 @@ from src.world.pathing.pathing_space import PathingSpace
 class Ray(NamedTuple):
     start: Node
 
-    def cast(self, look_at: Node) -> Generator[Node, None, None]:
+    def as_vec(self, look_at: Node) -> Vec3:
         if self.start == look_at:
             raise ValueError(
                 f"The target for the ray {look_at=} is the same as the start point {self.start=}. "
@@ -26,6 +26,16 @@ class Ray(NamedTuple):
             return
 
         step = Vec3(*rect) / divisor
+        return step
+
+    def interpolate_z(self, look_at: Node, z_stop: int | float = 0) -> Vec3:
+        step = self.as_vec(look_at)
+        step_count = abs(self.start.z - z_stop) / abs(step.z)
+        stop = step * step_count
+        return Vec3(*self.start) + stop
+
+    def cast(self, look_at: Node) -> Generator[Node, None, None]:
+        step = self.as_vec(look_at)
         curr_vec = Vec3(0, 0, 0)
         while True:
             next_node = Node(

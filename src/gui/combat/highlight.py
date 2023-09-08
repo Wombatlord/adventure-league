@@ -25,6 +25,7 @@ class HighlightLayer:
     _sprite_list: arcade.SpriteList | None
     _texture: arcade.Texture
     _space: PathingSpace | None
+    _nodes: list[Node]
     _scale: float
     _transform: Transform
     _sprite_refs: dict[Node, BaseSprite]
@@ -42,6 +43,7 @@ class HighlightLayer:
         self._texture = texture
         self._sprite_offset = offset
         self._space = None
+        self._nodes = []
         self._scale = scale
         self._transform = transform
         self._sprite_refs = {}
@@ -68,7 +70,11 @@ class HighlightLayer:
 
     def set_space(self, pathing_space: PathingSpace):
         """This allows a pathing space to be set directly, so that we don't need a room"""
-        self._space = pathing_space
+        self.set_nodes(pathing_space.all_included_nodes(exclude_dynamic=False))
+
+    def set_nodes(self, nodes: list[Node]):
+        """This allows a list of nodes to be set directly, so that we don't need a pathing space, shoutout 2 set_space. Big up."""
+        self._nodes = nodes
         if self._sprite_list:
             self._setup_sprites()
         self._visible_nodes = set()
@@ -78,14 +84,14 @@ class HighlightLayer:
         Does the bulk of the heavy lifting around setting up the various references etc.
         Implements a lazy approach to
         """
-        if self._space is None:
+        if not self._nodes:
             raise ValueError("Cannot setup sprites if no room has been supplied")
 
         if self._sprite_list is None:
             raise ValueError("Cannot setup sprites if there is no display list")
 
         to_check = {*self._sprite_refs.keys()}
-        for node in self._space.all_included_nodes(exclude_dynamic=False):
+        for node in self._nodes:
             to_check -= {node}
             if highlight := self._sprite_refs.get(node, self._build_tile()):
                 if highlight in self._sprite_list:
@@ -107,7 +113,7 @@ class HighlightLayer:
             self._texture,
             scale=self._scale,
             transform=self._transform,
-            draw_priority_offset=0.1 + self._draw_priority_bias,
+            draw_priority_offset=-0.1 + self._draw_priority_bias,
         ).offset_anchor(tuple(self._sprite_offset))
 
     def _include_in_display(self, sprite: BaseSprite, node: Node):
