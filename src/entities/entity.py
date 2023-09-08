@@ -1,6 +1,7 @@
 from typing import Any, Generator, NamedTuple, Optional, Self, Sequence
 from uuid import uuid4
 
+from src.engine.events_enum import EventTopic
 from src.entities.ai.ai import AiInterface
 from src.entities.combat.fighter import Fighter
 from src.entities.item.inventory import Inventory
@@ -129,7 +130,7 @@ class Entity:
         return {
             **event,
             **{
-                "entity_data": {
+                EventTopic.ENTITY_DATA.value: {
                     "health": self.fighter.health.current if self.fighter else None,
                     "name": self.name.name_and_title,
                     "retreat": self.fighter.retreating,

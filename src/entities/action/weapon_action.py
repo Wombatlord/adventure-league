@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from src.engine.events_enum import EventTopic
+
 if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
 
@@ -30,7 +32,7 @@ class WeaponAttackAction(BaseAction, metaclass=ActionMeta):
             yield from attack.attack(target=target.owner)
 
         else:
-            yield {"message": f"Not enough AP for {attack.name}"}
+            yield {EventTopic.MESSAGE: f"Not enough AP for {attack.name}"}
 
     @classmethod
     def details(cls, fighter: Fighter, attack: WeaponAttackMeta) -> dict:

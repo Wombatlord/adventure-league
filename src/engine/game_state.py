@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
+from src.engine.events_enum import EventTopic
+
 if TYPE_CHECKING:
     from src.engine.engine import Engine
 
@@ -92,7 +94,7 @@ class AwardSpoilsHandler:
         """
         code etc
         """
-        dungeon = event.get("team triumphant", {}).get("dungeon")
+        dungeon = event.get(EventTopic.VICTORY, {}).get(EventTopic.DUNGEON)
         if dungeon is None:
             return
         dungeon.cleared = True

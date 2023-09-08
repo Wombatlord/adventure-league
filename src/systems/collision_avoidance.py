@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from src.engine.events_enum import EventTopic
+
 if TYPE_CHECKING:
     from src.engine.engine import Engine
 
@@ -13,7 +15,7 @@ class SpaceOccupancyHandler:
 
     @classmethod
     def handle_new_encounter(cls, event: dict):
-        cls.current_room = event.get("new_encounter")
+        cls.current_room = event.get(EventTopic.NEW_ENCOUNTER)
         assert cls.current_room is not None
 
     @classmethod
@@ -27,17 +29,17 @@ class SpaceOccupancyHandler:
 
 def subscribe(eng: Engine):
     eng.projection_dispatcher.static_subscribe(
-        topic="new_encounter",
+        topic=EventTopic.NEW_ENCOUNTER,
         handler_id=f"{SpaceOccupancyHandler.__name__}.handle_new_encounter",
         handler=SpaceOccupancyHandler.handle_new_encounter,
     )
     eng.projection_dispatcher.static_subscribe(
-        topic="cleanup",
+        topic=EventTopic.CLEANUP,
         handler_id=f"{SpaceOccupancyHandler.__name__}.handle_cleanup",
         handler=SpaceOccupancyHandler.handle_cleanup,
     )
     eng.projection_dispatcher.static_subscribe(
-        topic="move",
+        topic=EventTopic.MOVE,
         handler_id=f"{SpaceOccupancyHandler.__name__}.handle_move",
         handler=SpaceOccupancyHandler.handle_move,
     )

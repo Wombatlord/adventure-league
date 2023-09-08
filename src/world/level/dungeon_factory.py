@@ -79,9 +79,9 @@ def create_dungeon_with_boss_room(
         treasure=randint(100, 150),
         xp_reward=10,
     )
-    for _ in range(room_amount):
+    for _ in range(1):
         e = randint(min_enemies_per_room, d.max_enemies_per_room)
-        d.rooms.append(create_random_enemy_room(enemy_amount=e, biome=d.biome))
+        d.rooms.append(create_random_enemy_room(enemy_amount=1, biome=d.biome))
     d.rooms.append(create_random_boss_room(d.biome))
     d.boss = d.rooms[-1].enemies[0]
 

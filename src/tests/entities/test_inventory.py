@@ -1,5 +1,6 @@
 import unittest
 
+from src.engine.events_enum import EventTopic
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name
 from src.entities.item.inventory import Inventory
@@ -86,7 +87,7 @@ class HealingPotionTest(unittest.TestCase):
         ), f"expected {merc.fighter.health.current=} {merc.fighter.health.max_hp=}"
         expected = merc.annotate_event(
             {
-                "message": f"{potion_1.get_name()} used by {merc.inventory.owner.name}",
+                EventTopic.MESSAGE: f"{potion_1.get_name()} used by {merc.inventory.owner.name}",
                 "item_consumed": {
                     "consumable": potion_1,
                     "effect": {

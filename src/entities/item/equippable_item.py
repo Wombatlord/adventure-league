@@ -248,76 +248,116 @@ class EquippableItemConfig(NamedTuple):
     stats: EquippableItemStats | None = None
 
 
+class Configs:
+    _items: list[EquippableItemConfig]
+
+    def __init__(self, items):
+        self._items = items
+
+    def items_where(
+        self, predicate: Callable[[EquippableItemConfig], bool]
+    ) -> list[EquippableItemConfig]:
+        return [item for item in self._items if predicate(item)]
+
+    def __getattr__(self, name):
+        return getattr(self._items, name)
+
+
+item_configs = []
+
+
+def register(conf: EquippableItemConfig) -> list[EquippableItemConfig]:
+    global item_configs
+    item_configs.append(conf)
+    return item_configs
+
+
 # Example Configs
-helmet = EquippableItemConfig(
-    name="helmet",
-    slot="_helmet",
-    fighter_affixes=[percent_power_increase],
-    stats=EquippableItemStats(
-        crit=0,
-        block=0,
-        evasion=0,
-    ),
+helmet = register(
+    EquippableItemConfig(
+        name="helmet",
+        slot="_helmet",
+        fighter_affixes=[percent_power_increase],
+        stats=EquippableItemStats(
+            crit=0,
+            block=0,
+            evasion=0,
+        ),
+    )
 )
 
-breastplate = EquippableItemConfig(
-    name="breastplate",
-    slot="_body",
-    fighter_affixes=[raw_power_increase, raw_defence_increase],
-    equippable_item_affixes=[percent_crit_increase],
-    stats=EquippableItemStats(
-        crit=0,
-        block=0,
-        evasion=0.05,
-    ),
+
+breastplate = register(
+    EquippableItemConfig(
+        name="breastplate",
+        slot="_body",
+        fighter_affixes=[raw_power_increase, raw_defence_increase],
+        equippable_item_affixes=[percent_crit_increase],
+        stats=EquippableItemStats(
+            crit=0,
+            block=0,
+            evasion=0.05,
+        ),
+    )
 )
 
-sword = EquippableItemConfig(
-    name="sword",
-    slot="_weapon",
-    attack_verb="melee",
-    range=1,
-    attacks=[NormalAttack.name],
-    spells=[],
-    fighter_affixes=[raw_power_increase],
-    equippable_item_affixes=[percent_crit_increase],
-    stats=EquippableItemStats(
-        crit=10,
-        block=0,
-        evasion=0,
-        attack_dice=2,
-        attack_dice_faces=6,
-    ),
+sword = register(
+    EquippableItemConfig(
+        name="sword",
+        slot="_weapon",
+        attack_verb="melee",
+        range=1,
+        attacks=[NormalAttack.name],
+        spells=[],
+        fighter_affixes=[raw_power_increase],
+        equippable_item_affixes=[percent_crit_increase],
+        stats=EquippableItemStats(
+            crit=10,
+            block=0,
+            evasion=0,
+            attack_dice=2,
+            attack_dice_faces=6,
+        ),
+    )
 )
 
-bow = EquippableItemConfig(
-    name="bow",
-    slot="_weapon",
-    attack_verb="ranged",
-    range=5,
-    attacks=[NormalAttack.name],
-    spells=[],
-    stats=EquippableItemStats(
-        crit=15,
-        block=0,
-        evasion=0,
-        attack_dice=1,
-        attack_dice_faces=12,
-    ),
+bow = register(
+    EquippableItemConfig(
+        name="bow",
+        slot="_weapon",
+        attack_verb="ranged",
+        range=5,
+        attacks=[NormalAttack.name],
+        spells=[],
+        stats=EquippableItemStats(
+            crit=15,
+            block=0,
+            evasion=0,
+            attack_dice=1,
+            attack_dice_faces=12,
+        ),
+    )
 )
 
-spellbook = EquippableItemConfig(
-    name="grimoire",
-    slot="_weapon",
-    attack_verb="melee",
-    range=1,
-    attacks=[NormalAttack.name],
-    spells=[MagicMissile.name, Shield.name, Fireball.name],
-    stats=EquippableItemStats(
-        crit=0,
-        block=0,
-        evasion=0,
-        attack_dice=1,
-        attack_dice_faces=4,
-    ),
+spellbook = register(
+    EquippableItemConfig(
+        name="grimoire",
+        slot="_weapon",
+        attack_verb="melee",
+        range=1,
+        attacks=[NormalAttack.name],
+        spells=[MagicMissile.name, Shield.name, Fireball.name],
+        stats=EquippableItemStats(
+            crit=0,
+            block=0,
+            evasion=0,
+            attack_dice=1,
+            attack_dice_faces=4,
+        ),
+    )
 )
+
+
+def get_item_configs() -> Configs | list[EquippableItemConfig]:
+    global item_configs
+    return Configs([*item_configs])

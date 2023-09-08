@@ -2,6 +2,7 @@ from enum import Enum
 from random import shuffle
 from typing import Any, Callable, Generator, NamedTuple
 
+from src.engine.events_enum import EventTopic
 from src.entities.action.actions import EndTurnAction
 from src.entities.combat.fighter import Fighter
 from src.entities.combat.leveller import Experience
@@ -59,7 +60,7 @@ class CombatRound:
         self._round_order = [combatant for combatant, _ in initiative_roll]
         events.append(
             {
-                "message": f"{self._round_order[0].owner.name.name_and_title} goes first this turn"
+                EventTopic.MESSAGE: f"{self._round_order[0].owner.name.name_and_title} goes first this turn"
             }
         )
 
@@ -121,7 +122,6 @@ class CombatRound:
                 # otherwise do that action!
                 yield from combatant.act()
                 yield from self._check_for_death(enemies)
-                yield from self._resolve_experience(combatant)
                 yield from self._check_for_retreat(self.teams[0] + self.teams[1])
         self.current_combatant(pop=True)
         yield from combatant.on_turn_end()
@@ -133,7 +133,11 @@ class CombatRound:
                 target.owner.die()
                 self._purge_fighter(target)
 
-                yield {"dying": target.owner, "message": f"{name} is dead!"}
+                yield {
+                    EventTopic.DYING: target.owner,
+                    EventTopic.MESSAGE: f"{name} is dead!",
+                    EventTopic.ROLL_ITEM_DROP: target.owner,
+                }
 
     def _check_for_retreat(self, team) -> Event:
         for fighter in team:
@@ -145,25 +149,11 @@ class CombatRound:
                 result.update(
                     {
                         "retreat": fighter,
-                        "message": f"{fighter.owner.name.name_and_title} is retreating!",
+                        EventTopic.MESSAGE: f"{fighter.owner.name.name_and_title} is retreating!",
                     }
                 )
 
                 yield result
-
-    def _resolve_experience(
-        self, combatant: Fighter
-    ) -> Generator[Event, None, None] | None:
-        final = Experience(0)
-        for experience in combatant.leveller.xp_to_resolve:
-            final += experience
-
-        if final.xp_value > 0:
-            final.resolve_xp(combatant.leveller)
-            yield {
-                "message": f"{combatant.owner.name} gained {final.xp_value} experience!"
-            }
-            yield combatant.leveller.should_level_up()
 
     def _purge_fighter(self, fighter: Fighter) -> None:
         team_id = 0 if fighter in self.teams[0] else 1

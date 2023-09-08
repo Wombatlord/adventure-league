@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.engine.guild import Team
+    from src.entities.gear.equippable_item import EquippableItem
 
 from src.entities.combat.leveller import Experience
 
@@ -18,9 +19,10 @@ class Rewarder:
 
 class Loot(Rewarder):
     guild_xp: int
-    team_xp: list[Experience]
+    _team_xp_to_be_awarded: list[Experience]
     gp: int
     _text: str
+    item_drops: list[EquippableItem]
 
     def __init__(
         self,
@@ -29,7 +31,9 @@ class Loot(Rewarder):
     ):
         self.guild_xp = max(0, xp)
         self.gp = max(0, gp)
-        self.team_xp = []
+        self._team_xp_to_be_awarded = []
+        self.awarded_xp_per_member = 0
+        self.item_drops = []
 
     @property
     def claimed(self) -> bool:
@@ -43,24 +47,34 @@ class Loot(Rewarder):
         xp, self.guild_xp = self.guild_xp, 0
         return xp
 
+    def claim_items(self) -> list[EquippableItem]:
+        items, self.item_drops = self.item_drops, []
+        return items
+
     def claim_team_xp(self, team: Team):
         member_count = len(team.members)
 
-        final = Experience(0)
-        for experience in self.team_xp:
-            final += experience
+        final = self.calculate_xp_per_member(member_count)
 
-        final = final // member_count
         for member in team.members:
             member.fighter.leveller.gain_xp(final)
 
-        self.team_xp = []
+            if member.fighter.leveller.should_level_up():
+                member.fighter.leveller._do_level_up()
 
-    def team_xp_total(self) -> int:
-        total = Experience(0)
-        for xp in self.team_xp:
-            total += xp
-        return total.xp_value
+        self.awarded_xp_per_member = final.xp_value
+        self._team_xp_to_be_awarded = []
+
+    def calculate_xp_per_member(self, member_count) -> Experience:
+        final = Experience(0)
+        for experience in self._team_xp_to_be_awarded:
+            final += experience
+
+        final = final // member_count
+        return final
+
+    def team_xp_total(self, team: Team) -> int:
+        return self.awarded_xp_per_member * len(team.members)
 
     def __str__(self) -> str:
         if self.claimed:
