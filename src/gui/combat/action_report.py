@@ -14,9 +14,9 @@ from src.utils.rectangle import Corner, Rectangle
 from src.world.level.dungeon import Dungeon
 
 
-def linear_up_to_max(max_val: float, reached_at: float) -> Callable[[float], float]:
-    gradient = max_val / reached_at
-    return lambda x: max(0, min(x * gradient, max_val))
+def linear_up_to_max(delta_val: float, reached_at: float, start_val: float = 0.0) -> Callable[[float], float]:
+    gradient = delta_val / reached_at
+    return lambda x: start_val + max(0, min(x * gradient, delta_val))
 
 
 class XPGainWidget:
@@ -41,12 +41,12 @@ class XPGainWidget:
         ).xp_value
         if self._xp_gain == 0:
             self._xp_gain = dungeon.loot.awarded_xp_per_member
-
         self._initial_level = self._leveller.current_level
         self._initial_xp = self._leveller.total_xp
         self._text = text
         self._countdown_ms = self.ANIMATION_TIME_MS
-        self._display_xp = linear_up_to_max(self._xp_gain, self.ANIMATION_TIME_MS)
+        self._display_xp = linear_up_to_max(self._xp_gain, self.ANIMATION_TIME_MS, start_val=self._initial_xp)
+        self._debug = False
 
     def update(self, dt: float) -> None:
         self.tick_xp()
@@ -55,12 +55,21 @@ class XPGainWidget:
 
         self._countdown_ms -= dt * 1000.0
 
+    def debug(self):
+        self._debug = True
+        
     def tick_xp(self) -> None:
         time_left = self.ANIMATION_TIME_MS - self._countdown_ms
-        delta_xp = int(self._display_xp(time_left)) - self._leveller.total_xp
-
-        if delta_xp >= 1:
-            self._leveller.gain_xp(delta_xp)
+        current = self._leveller.total_xp
+        next_xp = int(self._display_xp(time_left))
+        xp_increment = next_xp - current
+        if self._debug:
+            breakpoint()
+            self._debug = False
+        
+        if xp_increment >= 1:
+            self._leveller.gain_xp(xp_increment)
+                
         levels = self._leveller.current_level - self._initial_level
         lvl_up = f"{' + ' + str(levels)}!" if levels else ""
         self._text.text = (
@@ -182,12 +191,6 @@ class ActionReport(arcade.Section):
 
         self.enable()
 
-    def animate_xp_counter(self):
-        for i, label in enumerate(self.xp_labels):
-            count = label.text.split("/")[0]
-            if int(count) < self.dungeon_context.loot.awarded_xp_per_member:
-                label.text = f"{int(count) + 1} / {eng.game_state.team.members[i].fighter.leveller.xp_to_level_up} xp"
-
     def on_update(self, delta_time: float):
         if not self.enabled:
             return
@@ -246,3 +249,5 @@ class ActionReport(arcade.Section):
                 if eng.mission_in_progress is False:
                     eng.flush_subscriptions()
                     self.view.window.show_view(self.view.parent_factory())
+            case arcade.key.D:
+                self._xp_labels[0].debug()

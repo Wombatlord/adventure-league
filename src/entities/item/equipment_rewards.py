@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Generator, NamedTuple
 from src.engine.events_enum import EventFields, EventTopic
 from src.entities.entity import Entity
 from src.entities.gear.equippable_item import EquippableItem
-from src.entities.item.equippable_item import body, bow, get_item_configs, helmet
+from src.entities.item.equippable_item import breastplate, bow, get_item_configs, helmet
 from src.entities.item.loot import Loot
 from src.world.level.dungeon import Dungeon
 
@@ -53,7 +53,7 @@ def roll_boss_table():
     yield from roll_table(
         [
             (80000, []),
-            (5, [body]),
+            (5, [breastplate]),
             (5, [helmet] * 2),
             (1, [bow] * 3),
         ]

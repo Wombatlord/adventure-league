@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generator, Self
+from typing import TYPE_CHECKING, Self
 
 from src.utils import deep_copy
 
 if TYPE_CHECKING:
-    from src.engine.engine import Event
     from src.entities.combat.fighter import Fighter
 
 
@@ -14,7 +13,7 @@ class Leveller:
     xp_to_resolve: list[Experience]
 
     @staticmethod
-    def delta_xp(from_level) -> int:
+    def xp_for_next_level(from_level) -> int:
         if from_level < 0:
             return 0
         return (from_level + 1) * 1000
@@ -23,7 +22,6 @@ class Leveller:
         self.owner = owner
         self._current_level = 0
         self._current_xp = 0
-        self._xp_to_level_up = 1000
         self.xp_to_resolve = []
 
     @property
@@ -32,15 +30,19 @@ class Leveller:
 
     @property
     def xp_to_level_up(self):
-        return self.delta_xp(self.current_level)
+        return self.xp_for_next_level(self.current_level)
 
+    @property
+    def previous_level_xp(self):
+        return self.xp_for_next_level(self.current_level - 1)
+    
     @property
     def total_xp(self) -> int:
         lvl = self.current_level
         xp_acc = self.current_xp
         while (lvl := lvl - 1) > -1:
-            xp_acc += self.delta_xp(lvl)
-
+            xp_acc += self.xp_for_next_level(lvl)
+        
         return xp_acc
 
     @property
@@ -51,8 +53,8 @@ class Leveller:
         return self.current_xp >= self.xp_to_level_up
 
     def _do_level_up(self):
-        self._current_xp = 0
         self._current_level += 1
+        self._current_xp -= self.previous_level_xp
         if not self.owner:
             return
         new_power = self.owner.stats.power + 1
@@ -65,8 +67,9 @@ class Leveller:
         if self.owner.caster:
             self.owner.caster.mp_pool.max += 5
             self.owner.caster.mp_pool.recharge()
+            
 
-    def gain_xp(self, amount: Experience | int) -> Generator[Event, None, None]:
+    def gain_xp(self, amount: Experience | int):
         xp_change = amount
         if isinstance(xp_change, Experience):
             xp_change = xp_change.xp_value

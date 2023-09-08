@@ -269,6 +269,7 @@ item_configs = []
 def register(conf: EquippableItemConfig) -> list[EquippableItemConfig]:
     global item_configs
     item_configs.append(conf)
+    return item_configs
 
 
 # Example Configs
