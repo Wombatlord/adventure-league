@@ -68,7 +68,7 @@ def flat_normal_map(texture: arcade.Texture) -> arcade.Texture:
 def flat_sprite_height_map(texture: arcade.Texture):
     image = texture.image
     grad = Gradient(
-        start=RGBA(A=1),
+        start=RGBA(A=255),
         step=RGBA(R=1, G=1, B=1),
         initial=Vec2(0, image.height),
         direction=Vec2(0, -1),
