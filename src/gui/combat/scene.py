@@ -218,6 +218,7 @@ class Scene(arcade.Section):
 
     def refresh_draw_order(self):
         self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
+        self.terrain_sprite_list.sort(key=lambda s: s.get_draw_priority())
 
     def update_camera(self):
         self.cam_controls.on_update()
@@ -237,6 +238,7 @@ class Scene(arcade.Section):
 
         self.dudes_sprite_list.update_animation(delta_time=delta_time)
         self.floating_health_bars.update()
+        self.shader_pipeline.update()
 
         if eng.update_clock < 0:
             eng.reset_update_clock()
@@ -322,6 +324,7 @@ class Scene(arcade.Section):
             self.dudes_sprite_list = arcade.SpriteList()
         else:
             self.dudes_sprite_list.clear()
+            self.shader_pipeline.clear_character_sprites()
 
         for dude in self.encounter_room.occupants:
             if dude.fighter.is_boss:
@@ -333,6 +336,8 @@ class Scene(arcade.Section):
             self.world_sprite_list.append(dude.entity_sprite.sprite)
             self.dudes_sprite_list.append(dude.entity_sprite.sprite)
             self.floating_health_bars.attach(dude.fighter)
+
+        self.shader_pipeline.register_character_sprites(self.dudes_sprite_list)
 
     def update_dudes(self, _: dict) -> None:
         self._update_dudes()
@@ -443,3 +448,13 @@ class Scene(arcade.Section):
         match symbol:
             case arcade.key.R:
                 self.rotate_level()
+            case arcade.key.KEY_1:
+                self.shader_pipeline.toggle_scene()
+            case arcade.key.KEY_2:
+                self.shader_pipeline.toggle_normal()
+            case arcade.key.KEY_3:
+                self.shader_pipeline.toggle_height()
+            case arcade.key.KEY_4:
+                self.shader_pipeline.toggle_ray()
+            case arcade.key.M:
+                self.shader_pipeline.debug()

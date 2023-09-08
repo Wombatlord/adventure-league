@@ -1,11 +1,17 @@
+import functools
+import types
+import weakref
 from enum import Enum
-from typing import Self
+from functools import cached_property
+from typing import Any, Callable, Generic, Self, TypeVar
 
+import arcade
 from arcade import BasicSprite
 from arcade.sprite import Sprite
 from arcade.texture import Texture
 from arcade.types import PathOrTexture, Point
 
+from src.textures.flat_sprite_maps import flat_normal_map, flat_sprite_height_map
 from src.world.isometry.transforms import Transform
 from src.world.node import Node
 
@@ -151,6 +157,90 @@ class BaseSprite(OffsetSprite, Sprite):
             clone.set_transform(self.transform)
 
         return clone
+
+
+SpriteType = TypeVar("SpriteType", arcade.Sprite, BaseSprite, OffsetSprite)
+
+
+class MapSprite(Generic[SpriteType]):
+    __sprite: SpriteType
+    __tx_cache: dict[str, arcade.Texture]
+    __recursion_canary: int
+
+    def __init__(
+        self, sprite: SpriteType, tx_map: Callable[[arcade.Texture], arcade.Texture]
+    ):
+        self.__sprite = sprite
+        self.__map = tx_map
+        self.__tx_cache = {}
+
+    def __setattr__(self, key, value):
+        if key == "texture":
+            self.__sprite.texture = value
+            if not self.__tx_cache.get(self.__sprite.texture.cache_name):
+                self.__tx_cache[self.__sprite.texture.cache_name] = self.__map(
+                    self.__sprite.texture
+                )
+        else:
+            object.__setattr__(self, key, value)
+
+    def __getattr__(self, item: str) -> Any:
+        if item == "texture":
+            if hit := self.__tx_cache.get(self.__sprite.texture.cache_name):
+                return hit
+
+            hit = self.__tx_cache[self.__sprite.texture.cache_name] = self.__map(
+                self.__sprite.texture
+            )
+            return hit
+
+        attr = getattr(self.__sprite, item)
+        return attr
+
+
+normal_maps: dict[str, weakref.ReferenceType[arcade.Texture]] = {}
+height_maps: dict[str, weakref.ReferenceType[arcade.Texture]] = {}
+
+_TxMap = Callable[[arcade.Texture], arcade.Texture]
+
+
+def cache_aware(tx_map: _TxMap, cache: dict) -> _TxMap:
+    @functools.wraps(tx_map)
+    def _mapping(tex):
+        nonlocal cache
+        if tex.cache_name in cache:
+            maybe_hit = cache[tex.cache_name]
+            if hit := maybe_hit():
+                return hit
+            else:
+                del cache[tex.cache_name]
+
+        hit = tx_map(tex)
+        cache[tex.cache_name] = weakref.ref(hit)
+        return hit
+
+    return _mapping
+
+
+flat_sprite_height_map = cache_aware(flat_sprite_height_map, height_maps)
+flat_normal_map = cache_aware(flat_normal_map, normal_maps)
+
+
+def _apply(tx_map: _TxMap, sprite: SpriteType):
+    mapped = sprite.clone()
+    mapped.__dict__["_parent"] = sprite
+    mapped.textures = [tx_map(tx) for tx in mapped.textures]
+    mapped.texture = mapped.textures[mapped.tex_idx]
+
+    return mapped
+
+
+def z_mapped_sprite(sprite: SpriteType) -> SpriteType | MapSprite:
+    return _apply(tx_map=flat_sprite_height_map, sprite=sprite)
+
+
+def norm_mapped_sprite(sprite: SpriteType) -> SpriteType | MapSprite:
+    return _apply(tx_map=flat_normal_map, sprite=sprite)
 
 
 class AnimatedSpriteAttribute:

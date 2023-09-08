@@ -120,7 +120,7 @@ void main() {
     final += draw_axes(colour, xyz, vec3(0)) * axes_toggle;
     final += vec4(surface_normal, 1.) * normal_toggle;
     final += vec4(xyz.xy/10, depth_sample(xyz.xy)/2., 1.) * height_toggle;
-    final += vec4(normalize(ray)/2. + .5, 1.) * ray_toggle;
+    final += vec4(pt_intensity*normalize(ray)/2. + .5, 1.) * ray_toggle;
 
     rgba = final;
 }

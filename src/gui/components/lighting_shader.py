@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Callable
+from typing import Callable, Iterable
 
 import arcade
 from arcade.gl import geometry
@@ -10,7 +10,12 @@ from arcade.types import PointList
 from PIL import Image
 from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
-from src.entities.sprites import BaseSprite
+from src.entities.sprites import (
+    BaseSprite,
+    MapSprite,
+    norm_mapped_sprite,
+    z_mapped_sprite,
+)
 from src.gui.biome_textures import BiomeName, biome_map
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.shader_program import Binding, Shader
@@ -87,6 +92,8 @@ class ShaderPipeline:
         self.terrain_nodes = []
         self.normal_sprites = arcade.SpriteList()
         self.height_sprites = arcade.SpriteList()
+        self.character_sprites = arcade.SpriteList()
+        self.updating_sprite_mapping = {}
         self.shader.attach_uniform("scene_toggle", self.get_scene_toggle)
         self.shader.attach_uniform("height_toggle", self.get_height_toggle)
         self.shader.attach_uniform("normal_toggle", self.get_normal_toggle)
@@ -150,13 +157,49 @@ class ShaderPipeline:
             "light_balance", lambda: Vec3(ambient, directional, point)
         )
 
+    def register_character_sprites(
+        self, sprites: Iterable[BaseSprite], clear: bool = True
+    ):
+        if clear:
+            self.clear_character_sprites()
+
+        for sprite in sprites:
+            mappings = (norm_mapped_sprite(sprite), z_mapped_sprite(sprite))
+            self.updating_sprite_mapping[sprite] = mappings
+            norm, height = mappings
+            self.normal_sprites.append(norm)
+            self.height_sprites.append(height)
+        self.character_sprites.extend(sprites)
+
+    def clear_character_sprites(self):
+        self.character_sprites.clear()
+
+        remove_list: list[MapSprite | arcade.Sprite] = []
+        for s in self.normal_sprites:
+            if isinstance(s, MapSprite):
+                remove_list.append(s)
+        while remove_list and (s := remove_list.pop()):
+            self.normal_sprites.remove(s)
+
+        for s in self.height_sprites:
+            if isinstance(s, MapSprite):
+                remove_list.append(s)
+        while remove_list and (s := remove_list.pop()):
+            self.height_sprites.remove(s)
+
     @property
     def size(self) -> tuple[int, int]:
         return self.width, self.height
 
+    def update(self):
+        for parent, (norm, height) in self.updating_sprite_mapping.items():
+            norm.position = parent.position
+            height.position = parent.position
+
     def update_terrain_nodes(self, sprites: arcade.SpriteList):
         self.normal_sprites.clear()
         self.height_sprites.clear()
+        self.character_sprites.clear()
         nodes = {}
         max_x, max_y = 0, 0
         for sprite in sprites:
@@ -181,6 +224,10 @@ class ShaderPipeline:
 
         self._generate_world_height_tx(nodes)
 
+    def refresh_draw_order(self):
+        self.normal_sprites.sort(key=lambda s: s.get_draw_priority())
+        self.height_sprites.sort(key=lambda s: s.get_draw_priority())
+
     def _generate_world_height_tx(self, nodes):
         image = self.h_sprite.texture.image
         for xy, z in nodes.items():
@@ -195,6 +242,7 @@ class ShaderPipeline:
         self.terrain_binding.capture(lambda: self.h_sprite.draw(pixelated=True))
 
     def render_scene(self, sprite_list: arcade.SpriteList):
+        self.refresh_draw_order()
         self.scene_binding.capture(lambda: sprite_list.draw(pixelated=True))
         self.normal_binding.capture(lambda: self.normal_sprites.draw(pixelated=True))
         self.height_binding.capture(lambda: self.height_sprites.draw(pixelated=True))
