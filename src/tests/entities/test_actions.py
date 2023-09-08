@@ -61,7 +61,7 @@ class ActionsTest(unittest.TestCase):
 
     def test_action_compendium_has_registered_all_actions(self):
         # Arrange
-        keys = {"end turn", "weapon attack", "cast spell", "use item", EventTopic.MOVE}
+        keys = {"end turn", "weapon attack", "cast spell", "use item", "move"}
         actions = MetaCompendium.all_actions
 
         # Assert
@@ -69,10 +69,13 @@ class ActionsTest(unittest.TestCase):
         assert keys == actual, f"expected {keys=}, got {actual=}"
 
         # Check each key contains the correct ActionMeta
-        assert actions.get("end turn") is EndTurnAction
-        assert actions.get("weapon attack") is WeaponAttackAction
-        assert actions.get("use item") is ConsumeItemAction
-        assert actions.get(EventTopic.MOVE) is MoveAction
+        for action in (
+            EndTurnAction,
+            WeaponAttackAction,
+            ConsumeItemAction,
+            MoveAction,
+        ):
+            assert actions.get(action.name) is action
 
     def test_request_action_event_schema(self):
         # Arrange
@@ -211,7 +214,7 @@ class MoveActionTest(unittest.TestCase):
         # assertions about the final step
         assert not step_event[EventTopic.MOVE][
             "in_motion"
-        ], f"expected false from {step_event['move']['in_motion']=}"
+        ], f"expected false from {step_event[EventTopic.MOVE]['in_motion']=}"
 
         # use the predicted points remaining to verify the cost is deducted correctly
         actual_points_remaining = current_fighter.action_points.current

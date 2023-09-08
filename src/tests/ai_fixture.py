@@ -56,7 +56,7 @@ class TestAI:
         if not callable(callback):
             raise TypeError(f"The callback {choice.get('on_confirm')=} is not callable")
         self.decision_log.append(choice)
-        if choice["name"] == EventTopic.MOVE:
+        if choice["name"] == MoveAction.name:
             destination = self.destination(event)
             callback(destination)
         else:
@@ -72,7 +72,7 @@ class TestAI:
         return in_range
 
     def destination(self, event):
-        fighter = event["choices"][EventTopic.MOVE][0]["subject"]
+        fighter = event["choices"][MoveAction.name][0]["subject"]
 
         _, path = fighter.locatable.nearest_entity(
             room=fighter.encounter_context.get(),

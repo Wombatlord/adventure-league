@@ -35,14 +35,14 @@ class Leveller:
     @property
     def previous_level_xp(self):
         return self.xp_for_next_level(self.current_level - 1)
-    
+
     @property
     def total_xp(self) -> int:
         lvl = self.current_level
         xp_acc = self.current_xp
         while (lvl := lvl - 1) > -1:
             xp_acc += self.xp_for_next_level(lvl)
-        
+
         return xp_acc
 
     @property
@@ -67,7 +67,6 @@ class Leveller:
         if self.owner.caster:
             self.owner.caster.mp_pool.max += 5
             self.owner.caster.mp_pool.recharge()
-            
 
     def gain_xp(self, amount: Experience | int):
         xp_change = amount

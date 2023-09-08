@@ -14,7 +14,9 @@ from src.utils.rectangle import Corner, Rectangle
 from src.world.level.dungeon import Dungeon
 
 
-def linear_up_to_max(delta_val: float, reached_at: float, start_val: float = 0.0) -> Callable[[float], float]:
+def linear_up_to_max(
+    delta_val: float, reached_at: float, start_val: float = 0.0
+) -> Callable[[float], float]:
     gradient = delta_val / reached_at
     return lambda x: start_val + max(0, min(x * gradient, delta_val))
 
@@ -45,7 +47,9 @@ class XPGainWidget:
         self._initial_xp = self._leveller.total_xp
         self._text = text
         self._countdown_ms = self.ANIMATION_TIME_MS
-        self._display_xp = linear_up_to_max(self._xp_gain, self.ANIMATION_TIME_MS, start_val=self._initial_xp)
+        self._display_xp = linear_up_to_max(
+            self._xp_gain, self.ANIMATION_TIME_MS, start_val=self._initial_xp
+        )
         self._debug = False
 
     def update(self, dt: float) -> None:
@@ -57,7 +61,7 @@ class XPGainWidget:
 
     def debug(self):
         self._debug = True
-        
+
     def tick_xp(self) -> None:
         time_left = self.ANIMATION_TIME_MS - self._countdown_ms
         current = self._leveller.total_xp
@@ -66,10 +70,10 @@ class XPGainWidget:
         if self._debug:
             breakpoint()
             self._debug = False
-        
+
         if xp_increment >= 1:
             self._leveller.gain_xp(xp_increment)
-                
+
         levels = self._leveller.current_level - self._initial_level
         lvl_up = f"{' + ' + str(levels)}!" if levels else ""
         self._text.text = (

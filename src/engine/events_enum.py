@@ -24,3 +24,4 @@ class EventTopic(Enum):
 class EventFields(Enum):
     TEAM_XP = "guild xp"
     DUNGEON = "dungeon context"
+    IN_MOTION = "in motion"
