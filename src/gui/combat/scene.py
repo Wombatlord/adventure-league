@@ -238,7 +238,6 @@ class Scene(arcade.Section):
 
         self.dudes_sprite_list.update_animation(delta_time=delta_time)
         self.floating_health_bars.update()
-        self.shader_pipeline.update()
 
         if eng.update_clock < 0:
             eng.reset_update_clock()
@@ -337,7 +336,7 @@ class Scene(arcade.Section):
             self.dudes_sprite_list.append(dude.entity_sprite.sprite)
             self.floating_health_bars.attach(dude.fighter)
 
-        self.shader_pipeline.register_character_sprites(self.dudes_sprite_list)
+        self.shader_pipeline.register_character_sprites(self.encounter_room.occupants)
 
     def update_dudes(self, _: dict) -> None:
         self._update_dudes()
@@ -456,5 +455,7 @@ class Scene(arcade.Section):
                 self.shader_pipeline.toggle_height()
             case arcade.key.KEY_4:
                 self.shader_pipeline.toggle_ray()
+            case arcade.key.KEY_5:
+                self.shader_pipeline.toggle_terrain()
             case arcade.key.M:
                 self.shader_pipeline.debug()

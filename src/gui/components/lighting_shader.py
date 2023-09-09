@@ -9,6 +9,7 @@ from arcade.hitbox import HitBoxAlgorithm
 from arcade.types import PointList
 from PIL import Image
 from pyglet.math import Mat4, Vec2, Vec3, Vec4
+from src.entities.entity import Entity
 
 from src.entities.sprites import (
     BaseSprite,
@@ -77,6 +78,7 @@ class ShaderPipeline:
 
         self.terrain_size = (10, 10)
         self.terrain_binding = self.shader.bind("terrain", self.terrain_size)
+        self.terrain_toggle = 0.0
         self.h_sprite = arcade.Sprite()
         self.h_sprite.texture = arcade.Texture(
             image=Image.new("RGBA", self.terrain_size),
@@ -99,6 +101,7 @@ class ShaderPipeline:
         self.shader.attach_uniform("normal_toggle", self.get_normal_toggle)
         self.shader.attach_uniform("ray_toggle", self.get_ray_toggle)
         self.shader.attach_uniform("axes_toggle", self.get_axes_toggle)
+        self.shader.attach_uniform("terrain_toggle", self.get_terrain_toggle)
         self.shader.attach_uniform("pt_col", lambda: Vec4(0.8, 0.6, 0.2, 1.0))
         self.shader.attach_uniform("pt_src", lambda: Vec3(4.0, 4.0, 0.5))
         self.shader.attach_uniform(
@@ -108,6 +111,7 @@ class ShaderPipeline:
         self.shader.attach_uniform("ambient_col", lambda: Vec4(1, 1, 1, 1))
         self.shader.attach_uniform("light_balance", lambda: Vec3(0.2, 0, 0.8))
         self.shader.attach_uniform("time_since_start", lambda: self.get_time())
+        self.sprite_attributes = []
 
     def get_time(self) -> float:
         return time.time() - self.time
@@ -126,6 +130,12 @@ class ShaderPipeline:
 
     def get_ray_toggle(self) -> float:
         return self.ray_toggle
+    
+    def get_terrain_toggle(self) -> float:
+        return self.terrain_toggle
+    
+    def toggle_terrain(self):
+        self.terrain_toggle = 1.0 - self.terrain_toggle
 
     def toggle_normal(self):
         self.normal_toggle = 1.0 - self.normal_toggle
@@ -158,43 +168,30 @@ class ShaderPipeline:
         )
 
     def register_character_sprites(
-        self, sprites: Iterable[BaseSprite], clear: bool = True
+        self, entities: list[Entity], clear: bool = True
     ):
         if clear:
             self.clear_character_sprites()
+        breakpoint()
+        for entity in entities:
+            self.sprite_attributes.append(entity.entity_sprite)
+            normal_sprite = entity.entity_sprite.normals.sprite
+            self.normal_sprites.append(normal_sprite)
+            height_sprite = entity.entity_sprite.heights.sprite
+            self.height_sprites.append(height_sprite)
+            self.character_sprites.append(entity.entity_sprite.sprite)
 
-        for sprite in sprites:
-            mappings = (norm_mapped_sprite(sprite), z_mapped_sprite(sprite))
-            self.updating_sprite_mapping[sprite] = mappings
-            norm, height = mappings
-            self.normal_sprites.append(norm)
-            self.height_sprites.append(height)
-        self.character_sprites.extend(sprites)
 
     def clear_character_sprites(self):
+        for sprite_attr in self.sprite_attributes:
+            self.normal_sprites.remove(sprite_attr.normals.sprite)
+            self.height_sprites.remove(sprite_attr.heights.sprite)
         self.character_sprites.clear()
-
-        remove_list: list[MapSprite | arcade.Sprite] = []
-        for s in self.normal_sprites:
-            if isinstance(s, MapSprite):
-                remove_list.append(s)
-        while remove_list and (s := remove_list.pop()):
-            self.normal_sprites.remove(s)
-
-        for s in self.height_sprites:
-            if isinstance(s, MapSprite):
-                remove_list.append(s)
-        while remove_list and (s := remove_list.pop()):
-            self.height_sprites.remove(s)
-
+        self.sprite_attributes.clear()
+        
     @property
     def size(self) -> tuple[int, int]:
         return self.width, self.height
-
-    def update(self):
-        for parent, (norm, height) in self.updating_sprite_mapping.items():
-            norm.position = parent.position
-            height.position = parent.position
 
     def update_terrain_nodes(self, sprites: arcade.SpriteList):
         self.normal_sprites.clear()
@@ -242,7 +239,6 @@ class ShaderPipeline:
         self.terrain_binding.capture(lambda: self.h_sprite.draw(pixelated=True))
 
     def render_scene(self, sprite_list: arcade.SpriteList):
-        self.refresh_draw_order()
         self.scene_binding.capture(lambda: sprite_list.draw(pixelated=True))
         self.normal_binding.capture(lambda: self.normal_sprites.draw(pixelated=True))
         self.height_binding.capture(lambda: self.height_sprites.draw(pixelated=True))
@@ -251,5 +247,6 @@ class ShaderPipeline:
         with self.shader as program:
             self.quad_fs.render(program)
 
+    
     def debug(self):
         breakpoint()

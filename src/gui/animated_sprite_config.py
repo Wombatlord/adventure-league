@@ -1,23 +1,45 @@
 import random
-from typing import NamedTuple, Sequence
+import select
+from typing import NamedTuple, Self, Sequence
 
 from arcade import Texture
 
 from src.entities.combat.archetypes import FighterArchetype
-from src.textures.texture_data import SpriteSheetSpecs
+from src.textures.texture_data import SheetSpec, SpriteSheetSpecs
 
 
 class AnimatedSpriteConfig(NamedTuple):
     idle: Sequence[int]
     attack: Sequence[int]
+    sheet_spec: SheetSpec = SpriteSheetSpecs.characters
 
     @property
     def idle_textures(self) -> tuple[Texture, ...]:
-        return tuple(SpriteSheetSpecs.characters.load_one(idx) for idx in self.idle)
+        return tuple(self.sheet_spec.load_one(idx) for idx in self.idle)
 
     @property
     def attack_textures(self) -> tuple[Texture, ...]:
-        return tuple(SpriteSheetSpecs.characters.load_one(idx) for idx in self.attack)
+        return tuple(self.sheet_spec.load_one(idx) for idx in self.attack)
+
+    def get_normals(self) -> Self | None:
+        if not (sheet_spec := self.sheet_spec.get_normals()):
+            return None
+            
+        return AnimatedSpriteConfig(
+            idle=self.idle, 
+            attack=self.attack, 
+            sheet_spec=sheet_spec,
+        )
+
+    def get_heights(self) -> Self | None:
+        if not (sheet_spec := self.sheet_spec.get_height_map()):
+            return None
+        
+        return AnimatedSpriteConfig(
+            idle=self.idle,
+            attack=self.attack,
+            sheet_spec=sheet_spec,
+        )
 
 
 MERC_TEXTURE_OPTS = (

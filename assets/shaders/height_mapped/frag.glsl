@@ -9,6 +9,7 @@ uniform float height_toggle;
 uniform float normal_toggle;
 uniform float axes_toggle;
 uniform float ray_toggle;
+uniform float terrain_toggle;
 
 uniform vec4 pt_col;
 uniform vec3 pt_src;
@@ -121,6 +122,7 @@ void main() {
     final += vec4(surface_normal, 1.) * normal_toggle;
     final += vec4(xyz.xy/10, depth_sample(xyz.xy)/2., 1.) * height_toggle;
     final += vec4(pt_intensity*normalize(ray)/2. + .5, 1.) * ray_toggle;
+    final += texture(terrain, xyz.xy) * terrain_toggle;
 
     rgba = final;
 }

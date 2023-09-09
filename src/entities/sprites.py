@@ -1,3 +1,10 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.gui.animated_sprite_config import AnimatedSpriteConfig
+    from src.entities.entity import Entity
+
 import functools
 import types
 import weakref
@@ -40,6 +47,9 @@ class OffsetSprite(Sprite):
                 new_pos[1] - self.px_offset[1],
             ),
         )
+        if hasattr(self, "_sync_list"):
+            for sprite in self._sync_list:
+                sprite.position = new_pos
 
     @BasicSprite.center_x.getter
     def center_x(self) -> float:
@@ -47,6 +57,10 @@ class OffsetSprite(Sprite):
 
     @center_x.setter
     def center_x(self, x: float) -> None:
+        new_pos = (
+            x - self.px_offset[0] * self.scale,
+            self._position[1],
+        )
         BasicSprite.position.fset(
             self,
             (
@@ -54,6 +68,9 @@ class OffsetSprite(Sprite):
                 self._position[1],
             ),
         )
+        if hasattr(self, "_sync_list"):
+            for sprite in self._sync_list:
+                sprite.position = new_pos
 
     @BasicSprite.center_y.getter
     def center_y(self) -> float:
@@ -61,13 +78,19 @@ class OffsetSprite(Sprite):
 
     @center_y.setter
     def center_y(self, y: float) -> None:
+        new_pos = (
+            self._position[0],
+            y - self.px_offset[1] * self.scale,
+        )
+
         BasicSprite.position.fset(
             self,
-            (
-                self._position[0],
-                y - self.px_offset[1] * self.scale,
-            ),
+            new_pos,
         )
+
+        if hasattr(self, "_sync_list"):
+            for sprite in self._sync_list:
+                sprite.position = new_pos
 
 
 class BaseSprite(OffsetSprite, Sprite):
@@ -80,6 +103,7 @@ class BaseSprite(OffsetSprite, Sprite):
         center_x: float = 0.0,
         center_y: float = 0.0,
         angle: float = 0.0,
+        sync_list: tuple[arcade.Sprite, ...] = (),
         **kwargs,
     ):
         super().__init__(
@@ -99,6 +123,7 @@ class BaseSprite(OffsetSprite, Sprite):
         self._draw_priority = 0
         self._draw_priority_offset = kwargs.get("draw_priority_offset", 0)
         self._node = None
+        self._sync_list = sync_list
 
     @property
     def node(self) -> Node | None:
@@ -106,6 +131,10 @@ class BaseSprite(OffsetSprite, Sprite):
 
     def set_scale(self, scale: int):
         self.scale = scale
+        for child in self._sync_list:
+            if not hasattr(child, "set_scale"):
+                continue
+            child.set_scale(scale)
 
     def get_draw_priority(self) -> float:
         priority = self._draw_priority
@@ -115,6 +144,12 @@ class BaseSprite(OffsetSprite, Sprite):
 
     def set_node(self, node: Node) -> Self:
         self._node = node
+        
+        for child in self._sync_list:
+            if not hasattr(child, "set_node"):
+                continue
+            child.set_node(node)
+            
         if self.transform != Transform.trivial():
             self.update_position()
 
@@ -122,14 +157,22 @@ class BaseSprite(OffsetSprite, Sprite):
 
     def set_transform(self, transform: Transform) -> Self:
         self.transform = transform
+        for child in self._sync_list:
+            if not hasattr(child, "set_transform"):
+                continue
+            child.set_transform(transform)
         if self._node:
             self.update_position()
+            
 
         return self
 
     def update_position(self):
         self.center_x, self.center_y = self.transform.project(self._node)
         self._draw_priority = self.transform.draw_priority(self._node)
+        for sprite in self._sync_list:
+            if hasattr(sprite, "update_position"):
+                sprite.update_position()
 
     def update_animation(self, delta_time: float = 1 / 60) -> None:
         self.animation_cycle -= delta_time
@@ -145,6 +188,10 @@ class BaseSprite(OffsetSprite, Sprite):
                     self.texture = self.textures[self.tex_idx]
                     self.tex_idx = (self.tex_idx + 1) % len(self.textures)
                     self.animation_cycle = 0.75
+        for child in self._sync_list:
+            if not hasattr(child, "update_animation"):
+                continue
+            child.update_animation(delta_time)
 
     def clone(self) -> Self:
         clone = BaseSprite(
@@ -246,14 +293,38 @@ def norm_mapped_sprite(sprite: SpriteType) -> SpriteType | MapSprite:
 class AnimatedSpriteAttribute:
     sprite: BaseSprite
 
+    @classmethod
+    def from_sprite_conf(cls, sprite_conf: AnimatedSpriteConfig) -> Self:
+        return cls(
+            idle_textures=sprite_conf.idle_textures,
+            attack_textures=sprite_conf.attack_textures,
+        )
+
     def __init__(
         self,
         idle_textures: tuple[Texture, ...] = None,
         attack_textures: tuple[Texture, ...] = None,
         scale: float = 4,
+        sprite_conf: AnimatedSpriteConfig | None = None,
     ) -> None:
-        self.owner = None
-        self.sprite = BaseSprite(scale=scale)
+        self.sprite_conf = sprite_conf
+
+        self.normals = None
+        self.heights = None
+        sync_list = ()
+        if self.sprite_conf:
+            if normal_conf := self.sprite_conf.get_normals():
+                self.normals = self.from_sprite_conf(normal_conf)
+                self.normals.sprite.owner = self.normals
+                sync_list += (self.normals.sprite,)
+
+            if height_conf := self.sprite_conf.get_heights():
+                self.heights = self.from_sprite_conf(height_conf)
+                self.heights.sprite.owner = self.heights
+                sync_list += (self.heights.sprite,)
+
+        self._owner = None
+        self.sprite = BaseSprite(scale=scale, sync_list=sync_list)
         self.sprite.owner = self
         self.idle_textures = idle_textures
         self.attack_textures = attack_textures
@@ -263,23 +334,45 @@ class AnimatedSpriteAttribute:
             [tex for tex in attack_textures],
             [tex.flip_left_right() for tex in attack_textures],
         )
-        idle_offset, flip_idle_offset, 
 
         self.sprite.textures = self.all_textures[0]
         self.sprite.set_texture(0)
 
+    @property
+    def owner(self) -> Entity | None:
+        return self._owner
+
+    @owner.setter
+    def owner(self, value: Entity):
+        self._owner = value
+        if self.normals:
+            self.normals.owner = self.owner
+        if self.heights:
+            self.heights.owner = self.owner
+
     def offset_anchor(self, offset_px: Point) -> Self:
         self.sprite.offset_anchor(offset_px)
+        if self.normals:
+            self.normals.offset_anchor(offset_px)
+
+        if self.heights:
+            self.heights.offset_anchor(offset_px)
         return self
 
     def swap_idle_and_attack_textures(self):
-        if self.owner.fighter.in_combat:
+        if self._owner.fighter.in_combat:
             self.sprite.textures = self.all_textures[2]
             self.sprite.set_texture(0)
 
         else:
             self.sprite.textures = self.all_textures[0]
             self.sprite.set_texture(0)
+
+        if self.normals:
+            self.normals.swap_idle_and_attack_textures()
+
+        if self.heights:
+            self.heights.swap_idle_and_attack_textures()
 
     def orient(self, orientation: Node):
         if isinstance(orientation, Enum):
@@ -294,12 +387,12 @@ class AnimatedSpriteAttribute:
         ), f"expected type Node, got {type(orientation)=}"
         match orientation:
             case Node(0, 1) | Node(-1, 0):
-                if self.owner.fighter.in_combat:
+                if self._owner.fighter.in_combat:
                     self.sprite.textures = self.all_textures[2]
                 else:
                     self.sprite.textures = self.all_textures[1]
             case Node(1, 0) | Node(0, -1):
-                if self.owner.fighter.in_combat:
+                if self._owner.fighter.in_combat:
                     self.sprite.textures = self.all_textures[3]
                 else:
                     self.sprite.textures = self.all_textures[0]
@@ -307,6 +400,10 @@ class AnimatedSpriteAttribute:
                 pass
 
         self.sprite.set_texture(0)
+        if self.normals:
+            self.normals.orient(orientation)
+        if self.heights:
+            self.heights.orient(orientation)
 
 
 class SimpleSpriteAttribute:

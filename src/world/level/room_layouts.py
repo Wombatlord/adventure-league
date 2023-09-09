@@ -216,7 +216,7 @@ def random_room(
 ) -> tuple[TerrainNode, ...]:
     return random.choice(
         [
-            basic_room,
+            # basic_room,
             side_pillars,
             alternating_big_pillars,
         ]

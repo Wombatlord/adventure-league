@@ -62,6 +62,7 @@ def attach_sprites(entity: Entity) -> Entity:
         AnimatedSpriteAttribute(
             idle_textures=sprite_config.idle_textures,
             attack_textures=sprite_config.attack_textures,
+            sprite_conf=sprite_config,
         )
     )
 
