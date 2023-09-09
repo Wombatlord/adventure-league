@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -144,12 +145,12 @@ class BaseSprite(OffsetSprite, Sprite):
 
     def set_node(self, node: Node) -> Self:
         self._node = node
-        
+
         for child in self._sync_list:
             if not hasattr(child, "set_node"):
                 continue
             child.set_node(node)
-            
+
         if self.transform != Transform.trivial():
             self.update_position()
 
@@ -163,7 +164,6 @@ class BaseSprite(OffsetSprite, Sprite):
             child.set_transform(transform)
         if self._node:
             self.update_position()
-            
 
         return self
 

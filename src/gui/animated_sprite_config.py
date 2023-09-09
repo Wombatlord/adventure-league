@@ -24,17 +24,17 @@ class AnimatedSpriteConfig(NamedTuple):
     def get_normals(self) -> Self | None:
         if not (sheet_spec := self.sheet_spec.get_normals()):
             return None
-            
+
         return AnimatedSpriteConfig(
-            idle=self.idle, 
-            attack=self.attack, 
+            idle=self.idle,
+            attack=self.attack,
             sheet_spec=sheet_spec,
         )
 
     def get_heights(self) -> Self | None:
         if not (sheet_spec := self.sheet_spec.get_height_map()):
             return None
-        
+
         return AnimatedSpriteConfig(
             idle=self.idle,
             attack=self.attack,

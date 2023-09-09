@@ -80,34 +80,52 @@ def flat_sprite_height_map(texture: arcade.Texture):
     return arcade.Texture(height_map, hit_box_points=texture.hit_box_points)
 
 
-def iter_sheet_rows(size: tuple[int, int], row_height: int) -> Generator[tuple[tuple[int, int], int], None, None]:
+def iter_sheet_rows(
+    size: tuple[int, int], row_height: int
+) -> Generator[tuple[tuple[int, int], int], None, None]:
     for y in reversed(range(size[1])):
         for x in range(size[0]):
             local_y = y % row_height
-            
-            yield (x,y), local_y
+
+            yield (x, y), local_y
+
 
 def iter_map_sheet(file_path: str) -> PIL.Image.Image:
     src_image = PIL.Image.open(file_path)
     row_height = 17
     grad = Gradient(
-        start=RGBA(A=255),
+        start=RGBA(R=8, G=8, B=8, A=255),
         step=RGBA(R=1, G=1, B=1),
-        initial=Vec2(0, row_height),
+        initial=Vec2(0, row_height - 4),
         direction=Vec2(0, -1),
-    )    
-    dst_image = PIL.Image.new("RGBA", color=(0,0,0,0), size=src_image.size)
-    
+    )
+    dst_image = PIL.Image.new("RGBA", color=(0, 0, 0, 0), size=src_image.size)
+
     for px, local_y in iter_sheet_rows(src_image.size, row_height):
         output_colour = grad.sample(px[0], local_y)
         src_colour = RGBA(*src_image.getpixel(px))
         if src_colour.A == 0:
             continue
-        
+
         dst_image.putpixel(px, output_colour)
-    
+
     return dst_image
+
 
 def character_height_maps():
     output = iter_map_sheet(SpriteSheetSpecs.characters.args[0])
-    output.save(SpriteSheetSpecs.characters.args[0].replace(".png", ".z.png"), format="png")
+    output.save(
+        SpriteSheetSpecs.characters.args[0].replace(".png", ".z.png"), format="png"
+    )
+
+
+def character_normals():
+    file_path = SpriteSheetSpecs.characters.args[0]
+    src_image = PIL.Image.open(file_path)
+    dst_image = PIL.Image.new("RGBA", size=src_image.size, color=(0, 0, 0, 0))
+    for px in iter_px(src_image.size):
+        if RGBA(*src_image.getpixel(px)).A > 0:
+            dst_image.putpixel(px, (255, 255, 0, 255))
+    dst_image.save(
+        SpriteSheetSpecs.characters.args[0].replace(".png", ".norm.png"), format="png"
+    )

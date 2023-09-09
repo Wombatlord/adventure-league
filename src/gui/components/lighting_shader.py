@@ -9,8 +9,8 @@ from arcade.hitbox import HitBoxAlgorithm
 from arcade.types import PointList
 from PIL import Image
 from pyglet.math import Mat4, Vec2, Vec3, Vec4
-from src.entities.entity import Entity
 
+from src.entities.entity import Entity
 from src.entities.sprites import (
     BaseSprite,
     MapSprite,
@@ -112,6 +112,11 @@ class ShaderPipeline:
         self.shader.attach_uniform("light_balance", lambda: Vec3(0.2, 0, 0.8))
         self.shader.attach_uniform("time_since_start", lambda: self.get_time())
         self.sprite_attributes = []
+        self.init_empty_height_data()
+
+    def init_empty_height_data(self):
+        self.height_data = bytearray()
+        self.height_data.extend((0 for _ in range(4 * 10 * 10)))
 
     def get_time(self) -> float:
         return time.time() - self.time
@@ -130,10 +135,10 @@ class ShaderPipeline:
 
     def get_ray_toggle(self) -> float:
         return self.ray_toggle
-    
+
     def get_terrain_toggle(self) -> float:
         return self.terrain_toggle
-    
+
     def toggle_terrain(self):
         self.terrain_toggle = 1.0 - self.terrain_toggle
 
@@ -167,12 +172,9 @@ class ShaderPipeline:
             "light_balance", lambda: Vec3(ambient, directional, point)
         )
 
-    def register_character_sprites(
-        self, entities: list[Entity], clear: bool = True
-    ):
+    def register_character_sprites(self, entities: list[Entity], clear: bool = True):
         if clear:
             self.clear_character_sprites()
-        breakpoint()
         for entity in entities:
             self.sprite_attributes.append(entity.entity_sprite)
             normal_sprite = entity.entity_sprite.normals.sprite
@@ -181,14 +183,13 @@ class ShaderPipeline:
             self.height_sprites.append(height_sprite)
             self.character_sprites.append(entity.entity_sprite.sprite)
 
-
     def clear_character_sprites(self):
         for sprite_attr in self.sprite_attributes:
             self.normal_sprites.remove(sprite_attr.normals.sprite)
             self.height_sprites.remove(sprite_attr.heights.sprite)
         self.character_sprites.clear()
         self.sprite_attributes.clear()
-        
+
     @property
     def size(self) -> tuple[int, int]:
         return self.width, self.height
@@ -226,27 +227,27 @@ class ShaderPipeline:
         self.height_sprites.sort(key=lambda s: s.get_draw_priority())
 
     def _generate_world_height_tx(self, nodes):
-        image = self.h_sprite.texture.image
-        for xy, z in nodes.items():
+        self.height_data.clear()
+        for xy in ((x, y) for y in range(10) for x in range(10)):
             x, y = xy
             if x >= 10 or y >= 10:
                 continue
-            image.putpixel(xy, ((z + 1) * 255,) * 3 + (255,))
-        self.h_sprite.texture = arcade.Texture(image, hit_box_algorithm=TrivialHitbox())
-        self.h_sprite.center_y = 4
-        self.h_sprite.center_x = 4
-        self.h_sprite.scale = 1.0
-        self.terrain_binding.capture(lambda: self.h_sprite.draw(pixelated=True))
+            z_node = nodes.get(xy, -1) + 1
+            z_ground = z_node + 1
+            z_mapped = 8 * z_ground
+            self.height_data.extend((z_mapped, z_mapped, z_mapped, 255))
 
     def render_scene(self, sprite_list: arcade.SpriteList):
+        self.refresh_draw_order()
         self.scene_binding.capture(lambda: sprite_list.draw(pixelated=True))
         self.normal_binding.capture(lambda: self.normal_sprites.draw(pixelated=True))
         self.height_binding.capture(lambda: self.height_sprites.draw(pixelated=True))
-        self.terrain_binding.capture(lambda: self.h_sprite.draw(pixelated=True))
+        self.terrain_binding.texture.write(
+            self.height_data, level=0, viewport=(0, 0, 10, 10)
+        )
         self.ctx.screen.use()
         with self.shader as program:
             self.quad_fs.render(program)
 
-    
     def debug(self):
         breakpoint()

@@ -71,6 +71,8 @@ class Shader:
             dtype=dtype,
         )
         buf = ctx.framebuffer(color_attachments=[tx])
+        buf.resize()
+        buf.viewport = (0, 0, *size)
         return tx, buf
 
     def __init__(self, ctx: gl.Context):
@@ -104,7 +106,7 @@ class Shader:
             self._program[name] = offset
 
     def bind(
-        self, name: str, size: tuple[int, int], components=4, dtype="f4"
+        self, name: str, size: tuple[int, int], components=4, dtype="f1"
     ) -> Binding:
         names = [*self._bindings.keys()]
         if self._bindings.get(name) is None:

@@ -66,7 +66,7 @@ float on_off(float start, float stop, float x) {
 }
 
 float depth_sample(vec2 world) {
-    return float(texture(terrain, (world-.45)/10.))*2.;
+    return float(texture(terrain, (world+.55)/10.))*32.0-1.0;
 }
 
 float cast_ray(vec3 ray, float time) {
@@ -120,7 +120,8 @@ void main() {
     final += colour * scene_toggle;
     final += draw_axes(colour, xyz, vec3(0)) * axes_toggle;
     final += vec4(surface_normal, 1.) * normal_toggle;
-    final += vec4(xyz.xy/10, depth_sample(xyz.xy)/2., 1.) * height_toggle;
+    float d_sample = depth_sample(xyz.xy);
+    final += vec4(xyz.xy/10, step(0.5,d_sample)*xyz.z+depth_sample(xyz.xy), 1.) * height_toggle;
     final += vec4(pt_intensity*normalize(ray)/2. + .5, 1.) * ray_toggle;
     final += texture(terrain, xyz.xy) * terrain_toggle;
 

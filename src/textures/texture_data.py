@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Callable, NamedTuple, Self, TypeVar
 
 import arcade
@@ -8,7 +9,6 @@ from arcade.hitbox import BoundingHitBoxAlgorithm, HitBoxAlgorithm
 from arcade.types import PointList
 from PIL.Image import Image
 from pyglet.math import Vec2
-from pathlib import Path
 
 
 def _hashable(**d) -> tuple[tuple[str, int | tuple | HitBoxAlgorithm], ...]:
@@ -61,13 +61,13 @@ class SheetSpec(NamedTuple):
     @property
     def loaded(self) -> list[Texture]:
         return _load_once(SpriteSheetSpecs, _load_sheet_from_spec, self)
-    
+
     def get_normals(self) -> SheetSpec | None:
         path = Path(self.args[0].replace(".png", ".norm.png"))
         if not path.exists():
             return None
         return SheetSpec((path,), self.kwargs)
-    
+
     def get_height_map(self) -> SheetSpec | None:
         path = Path(self.args[0].replace(".png", ".z.png"))
         if not path.exists():
@@ -111,7 +111,7 @@ class SingleTextureSpecs:
     mission_banner_dark = TextureSpec(args=("./assets/sprites/mission_banner.png",))
     health_bar = TextureSpec(args=("./assets/sprites/health_bar.png",))
     tile_normals = TextureSpec(
-        args=("./assets/sprites/tile_normals_alt.png",),
+        args=("./assets/sprites/tile_normals.png",),
         kwargs=_hashable(
             x=0,
             y=0,
@@ -180,8 +180,6 @@ class SpriteSheetSpecs:
             }
         ),
     )
-    
-    from PIL.Image import Image
 
     characters = SheetSpec(
         args=("./assets/sprites/IsometricTRPGAssetPack_OutlinedEntities.png",),

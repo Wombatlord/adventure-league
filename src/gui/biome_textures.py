@@ -7,7 +7,7 @@ from src.textures.texture_data import SingleTextureSpecs, SpriteSheetSpecs
 from src.world.node import Node
 
 tiles = SpriteSheetSpecs.tiles.loaded
-normals_tiles = SpriteSheetSpecs.tile_normals_2_layer.loaded
+normals_tile = SingleTextureSpecs.tile_normals.loaded
 
 
 class BiomeName:
@@ -94,9 +94,9 @@ class BiomeTextures:
     def normal(cls):
         return Biome(
             name=BiomeName.NORMALS,
-            floor_tiles=normals_tiles,
-            wall_tiles=normals_tiles,
-            pillar_tiles=normals_tiles,
+            floor_tiles=[normals_tile],
+            wall_tiles=[normals_tile],
+            pillar_tiles=[normals_tile],
         )
 
 

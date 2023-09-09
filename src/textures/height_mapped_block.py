@@ -3,9 +3,9 @@ from typing import Callable, Generator
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
-from src.textures.texture_data import SpriteSheetSpecs
+from src.textures.texture_data import SingleTextureSpecs, SpriteSheetSpecs
 
-source_tx = SpriteSheetSpecs.tile_normals_2_layer.loaded[0]
+source_tx = SingleTextureSpecs.tile_normals.loaded
 
 Point = tuple[int, int]
 RGBA = tuple[int, int, int, int]
@@ -56,7 +56,7 @@ def gen_height_map_tile(base_height: int, delta: int, src: Image) -> Image.Image
 def generate_height_map_sheet() -> Image.Image:
     img: Image.Image | None = None
     for base_height in range(0, 255 - 8, 8):
-        tile = gen_height_map_tile(base_height, 9, source_tx.image)
+        tile = gen_height_map_tile(base_height, 8, source_tx.image)
         if not img:
             img = tile
             continue
