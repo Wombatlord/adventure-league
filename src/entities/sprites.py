@@ -229,7 +229,7 @@ flat_normal_map = cache_aware(flat_normal_map, normal_maps)
 def _apply(tx_map: _TxMap, sprite: SpriteType):
     mapped = sprite.clone()
     mapped.__dict__["_parent"] = sprite
-    mapped.textures = [tx_map(tx) for tx in mapped.textures]
+    mapped.textures = [tx_map(tx) for tx in sprite.textures]
     mapped.texture = mapped.textures[mapped.tex_idx]
 
     return mapped
@@ -263,6 +263,7 @@ class AnimatedSpriteAttribute:
             [tex for tex in attack_textures],
             [tex.flip_left_right() for tex in attack_textures],
         )
+        idle_offset, flip_idle_offset, 
 
         self.sprite.textures = self.all_textures[0]
         self.sprite.set_texture(0)

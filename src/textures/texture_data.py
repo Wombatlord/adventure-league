@@ -167,6 +167,8 @@ class SpriteSheetSpecs:
             }
         ),
     )
+    
+    from PIL.Image import Image
 
     characters = SheetSpec(
         args=("./assets/sprites/IsometricTRPGAssetPack_OutlinedEntities.png",),

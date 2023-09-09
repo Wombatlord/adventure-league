@@ -4,6 +4,8 @@ import arcade
 import PIL.Image
 from pyglet.math import Vec2, Vec4
 
+from src.textures.texture_data import SpriteSheetSpecs
+
 
 class RGBA(NamedTuple):
     R: int = 0
@@ -76,3 +78,36 @@ def flat_sprite_height_map(texture: arcade.Texture):
     height_map = flat_map(image, grad)
 
     return arcade.Texture(height_map, hit_box_points=texture.hit_box_points)
+
+
+def iter_sheet_rows(size: tuple[int, int], row_height: int) -> Generator[tuple[tuple[int, int], int], None, None]:
+    for y in reversed(range(size[1])):
+        for x in range(size[0]):
+            local_y = y % row_height
+            
+            yield (x,y), local_y
+
+def iter_map_sheet(file_path: str) -> PIL.Image.Image:
+    src_image = PIL.Image.open(file_path)
+    row_height = 17
+    grad = Gradient(
+        start=RGBA(A=255),
+        step=RGBA(R=1, G=1, B=1),
+        initial=Vec2(0, row_height),
+        direction=Vec2(0, -1),
+    )    
+    dst_image = PIL.Image.new("RGBA", color=(0,0,0,0), size=src_image.size)
+    
+    for px, local_y in iter_sheet_rows(src_image.size, row_height):
+        output_colour = grad.sample(px[0], local_y)
+        src_colour = RGBA(*src_image.getpixel(px))
+        if src_colour.A == 0:
+            continue
+        
+        dst_image.putpixel(px, output_colour)
+    
+    return dst_image
+
+def character_height_maps():
+    output = iter_map_sheet(SpriteSheetSpecs.characters.args[0])
+    output.save(SpriteSheetSpecs.characters.args[0].replace(".png", ".z.png"), format="png")
