@@ -2,7 +2,7 @@ import random
 from typing import NamedTuple
 
 from arcade import Texture
-
+from pyglet.math import Vec3, Vec4
 from src.textures.texture_data import SingleTextureSpecs, SpriteSheetSpecs
 from src.world.node import Node
 
@@ -33,7 +33,7 @@ class Biome(NamedTuple):
     wall_tiles: list[Texture]
     pillar_tiles: list[Texture]
     name: str
-
+    
     def get_tile_textures(self, tile_type: int) -> list[Texture]:
         return self[tile_type]
 
@@ -44,8 +44,26 @@ class Biome(NamedTuple):
         if self.name != BiomeName.NORMALS:
             return random.choice(self.get_tile_textures(tile_type))
         return self.floor_tiles[0]
+    
+    def biome_lighting(self, shader_pipeline):
+        match self.name:
+            case BiomeName.SNOW:
+                shader_pipeline.set_directional_light(Vec4(0.4, 0.3, 0.8, 1), Vec3(1, 1, 1))
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0)
+        
+            case BiomeName.CASTLE:
+                shader_pipeline.set_directional_light(Vec4(1, 0, 0, 1), Vec3(1, 1, 1))
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0)
 
-
+            case BiomeName.DESERT:
+                shader_pipeline.set_directional_light(Vec4(0, 1, 0, 1), Vec3(1, 1, 1))
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0)
+            
+            case BiomeName.PLAINS:
+                shader_pipeline.set_directional_light(Vec4(0, 0, 1, 1), Vec3(1, 1, 1))
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0)
+            
+            
 class BiomeTextures:
     @classmethod
     def castle(cls):

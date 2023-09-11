@@ -5,7 +5,7 @@ import random
 from typing import Callable, Generator, Sequence
 
 import arcade
-from pyglet.math import Mat4, Vec2, Vec3
+from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from src import config
 from src.entities.sprites import BaseSprite
@@ -188,6 +188,7 @@ class LayoutSection(arcade.Section):
         self.shader_pipeline = ShaderPipeline(
             self.width, self.height, arcade.get_window(), self.transform
         )
+        self.current_biome.biome_lighting(self.shader_pipeline)
         self.shader_pipeline.take_transform_from(self.get_full_transform)
         self.shader_pipeline.locate_light_with(self.get_light_location)
         self.light_loc = Vec3(4, 4, 0.2)
@@ -388,6 +389,7 @@ class LayoutSection(arcade.Section):
             self.terrain_sprite_list.append(sprite)
         self.refresh_draw_order()
         self.shader_pipeline.update_terrain_nodes(self.terrain_sprite_list)
+        self.current_biome.biome_lighting(self.shader_pipeline)
 
     def teardown_level(self):
         self.world_sprite_list.clear()
