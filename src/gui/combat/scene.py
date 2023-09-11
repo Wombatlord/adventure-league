@@ -2,7 +2,7 @@ import math
 from typing import Sequence
 
 import arcade
-from pyglet.math import Vec2
+from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from src import config
 from src.engine.events_enum import EventTopic
@@ -12,6 +12,7 @@ from src.entities.properties.locatable import Locatable
 from src.entities.sprites import BaseSprite
 from src.gui.combat.health_bar import FloatingHealthBars
 from src.gui.combat.highlight import HighlightLayer
+from src.gui.components.lighting_shader import ShaderPipeline
 from src.gui.components.menu import Menu
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.camera_controls import CameraController
@@ -100,6 +101,27 @@ class Scene(arcade.Section):
         self.floating_health_bars = FloatingHealthBars(
             self.world_sprite_list, self.transform
         )
+
+        self.shader_pipeline = ShaderPipeline(
+            self.width, self.height, arcade.get_window(), self.transform
+        )
+        self.shader_pipeline.take_transform_from(self.get_full_transform)
+        self.shader_pipeline.locate_light_with(self.get_light_location)
+        self.shader_pipeline.set_directional_light(
+            colour=Vec4(1.0, 1.0, 1.0, 1.0) / 2.0, direction=Vec3(1, 1, 0.5)
+        )
+        self.shader_pipeline.set_light_balance(ambient=0)
+
+    def get_full_transform(self) -> Mat4:
+        result = self.transform.clone()
+        result.translate_image(-Vec2(*self.cam_controls._camera.position))
+        return (result.screen_to_world()) @ Mat4().scale(
+            Vec3(self.width, self.height, 1)
+        )
+
+    def get_light_location(self) -> Vec3:
+        focus = self.get_focus()
+        return Vec3(focus.x, focus.y, focus.z + 0.5)
 
     def _subscribe_to_events(self):
         eng.combat_dispatcher.volatile_subscribe(
@@ -197,6 +219,7 @@ class Scene(arcade.Section):
 
     def refresh_draw_order(self):
         self.world_sprite_list.sort(key=lambda s: s.get_draw_priority())
+        self.terrain_sprite_list.sort(key=lambda s: s.transform.draw_priority(s.node))
 
     def update_camera(self):
         self.cam_controls.on_update()
@@ -231,7 +254,7 @@ class Scene(arcade.Section):
     def on_draw(self):
         self.grid_camera.use()
 
-        self.world_sprite_list.draw(pixelated=True)
+        self.shader_pipeline.render_scene(self.world_sprite_list)
         if config.DEBUG:
             l, r, b, t = self.grid_camera.projection
             arcade.draw_line(l, b, r, b, arcade.color.RED, line_width=4)
@@ -276,6 +299,7 @@ class Scene(arcade.Section):
 
     def level_to_sprite_list(self):
         self.world_sprite_list.clear()
+        self.terrain_sprite_list.clear()
         for terrain_node in self.encounter_room.layout:
             self.encounter_room.room_texturer.apply_biome_textures()
 
@@ -288,7 +312,8 @@ class Scene(arcade.Section):
             self.terrain_sprite_list.append(sprite)
             self.world_sprite_list.append(sprite)
 
-        self.terrain_sprite_list.sort(key=lambda s: s.get_draw_priority())
+        self.refresh_draw_order()
+        self.shader_pipeline.update_terrain_nodes(self.terrain_sprite_list)
 
     def prepare_dude_sprites(self):
         """
@@ -299,6 +324,7 @@ class Scene(arcade.Section):
             self.dudes_sprite_list = arcade.SpriteList()
         else:
             self.dudes_sprite_list.clear()
+            self.shader_pipeline.clear_character_sprites()
 
         for dude in self.encounter_room.occupants:
             if dude.fighter.is_boss:
@@ -310,6 +336,8 @@ class Scene(arcade.Section):
             self.world_sprite_list.append(dude.entity_sprite.sprite)
             self.dudes_sprite_list.append(dude.entity_sprite.sprite)
             self.floating_health_bars.attach(dude.fighter)
+
+        self.shader_pipeline.register_character_sprites(self.encounter_room.occupants)
 
     def update_dudes(self, _: dict) -> None:
         self._update_dudes()
@@ -413,9 +441,22 @@ class Scene(arcade.Section):
                 continue
             tile.update_position()
         self.refresh_draw_order()
+        self.shader_pipeline.update_terrain_nodes(self.terrain_sprite_list)
 
     def on_key_press(self, symbol: int, modifiers: int):
         print(symbol)
         match symbol:
             case arcade.key.R:
                 self.rotate_level()
+            case arcade.key.KEY_1:
+                self.shader_pipeline.toggle_scene()
+            case arcade.key.KEY_2:
+                self.shader_pipeline.toggle_normal()
+            case arcade.key.KEY_3:
+                self.shader_pipeline.toggle_height()
+            case arcade.key.KEY_4:
+                self.shader_pipeline.toggle_ray()
+            case arcade.key.KEY_5:
+                self.shader_pipeline.toggle_terrain()
+            case arcade.key.M:
+                self.shader_pipeline.debug()

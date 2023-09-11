@@ -15,10 +15,10 @@ def main(args: list[str]):
 
 
 def run(args: list[str]):
-    tool_name = args.pop()
+    tool_name = args.pop(0)
     print(f"Attempting to run {tool_name}")
     tool = registered_tools.get(tool_name, list_tools)
-    tool(args)
+    tool(*args)
 
 
 def list_tools(args: list[str]):

@@ -11,7 +11,7 @@ from src.tools.level_viewer.ui.hides import Hides
 if TYPE_CHECKING:
     from src.tools.level_viewer.ui.layout import LayoutSection
 
-from src.tools.level_viewer.model.layout import Block, get_registered_layouts
+from src.tools.level_viewer.model.viewer_state import Block, get_registered_layouts
 from src.world.node import Node
 
 NO_OP = lambda *_, **__: None

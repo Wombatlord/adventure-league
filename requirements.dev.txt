@@ -7,3 +7,5 @@ requests
 pydrive2
 viztracer
 pytest
+scikit-image
+matplotlib

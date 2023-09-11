@@ -1,11 +1,11 @@
 import arcade
 
 from src.gui.window_data import WindowData
-from src.tools.level_viewer.model.layout import register_layout
+from src.tools.level_viewer.model.viewer_state import register_layout
 from src.tools.level_viewer.ui.layout import LayoutView
 
 
-def start(_: list[str]):
+def start(*_: list[str]):
     """Startup"""
     window = arcade.Window(
         WindowData.width,
