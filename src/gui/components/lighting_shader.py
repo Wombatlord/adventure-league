@@ -4,6 +4,7 @@ import time
 from typing import Callable, Iterable
 
 import arcade
+from arcade import gl
 from arcade.gl import geometry
 from arcade.hitbox import HitBoxAlgorithm
 from arcade.types import PointList
@@ -77,7 +78,9 @@ class ShaderPipeline:
         self.height_toggle = 0.0
 
         self.terrain_size = (10, 10)
-        self.terrain_binding = self.shader.bind("terrain", self.terrain_size)
+        self.terrain_binding = self.shader.bind(
+            "terrain", self.terrain_size, wrapping=(gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+        )
         self.terrain_toggle = 0.0
         self.h_sprite = arcade.Sprite()
         self.h_sprite.texture = arcade.Texture(

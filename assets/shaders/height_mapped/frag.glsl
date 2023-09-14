@@ -38,7 +38,7 @@ vec2 to_screen(vec3 world) {
 }
 
 float sample_height(vec2 pt) {
-    return  (texture(height, pt).z)*32.0-1.0;
+    return (texture(height, pt).z)*32.0-1.0;
 }
 
 vec4 draw_axes(vec4 in_col, vec3 px, vec3 fixed_pt) {
@@ -57,7 +57,12 @@ vec4 draw_axes(vec4 in_col, vec3 px, vec3 fixed_pt) {
 
 vec3 get_surface_pt(vec2 screen_pt, vec2 world_pt) {
     float z = sample_height(screen_pt);
-    vec3 xyz = vec3(world_pt-(z-.5)*vec2(1.), z);
+    vec3 xy0 = vec3(world_pt, 0.0);
+    vec3 los = (transform * vec4(0.0, 0.0, -10.0, 0.0)).xyz;
+    los = normalize(los);
+    vec3 adj = vec3(0.5, 0.5, 0.0);
+
+    vec3 xyz = xy0 + adj - sqrt(3.)*vec3(z*los.xy, 0) + vec3(0., 0., z);
     return xyz;
 }
 
@@ -66,7 +71,7 @@ float on_off(float start, float stop, float x) {
 }
 
 float depth_sample(vec2 world) {
-    return float(texture(terrain, (world+.55)/10.))*32.0-1.0;
+    return float(texture(terrain, (world+vec2(0.5))/10.))*32.0-1.0;
 }
 
 float cast_ray(vec3 ray, float time) {
@@ -76,22 +81,25 @@ float cast_ray(vec3 ray, float time) {
     flicker += 0.02*cos(-(3./11.)*time-1.)*cos(5.*(time+2.));
 
     float intensity = flicker*4.0/pow(0.6+length(ray), 2);
-    float opacity = 10.;
     int iterations = 100;
     float sample_separation = length(ray)/float(iterations);
     vec3 direction = normalize(ray);
-    float attenuation_per_sample = opacity*sample_separation;
+    float transmission_per_sample = pow(10., -2.*sample_separation);
+    float no_occlusion = 1.;
 
     for (float i = 0.0; i < length(ray); i+=sample_separation) {
         vec3 sample_pt = pt_src + i * direction;
         float depth = (depth_sample(sample_pt.xy) - sample_pt.z);
 
-        float attentuation = step(0.0, depth)*attenuation_per_sample;
-        intensity *= (1.-attentuation);
+        float transmission_factor = mix(no_occlusion, transmission_per_sample, step(0.0, depth));
+        intensity *= transmission_factor;
     }
 
-    intensity = log(intensity+1.);
     return intensity;
+}
+
+float band(float center, float width, float x) {
+    return step(center-width/2., x)*(1.-step(center+width/2, x));
 }
 
 void main() {
@@ -106,9 +114,9 @@ void main() {
     float pt_intensity = cast_ray(ray, time);
     vec4 pt_diffuse = pt_intensity*pt_col*clamp(0.0, 1.0, dot(normalize(ray), -surface_normal));
 
-    vec4 dir_diffuse = directional_col*dot(directional_dir, surface_normal);
+    vec4 dir_diffuse = directional_col*clamp(0.0,1.0,dot(directional_dir, surface_normal));
 
-    vec3 balance = normalize(light_balance);
+    vec3 balance = light_balance/(light_balance.x + light_balance.y + light_balance.z);
 
     vec4 scene_col = texture(scene, uv);
     vec4 colour = vec4(0.);
@@ -120,9 +128,16 @@ void main() {
     final += colour * scene_toggle;
     final += draw_axes(colour, xyz, vec3(0)) * axes_toggle;
     final += vec4(surface_normal, 1.) * normal_toggle;
-    float d_sample = depth_sample(xyz.xy);
-    final += vec4(xyz.xy/10, step(0.5,d_sample)*xyz.z+depth_sample(xyz.xy), 1.) * height_toggle;
-    final += vec4(pt_intensity*normalize(ray)/2. + .5, 1.) * ray_toggle;
+
+    vec3 pt = fract(get_surface_pt(uv,xy));
+    final += height_toggle * vec4(
+        band(0.5, 0.05, fract(pt).x),
+        band(0.5, 0.05, fract(pt).y),
+        depth_sample(xyz.xy),
+        1.
+    );
+
+    final += vec4(length(pt_diffuse.xyz)*normalize(ray)/2. + .5, 1.) * ray_toggle;
     final += texture(terrain, xyz.xy) * terrain_toggle;
 
     rgba = final;
