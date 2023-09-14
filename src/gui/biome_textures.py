@@ -1,3 +1,8 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from src.gui.components.lighting_shader import ShaderPipeline
+
 import random
 from typing import NamedTuple
 
@@ -45,23 +50,23 @@ class Biome(NamedTuple):
             return random.choice(self.get_tile_textures(tile_type))
         return self.floor_tiles[0]
     
-    def biome_lighting(self, shader_pipeline):
+    def biome_lighting(self, shader_pipeline: ShaderPipeline):
         match self.name:
             case BiomeName.SNOW:
                 shader_pipeline.set_directional_light(Vec4(0.4, 0.3, 0.8, 1), Vec3(1, 1, 1))
-                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0)
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.2)
         
             case BiomeName.CASTLE:
-                shader_pipeline.set_directional_light(Vec4(1, 0, 0, 1), Vec3(1, 1, 1))
-                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0)
+                shader_pipeline.set_directional_light(Vec4(0.4, 0.2, 0, 1), Vec3(1, 1, 1))
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.2)
 
             case BiomeName.DESERT:
-                shader_pipeline.set_directional_light(Vec4(0, 1, 0, 1), Vec3(1, 1, 1))
-                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0)
+                shader_pipeline.set_directional_light(Vec4(0.6, 0.6, 0, 1), Vec3(1, 1, 1))
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.2)
             
             case BiomeName.PLAINS:
-                shader_pipeline.set_directional_light(Vec4(0, 0, 1, 1), Vec3(1, 1, 1))
-                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0)
+                shader_pipeline.set_directional_light(Vec4(0.5, 0.5, 0.5, 1), Vec3(1, 1, 1))
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.2)
             
             
 class BiomeTextures:
