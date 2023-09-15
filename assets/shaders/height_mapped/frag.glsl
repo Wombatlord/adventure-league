@@ -55,14 +55,17 @@ vec4 draw_axes(vec4 in_col, vec3 px, vec3 fixed_pt) {
     return col;
 }
 
+vec3 get_los() {
+    return normalize((transform*vec4(0.0, 0.0, -10.0, 0.0)).xyz);
+}
+
 vec3 get_surface_pt(vec2 screen_pt, vec2 world_pt) {
     float z = sample_height(screen_pt);
     vec3 xy0 = vec3(world_pt, 0.0);
-    vec3 los = (transform * vec4(0.0, 0.0, -10.0, 0.0)).xyz;
-    los = normalize(los);
-    vec3 adj = vec3(0.5, 0.5, 0.0);
+    vec3 los = sqrt(3.) * get_los();
+    vec3 adj = 0.5*vec3(los.xy, 0.0);
 
-    vec3 xyz = xy0 + adj - sqrt(3.)*vec3(z*los.xy, 0) + vec3(0., 0., z);
+    vec3 xyz = xy0 + adj - vec3(z*los.xy, 0) + vec3(0., 0., z);
     return xyz;
 }
 
@@ -71,7 +74,9 @@ float on_off(float start, float stop, float x) {
 }
 
 float depth_sample(vec2 world) {
-    return float(texture(terrain, (world+vec2(0.5))/10.))*32.0-1.0;
+    vec3 los = sqrt(3.) * get_los();
+    vec2 adj = 0.55*los.xy;
+    return float(texture(terrain, (world+adj)/10.))*32.0-1.0;
 }
 
 float cast_ray(vec3 ray, float time) {
@@ -133,7 +138,7 @@ void main() {
     final += height_toggle * vec4(
         band(0.5, 0.05, fract(pt).x),
         band(0.5, 0.05, fract(pt).y),
-        depth_sample(xyz.xy),
+        xyz.z,
         1.
     );
 
