@@ -74,8 +74,7 @@ float on_off(float start, float stop, float x) {
 }
 
 float depth_sample(vec2 world) {
-    vec3 los = sqrt(3.) * get_los();
-    vec2 adj = 0.55*los.xy;
+    vec2 adj = vec2(.5); // for some reason this one needs to be constant under rotation
     return float(texture(terrain, (world+adj)/10.))*32.0-1.0;
 }
 

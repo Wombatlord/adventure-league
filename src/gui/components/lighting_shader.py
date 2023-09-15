@@ -166,6 +166,9 @@ class ShaderPipeline:
     def locate_light_with(self, get_light_location: Callable[[], Vec3]):
         self.shader.attach_uniform("pt_src", get_light_location)
 
+    def take_pt_col_from(self, getter: Callable[[], Vec4]) -> None:
+        self.shader.attach_uniform("pt_col", getter)
+
     def set_directional_light(self, colour: Vec4, direction: Vec3):
         self.shader.attach_uniform("directional_col", lambda: colour)
         self.shader.attach_uniform("directional_dir", lambda: direction)

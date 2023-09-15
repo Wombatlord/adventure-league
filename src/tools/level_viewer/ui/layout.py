@@ -5,7 +5,7 @@ import random
 from typing import Callable, Generator, Sequence
 
 import arcade
-from pyglet.math import Mat4, Vec2, Vec3
+from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from src import config
 from src.entities.sprites import BaseSprite
@@ -190,6 +190,7 @@ class LayoutSection(arcade.Section):
         )
         self.shader_pipeline.take_transform_from(self.get_full_transform)
         self.shader_pipeline.locate_light_with(self.get_light_location)
+        self.shader_pipeline.take_pt_col_from(lambda: Vec4(1.6, 1.2, 0.4, 1.0))
         self.light_loc = Vec3(4, 4, 0.2)
         self.light_vel = Vec3()
         self.pressed_keys = {*[]}
@@ -463,7 +464,7 @@ class LayoutSection(arcade.Section):
             arcade.key.RIGHT: lambda: self.translate_level(n.east),
             arcade.key.DOWN: lambda: self.translate_level(n.south),
             arcade.key.LEFT: lambda: self.translate_level(n.west),
-            # arcade.key.R: lambda: self.rotate_level(),
+            arcade.key.R: lambda: self.rotate_level(),
             # light controls
             arcade.key.W: lambda: self.incr_light_loc(0, 0.2),
             arcade.key.S: lambda: self.incr_light_loc(0, -0.2),
