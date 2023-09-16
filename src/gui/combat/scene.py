@@ -108,7 +108,7 @@ class Scene(arcade.Section):
         self.shader_pipeline.take_transform_from(self.get_full_transform)
         self.shader_pipeline.locate_light_with(self.get_light_location)
         self.shader_pipeline.set_directional_light(
-            colour=Vec4(1.0, 1.0, 1.0, 1.0) / 2.0, direction=Vec3(1, 1, 0.5)
+            colour=Vec4(1.0, 1.0, 1.0, 1.0), direction=Vec3(1, 1, 0.5)
         )
         self.shader_pipeline.set_light_balance(ambient=0)
 

@@ -113,14 +113,13 @@ void main() {
     vec3 ray = xyz - pt_src;
 
     float time = 10.*time_since_start;
-    vec3 surface_normal = normalize(texture(norm, uv).xyz) * vec3(1., 1., 1.);
+    vec3 surface_normal = normalize(texture(norm, uv).xyz) * vec3(-1., -1., 1.);
 
     float pt_intensity = cast_ray(ray, time);
-    vec4 pt_diffuse = pt_intensity*pt_col*clamp(0.0, 1.0, dot(normalize(ray), -surface_normal));
+    vec4 pt_diffuse = pt_intensity*pt_col*clamp(dot(normalize(ray), -surface_normal), 0.0, 1.0);
 
-    vec4 dir_diffuse = directional_col*clamp(0.0,1.0,dot(directional_dir, surface_normal));
-
-    vec3 balance = light_balance/(light_balance.x + light_balance.y + light_balance.z);
+    vec4 dir_diffuse = directional_col*clamp(dot(directional_dir, -surface_normal), 0.0, 1.0);
+    vec3 balance = normalize(light_balance);
 
     vec4 scene_col = texture(scene, uv);
     vec4 colour = vec4(0.);
@@ -131,17 +130,17 @@ void main() {
     vec4 final = vec4(0.);
     final += colour * scene_toggle;
     final += draw_axes(colour, xyz, vec3(0)) * axes_toggle;
-    final += vec4(surface_normal, 1.) * normal_toggle;
+    final += vec4(surface_normal*vec3(-1.,-1.,1.), 1.) * normal_toggle;
 
     vec3 pt = fract(get_surface_pt(uv,xy));
-    final += height_toggle * vec4(
+    final += height_toggle * (vec4(
         band(0.5, 0.05, fract(pt).x),
         band(0.5, 0.05, fract(pt).y),
-        xyz.z,
+        0,
         1.
-    );
+    ) + vec4(xyz/10., 0));
 
-    final += vec4(length(pt_diffuse.xyz)*normalize(ray)/2. + .5, 1.) * ray_toggle;
+    final += vec4(ray*pt_intensity, 1.) * ray_toggle;
     final += texture(terrain, xyz.xy) * terrain_toggle;
 
     rgba = final;
