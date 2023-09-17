@@ -114,6 +114,7 @@ class ShaderPipeline:
         self.shader.attach_uniform("ambient_col", lambda: Vec4(1, 1, 1, 1))
         self.shader.attach_uniform("light_balance", lambda: Vec3(0.2, 0, 0.8))
         self.shader.attach_uniform("time_since_start", lambda: self.get_time())
+        self.shader.attach_uniform("terrain_transparency", lambda: 0.0001)
         self.sprite_attributes = []
         self.init_empty_height_data()
 
@@ -173,7 +174,9 @@ class ShaderPipeline:
         self.shader.attach_uniform("directional_col", lambda: colour)
         self.shader.attach_uniform("directional_dir", lambda: direction)
 
-    def set_light_balance(self, point: int = 1, directional: int = 1, ambient: int = 1):
+    def set_light_balance(
+        self, point: float = 1.0, directional: float = 1.0, ambient: float = 1.0
+    ):
         self.shader.attach_uniform(
             "light_balance", lambda: Vec3(ambient, directional, point)
         )

@@ -190,7 +190,15 @@ class LayoutSection(arcade.Section):
         )
         self.shader_pipeline.take_transform_from(self.get_full_transform)
         self.shader_pipeline.locate_light_with(self.get_light_location)
-        self.shader_pipeline.take_pt_col_from(lambda: Vec4(1.6, 1.2, 0.4, 1.0))
+        self.shader_pipeline.set_light_balance(
+            point=1.0,
+            directional=0.3,
+            ambient=0.1,
+        )
+        self.shader_pipeline.set_directional_light(
+            colour=Vec4(1, 1, 1, 1),
+            direction=Vec3(0.25, 0.0, -1.0),
+        )
         self.light_loc = Vec3(4, 4, 0.2)
         self.light_vel = Vec3()
         self.pressed_keys = {*[]}
