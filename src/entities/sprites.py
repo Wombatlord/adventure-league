@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from src.gui.biome_textures import BiomeTextures
+from src.gui.biome_textures import BiomeName, BiomeTextures
 
 if TYPE_CHECKING:
     from src.gui.animated_sprite_config import AnimatedSpriteConfig
@@ -132,10 +132,14 @@ class BaseSprite(OffsetSprite, Sprite):
 
     def get_biome(self):
         if self.texture in BiomeTextures.castle().pillar_tiles:
-            return "castle"
+            return BiomeName.CASTLE
+        if self.texture in BiomeTextures.desert().pillar_tiles:
+            return BiomeName.DESERT
         if self.texture in BiomeTextures.snow().pillar_tiles:
-            return "snow"
-    
+            return BiomeName.SNOW
+        if self.texture in BiomeTextures.plains().pillar_tiles:
+            return BiomeName.PLAINS
+
     @property
     def node(self) -> Node | None:
         return self._node
@@ -205,7 +209,12 @@ class BaseSprite(OffsetSprite, Sprite):
 
     def clone(self) -> Self:
         clone = BaseSprite(
-            self.texture, self.scale, self.position[0], self.position[1], self.angle, tile_type=self.tile_type,
+            self.texture,
+            self.scale,
+            self.position[0],
+            self.position[1],
+            self.angle,
+            tile_type=self.tile_type,
         )
         if self._node:
             clone.set_node(self._node)

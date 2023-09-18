@@ -383,7 +383,7 @@ class LayoutSection(arcade.Section):
                 block.texture,
                 scale=self.SPRITE_SCALE,
                 transform=self.transform,
-                tile_type=block.terrain_node.tile_type
+                tile_type=block.terrain_node.tile_type,
             )
             sprite.set_node(block.node)
             self.world_sprite_list.append(sprite)

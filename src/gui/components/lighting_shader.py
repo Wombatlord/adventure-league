@@ -205,7 +205,9 @@ class ShaderPipeline:
             if not hasattr(sprite, "clone") or not getattr(sprite, "node", None):
                 continue
             clone: BaseSprite = sprite.clone()
-            clone.texture = self.normal_biome.choose_texture_for_node(clone.node, clone.tile_type, sprite)
+            clone.texture = self.normal_biome.choose_texture_for_node(
+                clone.node, clone.tile_type, sprite
+            )
             clone.set_transform(sprite.transform)
             clone.set_node(sprite.node)
             nodes[clone.node[:2]] = max(nodes.get(clone.node[:2], -10), clone.node.z)
