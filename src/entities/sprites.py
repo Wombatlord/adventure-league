@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from src.gui.biome_textures import BiomeTextures
+
 if TYPE_CHECKING:
     from src.gui.animated_sprite_config import AnimatedSpriteConfig
     from src.entities.entity import Entity
@@ -105,6 +107,7 @@ class BaseSprite(OffsetSprite, Sprite):
         center_y: float = 0.0,
         angle: float = 0.0,
         sync_list: tuple[arcade.Sprite, ...] = (),
+        tile_type: int | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -125,7 +128,14 @@ class BaseSprite(OffsetSprite, Sprite):
         self._draw_priority_offset = kwargs.get("draw_priority_offset", 0)
         self._node = None
         self._sync_list = sync_list
+        self.tile_type = tile_type
 
+    def get_biome(self):
+        if self.texture in BiomeTextures.castle().pillar_tiles:
+            return "castle"
+        if self.texture in BiomeTextures.snow().pillar_tiles:
+            return "snow"
+    
     @property
     def node(self) -> Node | None:
         return self._node
@@ -195,7 +205,7 @@ class BaseSprite(OffsetSprite, Sprite):
 
     def clone(self) -> Self:
         clone = BaseSprite(
-            self.texture, self.scale, self.position[0], self.position[1], self.angle
+            self.texture, self.scale, self.position[0], self.position[1], self.angle, tile_type=self.tile_type,
         )
         if self._node:
             clone.set_node(self._node)

@@ -195,6 +195,7 @@ class ShaderPipeline:
         return self.width, self.height
 
     def update_terrain_nodes(self, sprites: arcade.SpriteList):
+        sprite: BaseSprite
         self.normal_sprites.clear()
         self.height_sprites.clear()
         self.character_sprites.clear()
@@ -204,7 +205,7 @@ class ShaderPipeline:
             if not hasattr(sprite, "clone") or not getattr(sprite, "node", None):
                 continue
             clone: BaseSprite = sprite.clone()
-            clone.texture = self.normal_biome.choose_texture_for_node(clone.node, 0)
+            clone.texture = self.normal_biome.choose_texture_for_node(clone.node, clone.tile_type, sprite)
             clone.set_transform(sprite.transform)
             clone.set_node(sprite.node)
             nodes[clone.node[:2]] = max(nodes.get(clone.node[:2], -10), clone.node.z)
@@ -212,6 +213,8 @@ class ShaderPipeline:
             max_y = max(clone.node.y, max_y)
 
             self.normal_sprites.append(clone)
+            if clone.tile_type == 2:
+                continue
             height_clone: BaseSprite = sprite.clone()
             height_clone.set_transform(sprite.transform)
             height_clone.set_node(sprite.node)

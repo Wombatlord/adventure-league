@@ -4,8 +4,9 @@ if TYPE_CHECKING:
     from src.gui.components.lighting_shader import ShaderPipeline
 
 import random
-from typing import NamedTuple
-
+from typing import NamedTuple, TYPE_CHECKING
+if TYPE_CHECKING:
+    from src.entities.sprites import BaseSprite
 from arcade import Texture
 from pyglet.math import Vec3, Vec4
 from src.textures.texture_data import SingleTextureSpecs, SpriteSheetSpecs
@@ -13,7 +14,7 @@ from src.world.node import Node
 
 tiles = SpriteSheetSpecs.tiles.loaded
 normals_tile = SingleTextureSpecs.tile_normals.loaded
-
+normals_pillars = SpriteSheetSpecs.pillar_normals.loaded
 
 class BiomeName:
     CASTLE = "castle"
@@ -45,10 +46,26 @@ class Biome(NamedTuple):
     def choose_tile_texture(self, tile_type: int) -> Texture:
         return random.choice(self.get_tile_textures(tile_type))
 
-    def choose_texture_for_node(self, node: Node, tile_type: int) -> Texture:
+    def choose_texture_for_node(self, node: Node, tile_type: int, sprite: BaseSprite) -> Texture:
         if self.name != BiomeName.NORMALS:
             return random.choice(self.get_tile_textures(tile_type))
-        return self.floor_tiles[0]
+        
+        biome = sprite.get_biome()
+        match tile_type:
+            case 0:
+                return self.floor_tiles[0]
+            case 1:
+                return self.wall_tiles[0]
+            case 2:
+                if biome == "castle":
+                    return self.floor_tiles[0]
+                if biome == "snow":
+                    if sprite.texture == BiomeTextures.snow().pillar_tiles[0]:
+                        return self.pillar_tiles[0]
+                    if sprite.texture == BiomeTextures.snow().pillar_tiles[1]:
+                        return self.pillar_tiles[1]
+                    if sprite.texture == BiomeTextures.snow().pillar_tiles[2]:
+                        return self.pillar_tiles[2]
     
     def biome_lighting(self, shader_pipeline: ShaderPipeline):
         match self.name:
@@ -119,7 +136,7 @@ class BiomeTextures:
             name=BiomeName.NORMALS,
             floor_tiles=[normals_tile],
             wall_tiles=[normals_tile],
-            pillar_tiles=[normals_tile],
+            pillar_tiles=[tiles[32], tiles[43], tiles[20]],
         )
 
 
