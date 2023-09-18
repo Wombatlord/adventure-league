@@ -56,26 +56,30 @@ class Biome(NamedTuple):
 
         biome = sprite.get_biome()
         match tile_type:
-            case 0:
+            case TileTypes.FLOOR:
                 return self.floor_tiles[0]
-            case 1:
+            case TileTypes.WALL:
                 return self.wall_tiles[0]
-            case 2:
-                if biome == BiomeName.CASTLE:
-                    return self.floor_tiles[0]
-                if biome == BiomeName.DESERT:
-                    return self.get_pillar_normal(
-                        sprite.texture, biome, BiomeTextures.desert().pillar_tiles
-                    )
-                if biome == BiomeName.SNOW:
-                    return self.get_pillar_normal(
-                        sprite.texture, biome, BiomeTextures.snow().pillar_tiles
-                    )
-                if biome == BiomeName.PLAINS:
-                    return self.get_pillar_normal(
-                        sprite.texture, biome, BiomeTextures.plains().pillar_tiles
-                    )
+            case TileTypes.PILLAR:
+                return self.check_biome_for_pillar_normal(biome, sprite.texture)
 
+    def check_biome_for_pillar_normal(self, biome: str, texture: Texture):
+        match biome:
+            case BiomeName.CASTLE:
+                return self.floor_tiles[0]
+            case BiomeName.DESERT:
+                return self.get_pillar_normal(
+                    texture, biome, BiomeTextures.desert().pillar_tiles
+                )
+            case BiomeName.SNOW:
+                return self.get_pillar_normal(
+                    texture, biome, BiomeTextures.snow().pillar_tiles
+                )
+            case BiomeName.PLAINS:
+                return self.get_pillar_normal(
+                    texture, biome, BiomeTextures.plains().pillar_tiles
+                )        
+        
     def get_pillar_normal(
         self, texture: Texture, biome_name: str, biome_pillar_tiles: list[Texture]
     ):
