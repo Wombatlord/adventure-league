@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from src.gui.components.lighting_shader import ShaderPipeline
-
-import random
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
+    from src.gui.components.lighting_shader import ShaderPipeline
     from src.entities.sprites import BaseSprite
 
+import random
 from arcade import Texture
 from pyglet.math import Vec3, Vec4
 
@@ -80,10 +76,12 @@ class Biome(NamedTuple):
                         sprite.texture, biome, BiomeTextures.plains().pillar_tiles
                     )
 
-    def get_pillar_normal(self, texture, biome, biome_tiles):
-        for tx in biome_tiles:
+    def get_pillar_normal(
+        self, texture: Texture, biome_name: str, biome_pillar_tiles: list[Texture]
+    ):
+        for tx in biome_pillar_tiles:
             if texture == tx:
-                return self.pillar_tiles[biome][biome_tiles.index(tx)]
+                return self.pillar_tiles[biome_name][biome_pillar_tiles.index(tx)]
 
     def biome_lighting(self, shader_pipeline: ShaderPipeline):
         match self.name:
