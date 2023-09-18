@@ -155,6 +155,20 @@ class SpriteSheetSpecs:
         ),
     )
 
+    pillar_heights = SheetSpec(
+        args=("./assets/sprites/Isometric_MedievalFantasy_Tiles.z.png",),
+        kwargs=_hashable(
+            **{
+                "sprite_height": 17,
+                "sprite_width": 16,
+                "columns": 11,
+                "count": 111,
+                "margin": 0,
+                "hit_box_algorithm": TileHitBoxAlgorithm,
+            }
+        ),
+    )
+
     tile_saturation_gradient = SheetSpec(
         args=("./assets/sprites/tile_normals_saturation_gradient.png",),
         kwargs=_hashable(

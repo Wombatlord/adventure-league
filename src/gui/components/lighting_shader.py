@@ -91,6 +91,7 @@ class ShaderPipeline:
         #     Vec3(self.width, self.height, 1.0)
         # )
         self.normal_biome = biome_map[BiomeName.NORMALS]
+        self.height_biome = biome_map[BiomeName.HEIGHT]
         self.terrain_nodes = []
         self.normal_sprites = arcade.SpriteList()
         self.height_sprites = arcade.SpriteList()
@@ -215,14 +216,18 @@ class ShaderPipeline:
             max_y = max(clone.node.y, max_y)
 
             self.normal_sprites.append(clone)
-            if clone.tile_type == 2:
-                continue
+
             height_clone: BaseSprite = sprite.clone()
             height_clone.set_transform(sprite.transform)
             height_clone.set_node(sprite.node)
-            height_clone.texture = SpriteSheetSpecs.tile_height_map_sheet.loaded[
-                height_clone.node.z + 1
-            ]
+
+            if clone.tile_type == 2:
+                self.height_biome.assign_height_mapped_texture(height_clone, sprite)
+            else:
+                height_clone.texture = SpriteSheetSpecs.tile_height_map_sheet.loaded[
+                    height_clone.node.z + 1
+                ]
+
             self.height_sprites.append(height_clone)
 
         self._generate_world_height_tx(nodes)

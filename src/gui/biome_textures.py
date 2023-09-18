@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from src.entities.sprites import BaseSprite
 
 import random
+
 from arcade import Texture
 from pyglet.math import Vec3, Vec4
 
@@ -16,6 +17,7 @@ from src.world.node import Node
 tiles = SpriteSheetSpecs.tiles.loaded
 normals_tile = SingleTextureSpecs.tile_normals.loaded
 normals_pillars = SpriteSheetSpecs.pillar_normals.loaded
+heights_pillars = SpriteSheetSpecs.pillar_heights.loaded
 
 
 class BiomeName:
@@ -24,6 +26,7 @@ class BiomeName:
     SNOW = "snow"
     PLAINS = "plains"
     NORMALS = "normals"
+    HEIGHT = "heights"
 
     @classmethod
     def all_biomes(cls) -> list[str]:
@@ -47,6 +50,29 @@ class Biome(NamedTuple):
 
     def choose_tile_texture(self, tile_type: int) -> Texture:
         return random.choice(self.get_tile_textures(tile_type))
+
+    def assign_height_mapped_texture(
+        self, clone_sprite: BaseSprite, origin_sprite: BaseSprite
+    ):
+        biome = origin_sprite.get_biome()
+        match biome:
+            case BiomeName.DESERT:
+                clone_sprite.texture = self.get_pillar_height_map_texture(
+                    BiomeTextures.desert().pillar_tiles, origin_sprite.texture, biome
+                )
+            case BiomeName.SNOW:
+                clone_sprite.texture = self.get_pillar_height_map_texture(
+                    BiomeTextures.snow().pillar_tiles, origin_sprite.texture, biome
+                )
+            case BiomeName.PLAINS:
+                clone_sprite.texture = self.get_pillar_height_map_texture(
+                    BiomeTextures.plains().pillar_tiles, origin_sprite.texture, biome
+                )
+
+    def get_pillar_height_map_texture(self, biome_pillar_tiles, texture, biome_name):
+        for tx in biome_pillar_tiles:
+            if texture == tx:
+                return self.pillar_tiles[biome_name][biome_pillar_tiles.index(tx)]
 
     def choose_texture_for_node(
         self, node: Node, tile_type: int, sprite: BaseSprite
@@ -78,8 +104,8 @@ class Biome(NamedTuple):
             case BiomeName.PLAINS:
                 return self.get_pillar_normal(
                     texture, biome, BiomeTextures.plains().pillar_tiles
-                )        
-        
+                )
+
     def get_pillar_normal(
         self, texture: Texture, biome_name: str, biome_pillar_tiles: list[Texture]
     ):
@@ -188,6 +214,36 @@ class BiomeTextures:
             },
         )
 
+    @classmethod
+    def height(cls):
+        return Biome(
+            name=BiomeName.HEIGHT,
+            floor_tiles=[],
+            wall_tiles=[],
+            pillar_tiles={
+                BiomeName.DESERT: [
+                    heights_pillars[42],
+                    heights_pillars[31],
+                    heights_pillars[9],
+                    heights_pillars[8],
+                    heights_pillars[20],
+                ],
+                BiomeName.SNOW: [
+                    heights_pillars[32],
+                    heights_pillars[43],
+                    heights_pillars[20],
+                ],
+                BiomeName.PLAINS: [
+                    heights_pillars[30],
+                    heights_pillars[41],
+                    heights_pillars[9],
+                    heights_pillars[8],
+                    heights_pillars[19],
+                    heights_pillars[10],
+                ],
+            },
+        )
+
 
 biome_map: dict[str, Biome] = {
     BiomeName.CASTLE: BiomeTextures.castle(),
@@ -195,4 +251,5 @@ biome_map: dict[str, Biome] = {
     BiomeName.DESERT: BiomeTextures.desert(),
     BiomeName.PLAINS: BiomeTextures.plains(),
     BiomeName.NORMALS: BiomeTextures.normal(),
+    BiomeName.HEIGHT: BiomeTextures.height(),
 }
