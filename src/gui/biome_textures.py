@@ -42,7 +42,7 @@ class TileTypes:
 class Biome(NamedTuple):
     floor_tiles: list[Texture]
     wall_tiles: list[Texture]
-    pillar_tiles: list[Texture]
+    pillar_tiles: list[Texture] | dict[str, list[Texture]]
     name: str
 
     def get_tile_textures(self, tile_type: int) -> list[Texture]:
@@ -69,10 +69,14 @@ class Biome(NamedTuple):
                     BiomeTextures.plains().pillar_tiles, origin_sprite.texture, biome
                 )
 
-    def get_pillar_height_map_texture(self, biome_pillar_tiles, texture, biome_name):
+    def get_pillar_height_map_texture(
+        self, biome_pillar_tiles: list[Texture], texture: Texture, biome_name: str
+    ) -> Texture:
         for tx in biome_pillar_tiles:
             if texture == tx:
-                return self.pillar_tiles[biome_name][biome_pillar_tiles.index(tx)]
+                return self.pillar_tiles.get(f"{biome_name}", "")[
+                    biome_pillar_tiles.index(tx)
+                ]
 
     def choose_texture_for_node(
         self, node: Node, tile_type: int, sprite: BaseSprite
@@ -108,10 +112,12 @@ class Biome(NamedTuple):
 
     def get_pillar_normal(
         self, texture: Texture, biome_name: str, biome_pillar_tiles: list[Texture]
-    ):
+    ) -> Texture:
         for tx in biome_pillar_tiles:
             if texture == tx:
-                return self.pillar_tiles[biome_name][biome_pillar_tiles.index(tx)]
+                return self.pillar_tiles.get(f"{biome_name}", "")[
+                    biome_pillar_tiles.index(tx)
+                ]
 
     def biome_lighting(self, shader_pipeline: ShaderPipeline):
         match self.name:
