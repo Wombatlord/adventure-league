@@ -56,6 +56,10 @@ class Biome(NamedTuple):
     ):
         biome = origin_sprite.get_biome()
         match biome:
+            case BiomeName.CASTLE:
+                clone_sprite.texture = self.get_pillar_height_map_texture(
+                    BiomeTextures.castle().pillar_tiles, origin_sprite.texture, biome
+                )
             case BiomeName.DESERT:
                 clone_sprite.texture = self.get_pillar_height_map_texture(
                     BiomeTextures.desert().pillar_tiles, origin_sprite.texture, biome
@@ -227,6 +231,10 @@ class BiomeTextures:
             floor_tiles=[],
             wall_tiles=[],
             pillar_tiles={
+                BiomeName.CASTLE: [
+                    tiles[88],
+                    tiles[89],
+                ],
                 BiomeName.DESERT: [
                     heights_pillars[42],
                     heights_pillars[31],

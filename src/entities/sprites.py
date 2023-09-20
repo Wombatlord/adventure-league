@@ -108,6 +108,7 @@ class BaseSprite(OffsetSprite, Sprite):
         angle: float = 0.0,
         sync_list: tuple[arcade.Sprite, ...] = (),
         tile_type: int | None = None,
+        biome_name: str | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -129,6 +130,7 @@ class BaseSprite(OffsetSprite, Sprite):
         self._node = None
         self._sync_list = sync_list
         self.tile_type = tile_type
+        self.biome = biome_name
 
     def get_biome(self):
         if self.texture in BiomeTextures.castle().pillar_tiles:

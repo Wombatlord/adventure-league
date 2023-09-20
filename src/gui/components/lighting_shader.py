@@ -221,7 +221,7 @@ class ShaderPipeline:
             height_clone.set_transform(sprite.transform)
             height_clone.set_node(sprite.node)
 
-            if clone.tile_type == 2:
+            if clone.tile_type == 2 and sprite.biome != BiomeName.CASTLE:
                 self.height_biome.assign_height_mapped_texture(height_clone, sprite)
             else:
                 height_clone.texture = SpriteSheetSpecs.tile_height_map_sheet.loaded[
