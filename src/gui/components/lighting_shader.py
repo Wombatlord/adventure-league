@@ -17,7 +17,7 @@ from src.entities.sprites import (
     norm_mapped_sprite,
     z_mapped_sprite,
 )
-from src.gui.biome_textures import BiomeName, biome_map
+from src.gui.biome_textures import BiomeName, TileTypes, biome_map
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.shader_program import Binding, Shader
 from src.world.isometry.transforms import Transform
@@ -221,7 +221,7 @@ class ShaderPipeline:
             height_clone.set_transform(sprite.transform)
             height_clone.set_node(sprite.node)
 
-            if clone.tile_type == 2 and sprite.biome != BiomeName.CASTLE:
+            if clone.tile_type == TileTypes.PILLAR and sprite.biome != BiomeName.CASTLE:
                 self.height_biome.assign_height_mapped_texture(height_clone, sprite)
             else:
                 height_clone.texture = SpriteSheetSpecs.tile_height_map_sheet.loaded[

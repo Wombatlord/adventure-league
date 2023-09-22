@@ -23,5 +23,5 @@ registered_tools = {
     ToolNames.char_heights: flat_sprite_maps.character_height_maps,
     ToolNames.tile_normals: flat_sprite_maps.tile_normals,
     ToolNames.tile_heights: flat_sprite_maps.tile_heights,
-    "level_viewer": run_level_viewer,
+    ToolNames.viewer: run_level_viewer,
 }
