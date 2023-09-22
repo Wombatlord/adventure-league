@@ -12,26 +12,16 @@ class ToolNames(NamedTuple):
     tile_normals = "generate_tile_normals"
     tile_heights = "generate_tile_heights"
 
-
-# This conditional is just to ensure that when running a sprite generation tool,
-# the level viewer import does not try to load assets which do not exist yet.
-if sys.argv[-1] == "level_viewer":
+def run_level_viewer():
     from src.tools import level_viewer
+    level_viewer.start()
 
-    registered_tools = {
-        ToolNames.viewer: level_viewer.start,
-        ToolNames.height_map: height_mapped_block.generate,
-        ToolNames.char_normals: flat_sprite_maps.character_normals,
-        ToolNames.char_heights: flat_sprite_maps.character_height_maps,
-        ToolNames.tile_normals: flat_sprite_maps.tile_normals,
-        ToolNames.tile_heights: flat_sprite_maps.tile_heights,
-    }
 
-else:
-    registered_tools = {
-        ToolNames.height_map: height_mapped_block.generate,
-        ToolNames.char_normals: flat_sprite_maps.character_normals,
-        ToolNames.char_heights: flat_sprite_maps.character_height_maps,
-        ToolNames.tile_normals: flat_sprite_maps.tile_normals,
-        ToolNames.tile_heights: flat_sprite_maps.tile_heights,
-    }
+registered_tools = {
+    ToolNames.height_map: height_mapped_block.generate,
+    ToolNames.char_normals: flat_sprite_maps.character_normals,
+    ToolNames.char_heights: flat_sprite_maps.character_height_maps,
+    ToolNames.tile_normals: flat_sprite_maps.tile_normals,
+    ToolNames.tile_heights: flat_sprite_maps.tile_heights,
+    "level_viewer": run_level_viewer,
+}
