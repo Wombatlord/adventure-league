@@ -12,8 +12,10 @@ class ToolNames(NamedTuple):
     tile_normals = "generate_tile_normals"
     tile_heights = "generate_tile_heights"
 
+
 def run_level_viewer():
     from src.tools import level_viewer
+
     level_viewer.start()
 
 

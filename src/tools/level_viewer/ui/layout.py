@@ -384,7 +384,7 @@ class LayoutSection(arcade.Section):
                 scale=self.SPRITE_SCALE,
                 transform=self.transform,
                 tile_type=block.terrain_node.tile_type,
-                biome_name=block.biome.name
+                biome_name=block.biome.name,
             )
             sprite.set_node(block.node)
             self.world_sprite_list.append(sprite)
