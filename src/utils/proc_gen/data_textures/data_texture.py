@@ -27,6 +27,9 @@ class DataTexture:
         self.pixels = np.zeros(size + (4,), dtype=dtype)
         self.debug = [lambda *_: None, lambda *_: None]
 
+    def __str__(self) -> str:
+        pass
+    
     def __getitem__(self, *indices):
         (indices,) = indices
 

@@ -2,6 +2,7 @@ import sys
 from typing import NamedTuple
 
 from src.textures import flat_sprite_maps, height_mapped_block
+from src.utils.proc_gen.data_textures.texture_composer import AssetMaterialiser, render_data_texture_to_terminal
 
 
 class ToolNames(NamedTuple):
@@ -11,6 +12,8 @@ class ToolNames(NamedTuple):
     char_heights = "generate_character_heights"
     tile_normals = "generate_tile_normals"
     tile_heights = "generate_tile_heights"
+    materialise = "materialise"
+    data_texture = "data_texture"
 
 
 def run_level_viewer():
@@ -26,4 +29,6 @@ registered_tools = {
     ToolNames.tile_normals: flat_sprite_maps.tile_normals,
     ToolNames.tile_heights: flat_sprite_maps.tile_heights,
     ToolNames.viewer: run_level_viewer,
+    ToolNames.materialise: AssetMaterialiser.materialise,
+    ToolNames.data_texture: render_data_texture_to_terminal,
 }
