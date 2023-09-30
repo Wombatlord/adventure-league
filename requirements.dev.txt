@@ -3,6 +3,7 @@ black
 isort
 parameterized
 ptpython
+prompt_toolkit
 requests
 pydrive2
 viztracer
