@@ -11,12 +11,8 @@ from PIL import Image
 from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from src.entities.entity import Entity
-from src.entities.sprites import (
-    BaseSprite,
-    MapSprite,
-    norm_mapped_sprite,
-    z_mapped_sprite,
-)
+from src.entities.sprites import (BaseSprite, MapSprite, norm_mapped_sprite,
+                                  z_mapped_sprite)
 from src.gui.biome_textures import BiomeName, TileTypes, biome_map
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.shader_program import Binding, Shader
@@ -206,8 +202,9 @@ class ShaderPipeline:
             if not hasattr(sprite, "clone") or not getattr(sprite, "node", None):
                 continue
             clone: BaseSprite = sprite.clone()
+            clone.meta_data = sprite.meta_data
             clone.texture = self.normal_biome.choose_texture_for_node(
-                clone.node, clone.tile_type, sprite
+                clone.node, clone.meta_data.tile_type, sprite
             )
             clone.set_transform(sprite.transform)
             clone.set_node(sprite.node)
@@ -221,7 +218,10 @@ class ShaderPipeline:
             height_clone.set_transform(sprite.transform)
             height_clone.set_node(sprite.node)
 
-            if clone.tile_type == TileTypes.PILLAR and sprite.biome != BiomeName.CASTLE:
+            if (
+                clone.meta_data.tile_type == TileTypes.PILLAR
+                and sprite.meta_data.biome != BiomeName.CASTLE
+            ):
                 self.height_biome.assign_height_mapped_texture(height_clone, sprite)
             else:
                 height_clone.texture = SpriteSheetSpecs.tile_height_map_sheet.loaded[

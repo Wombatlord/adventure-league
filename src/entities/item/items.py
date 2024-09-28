@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from src.entities.item.effects import (
-    apply_heal_consumption_effect,
-    apply_heal_on_hit_effect,
-)
+from src.entities.item.effects import (apply_heal_consumption_effect,
+                                       apply_heal_on_hit_effect)
 from src.entities.item.inventory_item import Consumable, Exhaustable, Throwable
 
 if TYPE_CHECKING:

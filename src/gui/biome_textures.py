@@ -86,29 +86,31 @@ class Biome(NamedTuple):
 
         biome = sprite.get_biome()
         match tile_type:
-            case TileTypes.FLOOR:
-                return self.floor_tiles[0]
             case TileTypes.WALL:
                 return self.wall_tiles[0]
             case TileTypes.PILLAR:
                 return self.check_biome_for_pillar_normal(biome, sprite.texture)
+            case _:
+                return self.floor_tiles[0]
 
     def check_biome_for_pillar_normal(self, biome: str, texture: Texture):
+        tx = None
         match biome:
             case BiomeName.CASTLE:
-                return self.floor_tiles[0]
+                tx = self.floor_tiles[0]
             case BiomeName.DESERT:
-                return self.get_pillar_normal(
+                tx = self.get_pillar_normal(
                     texture, biome, BiomeTextures.desert().pillar_tiles
                 )
             case BiomeName.SNOW:
-                return self.get_pillar_normal(
+                tx = self.get_pillar_normal(
                     texture, biome, BiomeTextures.snow().pillar_tiles
                 )
             case BiomeName.PLAINS:
-                return self.get_pillar_normal(
+                tx = self.get_pillar_normal(
                     texture, biome, BiomeTextures.plains().pillar_tiles
                 )
+        return tx
 
     def get_pillar_normal(
         self, texture: Texture, biome_name: str, biome_pillar_tiles: list[Texture]
@@ -121,25 +123,25 @@ class Biome(NamedTuple):
                 shader_pipeline.set_directional_light(
                     Vec4(0.4, 0.3, 0.8, 1), Vec3(1, 1, 1)
                 )
-                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.2)
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.5)
 
             case BiomeName.CASTLE:
                 shader_pipeline.set_directional_light(
                     Vec4(0.4, 0.2, 0, 1), Vec3(1, 1, 1)
                 )
-                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.2)
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.5)
 
             case BiomeName.DESERT:
                 shader_pipeline.set_directional_light(
                     Vec4(0.6, 0.6, 0, 1), Vec3(1, 1, 1)
                 )
-                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.2)
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.5)
 
             case BiomeName.PLAINS:
                 shader_pipeline.set_directional_light(
                     Vec4(0.5, 0.5, 0.5, 1), Vec3(1, 1, 1)
                 )
-                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.2)
+                shader_pipeline.set_light_balance(point=1, directional=1, ambient=0.5)
 
 
 class BiomeTextures:

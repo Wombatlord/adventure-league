@@ -9,6 +9,13 @@ TILE_SHAPE = TILE_X + TILE_Y
 CANVAS_SHAPE = TILE_SHAPE * 3
 
 
+def gen_open_ground() -> DataTexture:
+    dt = DataTexture(TILE_SHAPE)
+    arr = dt.pixels
+    arr[:, :] = [8, 8, 8, 255]
+    return dt
+
+
 def gen_spike() -> DataTexture:
     dt = DataTexture(TILE_SHAPE)
     arr = dt.pixels
@@ -119,9 +126,10 @@ def gen_yellow_shrub() -> DataTexture:
     dt.pixels[:, :, :3] = ground
     dt.pixels[2:9, 4, :3] = mid
     dt.pixels[5, 4, :3] = top
-    dt.pixels[3:5, 4, :3], dt.pixels[7,4,:3] = low, low
+    dt.pixels[3:5, 4, :3], dt.pixels[7, 4, :3] = low, low
 
     return dt
+
 
 def gen_brown_shrub() -> DataTexture:
     dt = DataTexture(TILE_SHAPE)
@@ -132,11 +140,12 @@ def gen_brown_shrub() -> DataTexture:
 
     dt.pixels[:, :, 3] = 255
     dt.pixels[:, :, :3] = ground
-    dt.pixels[1:9, 4,:3] = top
-    dt.pixels[2, 4, :3], dt.pixels[7,4,:3] = mid, mid
-    dt.pixels[4,4,:3] = low
-    
+    dt.pixels[1:9, 4, :3] = top
+    dt.pixels[2, 4, :3], dt.pixels[7, 4, :3] = mid, mid
+    dt.pixels[4, 4, :3] = low
+
     return dt
+
 
 def gen_green_shrub() -> DataTexture:
     dt = DataTexture(TILE_SHAPE)
@@ -148,12 +157,13 @@ def gen_green_shrub() -> DataTexture:
 
     dt.pixels[:, :, 3] = 255
     dt.pixels[:, :, :3] = ground
-    dt.pixels[1:9,4,:3] = low
-    dt.pixels[2:9,4,:3] = mid_b
-    dt.pixels[3:8,4,:3] = mid
+    dt.pixels[1:9, 4, :3] = low
+    dt.pixels[2:9, 4, :3] = mid_b
+    dt.pixels[3:8, 4, :3] = mid
     dt.pixels[4:7, 4, :3] = top
-    
+
     return dt
+
 
 def white_square() -> DataTexture:
     dt = DataTexture(TILE_SHAPE)
@@ -170,13 +180,13 @@ def render_data_texture_to_terminal(*args):
     mapping = {
         (0, 0): gen_green_shrub(),
         (0, 1): gen_yellow_shrub(),
-        (0,2): gen_brown_shrub(),
+        (0, 2): gen_brown_shrub(),
         (1, 0): gen_ice_pillars(),
         (1, 1): gen_spike(),
-        (1,2): gen_reeds(),
+        (1, 2): gen_reeds(),
         (2, 0): gen_rock(),
         (2, 1): gen_tall_cactus(),
-        (2,2): gen_split_rock()
+        (2, 2): gen_split_rock(),
     }
 
     display = DataTexture(CANVAS_SHAPE, dtype=np.uint8)
@@ -215,6 +225,7 @@ def pyprint(thing, name):
 
 class AssetMaterialiser:
     assets = {
+        "open_ground": gen_open_ground(),
         "rock": gen_rock(),
         "split_rock": gen_split_rock(),
         "spike": gen_spike(),
@@ -224,7 +235,7 @@ class AssetMaterialiser:
         "reeds": gen_reeds(),
         "brown_shrub": gen_brown_shrub(),
         "green_shrub": gen_green_shrub(),
-        "yellow_shrub": gen_yellow_shrub()
+        "yellow_shrub": gen_yellow_shrub(),
     }
 
     import_strings = [
@@ -236,7 +247,6 @@ class AssetMaterialiser:
 
     def assignment_string(thing: bytearray, name: str) -> str:
         return f"""\t{name} = {repr(thing)}\n"""
-
 
     def materialise():
         with open("./assets/materialised_assets.py", "w") as file:

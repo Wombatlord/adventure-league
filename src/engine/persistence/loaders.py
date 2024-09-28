@@ -5,14 +5,11 @@ from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.fighter import EncounterContext, Fighter
 from src.entities.combat.leveller import Leveller
 from src.entities.combat.modifiable_stats import ModifiableStats, Modifier
-from src.entities.combat.stats import (
-    EquippableItemStats,
-    FighterStats,
-    HealthPool,
-    StatAffix,
-)
+from src.entities.combat.stats import (EquippableItemStats, FighterStats,
+                                       HealthPool, StatAffix)
 from src.entities.entity import Entity, Name
-from src.entities.gear.equippable_item import EquippableItem, EquippableItemConfig
+from src.entities.gear.equippable_item import (EquippableItem,
+                                               EquippableItemConfig)
 from src.entities.gear.gear import Gear
 from src.entities.item.inventory import Inventory
 from src.entities.item.items import HealingPotion

@@ -5,7 +5,8 @@ from arcade.gui import UIAnchorLayout, UIBoxLayout, UIImage, UILabel, UIWidget
 from PIL import Image
 
 from src.gui.window_data import WindowData
-from src.textures.pixelated_nine_patch import PixelatedNinePatch, PixelatedTexture
+from src.textures.pixelated_nine_patch import (PixelatedNinePatch,
+                                               PixelatedTexture)
 
 
 def get_background_panel(panel_highlighted):

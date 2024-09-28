@@ -1,11 +1,6 @@
 import arcade
-from arcade.gui import (
-    UIAnchorLayout,
-    UIBoxLayout,
-    UIFlatButton,
-    UIManager,
-    UITextureButton,
-)
+from arcade.gui import (UIAnchorLayout, UIBoxLayout, UIFlatButton, UIManager,
+                        UITextureButton)
 
 from src.gui.components.layouts import single_box
 from src.gui.ui_styles import ADVENTURE_STYLE

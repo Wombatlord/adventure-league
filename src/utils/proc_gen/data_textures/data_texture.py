@@ -29,7 +29,7 @@ class DataTexture:
 
     def __str__(self) -> str:
         pass
-    
+
     def __getitem__(self, *indices):
         (indices,) = indices
 

@@ -3,25 +3,15 @@ from __future__ import annotations
 import functools
 import random
 from random import randint
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Generator,
-    Iterable,
-    NamedTuple,
-    Self,
-    Sequence,
-)
+from typing import (TYPE_CHECKING, Any, Callable, Generator, Iterable,
+                    NamedTuple, Self, Sequence)
 
 from astar import AStar
 
 from src.world.level.room_layouts import Z_INCR, Terrain
-from src.world.pathing.pathing_strategy import (
-    DefaultStrategy,
-    HeightMapStrategy,
-    PathingStrategy,
-)
+from src.world.pathing.pathing_strategy import (DefaultStrategy,
+                                                HeightMapStrategy,
+                                                PathingStrategy)
 
 if TYPE_CHECKING:
     pass

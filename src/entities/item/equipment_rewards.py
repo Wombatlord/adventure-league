@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Any, Callable, Generator, NamedTuple
 from src.engine.events_enum import EventFields, EventTopic
 from src.entities.entity import Entity
 from src.entities.gear.equippable_item import EquippableItem
-from src.entities.item.equippable_item import bow, breastplate, get_item_configs, helmet
+from src.entities.item.equippable_item import (bow, breastplate,
+                                               get_item_configs, helmet)
 from src.entities.item.loot import Loot
 from src.world.level.dungeon import Dungeon
 

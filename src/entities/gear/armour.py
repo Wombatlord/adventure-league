@@ -1,10 +1,8 @@
-from src.entities.combat.stats import (
-    EquippableItemStats,
-    percent_crit_increase,
-    percent_power_increase,
-    raw_defence_increase,
-    raw_power_increase,
-)
+from src.entities.combat.stats import (EquippableItemStats,
+                                       percent_crit_increase,
+                                       percent_power_increase,
+                                       raw_defence_increase,
+                                       raw_power_increase)
 from src.entities.gear.equippable_item import EquippableItemConfig
 
 helmet = EquippableItemConfig(

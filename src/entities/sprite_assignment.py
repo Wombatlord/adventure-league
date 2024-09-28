@@ -9,12 +9,10 @@ if TYPE_CHECKING:
     from src.entities.combat.fighter import Fighter
     from src.gui.animated_sprite_config import AnimatedSpriteConfig
 
-from src.gui.animated_sprite_config import (
-    choose_boss_texture,
-    choose_goblin_textures,
-    choose_merc_textures,
-    choose_slime_textures,
-)
+from src.gui.animated_sprite_config import (choose_boss_texture,
+                                            choose_goblin_textures,
+                                            choose_merc_textures,
+                                            choose_slime_textures)
 
 
 class Species:

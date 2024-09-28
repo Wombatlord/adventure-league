@@ -2,7 +2,8 @@ import sys
 from typing import NamedTuple
 
 from src.textures import flat_sprite_maps, height_mapped_block
-from src.utils.proc_gen.data_textures.texture_composer import AssetMaterialiser, render_data_texture_to_terminal
+from src.utils.proc_gen.data_textures.texture_composer import (
+    AssetMaterialiser, render_data_texture_to_terminal)
 
 
 class ToolNames(NamedTuple):
