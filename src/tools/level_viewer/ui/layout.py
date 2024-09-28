@@ -191,6 +191,15 @@ class LayoutSection(arcade.Section):
         self.current_biome.biome_lighting(self.shader_pipeline)
         self.shader_pipeline.take_transform_from(self.get_full_transform)
         self.shader_pipeline.locate_light_with(self.get_light_location)
+        self.shader_pipeline.set_light_balance(
+            point=1.0,
+            directional=0.3,
+            ambient=0.1,
+        )
+        self.shader_pipeline.set_directional_light(
+            colour=Vec4(1, 1, 1, 1),
+            direction=Vec3(0.25, 0.0, -1.0),
+        )
         self.light_loc = Vec3(4, 4, 0.2)
         self.light_vel = Vec3()
         self.pressed_keys = {*[]}
@@ -470,7 +479,7 @@ class LayoutSection(arcade.Section):
             arcade.key.RIGHT: lambda: self.translate_level(n.east),
             arcade.key.DOWN: lambda: self.translate_level(n.south),
             arcade.key.LEFT: lambda: self.translate_level(n.west),
-            # arcade.key.R: lambda: self.rotate_level(),
+            arcade.key.R: lambda: self.rotate_level(),
             # light controls
             arcade.key.W: lambda: self.incr_light_loc(0, 0.2),
             arcade.key.S: lambda: self.incr_light_loc(0, -0.2),

@@ -4,6 +4,7 @@ import time
 from typing import Callable, Iterable
 
 import arcade
+from arcade import gl
 from arcade.gl import geometry
 from arcade.hitbox import HitBoxAlgorithm
 from arcade.types import PointList
@@ -73,7 +74,9 @@ class ShaderPipeline:
         self.height_toggle = 0.0
 
         self.terrain_size = (10, 10)
-        self.terrain_binding = self.shader.bind("terrain", self.terrain_size)
+        self.terrain_binding = self.shader.bind(
+            "terrain", self.terrain_size, wrapping=(gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE)
+        )
         self.terrain_toggle = 0.0
         self.h_sprite = arcade.Sprite()
         self.h_sprite.texture = arcade.Texture(
@@ -108,6 +111,7 @@ class ShaderPipeline:
         self.shader.attach_uniform("ambient_col", lambda: Vec4(1, 1, 1, 1))
         self.shader.attach_uniform("light_balance", lambda: Vec3(0.2, 0, 0.8))
         self.shader.attach_uniform("time_since_start", lambda: self.get_time())
+        self.shader.attach_uniform("terrain_transparency", lambda: 0.0001)
         self.sprite_attributes = []
         self.init_empty_height_data()
 
@@ -160,11 +164,16 @@ class ShaderPipeline:
     def locate_light_with(self, get_light_location: Callable[[], Vec3]):
         self.shader.attach_uniform("pt_src", get_light_location)
 
+    def take_pt_col_from(self, getter: Callable[[], Vec4]) -> None:
+        self.shader.attach_uniform("pt_col", getter)
+
     def set_directional_light(self, colour: Vec4, direction: Vec3):
         self.shader.attach_uniform("directional_col", lambda: colour)
         self.shader.attach_uniform("directional_dir", lambda: direction)
 
-    def set_light_balance(self, point: int = 1, directional: int = 1, ambient: int = 1):
+    def set_light_balance(
+        self, point: float = 1.0, directional: float = 1.0, ambient: float = 1.0
+    ):
         self.shader.attach_uniform(
             "light_balance", lambda: Vec3(ambient, directional, point)
         )

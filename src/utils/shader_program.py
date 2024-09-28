@@ -4,6 +4,7 @@ from typing import Any, Callable, NamedTuple
 
 import arcade
 from arcade import gl
+from arcade.gl.types import PyGLenum
 
 
 class Uniform(NamedTuple):
@@ -63,12 +64,15 @@ class Shader:
         size: tuple[int, int],
         components=4,
         dtype="f4",
+        wrapping: tuple[PyGLenum, PyGLenum] = (gl.REPEAT, gl.REPEAT),
     ) -> tuple[arcade.gl.Texture2D, arcade.gl.Framebuffer]:
         tx = ctx.texture(
             size,
             components=components,
             filter=(ctx.NEAREST, ctx.NEAREST),
             dtype=dtype,
+            wrap_x=wrapping[0],
+            wrap_y=wrapping[1],
         )
         buf = ctx.framebuffer(color_attachments=[tx])
         buf.resize()
@@ -106,7 +110,12 @@ class Shader:
             self._program[name] = offset
 
     def bind(
-        self, name: str, size: tuple[int, int], components=4, dtype="f1"
+        self,
+        name: str,
+        size: tuple[int, int],
+        components: int = 4,
+        dtype: str = "f1",
+        wrapping: tuple[PyGLenum, PyGLenum] = (gl.REPEAT, gl.REPEAT),
     ) -> Binding:
         names = [*self._bindings.keys()]
         if self._bindings.get(name) is None:
@@ -119,7 +128,13 @@ class Shader:
         self._bindings[name] = (  # 😲 Spicy!
             bound := Binding(
                 bind_offset,
-                *self.gen_tx_buf(self._ctx, size, components=components, dtype=dtype),
+                *self.gen_tx_buf(
+                    self._ctx,
+                    size,
+                    components=components,
+                    dtype=dtype,
+                    wrapping=wrapping,
+                ),
             )
         )
 
