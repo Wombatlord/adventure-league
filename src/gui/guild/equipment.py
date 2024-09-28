@@ -14,7 +14,8 @@ from src.entities.gear.equippable_item import EquippableItem
 from src.gui.components.buttons import nav_button
 from src.gui.components.draggables import DraggableCollection
 from src.gui.components.observer import Observer, observe
-from src.gui.components.receivers import InventoryGrid, ItemReceiver, ReceiverCollection
+from src.gui.components.receivers import (InventoryGrid, ItemReceiver,
+                                          ReceiverCollection)
 from src.gui.generic_sections.command_bar import CommandBarSection
 from src.gui.guild.snap_grid import GridLoc, SnapGrid
 from src.textures.pixelated_nine_patch import PixelatedNinePatch

@@ -12,7 +12,8 @@ if TYPE_CHECKING:
     from src.entities.combat.modifiable_stats import Modifier
     from src.entities.combat.stats import HealthPool, StatAffix
     from src.entities.entity import Entity
-    from src.entities.gear.equippable_item import EquippableItem, EquippableItemConfig
+    from src.entities.gear.equippable_item import (EquippableItem,
+                                                   EquippableItemConfig)
     from src.entities.gear.gear import Gear
     from src.entities.magic.caster import Caster, MpPool
 

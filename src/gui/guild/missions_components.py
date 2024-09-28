@@ -1,6 +1,7 @@
 from arcade.gui import UIAnchorLayout, UIBoxLayout, UIWidget
 
-from src.gui.components.layouts import get_background_panel, get_pixelated_tex_panel
+from src.gui.components.layouts import (get_background_panel,
+                                        get_pixelated_tex_panel)
 from src.textures.pixelated_nine_patch import PixelatedNinePatch
 
 

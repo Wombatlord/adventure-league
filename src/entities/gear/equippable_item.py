@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, NamedTuple, Self
 from src import config
 from src.entities.combat.damage import Damage
 from src.entities.combat.modifiable_stats import ModifiableStats, Modifier
-from src.entities.combat.stats import EquippableItemStats, FighterStats, StatAffix
+from src.entities.combat.stats import (EquippableItemStats, FighterStats,
+                                       StatAffix)
 from src.entities.combat.weapon_attacks import WeaponAttackMeta
 from src.entities.magic.spells import Spell, SpellMeta
 from src.entities.properties.meta_compendium import MetaCompendium

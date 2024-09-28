@@ -6,10 +6,8 @@ from arcade.gui.events import UIEvent
 from arcade.gui.widgets.buttons import UITextureButton
 
 from src.engine.init_engine import eng
-from src.textures.texture_config import (
-    TextureButtonNinePatchConfig,
-    load_ui_texture_button,
-)
+from src.textures.texture_config import (TextureButtonNinePatchConfig,
+                                         load_ui_texture_button)
 
 UIEventHandler = Callable[[UIEvent], None]
 

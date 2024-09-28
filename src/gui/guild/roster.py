@@ -17,17 +17,13 @@ from src.config import font_sizes
 from src.engine.init_engine import eng
 from src.entities.entity import Entity
 from src.gui.components.buttons import nav_button
-from src.gui.components.layouts import (
-    box_containing_horizontal_label_pair,
-    get_colored_label,
-)
+from src.gui.components.layouts import (box_containing_horizontal_label_pair,
+                                        get_colored_label)
 from src.gui.components.observer import observe
 from src.gui.generic_sections.command_bar import CommandBarSection
 from src.gui.generic_sections.info_pane import InfoPaneSection
-from src.gui.guild.roster_sections import (
-    RecruitmentPaneSection,
-    RosterAndTeamPaneSection,
-)
+from src.gui.guild.roster_sections import (RecruitmentPaneSection,
+                                           RosterAndTeamPaneSection)
 from src.gui.window_data import WindowData
 
 

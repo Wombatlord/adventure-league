@@ -10,7 +10,8 @@ from src.engine.dispatcher import StaticDispatcher, VolatileDispatcher
 from src.engine.events_enum import EventFields, EventTopic
 from src.engine.game_state import AwardSpoilsHandler, GameState
 from src.engine.mission_board import MissionBoard
-from src.engine.persistence.game_state_repository import Format, GuildRepository
+from src.engine.persistence.game_state_repository import (Format,
+                                                          GuildRepository)
 from src.entities.combat.fighter_factory import RecruitmentPool
 from src.systems.combat import CombatRound
 from src.world.level.dungeon import Dungeon

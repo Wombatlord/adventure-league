@@ -12,19 +12,15 @@ if TYPE_CHECKING:
     from src.gui.combat.hud import HUD
     from src.entities.combat.weapon_attacks import WeaponAttackMeta
 
-from src.entities.action.actions import ConsumeItemAction, EndTurnAction, MoveAction
+from src.entities.action.actions import (ConsumeItemAction, EndTurnAction,
+                                         MoveAction)
 from src.entities.action.magic_action import MagicAction
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.fighter import Fighter
 from src.entities.magic.spells import EffectType
 from src.gui.combat.node_selection import NodeSelection
-from src.gui.components.menu import (
-    LeafMenuNode,
-    Menu,
-    MenuNode,
-    NodeSelectionNode,
-    SubMenuNode,
-)
+from src.gui.components.menu import (LeafMenuNode, Menu, MenuNode,
+                                     NodeSelectionNode, SubMenuNode)
 from src.utils.rectangle import Rectangle
 from src.world.node import Node
 

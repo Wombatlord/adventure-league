@@ -15,6 +15,7 @@ from src.gui.combat.highlight import HighlightLayer
 from src.gui.components.lighting_shader import ShaderPipeline
 from src.gui.components.menu import Menu
 from src.textures.texture_data import SpriteSheetSpecs
+from src.tools.repl import run_repl
 from src.utils.camera_controls import CameraController
 from src.world.isometry.transforms import Transform
 from src.world.level.room import Room
@@ -460,3 +461,5 @@ class Scene(arcade.Section):
                 self.shader_pipeline.toggle_terrain()
             case arcade.key.M:
                 self.shader_pipeline.debug()
+            case arcade.key.F:
+                run_repl()

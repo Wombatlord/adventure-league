@@ -12,13 +12,9 @@ from PIL import Image
 from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from src.entities.entity import Entity
-from src.entities.sprites import (
-    BaseSprite,
-    MapSprite,
-    norm_mapped_sprite,
-    z_mapped_sprite,
-)
-from src.gui.biome_textures import BiomeName, biome_map
+from src.entities.sprites import (BaseSprite, MapSprite, norm_mapped_sprite,
+                                  z_mapped_sprite)
+from src.gui.biome_textures import BiomeName, TileTypes, biome_map
 from src.textures.texture_data import SpriteSheetSpecs
 from src.utils.shader_program import Binding, Shader
 from src.world.isometry.transforms import Transform
@@ -94,6 +90,7 @@ class ShaderPipeline:
         #     Vec3(self.width, self.height, 1.0)
         # )
         self.normal_biome = biome_map[BiomeName.NORMALS]
+        self.height_biome = biome_map[BiomeName.HEIGHT]
         self.terrain_nodes = []
         self.normal_sprites = arcade.SpriteList()
         self.height_sprites = arcade.SpriteList()
@@ -204,6 +201,7 @@ class ShaderPipeline:
         return self.width, self.height
 
     def update_terrain_nodes(self, sprites: arcade.SpriteList):
+        sprite: BaseSprite
         self.normal_sprites.clear()
         self.height_sprites.clear()
         self.character_sprites.clear()
@@ -213,7 +211,10 @@ class ShaderPipeline:
             if not hasattr(sprite, "clone") or not getattr(sprite, "node", None):
                 continue
             clone: BaseSprite = sprite.clone()
-            clone.texture = self.normal_biome.choose_texture_for_node(clone.node, 0)
+            clone.meta_data = sprite.meta_data
+            clone.texture = self.normal_biome.choose_texture_for_node(
+                clone.node, clone.meta_data.tile_type, sprite
+            )
             clone.set_transform(sprite.transform)
             clone.set_node(sprite.node)
             nodes[clone.node[:2]] = max(nodes.get(clone.node[:2], -10), clone.node.z)
@@ -221,12 +222,21 @@ class ShaderPipeline:
             max_y = max(clone.node.y, max_y)
 
             self.normal_sprites.append(clone)
+
             height_clone: BaseSprite = sprite.clone()
             height_clone.set_transform(sprite.transform)
             height_clone.set_node(sprite.node)
-            height_clone.texture = SpriteSheetSpecs.tile_height_map_sheet.loaded[
-                height_clone.node.z + 1
-            ]
+
+            if (
+                clone.meta_data.tile_type == TileTypes.PILLAR
+                and sprite.meta_data.biome != BiomeName.CASTLE
+            ):
+                self.height_biome.assign_height_mapped_texture(height_clone, sprite)
+            else:
+                height_clone.texture = SpriteSheetSpecs.tile_height_map_sheet.loaded[
+                    height_clone.node.z + 1
+                ]
+
             self.height_sprites.append(height_clone)
 
         self._generate_world_height_tx(nodes)

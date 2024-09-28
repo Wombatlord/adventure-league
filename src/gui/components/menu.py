@@ -5,7 +5,8 @@ from types import FunctionType
 from typing import Callable, NamedTuple, Self
 
 import arcade
-from arcade.gui import UIAnchorLayout, UIBoxLayout, UIEvent, UIManager, UITextureButton
+from arcade.gui import (UIAnchorLayout, UIBoxLayout, UIEvent, UIManager,
+                        UITextureButton)
 from pyglet.math import Vec2
 
 from src.gui.animation.positioning import maintain_position

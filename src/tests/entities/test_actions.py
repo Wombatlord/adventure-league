@@ -1,7 +1,8 @@
 import unittest
 
 from src.engine.events_enum import EventTopic
-from src.entities.action.actions import ConsumeItemAction, EndTurnAction, MoveAction
+from src.entities.action.actions import (ConsumeItemAction, EndTurnAction,
+                                         MoveAction)
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.fighter import Fighter
 from src.entities.entity import Entity, Name

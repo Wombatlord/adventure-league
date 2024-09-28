@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
+
+from src.gui.biome_textures import BiomeName, BiomeTextures
 
 if TYPE_CHECKING:
     from src.gui.animated_sprite_config import AnimatedSpriteConfig
@@ -19,7 +21,8 @@ from arcade.sprite import Sprite
 from arcade.texture import Texture
 from arcade.types import PathOrTexture, Point
 
-from src.textures.flat_sprite_maps import flat_normal_map, flat_sprite_height_map
+from src.textures.flat_sprite_maps import (flat_normal_map,
+                                           flat_sprite_height_map)
 from src.world.isometry.transforms import Transform
 from src.world.node import Node
 
@@ -94,6 +97,12 @@ class OffsetSprite(Sprite):
                 sprite.position = new_pos
 
 
+class SpriteMetaData(NamedTuple):
+    tile_type: int | None = None
+    biome: str | None = None
+    main_sheet_index: int | None = None
+
+
 class BaseSprite(OffsetSprite, Sprite):
     transform: Transform
 
@@ -105,6 +114,7 @@ class BaseSprite(OffsetSprite, Sprite):
         center_y: float = 0.0,
         angle: float = 0.0,
         sync_list: tuple[arcade.Sprite, ...] = (),
+        meta_data: SpriteMetaData = SpriteMetaData(None, None, None),
         **kwargs,
     ):
         super().__init__(
@@ -125,6 +135,17 @@ class BaseSprite(OffsetSprite, Sprite):
         self._draw_priority_offset = kwargs.get("draw_priority_offset", 0)
         self._node = None
         self._sync_list = sync_list
+        self.meta_data = meta_data
+
+    def get_biome(self):
+        if self.texture in BiomeTextures.castle().pillar_tiles:
+            return BiomeName.CASTLE
+        if self.texture in BiomeTextures.desert().pillar_tiles:
+            return BiomeName.DESERT
+        if self.texture in BiomeTextures.snow().pillar_tiles:
+            return BiomeName.SNOW
+        if self.texture in BiomeTextures.plains().pillar_tiles:
+            return BiomeName.PLAINS
 
     @property
     def node(self) -> Node | None:
@@ -195,7 +216,12 @@ class BaseSprite(OffsetSprite, Sprite):
 
     def clone(self) -> Self:
         clone = BaseSprite(
-            self.texture, self.scale, self.position[0], self.position[1], self.angle
+            self.texture,
+            self.scale,
+            self.position[0],
+            self.position[1],
+            self.angle,
+            tile_type=self.meta_data.tile_type,
         )
         if self._node:
             clone.set_node(self._node)
