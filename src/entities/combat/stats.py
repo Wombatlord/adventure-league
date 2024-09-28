@@ -3,11 +3,8 @@ from __future__ import annotations
 import random
 from typing import Callable, NamedTuple
 
-from src.entities.combat.modifiable_stats import (
-    Modifier,
-    namedtuple_add,
-    namedtuple_sub,
-)
+from src.entities.combat.modifiable_stats import (Modifier, namedtuple_add,
+                                                  namedtuple_sub)
 
 
 class HealthPool:

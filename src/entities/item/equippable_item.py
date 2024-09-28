@@ -7,17 +7,14 @@ from typing import TYPE_CHECKING, Callable, NamedTuple, Self
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.damage import Damage
 from src.entities.combat.modifiable_stats import ModifiableStats, Modifier
-from src.entities.combat.stats import (
-    EquippableItemStats,
-    FighterStats,
-    StatAffix,
-    percent_crit_increase,
-    percent_power_increase,
-    raw_defence_increase,
-    raw_power_increase,
-)
+from src.entities.combat.stats import (EquippableItemStats, FighterStats,
+                                       StatAffix, percent_crit_increase,
+                                       percent_power_increase,
+                                       raw_defence_increase,
+                                       raw_power_increase)
 from src.entities.combat.weapon_attacks import NormalAttack, WeaponAttackMeta
-from src.entities.magic.spells import Fireball, MagicMissile, Shield, Spell, SpellMeta
+from src.entities.magic.spells import (Fireball, MagicMissile, Shield, Spell,
+                                       SpellMeta)
 from src.entities.properties.meta_compendium import MetaCompendium
 
 if TYPE_CHECKING:

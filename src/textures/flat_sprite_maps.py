@@ -129,3 +129,20 @@ def character_normals():
     dst_image.save(
         SpriteSheetSpecs.characters.args[0].replace(".png", ".norm.png"), format="png"
     )
+
+
+def tile_heights():
+    output = iter_map_sheet(SpriteSheetSpecs.tiles.args[0])
+    output.save(SpriteSheetSpecs.tiles.args[0].replace(".png", ".z.png"), format="png")
+
+
+def tile_normals():
+    file_path = SpriteSheetSpecs.tiles.args[0]
+    src_image = PIL.Image.open(file_path)
+    dst_image = PIL.Image.new("RGBA", size=src_image.size, color=(0, 0, 0, 0))
+    for px in iter_px(src_image.size):
+        if RGBA(*src_image.getpixel(px)).A > 0:
+            dst_image.putpixel(px, (255, 255, 0, 255))
+    dst_image.save(
+        SpriteSheetSpecs.tiles.args[0].replace(".png", ".norm.png"), format="png"
+    )

@@ -1,13 +1,15 @@
 from unittest import TestCase
 
 from src.engine.persistence.dumpers import GameStateDumpers
-from src.engine.persistence.game_state_repository import Format, GuildRepository
+from src.engine.persistence.game_state_repository import (Format,
+                                                          GuildRepository)
 from src.engine.persistence.loaders import GameStateLoaders
 from src.entities.combat.archetypes import FighterArchetype
 from src.entities.combat.modifiable_stats import Modifier
 from src.entities.combat.stats import StatAffix
 from src.entities.entity import Entity
-from src.entities.gear.equippable_item import EquippableItem, EquippableItemConfig
+from src.entities.gear.equippable_item import (EquippableItem,
+                                               EquippableItemConfig)
 from src.entities.gear.gear import Gear
 from src.tests.fixtures import GuildFactory
 from src.utils.deep_copy import copy

@@ -5,14 +5,9 @@ from typing import TYPE_CHECKING, Any, Generator, Optional, Self
 import yaml
 
 from src.engine.events_enum import EventTopic
-from src.entities.action.actions import (
-    ActionMeta,
-    ActionPoints,
-    BaseAction,
-    ConsumeItemAction,
-    EndTurnAction,
-    MoveAction,
-)
+from src.entities.action.actions import (ActionMeta, ActionPoints, BaseAction,
+                                         ConsumeItemAction, EndTurnAction,
+                                         MoveAction)
 from src.entities.action.magic_action import MagicAction
 from src.entities.action.weapon_action import WeaponAttackAction
 from src.entities.combat.archetypes import FighterArchetype

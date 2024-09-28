@@ -4,20 +4,9 @@ from unittest import TestCase
 from parameterized import parameterized
 
 from src.utils.proc_gen.wave_function_collapse import (
-    EAST,
-    SOUTH,
-    CollapseResult,
-    IrreconcilableStateError,
-    Observation,
-    Pos,
-    Side,
-    StateVec,
-    config,
-    from_distribution,
-    generate,
-    iter_one_from,
-    iterate_with_backtracking,
-)
+    EAST, SOUTH, CollapseResult, IrreconcilableStateError, Observation, Pos,
+    Side, StateVec, config, from_distribution, generate, iter_one_from,
+    iterate_with_backtracking)
 
 
 class PathTile(NamedTuple):

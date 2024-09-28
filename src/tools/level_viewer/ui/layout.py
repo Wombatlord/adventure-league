@@ -5,11 +5,11 @@ import random
 from typing import Callable, Generator, Sequence
 
 import arcade
-from pyglet.math import Mat4, Vec2, Vec3
+from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from src import config
-from src.entities.sprites import BaseSprite
-from src.gui.biome_textures import Biome, BiomeName, biome_map
+from src.entities.sprites import BaseSprite, SpriteMetaData
+from src.gui.biome_textures import Biome, BiomeName, biome_map, tiles
 from src.gui.combat.highlight import HighlightLayer
 from src.gui.components.lighting_shader import ShaderPipeline
 from src.textures.texture_data import SpriteSheetSpecs
@@ -188,6 +188,7 @@ class LayoutSection(arcade.Section):
         self.shader_pipeline = ShaderPipeline(
             self.width, self.height, arcade.get_window(), self.transform
         )
+        self.current_biome.biome_lighting(self.shader_pipeline)
         self.shader_pipeline.take_transform_from(self.get_full_transform)
         self.shader_pipeline.locate_light_with(self.get_light_location)
         self.light_loc = Vec3(4, 4, 0.2)
@@ -378,16 +379,22 @@ class LayoutSection(arcade.Section):
     def level_to_sprite_list(self):
         self.teardown_level()
         for block in self.layout:
+            texture = block.texture
+            main_sheet_idx = tiles.index(texture)
             sprite = BaseSprite(
-                block.texture,
+                texture,
                 scale=self.SPRITE_SCALE,
                 transform=self.transform,
+                meta_data=SpriteMetaData(
+                    block.terrain_node.tile_type, block.biome.name, main_sheet_idx
+                ),
             )
             sprite.set_node(block.node)
             self.world_sprite_list.append(sprite)
             self.terrain_sprite_list.append(sprite)
         self.refresh_draw_order()
         self.shader_pipeline.update_terrain_nodes(self.terrain_sprite_list)
+        self.current_biome.biome_lighting(self.shader_pipeline)
 
     def teardown_level(self):
         self.world_sprite_list.clear()

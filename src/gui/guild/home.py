@@ -16,9 +16,11 @@ from src.engine.game_state import GameState
 from src.engine.guild import Guild
 from src.engine.init_engine import eng
 from src.engine.persistence.dumpers import GameStateDumpers
-from src.engine.persistence.game_state_repository import Format, GuildRepository
+from src.engine.persistence.game_state_repository import (Format,
+                                                          GuildRepository)
 from src.entities.entity import Entity
-from src.gui.components.buttons import get_nav_handler, nav_button, update_button
+from src.gui.components.buttons import (get_nav_handler, nav_button,
+                                        update_button)
 from src.gui.components.menu import LeafMenuNode, Menu, SubMenuNode
 from src.gui.generic_sections.command_bar import CommandBarSection
 from src.gui.generic_sections.info_pane import InfoPaneSection
