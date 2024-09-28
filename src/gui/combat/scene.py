@@ -111,7 +111,8 @@ class Scene(arcade.Section):
         self.shader_pipeline.set_directional_light(
             colour=Vec4(1.0, 1.0, 1.0, 1.0), direction=Vec3(1, 1, 0.5)
         )
-        self.shader_pipeline.set_light_balance(ambient=0)
+        self.shader_pipeline.take_pt_col_from(lambda: Vec4(0.6, 0.4, 0.1, 1.0))
+        self.shader_pipeline.set_light_balance(ambient=0.5)
 
     def get_full_transform(self) -> Mat4:
         result = self.transform.clone()
